@@ -116,16 +116,29 @@ module demo_vert() {
     cylinder(r=3, $fn = $ps_vertex_valence);
 }
 
+module demo_volume_group() {
+    hull() {
+        for (vi = $ps_proxy_volume_group_vertex_idxs) {
+            translate($ps_poly_verts_local[vi])
+                sphere(d = 0.01);
+        }
+    }
+}
+
 
 place_on_faces(p, IR, indices = [2]) {
     difference() {
         demo_face();
+
         place_on_face_foreign_proxy_sites() {
             demo_face();
             edge_seg($ps_edge_pts_local, $ps_poly_center_local, edge_t = EDGE_T);
             demo_vert();
         }
+
+        place_on_face_foreign_proxy_volume_groups() {
+            demo_volume_group();
+        }
     }
 }
-
 

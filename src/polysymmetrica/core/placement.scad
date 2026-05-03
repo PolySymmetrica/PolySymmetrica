@@ -1234,6 +1234,39 @@ module place_on_face_foreign_proxy_sites(
 }
 
 /**
+ * Module: Iterate connected foreign proxy volume groups affecting the current placed face.
+ * Params: mode (foreign face fill rule), eps (tolerance), filter_parent (drop parent-edge cuts)
+ * Returns: none; exposes `$ps_proxy_volume_group_*` metadata and calls children once per connected source-face group
+ * Limitations/Gotchas: volume groups are provenance records, not placed elements; children run in the current target face frame
+ */
+module place_on_face_foreign_proxy_volume_groups(mode="nonzero", eps=1e-8, filter_parent=true) {
+    assert(!is_undef($ps_face_pts2d), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_face_pts2d)");
+    assert(!is_undef($ps_face_idx), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_face_idx)");
+    assert(!is_undef($ps_poly_faces_idx), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_poly_faces_idx)");
+    assert(!is_undef($ps_poly_verts_local), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_poly_verts_local)");
+
+    groups = ps_face_foreign_proxy_volume_groups($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, eps, mode, filter_parent);
+    for (group = groups) {
+        $ps_proxy_volume_group_record = group;
+        $ps_proxy_volume_group_idx = ps_proxy_volume_group_idx(group);
+        $ps_proxy_volume_group_count = len(groups);
+        $ps_proxy_volume_group_kind = ps_proxy_volume_group_kind(group);
+        $ps_proxy_volume_group_target_face_idx = ps_proxy_volume_group_target_face_idx(group);
+        $ps_proxy_volume_group_face_idxs = ps_proxy_volume_group_face_idxs(group);
+        $ps_proxy_volume_group_record_idxs = ps_proxy_volume_group_record_idxs(group);
+        $ps_proxy_volume_group_edge_idxs = ps_proxy_volume_group_edge_idxs(group);
+        $ps_proxy_volume_group_vertex_idxs = ps_proxy_volume_group_vertex_idxs(group);
+
+        $ps_proxy_kind = "foreign_volume_group";
+        $ps_proxy_source_kind = "volume_group";
+        $ps_proxy_source_idx = ps_proxy_volume_group_idx(group);
+        $ps_proxy_target_face_idx = ps_proxy_volume_group_target_face_idx(group);
+
+        children();
+    }
+}
+
+/**
  * Function: Build edge placement site records for `place_on_edges(...)`.
  * Params: poly (poly descriptor), inter_radius (scale input), edge_len (explicit scale override), classify/classify_opts (optional classification context)
  * Returns: list of edge site records `[edge_idx, center, ex, ey, ez, edge_len, edge_midradius, poly_center_local, edge_pts_local, edge_verts_idx, edge_adj_faces_idx, edge_family_id, face_family_count, edge_family_count, vertex_family_count]`

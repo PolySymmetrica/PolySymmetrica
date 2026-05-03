@@ -618,6 +618,27 @@ module test_place_on_face_foreign_proxy_sites__7_3_15_triangle_dispatches_edge_a
     }
 }
 
+module test_place_on_face_foreign_proxy_volume_groups__5_2_15_triangle_exposes_context() {
+    place_on_faces(_test_penta_punch_poly()) {
+        if ($ps_face_idx == 2) {
+            place_on_face_foreign_proxy_volume_groups(mode = MODE) {
+                assert_int_eq($ps_proxy_volume_group_count, 1, "pentagram proxy volume group iterator count");
+                assert_int_eq($ps_proxy_volume_group_idx, 0, "pentagram proxy volume group idx");
+                assert($ps_proxy_volume_group_kind == "foreign_proxy_volume_group", "pentagram proxy volume group kind");
+                assert_int_eq($ps_proxy_volume_group_target_face_idx, 2, "pentagram proxy volume group target face");
+                assert_list_eq($ps_proxy_volume_group_face_idxs, [4, 5, 9], "pentagram proxy volume group face ids");
+                assert_list_eq($ps_proxy_volume_group_record_idxs, [0, 1, 2], "pentagram proxy volume group exact record ids");
+                assert_int_eq(len($ps_proxy_volume_group_edge_idxs), 7, "pentagram proxy volume group edge ids");
+                assert_int_eq(len($ps_proxy_volume_group_vertex_idxs), 5, "pentagram proxy volume group vertex ids");
+                assert($ps_proxy_kind == "foreign_volume_group", "pentagram proxy kind alias");
+                assert($ps_proxy_source_kind == "volume_group", "pentagram proxy source kind alias");
+                assert_int_eq($ps_proxy_source_idx, 0, "pentagram proxy source idx alias");
+                assert_int_eq($ps_proxy_target_face_idx, 2, "pentagram proxy target face alias");
+            }
+        }
+    }
+}
+
 module test_face_local_iterators__parent_coords_preserve_metadata() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == STAR_FACE_IDX) {
@@ -663,6 +684,7 @@ module run_TestSelfCrossing() {
     test_place_on_face_foreign_proxy_sites__7_3_15_triangle_dispatches_face_child();
     test_place_on_face_foreign_proxy_sites__7_3_15_triangle_element_child_uses_source_face_context();
     test_place_on_face_foreign_proxy_sites__7_3_15_triangle_dispatches_edge_and_vertex_children();
+    test_place_on_face_foreign_proxy_volume_groups__5_2_15_triangle_exposes_context();
     test_face_local_iterators__parent_coords_preserve_metadata();
 }
 
