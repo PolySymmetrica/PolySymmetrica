@@ -116,15 +116,48 @@ module demo_vert() {
     cylinder(r=3, $fn = $ps_vertex_valence);
 }
 
-module demo_volume_group() {
-    hull() {
-        for (vi = $ps_proxy_volume_group_vertex_idxs) {
-            translate($ps_poly_verts_local[vi])
-                sphere(d = 0.01);
-        }
-    }
-}
+/**
+ * Function: Close each boundary loop with a centroid triangle fan.
+ * Params: poly (open local patch poly descriptor)
+ * Returns: local poly descriptor with planar triangular cap faces added
+ * Limitations/Gotchas: example helper; cap shape is best-effort, not the true source solid interior
+ */
+function demo_cap_boundary_loops_with_fans(poly) =
+    let(
+        verts = poly_verts(poly),
+        faces = poly_faces(poly),
+        loops = poly_boundary_loops(poly),
+        centers = [for (loop = loops) ps_face_centroid(verts, loop)],
+        cap_faces = [
+            for (li = [0:1:len(loops)-1])
+                let(
+                    loop = loops[li],
+                    center_idx = len(verts) + li
+                )
+                for (i = [0:1:len(loop)-1])
+                    [center_idx, loop[i], loop[(i + 1) % len(loop)]]
+        ]
+    )
+    [concat(verts, centers), concat(faces, cap_faces), poly_e_over_ir(poly)];
 
+/**
+ * Function: Build the current proxy volume group as a closed local patch volume.
+ * Params: uses `$ps_proxy_volume_group_shell_faces_idx` and `$ps_poly_verts_local`
+ * Returns: local poly descriptor suitable for `polyhedron(...)`
+ * Limitations/Gotchas: caps open source-face patches with artificial fan faces for subtraction
+ */
+function demo_volume_group_patch_poly() =
+    let(
+        patch_faces = $ps_proxy_volume_group_shell_faces_idx,
+        patch = [$ps_poly_verts_local, patch_faces, 1],
+        capped = demo_cap_boundary_loops_with_fans(patch)
+    )
+    poly_fix_winding(capped);
+
+module demo_volume_group() {
+    solid = demo_volume_group_patch_poly();
+    polyhedron(points = poly_verts(solid), faces = poly_faces(solid), convexity = 10);
+}
 
 place_on_faces(p, IR, indices = [2]) {
     difference() {
@@ -141,4 +174,3 @@ place_on_faces(p, IR, indices = [2]) {
         }
     }
 }
-

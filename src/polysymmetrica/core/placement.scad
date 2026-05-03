@@ -377,6 +377,32 @@ function _ps_proxy_vertex_ids_from_face_record(record, faces, verts_local, eps=1
     _ps_unique_values(raw);
 
 /**
+ * Function: Build edge ids from role-specific shell face loops.
+ * Params: face_loops (source vertex loops), faces (full source face list)
+ * Returns: deduped global source edge ids; synthetic closing chords are omitted
+ */
+function _ps_proxy_edge_ids_from_face_loops(face_loops, faces) =
+    let(
+        edges = _ps_edges_from_faces(faces),
+        ids = [
+            for (loop = face_loops)
+                for (k = [0:1:len(loop)-1])
+                    let(edge_idx = _ps_edge_idx_from_verts(edges, loop[k], loop[(k + 1) % len(loop)]))
+                    if (edge_idx >= 0)
+                        edge_idx
+        ]
+    )
+    _ps_unique_values(ids);
+
+/**
+ * Function: Build vertex ids from role-specific shell face loops.
+ * Params: face_loops (source vertex loops)
+ * Returns: deduped source vertex ids
+ */
+function _ps_proxy_vertex_ids_from_face_loops(face_loops) =
+    _ps_unique_values([for (loop = face_loops) each loop]);
+
+/**
  * Function: Test whether two source faces share a topology edge.
  * Params: faces (face list), a/b (face indices)
  * Returns: true when the two faces are edge-adjacent in the source polyhedron
@@ -388,6 +414,50 @@ function _ps_proxy_faces_share_edge(faces, a, b) =
             if (ps_face_has_edge(fb, fa[k], fa[(k + 1) % len(fa)]))
                 1
     ]) > 0;
+
+/**
+ * Function: Find vertices on a support face that touch the current shell.
+ * Params: faces (face list), face_idx (support face), shell_face_ids (seed/support face ids)
+ * Returns: support-face vertices participating in shared shell edges
+ */
+function _ps_proxy_support_shared_vertices(faces, face_idx, shell_face_ids) =
+    let(f = faces[face_idx])
+    _ps_unique_values([
+        for (k = [0:1:len(f)-1])
+            let(a = f[k], b = f[(k + 1) % len(f)])
+            if (len([
+                for (other_idx = shell_face_ids)
+                    if (other_idx != face_idx && ps_face_has_edge(faces[other_idx], a, b))
+                        1
+            ]) > 0)
+                each [a, b]
+    ]);
+
+/**
+ * Function: Build the role-specific loop for a support face.
+ * Params: faces (face list), face_idx (support face), shell_face_ids (seed/support face ids)
+ * Returns: source vertex loop clipped to shared shell edges, or the full source loop if clipping would degenerate
+ */
+function _ps_proxy_support_face_loop(faces, face_idx, shell_face_ids) =
+    let(
+        f = faces[face_idx],
+        shared = _ps_proxy_support_shared_vertices(faces, face_idx, shell_face_ids),
+        ordered = [for (v = f) if (_ps_list_contains(shared, v)) v]
+    )
+    len(ordered) >= 3 ? ordered : f;
+
+/**
+ * Function: Build source-vertex shell face loops for a proxy volume group.
+ * Params: seed_face_ids/shell_face_ids (group provenance), faces (face list)
+ * Returns: source vertex loops; seed faces are full loops, support faces are clipped to their shell role
+ */
+function _ps_proxy_shell_face_loops(seed_face_ids, shell_face_ids, faces) =
+    [
+        for (face_id = shell_face_ids)
+            _ps_list_contains(seed_face_ids, face_id)
+                ? faces[face_id]
+                : _ps_proxy_support_face_loop(faces, face_id, shell_face_ids)
+    ];
 
 /**
  * Function: Build one connected component of exact intruding source faces.
@@ -445,45 +515,78 @@ function _ps_proxy_record_idxs_for_faces(face_records, face_ids) =
     ];
 
 /**
- * Function: Build one connected proxy volume group record.
- * Params: group_idx/target_face_idx (record ids), face_ids (connected source face ids), face_records (exact records), faces/verts_local/eps (source topology context)
- * Returns: `foreign_proxy_volume_group` record with face, record, edge, and vertex provenance
+ * Function: Get unique foreign face ids from intrusion records.
+ * Params: records (foreign intrusion records)
+ * Returns: source face indices preserving first-record order
  */
-function _ps_proxy_volume_group_record(group_idx, target_face_idx, face_ids, face_records, faces, verts_local, eps=1e-8) =
+function _ps_proxy_face_ids_from_records(records) =
+    _ps_unique_values([for (r = records) ps_intrusion_foreign_idx(r)]);
+
+/**
+ * Function: Build one connected proxy volume group record.
+ * Params: group_idx/target_face_idx (record ids), seed_face_ids (exact intrusion source faces), seed_records (filtered exact records), support_records (unfiltered records used for shell closure), faces/verts_local/eps (source topology context)
+ * Returns: `foreign_proxy_volume_group` record with seed/support/shell face, record, edge, and vertex provenance
+ */
+function _ps_proxy_volume_group_record(group_idx, target_face_idx, seed_face_ids, seed_records, support_records, faces, verts_local, eps=1e-8) =
     let(
-        record_idxs = _ps_proxy_record_idxs_for_faces(face_records, face_ids),
+        support_face_ids_all = _ps_proxy_face_ids_from_records(support_records),
+        shell_face_ids_raw = _ps_proxy_face_component(support_face_ids_all, faces, seed_face_ids),
+        shell_face_ids = [
+            for (face_id = support_face_ids_all)
+                if (_ps_list_contains(shell_face_ids_raw, face_id))
+                    face_id
+        ],
+        support_face_ids = [
+            for (face_id = shell_face_ids)
+                if (!_ps_list_contains(seed_face_ids, face_id))
+                    face_id
+        ],
+        record_idxs = _ps_proxy_record_idxs_for_faces(seed_records, seed_face_ids),
+        support_record_idxs = _ps_proxy_record_idxs_for_faces(support_records, support_face_ids),
+        shell_record_idxs = _ps_proxy_record_idxs_for_faces(support_records, shell_face_ids),
         edge_ids = _ps_unique_values([
             for (ri = record_idxs)
-                each _ps_proxy_edge_ids_from_face_record(face_records[ri], faces, verts_local, eps)
+                each _ps_proxy_edge_ids_from_face_record(seed_records[ri], faces, verts_local, eps)
         ]),
         vertex_ids = _ps_unique_values([
             for (ri = record_idxs)
-                each _ps_proxy_vertex_ids_from_face_record(face_records[ri], faces, verts_local, eps)
-        ])
+                each _ps_proxy_vertex_ids_from_face_record(seed_records[ri], faces, verts_local, eps)
+        ]),
+        shell_face_loops = _ps_proxy_shell_face_loops(seed_face_ids, shell_face_ids, faces),
+        shell_edge_ids = _ps_proxy_edge_ids_from_face_loops(shell_face_loops, faces),
+        shell_vertex_ids = _ps_proxy_vertex_ids_from_face_loops(shell_face_loops)
     )
     [
         "foreign_proxy_volume_group",
         target_face_idx,
         group_idx,
-        face_ids,
+        seed_face_ids,
         record_idxs,
         edge_ids,
-        vertex_ids
+        vertex_ids,
+        support_face_ids,
+        support_record_idxs,
+        shell_face_ids,
+        shell_record_idxs,
+        shell_edge_ids,
+        shell_vertex_ids,
+        shell_face_loops
     ];
 
 /**
  * Function: Build connected proxy volume groups from already-derived exact foreign face records.
- * Params: target_face_idx (target face id), face_records (exact foreign face intrusion records), poly_faces_idx/poly_verts_local (current `place_on_faces(...)` metadata), eps (tolerance)
- * Returns: connected `foreign_proxy_volume_group` records; these are provenance groups, not SCAD geometry
+ * Params: target_face_idx (target face id), face_records (seed exact foreign face intrusion records), poly_faces_idx/poly_verts_local (current `place_on_faces(...)` metadata), eps (tolerance), support_records (optional unfiltered records used to close shell volumes)
+ * Returns: connected `foreign_proxy_volume_group` records with exact seed roles and optional connected shell-support roles
  */
-function _ps_face_foreign_proxy_volume_groups_from_records(target_face_idx, face_records, poly_faces_idx, poly_verts_local, eps=1e-8) =
+function _ps_face_foreign_proxy_volume_groups_from_records(target_face_idx, face_records, poly_faces_idx, poly_verts_local, eps=1e-8, support_records=undef) =
     let(
-        face_ids = _ps_unique_values([for (r = face_records) ps_intrusion_foreign_idx(r)]),
+        face_ids = _ps_proxy_face_ids_from_records(face_records),
+        support_records_eff = is_undef(support_records) ? face_records : support_records,
         groups = _ps_proxy_face_components(face_ids, poly_faces_idx)
     )
     [
         for (gi = [0:1:len(groups)-1])
-            _ps_proxy_volume_group_record(gi, target_face_idx, groups[gi], face_records, poly_faces_idx, poly_verts_local, eps)
+            _ps_proxy_volume_group_record(gi, target_face_idx, groups[gi], face_records, support_records_eff, poly_faces_idx, poly_verts_local, eps)
     ];
 
 /**
@@ -681,8 +784,8 @@ function ps_face_foreign_proxy_replay_sites(face_pts2d, face_idx, poly_faces_idx
 /**
  * Function: Build connected source-face groups for optional foreign proxy volume replay.
  * Params: face_pts2d (target face loop), face_idx (target face index), poly_faces_idx/poly_verts_local (current `place_on_faces(...)` metadata), eps (tolerance), mode (foreign face fill rule), filter_parent (drop parent-edge cuts)
- * Returns: connected proxy volume group records with source face, exact-record, edge, and vertex provenance
- * Limitations/Gotchas: groups describe source topology components only; later geometry replay decides how to turn each group into a cuttable volume
+ * Returns: connected proxy volume group records with exact seed roles plus connected shell-support roles
+ * Limitations/Gotchas: `face_idxs`/`record_idxs` are the exact intrusion seeds; `shell_face_idxs` may include adjacent parent-boundary support faces needed to make a subtractive volume
  */
 function ps_face_foreign_proxy_volume_groups(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero", filter_parent=true) =
     let(
@@ -690,9 +793,14 @@ function ps_face_foreign_proxy_volume_groups(face_pts2d, face_idx, poly_faces_id
             for (r = ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent))
                 if (ps_intrusion_foreign_kind(r) == "face")
                     r
+        ],
+        shell_records = [
+            for (r = ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, false))
+                if (ps_intrusion_foreign_kind(r) == "face")
+                    r
         ]
     )
-    _ps_face_foreign_proxy_volume_groups_from_records(face_idx, face_records, poly_faces_idx, poly_verts_local, eps);
+    _ps_face_foreign_proxy_volume_groups_from_records(face_idx, face_records, poly_faces_idx, poly_verts_local, eps, shell_records);
 
 /**
  * Function: Get proxy volume group kind.
@@ -716,9 +824,9 @@ function ps_proxy_volume_group_target_face_idx(group) = group[1];
 function ps_proxy_volume_group_idx(group) = group[2];
 
 /**
- * Function: Get exact intruding source face ids for a proxy volume group.
+ * Function: Get exact seed source face ids for a proxy volume group.
  * Params: group (proxy volume group record)
- * Returns: connected source face indices
+ * Returns: source face indices from non-parent exact intrusion records
  */
 function ps_proxy_volume_group_face_idxs(group) = group[3];
 
@@ -742,6 +850,55 @@ function ps_proxy_volume_group_edge_idxs(group) = group[5];
  * Returns: deduped source vertex indices
  */
 function ps_proxy_volume_group_vertex_idxs(group) = group[6];
+
+/**
+ * Function: Get connected support source face ids for a proxy volume group.
+ * Params: group (proxy volume group record)
+ * Returns: source face indices added only to close the subtractive shell volume
+ */
+function ps_proxy_volume_group_support_face_idxs(group) = group[7];
+
+/**
+ * Function: Get support intrusion record indices represented by a proxy volume group.
+ * Params: group (proxy volume group record)
+ * Returns: indices into the unfiltered support-record list
+ */
+function ps_proxy_volume_group_support_record_idxs(group) = group[8];
+
+/**
+ * Function: Get all source face ids used by a proxy volume group shell.
+ * Params: group (proxy volume group record)
+ * Returns: seed and connected support source face indices
+ */
+function ps_proxy_volume_group_shell_face_idxs(group) = group[9];
+
+/**
+ * Function: Get all intrusion record indices used by a proxy volume group shell.
+ * Params: group (proxy volume group record)
+ * Returns: indices into the unfiltered support-record list
+ */
+function ps_proxy_volume_group_shell_record_idxs(group) = group[10];
+
+/**
+ * Function: Get boundary edge ids covered by a proxy volume group shell.
+ * Params: group (proxy volume group record)
+ * Returns: deduped global source edge indices for seed and support shell faces
+ */
+function ps_proxy_volume_group_shell_edge_idxs(group) = group[11];
+
+/**
+ * Function: Get vertex ids covered by a proxy volume group shell.
+ * Params: group (proxy volume group record)
+ * Returns: deduped source vertex indices for seed and support shell faces
+ */
+function ps_proxy_volume_group_shell_vertex_idxs(group) = group[12];
+
+/**
+ * Function: Get role-specific source vertex loops used by a proxy volume group shell.
+ * Params: group (proxy volume group record)
+ * Returns: source-vertex face loops; seed faces are full loops, support faces may be clipped to their closure role
+ */
+function ps_proxy_volume_group_shell_faces_idx(group) = group[13];
 
 /**
  * Function: Get replay site index.
@@ -1237,7 +1394,7 @@ module place_on_face_foreign_proxy_sites(
  * Module: Iterate connected foreign proxy volume groups affecting the current placed face.
  * Params: mode (foreign face fill rule), eps (tolerance), filter_parent (drop parent-edge cuts)
  * Returns: none; exposes `$ps_proxy_volume_group_*` metadata and calls children once per connected source-face group
- * Limitations/Gotchas: volume groups are provenance records, not placed elements; children run in the current target face frame
+ * Limitations/Gotchas: `*_face_idxs` are exact intrusion seeds; `*_shell_face_idxs` add connected support faces for subtractive shell construction; children run in the current target face frame
  */
 module place_on_face_foreign_proxy_volume_groups(mode="nonzero", eps=1e-8, filter_parent=true) {
     assert(!is_undef($ps_face_pts2d), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_face_pts2d)");
@@ -1256,6 +1413,13 @@ module place_on_face_foreign_proxy_volume_groups(mode="nonzero", eps=1e-8, filte
         $ps_proxy_volume_group_record_idxs = ps_proxy_volume_group_record_idxs(group);
         $ps_proxy_volume_group_edge_idxs = ps_proxy_volume_group_edge_idxs(group);
         $ps_proxy_volume_group_vertex_idxs = ps_proxy_volume_group_vertex_idxs(group);
+        $ps_proxy_volume_group_support_face_idxs = ps_proxy_volume_group_support_face_idxs(group);
+        $ps_proxy_volume_group_support_record_idxs = ps_proxy_volume_group_support_record_idxs(group);
+        $ps_proxy_volume_group_shell_face_idxs = ps_proxy_volume_group_shell_face_idxs(group);
+        $ps_proxy_volume_group_shell_record_idxs = ps_proxy_volume_group_shell_record_idxs(group);
+        $ps_proxy_volume_group_shell_edge_idxs = ps_proxy_volume_group_shell_edge_idxs(group);
+        $ps_proxy_volume_group_shell_vertex_idxs = ps_proxy_volume_group_shell_vertex_idxs(group);
+        $ps_proxy_volume_group_shell_faces_idx = ps_proxy_volume_group_shell_faces_idx(group);
 
         $ps_proxy_kind = "foreign_volume_group";
         $ps_proxy_source_kind = "volume_group";

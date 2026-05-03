@@ -316,7 +316,22 @@ module test_ps_face_foreign_proxy_volume_groups__5_2_15_triangle_groups_connecte
     assert_list_eq(
         ps_proxy_volume_group_face_idxs(groups[0]),
         [4, 5, 9],
-        "pentagram triangle connected source face ids"
+        "pentagram triangle connected exact seed face ids"
+    );
+    assert_list_eq(
+        ps_proxy_volume_group_support_face_idxs(groups[0]),
+        [0],
+        "pentagram triangle connected support face ids"
+    );
+    assert_list_eq(
+        ps_proxy_volume_group_shell_face_idxs(groups[0]),
+        [0, 4, 5, 9],
+        "pentagram triangle connected shell face ids"
+    );
+    assert_list_eq(
+        ps_proxy_volume_group_shell_faces_idx(groups[0]),
+        [[4, 1, 3], [9, 1, 4], [6, 3, 1], [9, 6, 1]],
+        "pentagram triangle connected shell face loops"
     );
     assert_list_eq(
         ps_proxy_volume_group_record_idxs(groups[0]),
@@ -325,6 +340,8 @@ module test_ps_face_foreign_proxy_volume_groups__5_2_15_triangle_groups_connecte
     );
     assert_int_eq(len(ps_proxy_volume_group_edge_idxs(groups[0])), 7, "pentagram triangle proxy volume edge provenance count");
     assert_int_eq(len(ps_proxy_volume_group_vertex_idxs(groups[0])), 5, "pentagram triangle proxy volume vertex provenance count");
+    assert_int_eq(len(ps_proxy_volume_group_shell_edge_idxs(groups[0])), 7, "pentagram triangle proxy volume shell edge provenance count");
+    assert_int_eq(len(ps_proxy_volume_group_shell_vertex_idxs(groups[0])), 5, "pentagram triangle proxy volume shell vertex provenance count");
 }
 
 module test_ps_face_foreign_proxy_volume_groups__preserves_duplicate_record_provenance() {
@@ -341,6 +358,9 @@ module test_ps_face_foreign_proxy_volume_groups__preserves_duplicate_record_prov
 
     assert_int_eq(len(groups), 1, "duplicate records for one source face should remain one group");
     assert_list_eq(ps_proxy_volume_group_face_idxs(groups[0]), [1], "duplicate group source face id");
+    assert_list_eq(ps_proxy_volume_group_support_face_idxs(groups[0]), [], "duplicate group has no support face ids without support records");
+    assert_list_eq(ps_proxy_volume_group_shell_face_idxs(groups[0]), [1], "duplicate group shell source face id");
+    assert_list_eq(ps_proxy_volume_group_shell_faces_idx(groups[0]), [[4, 5, 6, 7]], "duplicate group shell source face loop");
     assert_list_eq(ps_proxy_volume_group_record_idxs(groups[0]), [0, 1], "duplicate group preserves both exact records");
     assert_int_eq(len(ps_proxy_volume_group_edge_idxs(groups[0])), 4, "duplicate group edge provenance count");
     assert_int_eq(len(ps_proxy_volume_group_vertex_idxs(groups[0])), 4, "duplicate group vertex provenance count");
@@ -360,6 +380,7 @@ module test_ps_face_foreign_proxy_volume_groups__splits_disconnected_source_face
 
     assert_int_eq(len(groups), 2, "disconnected source faces should form separate proxy volume groups");
     assert_list_eq([for (g = groups) ps_proxy_volume_group_face_idxs(g)], [[1], [2]], "disconnected group source face ids");
+    assert_list_eq([for (g = groups) ps_proxy_volume_group_shell_face_idxs(g)], [[1], [2]], "disconnected group shell source face ids");
     assert_list_eq([for (g = groups) ps_proxy_volume_group_record_idxs(g)], [[0], [1]], "disconnected group record provenance");
 }
 
@@ -627,9 +648,14 @@ module test_place_on_face_foreign_proxy_volume_groups__5_2_15_triangle_exposes_c
                 assert($ps_proxy_volume_group_kind == "foreign_proxy_volume_group", "pentagram proxy volume group kind");
                 assert_int_eq($ps_proxy_volume_group_target_face_idx, 2, "pentagram proxy volume group target face");
                 assert_list_eq($ps_proxy_volume_group_face_idxs, [4, 5, 9], "pentagram proxy volume group face ids");
+                assert_list_eq($ps_proxy_volume_group_support_face_idxs, [0], "pentagram proxy volume group support face ids");
+                assert_list_eq($ps_proxy_volume_group_shell_face_idxs, [0, 4, 5, 9], "pentagram proxy volume group shell face ids");
+                assert_list_eq($ps_proxy_volume_group_shell_faces_idx, [[4, 1, 3], [9, 1, 4], [6, 3, 1], [9, 6, 1]], "pentagram proxy volume group shell face loops");
                 assert_list_eq($ps_proxy_volume_group_record_idxs, [0, 1, 2], "pentagram proxy volume group exact record ids");
                 assert_int_eq(len($ps_proxy_volume_group_edge_idxs), 7, "pentagram proxy volume group edge ids");
                 assert_int_eq(len($ps_proxy_volume_group_vertex_idxs), 5, "pentagram proxy volume group vertex ids");
+                assert_int_eq(len($ps_proxy_volume_group_shell_edge_idxs), 7, "pentagram proxy volume group shell edge ids");
+                assert_int_eq(len($ps_proxy_volume_group_shell_vertex_idxs), 5, "pentagram proxy volume group shell vertex ids");
                 assert($ps_proxy_kind == "foreign_volume_group", "pentagram proxy kind alias");
                 assert($ps_proxy_source_kind == "volume_group", "pentagram proxy source kind alias");
                 assert_int_eq($ps_proxy_source_idx, 0, "pentagram proxy source idx alias");
