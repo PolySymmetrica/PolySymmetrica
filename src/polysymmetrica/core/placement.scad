@@ -377,6 +377,116 @@ function _ps_proxy_vertex_ids_from_face_record(record, faces, verts_local, eps=1
     _ps_unique_values(raw);
 
 /**
+ * Function: Test whether two source faces share a topology edge.
+ * Params: faces (face list), a/b (face indices)
+ * Returns: true when the two faces are edge-adjacent in the source polyhedron
+ */
+function _ps_proxy_faces_share_edge(faces, a, b) =
+    let(fa = faces[a], fb = faces[b])
+    len([
+        for (k = [0:1:len(fa)-1])
+            if (ps_face_has_edge(fb, fa[k], fa[(k + 1) % len(fa)]))
+                1
+    ]) > 0;
+
+/**
+ * Function: Build one connected component of exact intruding source faces.
+ * Params: face_ids (eligible source face ids), faces (face list), frontier/seen (recursion state)
+ * Returns: connected source face ids, preserving discovery order
+ */
+function _ps_proxy_face_component(face_ids, faces, frontier, seen=[]) =
+    (len(frontier) == 0) ? seen :
+    let(
+        cur = frontier[0],
+        rest = [for (i = [1:1:len(frontier)-1]) frontier[i]]
+    )
+    _ps_list_contains(seen, cur)
+        ? _ps_proxy_face_component(face_ids, faces, rest, seen)
+        : let(
+            seen2 = concat(seen, [cur]),
+            adj = [
+                for (fid = face_ids)
+                    if (
+                        !_ps_list_contains(seen2, fid) &&
+                        !_ps_list_contains(rest, fid) &&
+                        _ps_proxy_faces_share_edge(faces, cur, fid)
+                    )
+                        fid
+            ]
+        )
+        _ps_proxy_face_component(face_ids, faces, concat(rest, adj), seen2);
+
+/**
+ * Function: Split exact intruding source faces into connected components.
+ * Params: face_ids (unique source face ids), faces (face list), i/assigned/groups (recursion state)
+ * Returns: `[[face_idx, ...], ...]` connected by source topology
+ */
+function _ps_proxy_face_components(face_ids, faces, i=0, assigned=[], groups=[]) =
+    (i >= len(face_ids)) ? groups :
+    let(fid = face_ids[i])
+    _ps_list_contains(assigned, fid)
+        ? _ps_proxy_face_components(face_ids, faces, i + 1, assigned, groups)
+        : let(
+            raw_comp = _ps_proxy_face_component(face_ids, faces, [fid]),
+            comp = [for (face_id = face_ids) if (_ps_list_contains(raw_comp, face_id)) face_id]
+        )
+        _ps_proxy_face_components(face_ids, faces, i + 1, concat(assigned, comp), concat(groups, [comp]));
+
+/**
+ * Function: Find exact intrusion record indices whose foreign faces are in a group.
+ * Params: face_records (exact face intrusion records), face_ids (source face ids)
+ * Returns: record indices preserving the original intrusion order
+ */
+function _ps_proxy_record_idxs_for_faces(face_records, face_ids) =
+    [
+        for (ri = [0:1:len(face_records)-1])
+            if (_ps_list_contains(face_ids, ps_intrusion_foreign_idx(face_records[ri])))
+                ri
+    ];
+
+/**
+ * Function: Build one connected proxy volume group record.
+ * Params: group_idx/target_face_idx (record ids), face_ids (connected source face ids), face_records (exact records), faces/verts_local/eps (source topology context)
+ * Returns: `foreign_proxy_volume_group` record with face, record, edge, and vertex provenance
+ */
+function _ps_proxy_volume_group_record(group_idx, target_face_idx, face_ids, face_records, faces, verts_local, eps=1e-8) =
+    let(
+        record_idxs = _ps_proxy_record_idxs_for_faces(face_records, face_ids),
+        edge_ids = _ps_unique_values([
+            for (ri = record_idxs)
+                each _ps_proxy_edge_ids_from_face_record(face_records[ri], faces, verts_local, eps)
+        ]),
+        vertex_ids = _ps_unique_values([
+            for (ri = record_idxs)
+                each _ps_proxy_vertex_ids_from_face_record(face_records[ri], faces, verts_local, eps)
+        ])
+    )
+    [
+        "foreign_proxy_volume_group",
+        target_face_idx,
+        group_idx,
+        face_ids,
+        record_idxs,
+        edge_ids,
+        vertex_ids
+    ];
+
+/**
+ * Function: Build connected proxy volume groups from already-derived exact foreign face records.
+ * Params: target_face_idx (target face id), face_records (exact foreign face intrusion records), poly_faces_idx/poly_verts_local (current `place_on_faces(...)` metadata), eps (tolerance)
+ * Returns: connected `foreign_proxy_volume_group` records; these are provenance groups, not SCAD geometry
+ */
+function _ps_face_foreign_proxy_volume_groups_from_records(target_face_idx, face_records, poly_faces_idx, poly_verts_local, eps=1e-8) =
+    let(
+        face_ids = _ps_unique_values([for (r = face_records) ps_intrusion_foreign_idx(r)]),
+        groups = _ps_proxy_face_components(face_ids, poly_faces_idx)
+    )
+    [
+        for (gi = [0:1:len(groups)-1])
+            _ps_proxy_volume_group_record(gi, target_face_idx, groups[gi], face_records, poly_faces_idx, poly_verts_local, eps)
+    ];
+
+/**
  * Function: Test whether a candidate record set already contains a foreign element.
  * Params: records (candidate records), kind (foreign kind), idx (foreign index), i (recursion state)
  * Returns: boolean
@@ -567,6 +677,71 @@ function ps_face_foreign_proxy_replay_sites(face_pts2d, face_idx, poly_faces_idx
         ]
     )
     _ps_face_foreign_proxy_replay_sites_from_records(face_idx, face_records, poly_faces_idx, poly_verts_local, poly_center_local, eps);
+
+/**
+ * Function: Build connected source-face groups for optional foreign proxy volume replay.
+ * Params: face_pts2d (target face loop), face_idx (target face index), poly_faces_idx/poly_verts_local (current `place_on_faces(...)` metadata), eps (tolerance), mode (foreign face fill rule), filter_parent (drop parent-edge cuts)
+ * Returns: connected proxy volume group records with source face, exact-record, edge, and vertex provenance
+ * Limitations/Gotchas: groups describe source topology components only; later geometry replay decides how to turn each group into a cuttable volume
+ */
+function ps_face_foreign_proxy_volume_groups(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero", filter_parent=true) =
+    let(
+        face_records = [
+            for (r = ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent))
+                if (ps_intrusion_foreign_kind(r) == "face")
+                    r
+        ]
+    )
+    _ps_face_foreign_proxy_volume_groups_from_records(face_idx, face_records, poly_faces_idx, poly_verts_local, eps);
+
+/**
+ * Function: Get proxy volume group kind.
+ * Params: group (proxy volume group record)
+ * Returns: record kind string
+ */
+function ps_proxy_volume_group_kind(group) = group[0];
+
+/**
+ * Function: Get target face id for a proxy volume group.
+ * Params: group (proxy volume group record)
+ * Returns: target face index
+ */
+function ps_proxy_volume_group_target_face_idx(group) = group[1];
+
+/**
+ * Function: Get zero-based proxy volume group index.
+ * Params: group (proxy volume group record)
+ * Returns: group index
+ */
+function ps_proxy_volume_group_idx(group) = group[2];
+
+/**
+ * Function: Get exact intruding source face ids for a proxy volume group.
+ * Params: group (proxy volume group record)
+ * Returns: connected source face indices
+ */
+function ps_proxy_volume_group_face_idxs(group) = group[3];
+
+/**
+ * Function: Get exact intrusion record indices represented by a proxy volume group.
+ * Params: group (proxy volume group record)
+ * Returns: indices into the face-record list used to build the group
+ */
+function ps_proxy_volume_group_record_idxs(group) = group[4];
+
+/**
+ * Function: Get boundary edge ids covered by a proxy volume group.
+ * Params: group (proxy volume group record)
+ * Returns: deduped global source edge indices
+ */
+function ps_proxy_volume_group_edge_idxs(group) = group[5];
+
+/**
+ * Function: Get vertex ids covered by a proxy volume group.
+ * Params: group (proxy volume group record)
+ * Returns: deduped source vertex indices
+ */
+function ps_proxy_volume_group_vertex_idxs(group) = group[6];
 
 /**
  * Function: Get replay site index.

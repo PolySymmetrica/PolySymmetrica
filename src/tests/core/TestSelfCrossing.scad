@@ -73,6 +73,20 @@ function _test_duplicate_face_cut_faces_idx() =
         [4, 5, 6, 7]
     ];
 
+function _test_disconnected_proxy_volume_verts_local() =
+    [
+        [-3, -3, 0], [3, -3, 0], [3, 3, 0], [-3, 3, 0],
+        [-2, -2, -1], [-1, -2, 1], [-1.5, -1, -1],
+        [1, 1, -1], [2, 1, 1], [1.5, 2, -1]
+    ];
+
+function _test_disconnected_proxy_volume_faces_idx() =
+    [
+        [0, 1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9]
+    ];
+
 module test_ps_face_arrangement__7_3_15_star_has_stable_structure() {
     site = _test_face_site(_test_punch_poly(), STAR_FACE_IDX);
     arr = ps_face_arrangement(site[11]);
@@ -292,6 +306,61 @@ module test_ps_face_foreign_proxy_replay_sites__preserves_duplicate_exact_face_c
         [records[0][4], records[1][4]],
         "duplicate exact face records should preserve distinct cut segments"
     );
+}
+
+module test_ps_face_foreign_proxy_volume_groups__5_2_15_triangle_groups_connected_source_faces() {
+    site = _test_face_site(_test_penta_punch_poly(), 2);
+    groups = ps_face_foreign_proxy_volume_groups(site[10], site[0], site[13], site[12], mode = MODE, filter_parent = true);
+
+    assert_int_eq(len(groups), 1, "pentagram triangle should have one connected proxy volume group");
+    assert_list_eq(
+        ps_proxy_volume_group_face_idxs(groups[0]),
+        [4, 5, 9],
+        "pentagram triangle connected source face ids"
+    );
+    assert_list_eq(
+        ps_proxy_volume_group_record_idxs(groups[0]),
+        [0, 1, 2],
+        "pentagram triangle group exact record ids"
+    );
+    assert_int_eq(len(ps_proxy_volume_group_edge_idxs(groups[0])), 7, "pentagram triangle proxy volume edge provenance count");
+    assert_int_eq(len(ps_proxy_volume_group_vertex_idxs(groups[0])), 5, "pentagram triangle proxy volume vertex provenance count");
+}
+
+module test_ps_face_foreign_proxy_volume_groups__preserves_duplicate_record_provenance() {
+    records = [
+        ["face_plane_cut", 0, "face", 1, [[-1, -0.5], [1, -0.5]], 90, "exact"],
+        ["face_plane_cut", 0, "face", 1, [[-1, 0.5], [1, 0.5]], 90, "exact"]
+    ];
+    groups = _ps_face_foreign_proxy_volume_groups_from_records(
+        0,
+        records,
+        _test_duplicate_face_cut_faces_idx(),
+        _test_duplicate_face_cut_verts_local()
+    );
+
+    assert_int_eq(len(groups), 1, "duplicate records for one source face should remain one group");
+    assert_list_eq(ps_proxy_volume_group_face_idxs(groups[0]), [1], "duplicate group source face id");
+    assert_list_eq(ps_proxy_volume_group_record_idxs(groups[0]), [0, 1], "duplicate group preserves both exact records");
+    assert_int_eq(len(ps_proxy_volume_group_edge_idxs(groups[0])), 4, "duplicate group edge provenance count");
+    assert_int_eq(len(ps_proxy_volume_group_vertex_idxs(groups[0])), 4, "duplicate group vertex provenance count");
+}
+
+module test_ps_face_foreign_proxy_volume_groups__splits_disconnected_source_faces() {
+    records = [
+        ["face_plane_cut", 0, "face", 1, [[-2, -1], [-1, 0]], 90, "exact"],
+        ["face_plane_cut", 0, "face", 2, [[1, 0], [2, 1]], 90, "exact"]
+    ];
+    groups = _ps_face_foreign_proxy_volume_groups_from_records(
+        0,
+        records,
+        _test_disconnected_proxy_volume_faces_idx(),
+        _test_disconnected_proxy_volume_verts_local()
+    );
+
+    assert_int_eq(len(groups), 2, "disconnected source faces should form separate proxy volume groups");
+    assert_list_eq([for (g = groups) ps_proxy_volume_group_face_idxs(g)], [[1], [2]], "disconnected group source face ids");
+    assert_list_eq([for (g = groups) ps_proxy_volume_group_record_idxs(g)], [[0], [1]], "disconnected group record provenance");
 }
 
 module test_ps_face_visible_segments__7_3_15_triangle_splits_into_visible_cells() {
@@ -581,6 +650,9 @@ module run_TestSelfCrossing() {
     test_ps_face_foreign_proxy_replay_sites__7_3_15_triangle_includes_edge_and_vertex_candidates();
     test_ps_face_foreign_proxy_replay_sites__5_2_15_triangle_includes_all_intruding_face_boundary_edges();
     test_ps_face_foreign_proxy_replay_sites__preserves_duplicate_exact_face_cut_records();
+    test_ps_face_foreign_proxy_volume_groups__5_2_15_triangle_groups_connected_source_faces();
+    test_ps_face_foreign_proxy_volume_groups__preserves_duplicate_record_provenance();
+    test_ps_face_foreign_proxy_volume_groups__splits_disconnected_source_faces();
     test_ps_face_visible_segments__7_3_15_triangle_splits_into_visible_cells();
     test_ps_face_visible_segments__7_3_0_triangle_catches_meeting_cut_edges();
     test_ps_face_filled_boundary_source_edges__7_3_0_triangle_is_simple_boundary();
