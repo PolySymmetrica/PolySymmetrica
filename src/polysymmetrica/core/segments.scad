@@ -497,9 +497,46 @@ function _ps_seg_boundary_span_filled_side(seg2d, filled_cell, eps=1e-9) =
     (orient > eps) ? 1 : (orient < -eps) ? -1 : 0;
 
 /**
+ * Function: Test whether a source-edge parameter range covers the whole parent edge.
+ * Params: t0/t1 (source-edge parameters), eps (tolerance)
+ * Returns: true when the range is effectively `[0, 1]` in either direction
+ */
+function _ps_seg_source_span_is_full(t0, t1, eps=1e-8) =
+    is_undef(t0) || is_undef(t1) ? false :
+    abs(min(t0, t1)) <= eps && abs(max(t0, t1) - 1) <= eps;
+
+/**
+ * Function: Convert raw arrangement span kind into public boundary-span lineage.
+ * Params: raw_kind (`"source"` or future generated tags), source_t0/source_t1 (source-edge range), eps (tolerance)
+ * Returns: `"source_edge"`, `"source_partial"`, or `"generated_cut"`
+ */
+function _ps_seg_boundary_span_public_kind(raw_kind, source_t0, source_t1, eps=1e-8) =
+    (raw_kind == "source")
+        ? (_ps_seg_source_span_is_full(source_t0, source_t1, eps) ? "source_edge" : "source_partial")
+        : "generated_cut";
+
+/**
+ * Function: Test whether a public boundary-span kind passes a user-facing filter.
+ * Params: public_kind (`"source_edge"`, `"source_partial"`, or `"generated_cut"`), kind (`"all"`, `"source"`, `"source_edge"`, `"source_partial"`, `"generated"`, or `"generated_cut"`)
+ * Returns: boolean
+ */
+function _ps_seg_boundary_span_kind_matches(public_kind, kind="all") =
+    let(
+        _valid = assert(
+            kind == "all" || kind == "source" || kind == "source_edge"
+                || kind == "source_partial" || kind == "generated" || kind == "generated_cut",
+            "place_on_face_boundary_spans: kind must be \"all\", \"source\", \"source_edge\", \"source_partial\", \"generated\", or \"generated_cut\""
+        )
+    )
+    (kind == "all") ? true :
+    (kind == "source") ? (public_kind == "source_edge" || public_kind == "source_partial") :
+    (kind == "generated") ? (public_kind != "source_edge") :
+    public_kind == kind;
+
+/**
  * Function: Build internal dihedral-aware boundary-span site records for the current face.
  * Params: face_pts3d_local (loop in face-local 3D), face_idx (current face index), poly_faces_idx/poly_verts_local (full poly in current face-local coordinates), face_neighbors_idx/face_dihedrals (current face-edge metadata), mode (`"nonzero"`, `"evenodd"`, or `"all"`), eps (geometric tolerance)
- * Returns: list of boundary-span site records `[span_idx, center, ex, ey, ez, span_len, seg2d, loop_idx, source_edge_idx, source_t0, source_t1, kind, filled_cell_idx, other_cell_idx, adj_face_idx, dihedral, adj_face_normal_local, filled_side, adj_face_dir_span_local]`
+ * Returns: list of boundary-span site records `[span_idx, center, ex, ey, ez, span_len, seg2d, loop_idx, source_edge_idx, source_t0, source_t1, raw_kind, filled_cell_idx, other_cell_idx, adj_face_idx, dihedral, adj_face_normal_local, filled_side, adj_face_dir_span_local, public_kind]`
  * Limitations/Gotchas: internal helper for `place_on_face_boundary_spans(...)`; `filled_side` is `+1` when the filled region lies on the left side of `seg2d`, `-1` on the right, and `0` only for degenerate/ambiguous cases
  */
 function _ps_face_boundary_span_sites(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local, face_neighbors_idx, face_dihedrals, mode="nonzero", eps=1e-8) =
@@ -542,7 +579,8 @@ function _ps_face_boundary_span_sites(face_pts3d_local, face_idx, poly_faces_idx
                 adj_face_normal_local = _ps_seg_boundary_span_adj_face_normal_local(adj_face_idx, poly_faces_idx, poly_verts_local),
                 filled_cell = is_undef(filled_cell_idx) ? undef : cells[filled_cell_idx],
                 filled_side = _ps_seg_boundary_span_filled_side(seg2d, filled_cell, eps),
-                adj_face_dir_span_local = _ps_seg_boundary_span_adj_face_dir_span_local(source_ex, ex, ey, ez, adj_face_normal_local, eps)
+                adj_face_dir_span_local = _ps_seg_boundary_span_adj_face_dir_span_local(source_ex, ex, ey, ez, adj_face_normal_local, eps),
+                public_kind = _ps_seg_boundary_span_public_kind(span[5], span[3], span[4], eps)
             )
             [
                 si,
@@ -563,7 +601,8 @@ function _ps_face_boundary_span_sites(face_pts3d_local, face_idx, poly_faces_idx
                 dihedral,
                 adj_face_normal_local,
                 filled_side,
-                adj_face_dir_span_local
+                adj_face_dir_span_local,
+                public_kind
             ]
     ];
 
@@ -863,10 +902,10 @@ module place_on_face_filled_boundary_source_edges(mode="nonzero", eps=1e-8, coor
 
 /**
  * Module: Iterate dihedral-aware boundary spans for the current placed face.
- * Params: mode (`"nonzero"`, `"evenodd"`, or `"all"`), eps (geometric tolerance), coords (`"element"` or `"parent"`)
+ * Params: mode (`"nonzero"`, `"evenodd"`, or `"all"`), eps (geometric tolerance), coords (`"element"` or `"parent"`), kind (`"all"`, `"source"`, `"source_edge"`, `"source_partial"`, `"generated"`, or `"generated_cut"`)
  * Returns: none; exposes `$ps_boundary_span_*` metadata and places children in span coords or parent face coords
  */
-module place_on_face_boundary_spans(mode="nonzero", eps=1e-8, coords="element") {
+module place_on_face_boundary_spans(mode="nonzero", eps=1e-8, coords="element", kind="all") {
     assert(!is_undef($ps_face_pts3d_local), "place_on_face_boundary_spans: requires place_on_faces context ($ps_face_pts3d_local)");
     assert(!is_undef($ps_face_idx), "place_on_face_boundary_spans: requires place_on_faces context ($ps_face_idx)");
     assert(!is_undef($ps_poly_faces_idx), "place_on_face_boundary_spans: requires place_on_faces context ($ps_poly_faces_idx)");
@@ -874,7 +913,7 @@ module place_on_face_boundary_spans(mode="nonzero", eps=1e-8, coords="element") 
     assert(!is_undef($ps_face_neighbors_idx), "place_on_face_boundary_spans: requires place_on_faces context ($ps_face_neighbors_idx)");
     assert(!is_undef($ps_face_dihedrals), "place_on_face_boundary_spans: requires place_on_faces context ($ps_face_dihedrals)");
     assert(coords == "element" || coords == "parent", "place_on_face_boundary_spans: coords must be \"element\" or \"parent\"");
-    sites = _ps_face_boundary_span_sites(
+    all_sites = _ps_face_boundary_span_sites(
         $ps_face_pts3d_local,
         $ps_face_idx,
         $ps_poly_faces_idx,
@@ -884,16 +923,20 @@ module place_on_face_boundary_spans(mode="nonzero", eps=1e-8, coords="element") 
         mode,
         eps
     );
+    sites = [for (site = all_sites) if (_ps_seg_boundary_span_kind_matches(site[19], kind)) site];
     for (site = sites) {
         $ps_boundary_span_idx = site[0];
         $ps_boundary_span_count = len(sites);
+        $ps_boundary_span_total_count = len(all_sites);
         $ps_boundary_span_len = site[5];
         $ps_boundary_span_segment2d_local = site[6];
         $ps_boundary_span_loop_idx = site[7];
         $ps_boundary_span_source_edge_idx = site[8];
         $ps_boundary_span_source_t0 = site[9];
         $ps_boundary_span_source_t1 = site[10];
-        $ps_boundary_span_kind = site[11];
+        $ps_boundary_span_raw_kind = site[11];
+        $ps_boundary_span_kind = site[19];
+        $ps_boundary_span_is_generated = site[19] != "source_edge";
         $ps_boundary_span_filled_cell_idx = site[12];
         $ps_boundary_span_other_cell_idx = site[13];
         $ps_boundary_span_adj_face_idx = site[14];

@@ -47,6 +47,9 @@ function _test_source_counts(records, source_idx_pos, n) =
 function _test_replay_kind_count(sites, kind) =
     len([for (s = sites) if (ps_replay_site_foreign_kind(s) == kind) 1]);
 
+function _test_span_kind_count(sites, kind) =
+    len([for (s = sites) if (s[19] == kind) 1]);
+
 function _test_coincident_intrusion_verts_local() =
     [
         [-2, -2, 0], [2, -2, 0], [2, 2, 0], [-2, 2, 0],
@@ -111,6 +114,51 @@ module test_ps_face_boundary_model__7_3_15_star_has_true_nonzero_boundary() {
         segments[0][2],
         [0, 4, 5, 2, 3, 0, 1, 5, 6, 3, 4, 1, 2, 6],
         "star face filled segment source-edge lineage"
+    );
+}
+
+module test_ps_face_boundary_span_sites__classifies_full_and_partial_source_spans() {
+    place_on_faces(_test_punch_poly_angle0()) {
+        if ($ps_face_idx == TRI_FACE_IDX) {
+            sites = _ps_face_boundary_span_sites(
+                $ps_face_pts3d_local,
+                $ps_face_idx,
+                $ps_poly_faces_idx,
+                $ps_poly_verts_local,
+                $ps_face_neighbors_idx,
+                $ps_face_dihedrals,
+                MODE,
+                EPS
+            );
+
+            assert_int_eq(len(sites), 3, "simple triangle should expose three boundary spans");
+            assert_int_eq(_test_span_kind_count(sites, "source_edge"), 3, "simple triangle spans should be full source edges");
+            assert_int_eq(_test_span_kind_count(sites, "source_partial"), 0, "simple triangle should not expose partial source spans");
+        }
+    }
+
+    place_on_faces(_test_punch_poly()) {
+        if ($ps_face_idx == STAR_FACE_IDX) {
+            sites = _ps_face_boundary_span_sites(
+                $ps_face_pts3d_local,
+                $ps_face_idx,
+                $ps_poly_faces_idx,
+                $ps_poly_verts_local,
+                $ps_face_neighbors_idx,
+                $ps_face_dihedrals,
+                MODE,
+                EPS
+            );
+
+            assert_int_eq(len(sites), 14, "star face should expose split boundary spans");
+            assert_int_eq(_test_span_kind_count(sites, "source_edge"), 0, "star face should not treat split spans as full source edges");
+            assert_int_eq(_test_span_kind_count(sites, "source_partial"), 14, "star face split spans should be source_partial");
+        }
+    }
+
+    assert(
+        _ps_seg_boundary_span_public_kind("cut", undef, undef, EPS) == "generated_cut",
+        "future non-source raw spans should map to generated_cut"
     );
 }
 
@@ -570,9 +618,35 @@ module test_face_local_iterators__parent_coords_preserve_metadata() {
     }
 }
 
+module test_place_on_face_boundary_spans__kind_filter_exposes_generated_seams() {
+    place_on_faces(_test_punch_poly()) {
+        if ($ps_face_idx == STAR_FACE_IDX) {
+            place_on_face_boundary_spans(mode = MODE, kind = "generated") {
+                assert_int_eq($ps_boundary_span_count, 14, "generated filter should keep all split star spans");
+                assert_int_eq($ps_boundary_span_total_count, 14, "generated filter total count");
+                assert($ps_boundary_span_kind == "source_partial", "generated star seam should be source_partial");
+                assert($ps_boundary_span_raw_kind == "source", "source_partial star seam should preserve raw source kind");
+                assert($ps_boundary_span_is_generated, "source_partial spans should be generated-seam candidates");
+            }
+        }
+    }
+
+    place_on_faces(_test_punch_poly_angle0()) {
+        if ($ps_face_idx == TRI_FACE_IDX) {
+            place_on_face_boundary_spans(mode = MODE, kind = "source_edge") {
+                assert_int_eq($ps_boundary_span_count, 3, "source_edge filter should keep simple triangle edges");
+                assert_int_eq($ps_boundary_span_total_count, 3, "source_edge filter total count");
+                assert($ps_boundary_span_kind == "source_edge", "simple triangle spans should be source_edge");
+                assert(!$ps_boundary_span_is_generated, "full source edges should not be generated-seam candidates");
+            }
+        }
+    }
+}
+
 module run_TestSelfCrossing() {
     test_ps_face_arrangement__7_3_15_star_has_stable_structure();
     test_ps_face_boundary_model__7_3_15_star_has_true_nonzero_boundary();
+    test_ps_face_boundary_span_sites__classifies_full_and_partial_source_spans();
     test_ps_face_filled_boundary_source_edges__7_3_15_star_groups_surviving_spans();
     test_ps_face_geom_cut_entries__7_3_15_triangle_records_foreign_cutters();
     test_ps_face_foreign_intrusion_records__7_3_15_triangle_wraps_exact_face_cuts();
@@ -586,6 +660,7 @@ module run_TestSelfCrossing() {
     test_ps_face_filled_boundary_source_edges__7_3_0_triangle_is_simple_boundary();
     test_place_on_face_filled_boundary_source_edges__7_3_15_star_exposes_context();
     test_place_on_face_filled_boundary_source_edges__antitet_uses_span_direction();
+    test_place_on_face_boundary_spans__kind_filter_exposes_generated_seams();
     test_place_on_face_foreign_intrusions__7_3_15_triangle_exposes_context();
     test_place_on_face_foreign_face_replay_sites__7_3_15_triangle_exposes_context();
     test_place_on_face_foreign_proxy_sites__7_3_15_triangle_dispatches_face_child();
