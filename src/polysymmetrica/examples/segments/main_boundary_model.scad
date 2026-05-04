@@ -20,7 +20,7 @@ TXT_H = 0.4;
 TXT_S = 3.6;
 PANEL_X = 135;
 PANEL_Y = 118;
-ROW_LABEL_X = -2.35 * PANEL_X;
+ROW_LABEL_X = -3.35 * PANEL_X;
 RAW_FILL_Z = -1.2 * FACE_THK;
 BOUNDARY_FILL_Z = 0.15 * FACE_THK;
 SPAN_MARKER_Z = 1.2 * FACE_THK;
@@ -66,6 +66,17 @@ function source_edge_color(i) =
     (i % 8 == 5) ? "darkorange" :
     (i % 8 == 6) ? "turquoise" :
     "sienna";
+
+/**
+ * Function: Pick a readable named color for one public boundary-span kind.
+ * Params: kind (`"source_edge"`, `"source_partial"`, or `"generated_cut"`)
+ * Returns: a named color string
+ */
+function boundary_span_kind_color(kind) =
+    (kind == "source_edge") ? "gainsboro" :
+    (kind == "source_partial") ? "darkorange" :
+    (kind == "generated_cut") ? "magenta" :
+    "white";
 
 /**
  * Module: Draw a world-space label below one panel.
@@ -273,7 +284,7 @@ module draw_panel_boundary_spans(poly, face_idx, mode, label_s) {
             draw_source_edge_labels($ps_face_pts2d);
 
             place_on_face_boundary_spans(mode = mode) {
-                color("black")
+                color(boundary_span_kind_color($ps_boundary_span_kind))
                     cube([$ps_boundary_span_len, 0.8, 0.3], center = true);
 
                 draw_span_side_marker($ps_boundary_span_filled_side);
@@ -294,6 +305,46 @@ module draw_panel_boundary_spans(poly, face_idx, mode, label_s) {
                             text(
                                 str("se", $ps_boundary_span_source_edge_idx, "/f", $ps_boundary_span_adj_face_idx),
                                 size = 1.4,
+                                halign = "center",
+                                valign = "center"
+                            );
+            }
+        }
+    }
+
+    draw_panel_label(label_s);
+}
+
+/**
+ * Module: Draw only generated/split seam candidates for one selected face.
+ * Params: poly (poly descriptor), face_idx (target face index), mode (`"nonzero"` or `"evenodd"`), label_s (panel label)
+ * Returns: none
+ */
+module draw_panel_generated_seams(poly, face_idx, mode, label_s) {
+    draw_wireframe(poly, IR, true);
+
+    place_on_faces(poly, IR) {
+        if ($ps_face_idx == face_idx) {
+            color("gainsboro", 0.20)
+                translate([0, 0, RAW_FILL_Z])
+                    draw_polygon($ps_face_pts2d);
+
+            draw_source_edge_labels($ps_face_pts2d);
+
+            place_on_face_boundary_spans(mode = mode, kind = "generated") {
+                color(boundary_span_kind_color($ps_boundary_span_kind))
+                    cube([$ps_boundary_span_len, 2.2, 1.0], center = true);
+
+                color("white")
+                    translate([0, 0, SPAN_MARKER_Z + 2.6])
+                        linear_extrude(height = TXT_H)
+                            text(
+                                str(
+                                    $ps_boundary_span_kind,
+                                    "/se",
+                                    $ps_boundary_span_source_edge_idx
+                                ),
+                                size = 1.15,
                                 halign = "center",
                                 valign = "center"
                             );
@@ -390,20 +441,23 @@ module draw_boundary_row(poly, face_idx, row_s, y) {
     translate([0, y, 0])
         draw_row_label(row_s);
 
-    translate([-2.5 * PANEL_X, y, 0])
+    translate([-3.0 * PANEL_X, y, 0])
         place_on_faces(poly, IR)
             linear_extrude(height = 0.1) ps_polygon($ps_face_pts2d);
 
-    translate([-1.5 * PANEL_X, y, 0])
+    translate([-2.0 * PANEL_X, y, 0])
         draw_panel_boundary_model(poly, face_idx, "nonzero", "boundary nonzero");
 
-    translate([-0.5 * PANEL_X, y, 0])
+    translate([-1.0 * PANEL_X, y, 0])
         draw_panel_boundary_model(poly, face_idx, "evenodd", "boundary evenodd");
 
-    translate([0.5 * PANEL_X, y, 0])
+    translate([0, y, 0])
         draw_panel_boundary_spans(poly, face_idx, "nonzero", "boundary spans");
 
-    translate([1.5 * PANEL_X, y, 0])
+    translate([1.0 * PANEL_X, y, 0])
+        draw_panel_generated_seams(poly, face_idx, "nonzero", "generated seams");
+
+    translate([2.0 * PANEL_X, y, 0])
         draw_panel_boundary_source_edges(poly, face_idx, "nonzero", "source edges");
 }
 
