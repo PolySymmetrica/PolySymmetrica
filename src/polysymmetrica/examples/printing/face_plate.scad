@@ -16,10 +16,35 @@ FACE_PLATE_PILLOW_THK = 0.4;
 FACE_PLATE_CLEAR_HEIGHT = 10;
 
 /**
- * Module: Emit a face plate clipped by the current face's anti-interference volume.
- * Params: face_thk (plate thickness), idx/face_pts3d_local/poly_faces_idx/poly_verts_local/face_neighbors_idx/face_dihedrals (optional overrides; default from `place_on_faces` context), clear_space (emit clearance cutter), pillow_* (raised pillow sizing), base_z (bottom Z; defaults to `-face_thk` so the top sits on the source face plane), clear_height (clearance height), mode/max_project/eps/convexity (anti-interference controls)
+ * Module: Emit one raised pillow loop.
+ * Params: pts (2D loop), top_z (face top plane), pillow_min_rad/inset/ramp/thk (pillow sizing), eps (tolerance)
  * Returns: none
- * Limitations/Gotchas: requires `place_on_faces` context or explicit context overrides; pillow and clear-space cutter intentionally follow the source face loop rather than per-shell cut-through loops; true edge insets should be applied by subtractive edge operations around this body
+ */
+module _face_plate_pillow_loop(pts, top_z, pillow_min_rad, pillow_inset, pillow_ramp, pillow_thk, eps) {
+    loop_centroid = [
+        sum([for (p = pts) p[0]]) / len(pts),
+        sum([for (p = pts) p[1]]) / len(pts)
+    ];
+    loop_rad = sum([for (p = pts) norm([p[0] - loop_centroid[0], p[1] - loop_centroid[1]])]) / len(pts);
+    if (loop_rad > pillow_min_rad && loop_rad > pillow_inset + pillow_ramp + eps) {
+        s0 = max(0, 1 - pillow_inset / loop_rad);
+        s1 = max(0, 1 - (pillow_inset + pillow_ramp) / loop_rad);
+        p0 = [for (p = pts) [
+            loop_centroid[0] + (p[0] - loop_centroid[0]) * s0,
+            loop_centroid[1] + (p[1] - loop_centroid[1]) * s0
+        ]];
+        scale_xy = s0 <= eps ? 0 : (s1 / s0);
+        translate([0, 0, top_z])
+            linear_extrude(height = pillow_thk, scale = scale_xy)
+                ps_polygon(points = p0, mode = "nonzero");
+    }
+}
+
+/**
+ * Module: Emit a face plate clipped by the current face's anti-interference volume.
+ * Params: face_thk (plate thickness), idx/face_pts3d_local/poly_faces_idx/poly_verts_local/face_neighbors_idx/face_dihedrals (optional overrides; default from `place_on_faces` context), clear_space (emit clearance cutter), pillow_* (raised pillow sizing), base_z (bottom Z; defaults to `-face_thk` so the top sits on the source face plane), clear_height (clearance height), mode/max_project/boundary_inset/boundary_inset_mode/eps/convexity (anti-interference controls)
+ * Returns: none
+ * Limitations/Gotchas: requires `place_on_faces` context or explicit context overrides; pillow and clear-space cutter follow the generated shell top loops
  */
 module face_plate(face_thk,
     idx = $ps_face_idx,
@@ -37,6 +62,8 @@ module face_plate(face_thk,
     clear_height = FACE_PLATE_CLEAR_HEIGHT,
     mode = "nonzero",
     max_project = undef,
+    boundary_inset = 0,
+    boundary_inset_mode = "side",
     eps = 1e-4,
     convexity = 6
 ) {
@@ -61,7 +88,9 @@ module face_plate(face_thk,
         top_z,
         mode,
         max_project,
-        eps
+        eps,
+        boundary_inset,
+        boundary_inset_mode
     );
 
     color(len(pts) == 3 ? "white" : "red") {
@@ -70,39 +99,34 @@ module face_plate(face_thk,
                 if (shell[3] > 0)
                     echo(str("face_plate: capped ", shell[3], " projection(s) on face ", idx, " loop ", shell[2]));
 
-                polyhedron(points = shell[0], faces = shell[1], convexity = convexity);
+                polyhedron(
+                    points = ps_face_anti_interference_shell_points(shell),
+                    faces = ps_face_anti_interference_shell_faces(shell),
+                    convexity = convexity
+                );
             }
         }
 
-        // The pillow is source-face decoration: punch-through cuts are incidental
-        // and should be handled by later proxy subtraction, not by fragmenting the
-        // embossing over anti-interference shell loops.
-        loop_centroid = [
-            sum([for (p = pts) p[0]]) / len(pts),
-            sum([for (p = pts) p[1]]) / len(pts)
-        ];
-        loop_rad = sum([for (p = pts) norm([p[0] - loop_centroid[0], p[1] - loop_centroid[1]])]) / len(pts);
-        if (loop_rad > pillow_min_rad && loop_rad > pillow_inset + pillow_ramp + eps) {
-            s0 = max(0, 1 - pillow_inset / loop_rad);
-            s1 = max(0, 1 - (pillow_inset + pillow_ramp) / loop_rad);
-            p0 = [for (p = pts) [
-                loop_centroid[0] + (p[0] - loop_centroid[0]) * s0,
-                loop_centroid[1] + (p[1] - loop_centroid[1]) * s0
-            ]];
-            scale_xy = s0 <= eps ? 0 : (s1 / s0);
-            translate([0, 0, top_z])
-                linear_extrude(height = pillow_thk, scale = scale_xy)
-                    ps_polygon(points = p0, mode = "nonzero");
-        }
+        for (shell = shells)
+            _face_plate_pillow_loop(
+                ps_face_anti_interference_shell_top_loop2d(shell),
+                top_z,
+                pillow_min_rad,
+                pillow_inset,
+                pillow_ramp,
+                pillow_thk,
+                eps
+            );
     }
 
-    // Like the pillow, clear-space is manufacturing clearance around the
-    // nominal source face rather than an exact copy of the kept shell footprint.
     if (clear_space)
         color("magenta")
             translate([0, 0, top_z - eps])
                 linear_extrude(height = clear_height)
-                    ps_polygon(points = pts, mode = "nonzero");
+                    union() {
+                        for (shell = shells)
+                            ps_polygon(points = ps_face_anti_interference_shell_top_loop2d(shell), mode = "nonzero");
+                    }
 }
 
 // Direct smoke demo: subtract one placed star face cutter from a cube.

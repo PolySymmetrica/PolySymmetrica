@@ -13,13 +13,15 @@ module edge_seg(endPoints, pc, edge_t = EDGE_SEG_EDGE_T, fin_t = EDGE_SEG_FIN_T)
         }
         
         // creates the support fin under the edge - goes to centre of poly
-        difference() {
-            hull() {
-                translate(endPoints[0]) sphere(d = fin_t, $fn = 10);
-                translate(endPoints[1]) sphere(d = fin_t, $fn = 10);
-                translate(pc) sphere(d = fin_t, $fn = 10);
+        if (fin_t > 0) {
+            difference() {
+                hull() {
+                    translate(endPoints[0]) sphere(d = fin_t, $fn = 10);
+                    translate(endPoints[1]) sphere(d = fin_t, $fn = 10);
+                    translate(pc) sphere(d = fin_t, $fn = 10);
+                }
+                translate(pc) sphere(r = norm(pc) * 5/6, $fn = 50);
             }
-            translate(pc) sphere(r = norm(pc) * 5/6, $fn = 50);
         }
     }
 } 

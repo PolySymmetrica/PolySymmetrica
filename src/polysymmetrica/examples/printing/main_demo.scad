@@ -39,7 +39,12 @@ IR = 20 * SC;
 //p = poly_prism(5);
 //p = poly_antiprism(5);
 //p = poly_prism(n=5, p=2);
-p = poly_antiprism(n=5, p=2, angle = 15);
+p = poly_antiprism(n=5, p=2, angle = 0);
+//p = poly_antiprism(n=5, p=2, angle = 15);
+//p = poly_antiprism(n=7, p=3, angle = 0);
+//p = poly_antiprism(n=7, p=3, angle = 15);
+//p = poly_antiprism(n=7, p=3, angle = 180);
+//p = poly_truncate(tetrahedron(), t=-0.5);
 
 //p = j1_square_pyramid();
 //p = poly_dual(j2_pentagonal_pyramid());
@@ -92,7 +97,7 @@ module model(show_faces = undef, clear_airspace = true) {
         place_on_faces(p, IR) {
             // add '!' here to force faces-only:
             if (is_undef(show_faces) || len(search($ps_face_idx, [for (i=show_faces) i])) > 0) {
-                face_plate(face_thk = FACE_T, base_z = BASE_Z, max_project = 10, 
+                face_plate(face_thk = FACE_T, base_z = BASE_Z, max_project = 10,
                         clear_space = clear_airspace, clear_height = 0.6);
             }
         }
@@ -103,17 +108,12 @@ module model(show_faces = undef, clear_airspace = true) {
 //poly_render(p, 20);
 
 module demo_face() {
-    face_plate(base_z = BASE_Z, face_thk = FACE_T, clear_space = false, clear_height = 0.1, max_project = 10);
-}
-module demo_edge(endPoints, edge_t) {
-    hull() {
-        translate(endPoints[0]) sphere(d = edge_t, $fn = 40);
-        translate(endPoints[1]) sphere(d = edge_t, $fn = 40);
-    }
+    face_plate(base_z = BASE_Z, face_thk = FACE_T, clear_space = false, clear_height = 0.1,
+            max_project = 10, boundary_inset = INSET/2);
 }
 
 module demo_vert() {
-    cylinder(r=3, $fn = $ps_vertex_valence);
+    // cylinder(r=3, $fn = $ps_vertex_valence);
 }
 
 
@@ -122,10 +122,9 @@ place_on_faces(p, IR, indices = [2]) {
         demo_face();
         place_on_face_foreign_proxy_sites() {
             demo_face();
-            edge_seg($ps_edge_pts_local, $ps_poly_center_local, edge_t = EDGE_T);
+            edge_seg($ps_edge_pts_local, $ps_poly_center_local, edge_t = EDGE_T, fin_t = 0);
             demo_vert();
         }
     }
 }
-
 
