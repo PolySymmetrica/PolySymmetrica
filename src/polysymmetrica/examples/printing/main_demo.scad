@@ -39,7 +39,7 @@ IR = 20 * SC;
 //p = poly_prism(5);
 //p = poly_antiprism(5);
 //p = poly_prism(n=5, p=2);
-p = poly_antiprism(n=5, p=2, angle = 15);
+p = poly_antiprism(n=7, p=3, angle = 15);
 
 //p = j1_square_pyramid();
 //p = poly_dual(j2_pentagonal_pyramid());
@@ -50,6 +50,9 @@ INSET = 1.1 * SC;
 FACET_BASE_T = 1;
 FACET_BASE_W = 2.2;
 BASE_Z = -FACE_T / 2;
+// Diagnostic only: current shell-volume polyhedra are useful to inspect, but can
+// create expensive/non-manifold preview solids when subtracted by default.
+SHOW_PROXY_VOLUME_GROUPS = false;
 
 //// Or, experimental:
 //IR = 12 * SC;
@@ -135,7 +138,7 @@ function demo_cap_boundary_loops_with_fans(poly) =
                     center_idx = len(verts) + li
                 )
                 for (i = [0:1:len(loop)-1])
-                    [center_idx, loop[i], loop[(i + 1) % len(loop)]]
+                    [center_idx, loop[(i + 1) % len(loop)], loop[i]]
         ]
     )
     [concat(verts, centers), concat(faces, cap_faces), poly_e_over_ir(poly)];
@@ -149,17 +152,16 @@ function demo_cap_boundary_loops_with_fans(poly) =
 function demo_volume_group_patch_poly() =
     let(
         patch_faces = $ps_proxy_volume_group_shell_faces_idx,
-        patch = [$ps_poly_verts_local, patch_faces, 1],
-        capped = demo_cap_boundary_loops_with_fans(patch)
+        patch = [$ps_poly_verts_local, patch_faces, 1]
     )
-    poly_fix_winding(capped);
+    demo_cap_boundary_loops_with_fans(patch);
 
 module demo_volume_group() {
     solid = demo_volume_group_patch_poly();
     polyhedron(points = poly_verts(solid), faces = poly_faces(solid), convexity = 10);
 }
 
-place_on_faces(p, IR, indices = [2]) {
+place_on_faces(p, IR, indices = [1,2,9]) {
     difference() {
         demo_face();
 
@@ -169,8 +171,10 @@ place_on_faces(p, IR, indices = [2]) {
             demo_vert();
         }
 
-        place_on_face_foreign_proxy_volume_groups() {
-            demo_volume_group();
+        if (SHOW_PROXY_VOLUME_GROUPS) {
+            place_on_face_foreign_proxy_volume_groups() {
+                demo_volume_group();
+            }
         }
     }
 }

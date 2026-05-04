@@ -87,6 +87,13 @@ function _test_disconnected_proxy_volume_faces_idx() =
         [7, 8, 9]
     ];
 
+function _test_split_support_clip_faces_idx() =
+    [
+        [0, 1, 2, 3, 4, 5],
+        [8, 0, 1, 2],
+        [9, 3, 4, 5]
+    ];
+
 module test_ps_face_arrangement__7_3_15_star_has_stable_structure() {
     site = _test_face_site(_test_punch_poly(), STAR_FACE_IDX);
     arr = ps_face_arrangement(site[11]);
@@ -382,6 +389,16 @@ module test_ps_face_foreign_proxy_volume_groups__splits_disconnected_source_face
     assert_list_eq([for (g = groups) ps_proxy_volume_group_face_idxs(g)], [[1], [2]], "disconnected group source face ids");
     assert_list_eq([for (g = groups) ps_proxy_volume_group_shell_face_idxs(g)], [[1], [2]], "disconnected group shell source face ids");
     assert_list_eq([for (g = groups) ps_proxy_volume_group_record_idxs(g)], [[0], [1]], "disconnected group record provenance");
+}
+
+module test_ps_face_foreign_proxy_volume_groups__splits_disconnected_support_face_clips() {
+    loops = _ps_proxy_shell_face_loops([1, 2], [0, 1, 2], _test_split_support_clip_faces_idx());
+
+    assert_list_eq(
+        loops,
+        [[0, 1, 2], [3, 4, 5], [8, 0, 1, 2], [9, 3, 4, 5]],
+        "support face clips should remain separated by shared-edge run"
+    );
 }
 
 module test_ps_face_visible_segments__7_3_15_triangle_splits_into_visible_cells() {
@@ -700,6 +717,7 @@ module run_TestSelfCrossing() {
     test_ps_face_foreign_proxy_volume_groups__5_2_15_triangle_groups_connected_source_faces();
     test_ps_face_foreign_proxy_volume_groups__preserves_duplicate_record_provenance();
     test_ps_face_foreign_proxy_volume_groups__splits_disconnected_source_faces();
+    test_ps_face_foreign_proxy_volume_groups__splits_disconnected_support_face_clips();
     test_ps_face_visible_segments__7_3_15_triangle_splits_into_visible_cells();
     test_ps_face_visible_segments__7_3_0_triangle_catches_meeting_cut_edges();
     test_ps_face_filled_boundary_source_edges__7_3_0_triangle_is_simple_boundary();

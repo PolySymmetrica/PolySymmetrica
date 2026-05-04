@@ -416,47 +416,93 @@ function _ps_proxy_faces_share_edge(faces, a, b) =
     ]) > 0;
 
 /**
- * Function: Find vertices on a support face that touch the current shell.
- * Params: faces (face list), face_idx (support face), shell_face_ids (seed/support face ids)
- * Returns: support-face vertices participating in shared shell edges
+ * Function: Test whether one support-face edge touches the current shell.
+ * Params: faces (face list), face_idx (support face), shell_face_ids (seed/support face ids), edge_pos (support-face edge position)
+ * Returns: true when the support edge is shared by another shell face
  */
-function _ps_proxy_support_shared_vertices(faces, face_idx, shell_face_ids) =
-    let(f = faces[face_idx])
-    _ps_unique_values([
-        for (k = [0:1:len(f)-1])
-            let(a = f[k], b = f[(k + 1) % len(f)])
-            if (len([
-                for (other_idx = shell_face_ids)
-                    if (other_idx != face_idx && ps_face_has_edge(faces[other_idx], a, b))
-                        1
-            ]) > 0)
-                each [a, b]
-    ]);
-
-/**
- * Function: Build the role-specific loop for a support face.
- * Params: faces (face list), face_idx (support face), shell_face_ids (seed/support face ids)
- * Returns: source vertex loop clipped to shared shell edges, or the full source loop if clipping would degenerate
- */
-function _ps_proxy_support_face_loop(faces, face_idx, shell_face_ids) =
+function _ps_proxy_support_edge_is_shared(faces, face_idx, shell_face_ids, edge_pos) =
     let(
         f = faces[face_idx],
-        shared = _ps_proxy_support_shared_vertices(faces, face_idx, shell_face_ids),
-        ordered = [for (v = f) if (_ps_list_contains(shared, v)) v]
+        a = f[edge_pos],
+        b = f[(edge_pos + 1) % len(f)]
     )
-    len(ordered) >= 3 ? ordered : f;
+    len([
+        for (other_idx = shell_face_ids)
+            if (other_idx != face_idx && ps_face_has_edge(faces[other_idx], a, b))
+                1
+    ]) > 0;
+
+/**
+ * Function: Build shared-edge flags for one support face.
+ * Params: faces (face list), face_idx (support face), shell_face_ids (seed/support face ids)
+ * Returns: boolean list aligned to support-face edge positions
+ */
+function _ps_proxy_support_shared_edge_flags(faces, face_idx, shell_face_ids) =
+    [
+        for (k = [0:1:len(faces[face_idx])-1])
+            _ps_proxy_support_edge_is_shared(faces, face_idx, shell_face_ids, k)
+    ];
+
+/**
+ * Function: Find starts of contiguous shared-edge runs on a cyclic support face.
+ * Params: flags (boolean list aligned to face edges)
+ * Returns: edge positions where a false-to-true run begins
+ */
+function _ps_proxy_support_edge_run_starts(flags) =
+    [
+        for (k = [0:1:len(flags)-1])
+            if (flags[k] && !flags[(k + len(flags) - 1) % len(flags)])
+                k
+    ];
+
+/**
+ * Function: Collect one contiguous shared-edge run as a source vertex loop.
+ * Params: face (source vertex loop), flags (shared-edge flags), start (run start edge), step (recursion state)
+ * Returns: source vertices along the run, closed later by a synthetic chord
+ */
+function _ps_proxy_support_edge_run_loop(face, flags, start, step=0) =
+    (step >= len(face) || !flags[(start + step) % len(face)])
+        ? [face[(start + step) % len(face)]]
+        : concat(
+            [face[(start + step) % len(face)]],
+            _ps_proxy_support_edge_run_loop(face, flags, start, step + 1)
+        );
+
+/**
+ * Function: Build role-specific loops for a support face.
+ * Params: faces (face list), face_idx (support face), shell_face_ids (seed/support face ids)
+ * Returns: source vertex loops clipped to each contiguous shared-edge run, or the full source loop if clipping would degenerate
+ */
+function _ps_proxy_support_face_loops(faces, face_idx, shell_face_ids) =
+    let(
+        f = faces[face_idx],
+        flags = _ps_proxy_support_shared_edge_flags(faces, face_idx, shell_face_ids),
+        starts = _ps_proxy_support_edge_run_starts(flags),
+        all_shared = len([for (flag = flags) if (!flag) 1]) == 0,
+        clipped = all_shared
+            ? [f]
+            : [
+                for (start = starts)
+                    let(loop = _ps_proxy_support_edge_run_loop(f, flags, start))
+                    if (len(loop) >= 3)
+                        loop
+            ]
+    )
+    len(clipped) > 0 ? clipped : [f];
 
 /**
  * Function: Build source-vertex shell face loops for a proxy volume group.
  * Params: seed_face_ids/shell_face_ids (group provenance), faces (face list)
- * Returns: source vertex loops; seed faces are full loops, support faces are clipped to their shell role
+ * Returns: source vertex loops; seed faces are full loops, support faces may expand to multiple clipped role loops
  */
 function _ps_proxy_shell_face_loops(seed_face_ids, shell_face_ids, faces) =
     [
         for (face_id = shell_face_ids)
-            _ps_list_contains(seed_face_ids, face_id)
-                ? faces[face_id]
-                : _ps_proxy_support_face_loop(faces, face_id, shell_face_ids)
+            each (
+                _ps_list_contains(seed_face_ids, face_id)
+                    ? [faces[face_id]]
+                    : _ps_proxy_support_face_loops(faces, face_id, shell_face_ids)
+            )
     ];
 
 /**
@@ -523,6 +569,30 @@ function _ps_proxy_face_ids_from_records(records) =
     _ps_unique_values([for (r = records) ps_intrusion_foreign_idx(r)]);
 
 /**
+ * Function: Keep shell components that contain at least one exact seed face.
+ * Params: shell_components (support face components), seed_face_ids (exact seed faces)
+ * Returns: shell components that contain exact intrusion seeds
+ */
+function _ps_proxy_shell_components_with_seeds(shell_components, seed_face_ids) =
+    [
+        for (comp = shell_components)
+            if (len([for (face_id = comp) if (_ps_list_contains(seed_face_ids, face_id)) 1]) > 0)
+                comp
+    ];
+
+/**
+ * Function: Keep exact seed faces belonging to one shell component.
+ * Params: seed_face_ids (exact seed faces), shell_face_ids (one shell component)
+ * Returns: seed faces in first-record order
+ */
+function _ps_proxy_seed_face_ids_in_shell(seed_face_ids, shell_face_ids) =
+    [
+        for (face_id = seed_face_ids)
+            if (_ps_list_contains(shell_face_ids, face_id))
+                face_id
+    ];
+
+/**
  * Function: Build one connected proxy volume group record.
  * Params: group_idx/target_face_idx (record ids), seed_face_ids (exact intrusion source faces), seed_records (filtered exact records), support_records (unfiltered records used for shell closure), faces/verts_local/eps (source topology context)
  * Returns: `foreign_proxy_volume_group` record with seed/support/shell face, record, edge, and vertex provenance
@@ -582,11 +652,24 @@ function _ps_face_foreign_proxy_volume_groups_from_records(target_face_idx, face
     let(
         face_ids = _ps_proxy_face_ids_from_records(face_records),
         support_records_eff = is_undef(support_records) ? face_records : support_records,
-        groups = _ps_proxy_face_components(face_ids, poly_faces_idx)
+        support_face_ids = _ps_proxy_face_ids_from_records(support_records_eff),
+        shell_groups = _ps_proxy_shell_components_with_seeds(
+            _ps_proxy_face_components(support_face_ids, poly_faces_idx),
+            face_ids
+        )
     )
     [
-        for (gi = [0:1:len(groups)-1])
-            _ps_proxy_volume_group_record(gi, target_face_idx, groups[gi], face_records, support_records_eff, poly_faces_idx, poly_verts_local, eps)
+        for (gi = [0:1:len(shell_groups)-1])
+            _ps_proxy_volume_group_record(
+                gi,
+                target_face_idx,
+                _ps_proxy_seed_face_ids_in_shell(face_ids, shell_groups[gi]),
+                face_records,
+                support_records_eff,
+                poly_faces_idx,
+                poly_verts_local,
+                eps
+            )
     ];
 
 /**
@@ -896,7 +979,7 @@ function ps_proxy_volume_group_shell_vertex_idxs(group) = group[12];
 /**
  * Function: Get role-specific source vertex loops used by a proxy volume group shell.
  * Params: group (proxy volume group record)
- * Returns: source-vertex face loops; seed faces are full loops, support faces may be clipped to their closure role
+ * Returns: source-vertex face loops; seed faces are full loops, support faces may add multiple clipped closure-role loops
  */
 function ps_proxy_volume_group_shell_faces_idx(group) = group[13];
 
