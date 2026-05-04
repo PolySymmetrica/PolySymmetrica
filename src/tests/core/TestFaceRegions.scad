@@ -87,6 +87,33 @@ module test_ps_face_anti_interference_shells__boundary_inset_shrinks_shell() {
     assert_int_eq(len(shells1), len(shells0), "boundary inset should preserve shell count");
     assert(abs(_ps_seg_poly_area2(shells1[0][4])) < abs(_ps_seg_poly_area2(shells0[0][4])), "boundary inset should shrink z0 cap");
     assert(abs(_ps_seg_poly_area2(shells1[0][5])) < abs(_ps_seg_poly_area2(shells0[0][5])), "boundary inset should shrink z1 cap");
+    assert_int_eq(len(ps_face_anti_interference_shell_top_loop2d(shells1[0])), 4, "top loop accessor should expose inset cap loop");
+}
+
+module test_ps_face_anti_interference_shells__side_inset_compensates_face_offset() {
+    p = hexahedron();
+    site = _test_face_site(p, 0);
+    arr = ps_face_arrangement(site[11], EPS);
+    input_area = _ps_seg_poly_area2(ps_xy(site[11]));
+    input_sign = (input_area >= 0) ? 1 : -1;
+    cell_winding_signs = _ps_fr_cell_winding_signs(site[11], arr[4], EPS);
+    span_sites = _ps_face_boundary_span_sites(
+        site[11],
+        site[0],
+        site[13],
+        site[12],
+        site[20],
+        site[21],
+        "nonzero",
+        EPS
+    );
+    span_site = span_sites[0];
+    dir = _ps_fr_span_bisector_dir_local(span_site, input_sign, cell_winding_signs, EPS);
+    face_offset = _ps_fr_boundary_inset_face_offset(span_site, dir, 0.1, "face", EPS);
+    side_offset = _ps_fr_boundary_inset_face_offset(span_site, dir, 0.1, "side", EPS);
+
+    assert_near(face_offset, 0.1, EPS, "face inset mode should use raw face-plane offset");
+    assert(side_offset > face_offset, str("side inset mode should compensate angled side offset face=", face_offset, " side=", side_offset));
 }
 
 module test_ps_face_anti_interference_shells__matches_boundary_loop_count() {
@@ -231,6 +258,7 @@ module test_ps_face_intrusion_clearance_profiles__triangle_builds_one_profile_pe
 module run_TestFaceRegions() {
     test_ps_face_anti_interference_shells__cube_face_single_quad_shell();
     test_ps_face_anti_interference_shells__boundary_inset_shrinks_shell();
+    test_ps_face_anti_interference_shells__side_inset_compensates_face_offset();
     test_ps_face_anti_interference_shells__matches_boundary_loop_count();
     test_ps_face_anti_interference_shells__pentagram_zmax_expands_outward();
     test_ps_face_anti_interference_shells__anti_tet_hex_is_finite();
