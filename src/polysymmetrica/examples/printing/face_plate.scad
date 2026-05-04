@@ -17,9 +17,9 @@ FACE_PLATE_CLEAR_HEIGHT = 10;
 
 /**
  * Module: Emit a face plate clipped by the current face's anti-interference volume.
- * Params: face_thk (plate thickness), idx/face_pts3d_local/poly_faces_idx/poly_verts_local/face_neighbors_idx/face_dihedrals (optional overrides; default from `place_on_faces` context), clear_space (emit clearance cutter), pillow_* (raised pillow sizing), base_z (bottom Z; defaults to `-face_thk` so the top sits on the source face plane), clear_height (clearance height), mode/max_project/eps/convexity (anti-interference controls)
+ * Params: face_thk (plate thickness), idx/face_pts3d_local/poly_faces_idx/poly_verts_local/face_neighbors_idx/face_dihedrals (optional overrides; default from `place_on_faces` context), clear_space (emit clearance cutter), pillow_* (raised pillow sizing), base_z (bottom Z; defaults to `-face_thk` so the top sits on the source face plane), clear_height (clearance height), mode/max_project/boundary_inset/eps/convexity (anti-interference controls)
  * Returns: none
- * Limitations/Gotchas: requires `place_on_faces` context or explicit context overrides; pillow and clear-space cutter intentionally follow the source face loop rather than per-shell cut-through loops; true edge insets should be applied by subtractive edge operations around this body
+ * Limitations/Gotchas: requires `place_on_faces` context or explicit context overrides; pillow and clear-space cutter intentionally follow the source face loop rather than per-shell cut-through loops
  */
 module face_plate(face_thk,
     idx = $ps_face_idx,
@@ -37,6 +37,7 @@ module face_plate(face_thk,
     clear_height = FACE_PLATE_CLEAR_HEIGHT,
     mode = "nonzero",
     max_project = undef,
+    boundary_inset = 0,
     eps = 1e-4,
     convexity = 6
 ) {
@@ -61,7 +62,8 @@ module face_plate(face_thk,
         top_z,
         mode,
         max_project,
-        eps
+        eps,
+        boundary_inset
     );
 
     color(len(pts) == 3 ? "white" : "red") {

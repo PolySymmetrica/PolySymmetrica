@@ -18,6 +18,10 @@ that is allowed to exist and intersect user geometry with it.
 - **Anti-interference shell:** A closed polyhedron made by projecting each
   boundary span to two face-local Z planes along its dihedral-bisector
   direction, then intersecting neighbouring projected boundary lines.
+- **Boundary inset:** A positive face-plane offset that shifts each projected
+  boundary line toward the filled side before line intersections are computed.
+  This shrinks the admissible anti-interference region without adding separate
+  subtractive edge cutters.
 - **Intrusion clearance profile:** A simple target-face-local 2D strip around
   an exact foreign intrusion segment. This is proxy geometry: useful for
   inspection and later boolean clearance, but not yet user-geometry-aware.
@@ -34,7 +38,7 @@ Function: Build mesh data for the face's positive anti-interference volume.
 
 Params: `face_pts3d_local`, `face_idx`, `poly_faces_idx`, `poly_verts_local`,
 `face_neighbors_idx`, `face_dihedrals`, `z0`, `z1`, `mode="nonzero"`,
-`max_project=undef`, `eps=1e-8`.
+`max_project=undef`, `eps=1e-8`, `boundary_inset=0`.
 
 Returns: one shell per filled boundary loop, as
 `[points, faces, loop_idx, capped_count, bottom_loop2d, top_loop2d]`.
@@ -48,14 +52,19 @@ Module: Emit the generated shell volume for the current `place_on_faces(...)`
 context.
 
 Params: `z0`, `z1`, `mode="nonzero"`, `max_project=undef`, `eps=1e-8`,
-`convexity=6`.
+`convexity=6`, `boundary_inset=0`.
 
 Typical usage:
 
 ```scad
 place_on_faces(poly) {
     intersection() {
-        ps_face_anti_interference_volume(-0.8, 1.2, max_project = 20);
+        ps_face_anti_interference_volume(
+            -0.8,
+            1.2,
+            max_project = 20,
+            boundary_inset = 0.4
+        );
         my_face_geometry();
     }
 }
@@ -106,6 +115,12 @@ projects that midpoint to `z0` and `z1` along the span's anti-interference
 direction. The projected line stays parallel to the boundary span. Adjacent
 projected lines are intersected to form the projected polygon at each target Z
 plane.
+
+`boundary_inset` is applied in the current face plane after each boundary span
+has been projected to the target Z plane. Positive values move the generated
+line toward the filled side of that span, so adjacent projected lines intersect
+to form a smaller shell. This is intended for print clearances between face
+plates where the anti-interference shell itself should define the inset.
 
 The anti-interference direction is the bisector between a selected current-face
 ray and the adjacent-face ray on the current face `+Z` branch. For filled atoms

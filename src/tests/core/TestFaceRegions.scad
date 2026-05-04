@@ -59,6 +59,36 @@ module test_ps_face_anti_interference_shells__cube_face_single_quad_shell() {
     assert_near(max(zs), 0.6, EPS, "cube shell max z");
 }
 
+module test_ps_face_anti_interference_shells__boundary_inset_shrinks_shell() {
+    p = hexahedron();
+    site = _test_face_site(p, 0);
+    shells0 = ps_face_anti_interference_shells(
+        site[11],
+        site[0],
+        site[13],
+        site[12],
+        site[20],
+        site[21],
+        -0.4,
+        0.6
+    );
+    shells1 = ps_face_anti_interference_shells(
+        site[11],
+        site[0],
+        site[13],
+        site[12],
+        site[20],
+        site[21],
+        -0.4,
+        0.6,
+        boundary_inset = 0.1
+    );
+
+    assert_int_eq(len(shells1), len(shells0), "boundary inset should preserve shell count");
+    assert(abs(_ps_seg_poly_area2(shells1[0][4])) < abs(_ps_seg_poly_area2(shells0[0][4])), "boundary inset should shrink z0 cap");
+    assert(abs(_ps_seg_poly_area2(shells1[0][5])) < abs(_ps_seg_poly_area2(shells0[0][5])), "boundary inset should shrink z1 cap");
+}
+
 module test_ps_face_anti_interference_shells__matches_boundary_loop_count() {
     p = poly_antiprism(5, 2);
     site = _test_face_site(p, 1);
@@ -200,6 +230,7 @@ module test_ps_face_intrusion_clearance_profiles__triangle_builds_one_profile_pe
 
 module run_TestFaceRegions() {
     test_ps_face_anti_interference_shells__cube_face_single_quad_shell();
+    test_ps_face_anti_interference_shells__boundary_inset_shrinks_shell();
     test_ps_face_anti_interference_shells__matches_boundary_loop_count();
     test_ps_face_anti_interference_shells__pentagram_zmax_expands_outward();
     test_ps_face_anti_interference_shells__anti_tet_hex_is_finite();
