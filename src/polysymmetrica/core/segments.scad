@@ -1500,7 +1500,7 @@ module place_on_face_foreign_intrusions(mode="nonzero", eps=1e-8, filter_parent=
 /**
  * Function: Build one edge-like seam-segment placement site.
  * Params: site_idx (site index), seg2d (face-local seam segment), seam_source/source_kind (source labels), foreign_kind/foreign_idx (foreign element metadata), foreign_n (foreign face normal in target-local coords), dihedral/confidence/record (source metadata), poly_center_local (target-local poly center), eps (tolerance)
- * Returns: seam site record `[idx, center, ex, ey, ez, len, edge_pts_local, seg2d, seam_source, source_kind, foreign_kind, foreign_idx, dihedral, confidence, record]`
+ * Returns: seam site record `[idx, center, ex, ey, ez, len, edge_pts_local, seg2d, seam_source, source_kind, foreign_kind, foreign_idx, dihedral, confidence, record, foreign_n, support_kind, support_reason]`
  */
 function _ps_face_seam_segment_site(
     site_idx,
@@ -1513,6 +1513,8 @@ function _ps_face_seam_segment_site(
     dihedral,
     confidence,
     record,
+    support_kind="none",
+    support_reason="unclassified",
     poly_center_local=undef,
     eps=1e-8
 ) =
@@ -1538,7 +1540,94 @@ function _ps_face_seam_segment_site(
         ey = v_norm(v_cross(ez, ex)),
         edge_pts_local = [[-len_d / 2, 0, 0], [len_d / 2, 0, 0]]
     )
-    [site_idx, center, ex, ey, ez, len_d, edge_pts_local, seg2d, seam_source, source_kind, foreign_kind, foreign_idx, dihedral, confidence, record];
+    [site_idx, center, ex, ey, ez, len_d, edge_pts_local, seg2d, seam_source, source_kind, foreign_kind, foreign_idx, dihedral, confidence, record, n1, support_kind, support_reason];
+
+/**
+ * Function: Project one indexed face into its own best-fit local frame.
+ * Params: verts_local (poly vertices in current parent-local coords), face (face index loop), eps (tolerance)
+ * Returns: face points in that face's own local 3D frame
+ */
+function _ps_seg_face_own_frame_pts3d(verts_local, face, eps=1e-8) =
+    let(
+        center = ps_face_centroid(verts_local, face),
+        ez = ps_face_frame_normal(verts_local, face, eps),
+        ex_raw = verts_local[face[0]] - center,
+        ex_proj = ex_raw - ez * v_dot(ex_raw, ez),
+        edge_raw = (len(face) < 2) ? [1, 0, 0] : verts_local[face[1]] - verts_local[face[0]],
+        edge_proj = edge_raw - ez * v_dot(edge_raw, ez),
+        ex = norm(ex_proj) > eps
+            ? v_norm(ex_proj)
+            : norm(edge_proj) > eps
+            ? v_norm(edge_proj)
+            : _ps_any_perp(ez),
+        ey = v_cross(ez, ex)
+    )
+    [
+        for (vid = face)
+            let(p = verts_local[vid] - center)
+                [v_dot(p, ex), v_dot(p, ey), v_dot(p, ez)]
+    ];
+
+/**
+ * Function: Test whether a projected face loop has no self-crossings.
+ * Params: face_pts3d_local (face-local loop), eps (tolerance)
+ * Returns: true when the loop has no arrangement crossings
+ */
+function _ps_seg_face_loop_is_simple(face_pts3d_local, eps=1e-8) =
+    len(ps_face_arrangement(face_pts3d_local, eps)[1]) == 0;
+
+/**
+ * Function: Test whether an indexed face is simple in its own local frame.
+ * Params: poly_verts_local/poly_faces_idx (poly in current parent-local coords), face_idx (face id), eps (tolerance)
+ * Returns: true when the face loop has no self-crossings
+ */
+function _ps_seg_indexed_face_is_simple(poly_verts_local, poly_faces_idx, face_idx, eps=1e-8) =
+    _ps_seg_face_loop_is_simple(
+        _ps_seg_face_own_frame_pts3d(poly_verts_local, poly_faces_idx[face_idx], eps),
+        eps
+    );
+
+/**
+ * Function: Classify an exact foreign seam as a printable support kind.
+ * Params: target_simple/foreign_simple (loop simplicity flags), foreign_kind (source element kind), confidence (record confidence)
+ * Returns: support kind string, or `"none"`
+ */
+function _ps_seg_foreign_support_kind(target_simple, foreign_simple, foreign_kind, confidence) =
+    foreign_kind == "face" && confidence == "exact" && target_simple && foreign_simple
+        ? "foreign_simple_face_cut"
+        : "none";
+
+/**
+ * Function: Explain the foreign support classification decision.
+ * Params: target_simple/foreign_simple (loop simplicity flags), foreign_kind (source element kind), confidence (record confidence)
+ * Returns: reason string
+ */
+function _ps_seg_foreign_support_reason(target_simple, foreign_simple, foreign_kind, confidence) =
+    foreign_kind != "face"
+        ? "foreign_not_face"
+        : confidence != "exact"
+        ? "not_exact"
+        : !target_simple
+        ? "target_self_crossing"
+        : !foreign_simple
+        ? "foreign_self_crossing"
+        : "simple_face_cut";
+
+/**
+ * Function: Classify a boundary seam as a printable support kind.
+ * Params: source_kind (boundary span public lineage)
+ * Returns: support kind string, or `"none"`
+ */
+function _ps_seg_boundary_support_kind(source_kind) =
+    source_kind == "generated_cut" ? "generated_cut" : "none";
+
+/**
+ * Function: Explain the boundary support classification decision.
+ * Params: source_kind (boundary span public lineage)
+ * Returns: reason string
+ */
+function _ps_seg_boundary_support_reason(source_kind) =
+    source_kind == "generated_cut" ? "generated_cut" : "not_generated_cut";
 
 /**
  * Function: Build edge-like placement sites for current-face seam segments.
@@ -1570,6 +1659,7 @@ function ps_face_seam_segment_sites(
                 if (_ps_seg_boundary_span_kind_matches(site[19], boundary_kind))
                     site
         ],
+        target_simple = _ps_seg_face_loop_is_simple(face_pts3d_local, eps),
         boundary_out = [
             for (bi = [0:1:len(boundary_filtered)-1])
                 let(site = boundary_filtered[bi])
@@ -1584,6 +1674,8 @@ function ps_face_seam_segment_sites(
                     site[15],
                     "exact",
                     site,
+                    _ps_seg_boundary_support_kind(site[19]),
+                    _ps_seg_boundary_support_reason(site[19]),
                     poly_center_local,
                     eps
                 )
@@ -1596,21 +1688,28 @@ function ps_face_seam_segment_sites(
                 let(
                     record = foreign_records[fi],
                     foreign_idx = ps_intrusion_foreign_idx(record),
-                    foreign_n = ps_intrusion_foreign_kind(record) == "face"
+                    foreign_kind = ps_intrusion_foreign_kind(record),
+                    confidence = ps_intrusion_confidence(record),
+                    foreign_n = foreign_kind == "face"
                         ? ps_face_frame_normal(poly_verts_local, poly_faces_idx[foreign_idx], eps)
-                        : undef
+                        : undef,
+                    foreign_simple = foreign_kind == "face"
+                        ? _ps_seg_indexed_face_is_simple(poly_verts_local, poly_faces_idx, foreign_idx, eps)
+                        : false
                 )
                 _ps_face_seam_segment_site(
                     len(boundary_out) + fi,
                     ps_intrusion_segment2d_local(record),
                     "foreign",
                     ps_intrusion_kind(record),
-                    ps_intrusion_foreign_kind(record),
+                    foreign_kind,
                     foreign_idx,
                     foreign_n,
                     ps_intrusion_dihedral(record),
-                    ps_intrusion_confidence(record),
+                    confidence,
                     record,
+                    _ps_seg_foreign_support_kind(target_simple, foreign_simple, foreign_kind, confidence),
+                    _ps_seg_foreign_support_reason(target_simple, foreign_simple, foreign_kind, confidence),
                     poly_center_local,
                     eps
                 )
@@ -1633,6 +1732,10 @@ function ps_seam_site_foreign_idx(site) = site[11];
 function ps_seam_site_dihedral(site) = site[12];
 function ps_seam_site_confidence(site) = site[13];
 function ps_seam_site_record(site) = site[14];
+function ps_seam_site_foreign_normal_local(site) = site[15];
+function ps_seam_site_support_kind(site) = site[16];
+function ps_seam_site_support_reason(site) = site[17];
+function ps_seam_site_is_support_candidate(site) = ps_seam_site_support_kind(site) != "none";
 
 function _ps_seg_optional_idx_selected(idx, indices) =
     is_undef(indices) || is_undef(idx)
@@ -1643,9 +1746,9 @@ function _ps_seg_optional_idx_selected(idx, indices) =
 
 /**
  * Module: Place children on edge-like seam segments for the current placed face.
- * Params: mode/eps (segmentation controls), coords (`"element"` or `"parent"`), boundary_kind (boundary span kind filter), include_boundary/include_foreign/filter_parent (source controls), foreign_indices (optional accepted foreign element id or ids)
+ * Params: mode/eps (segmentation controls), coords (`"element"` or `"parent"`), boundary_kind (boundary span kind filter), include_boundary/include_foreign/filter_parent (source controls), foreign_indices (optional accepted foreign element id or ids), support_only (visit only classified printable support candidates)
  * Returns: none; exposes `$ps_seam_*` metadata and edge-compatible `$ps_edge_*` aliases
- * Limitations/Gotchas: requires `place_on_faces(...)`; foreign seams are exact face-plane intrusion segments, not yet classified as printable supports
+ * Limitations/Gotchas: requires `place_on_faces(...)`; printable support classification is conservative and only promotes simple-face exact cuts plus non-source generated cuts
  */
 module place_on_face_seam_segments(
     mode="nonzero",
@@ -1655,7 +1758,8 @@ module place_on_face_seam_segments(
     include_boundary=true,
     include_foreign=true,
     filter_parent=true,
-    foreign_indices=undef
+    foreign_indices=undef,
+    support_only=false
 ) {
     assert(!is_undef($ps_face_pts3d_local), "place_on_face_seam_segments: requires place_on_faces context ($ps_face_pts3d_local)");
     assert(!is_undef($ps_face_pts2d), "place_on_face_seam_segments: requires place_on_faces context ($ps_face_pts2d)");
@@ -1684,7 +1788,8 @@ module place_on_face_seam_segments(
     );
     sites = [
         for (site = all_sites)
-            if (_ps_seg_optional_idx_selected(ps_seam_site_foreign_idx(site), foreign_indices))
+            if (_ps_seg_optional_idx_selected(ps_seam_site_foreign_idx(site), foreign_indices)
+                    && (!support_only || ps_seam_site_is_support_candidate(site)))
                 site
     ];
 
@@ -1702,6 +1807,10 @@ module place_on_face_seam_segments(
         $ps_seam_dihedral = ps_seam_site_dihedral(site);
         $ps_seam_confidence = ps_seam_site_confidence(site);
         $ps_seam_record = ps_seam_site_record(site);
+        $ps_seam_foreign_normal_local = ps_seam_site_foreign_normal_local(site);
+        $ps_seam_support_kind = ps_seam_site_support_kind(site);
+        $ps_seam_support_reason = ps_seam_site_support_reason(site);
+        $ps_seam_is_support_candidate = ps_seam_site_is_support_candidate(site);
 
         // Edge-compatible aliases for reusable edge child modules.
         $ps_edge_idx = undef;

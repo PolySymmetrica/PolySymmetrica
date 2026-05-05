@@ -546,6 +546,63 @@ module test_place_on_face_seam_segments__triangle_exposes_foreign_edge_aliases()
     }
 }
 
+module test_ps_face_seam_segment_sites__source_partial_spans_are_not_support_candidates() {
+    place_on_faces(_test_punch_poly()) {
+        if ($ps_face_idx == STAR_FACE_IDX) {
+            sites = ps_face_seam_segment_sites(
+                $ps_face_pts3d_local,
+                $ps_face_pts2d,
+                $ps_face_idx,
+                $ps_poly_faces_idx,
+                $ps_poly_verts_local,
+                $ps_face_neighbors_idx,
+                $ps_face_dihedrals,
+                $ps_poly_center_local,
+                MODE,
+                EPS,
+                "generated",
+                true,
+                false
+            );
+            support_sites = [for (site = sites) if (ps_seam_site_is_support_candidate(site)) site];
+
+            assert_int_eq(len(sites), 14, "star generated seam site count includes source_partial spans");
+            assert_int_eq(len(support_sites), 0, "source_partial star spans are not printable support candidates");
+        }
+    }
+}
+
+module test_ps_face_seam_segment_sites__5_2_triangle_cuts_are_support_candidates() {
+    place_on_faces(poly_antiprism(5, 2, angle = 0)) {
+        if ($ps_face_idx == 7) {
+            sites = ps_face_seam_segment_sites(
+                $ps_face_pts3d_local,
+                $ps_face_pts2d,
+                $ps_face_idx,
+                $ps_poly_faces_idx,
+                $ps_poly_verts_local,
+                $ps_face_neighbors_idx,
+                $ps_face_dihedrals,
+                $ps_poly_center_local,
+                MODE,
+                EPS,
+                "generated_cut",
+                false,
+                true
+            );
+            support_sites = [for (site = sites) if (ps_seam_site_is_support_candidate(site)) site];
+
+            assert_int_eq(len(sites), 3, "5/2 triangle exact foreign seam count");
+            assert_int_eq(len(support_sites), 3, "5/2 triangle exact foreign seams classify as printable supports");
+            for (site = support_sites) {
+                assert(ps_seam_site_support_kind(site) == "foreign_simple_face_cut", "5/2 support kind");
+                assert(ps_seam_site_support_reason(site) == "simple_face_cut", "5/2 support reason");
+                assert_int_eq(len(ps_seam_site_foreign_normal_local(site)), 3, "5/2 support foreign normal arity");
+            }
+        }
+    }
+}
+
 module test_place_on_face_foreign_face_replay_sites__7_3_15_triangle_exposes_context() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
@@ -727,6 +784,8 @@ module run_TestSelfCrossing() {
     test_place_on_face_foreign_intrusions__7_3_15_triangle_exposes_context();
     test_ps_face_seam_segment_sites__triangle_builds_boundary_edge_records();
     test_place_on_face_seam_segments__triangle_exposes_foreign_edge_aliases();
+    test_ps_face_seam_segment_sites__source_partial_spans_are_not_support_candidates();
+    test_ps_face_seam_segment_sites__5_2_triangle_cuts_are_support_candidates();
     test_place_on_face_foreign_face_replay_sites__7_3_15_triangle_exposes_context();
     test_place_on_face_foreign_proxy_sites__7_3_15_triangle_dispatches_face_child();
     test_place_on_face_foreign_proxy_sites__7_3_15_triangle_element_child_uses_source_face_context();

@@ -102,6 +102,12 @@ module model(show_faces = undef, clear_airspace = true) {
                     top_z = BASE_Z,
                     extend = SEAM_SUPPORT_T * 0.25
                 );
+
+                face_foreign_cut_seam_supports(
+                    support_t = SEAM_SUPPORT_T,
+                    top_z = BASE_Z,
+                    extend = SEAM_SUPPORT_T * 0.25
+                );
             }
         }
         // Constructs faces, removes them from frame to create face-fitting sockets.
@@ -141,8 +147,7 @@ place_on_faces(p, IR, indices = DEMO_FACES) {
                 face_foreign_cut_seam_supports(
                     support_t = SEAM_SUPPORT_T,
                     top_z = BASE_Z,
-                    extend = SEAM_SUPPORT_T * 0.25,
-                    foreign_indices = DEMO_FACES
+                    extend = SEAM_SUPPORT_T * 0.25
                 );
             }
 
