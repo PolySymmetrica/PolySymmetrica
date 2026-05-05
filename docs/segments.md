@@ -633,6 +633,88 @@ Provides:
 - `$ps_intrusion_dihedral`
 - `$ps_intrusion_confidence`
 
+### `ps_face_seam_segment_sites(...)`
+
+Builds edge-like placement records for seam segments on the current face. This
+combines two sources:
+
+- boundary spans from `ps_face_boundary_model(...)`, filtered by
+  `boundary_kind`
+- exact foreign intrusion cuts from `ps_face_foreign_intrusion_records(...)`
+
+The returned records use the same accessor style as the other segment APIs:
+
+- `ps_seam_site_idx(site)`
+- `ps_seam_site_center_local(site)`
+- `ps_seam_site_ex_local(site)`
+- `ps_seam_site_ey_local(site)`
+- `ps_seam_site_ez_local(site)`
+- `ps_seam_site_len(site)`
+- `ps_seam_site_edge_pts_local(site)`
+- `ps_seam_site_segment2d_local(site)`
+- `ps_seam_site_source(site)`
+- `ps_seam_site_source_kind(site)`
+- `ps_seam_site_foreign_kind(site)`
+- `ps_seam_site_foreign_idx(site)`
+- `ps_seam_site_dihedral(site)`
+- `ps_seam_site_confidence(site)`
+- `ps_seam_site_record(site)`
+
+The seam frame is deliberately edge-like:
+
+- `+X` follows the seam segment
+- `+Z` is the signed current/foreign face-normal bisector when a foreign face
+  normal is known, with a radial fallback for boundary-only generated seams
+- `+Y` completes the local frame
+
+This makes seam segments usable by child modules that already understand the
+usual edge placement convention.
+
+### `place_on_face_seam_segments(...)`
+
+Iterator wrapper over `ps_face_seam_segment_sites(...)` for use inside
+`place_on_faces(...)`.
+
+Important parameters:
+
+- `coords`
+  uses `"element"` by default, placing children in the edge-like seam frame.
+  `"parent"` leaves children in the current face-local coordinate system.
+- `boundary_kind`
+  selects which boundary spans can become seam sites. The default is
+  `"generated_cut"` so ordinary face edges are not visited accidentally.
+- `include_boundary` / `include_foreign`
+  enable boundary-derived and foreign-intrusion-derived seam sources.
+- `foreign_indices`
+  optionally filters by foreign element id. It accepts either a scalar id or a
+  list of ids.
+
+Provides:
+
+- `$ps_seam_idx`
+- `$ps_seam_count`
+- `$ps_seam_total_count`
+- `$ps_seam_source`
+- `$ps_seam_source_kind`
+- `$ps_seam_foreign_kind`
+- `$ps_seam_foreign_idx`
+- `$ps_seam_len`
+- `$ps_seam_segment2d_local`
+- `$ps_seam_edge_pts_local`
+- `$ps_seam_dihedral`
+- `$ps_seam_confidence`
+- `$ps_seam_record`
+
+It also exposes edge-compatible aliases for reusable edge children:
+
+- `$ps_edge_len`
+- `$ps_edge_midradius`
+- `$ps_edge_pts_local`
+- `$ps_edge_adj_faces_idx`
+
+`$ps_edge_idx`, `$ps_edge_verts_idx`, and family metadata are `undef` because a
+generated seam is not necessarily a true polyhedron edge.
+
 ### `ps_face_visible_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero", filter_parent=true)`
 
 Splits the current face by geometry cuts and keeps only 2D face cells visible from the

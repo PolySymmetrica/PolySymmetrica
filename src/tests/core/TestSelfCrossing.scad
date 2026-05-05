@@ -483,6 +483,69 @@ module test_place_on_face_foreign_intrusions__7_3_15_triangle_exposes_context() 
     }
 }
 
+module test_ps_face_seam_segment_sites__triangle_builds_boundary_edge_records() {
+    place_on_faces(_test_punch_poly_angle0()) {
+        if ($ps_face_idx == TRI_FACE_IDX) {
+            sites = ps_face_seam_segment_sites(
+                $ps_face_pts3d_local,
+                $ps_face_pts2d,
+                $ps_face_idx,
+                $ps_poly_faces_idx,
+                $ps_poly_verts_local,
+                $ps_face_neighbors_idx,
+                $ps_face_dihedrals,
+                $ps_poly_center_local,
+                MODE,
+                EPS,
+                "source_edge",
+                true,
+                false
+            );
+
+            assert_int_eq(len(sites), 3, "triangle source-edge seam site count");
+            for (site = sites) {
+                assert(ps_seam_site_source(site) == "boundary", "boundary seam site source");
+                assert(ps_seam_site_source_kind(site) == "source_edge", "boundary seam site kind");
+                assert_int_eq(len(ps_seam_site_edge_pts_local(site)), 2, "boundary seam edge point arity");
+                assert_near(norm(ps_seam_site_ex_local(site)), 1, EPS, "boundary seam ex unit");
+                assert_near(norm(ps_seam_site_ey_local(site)), 1, EPS, "boundary seam ey unit");
+                assert_near(norm(ps_seam_site_ez_local(site)), 1, EPS, "boundary seam ez unit");
+                assert_near(v_dot(ps_seam_site_ex_local(site), ps_seam_site_ey_local(site)), 0, EPS, "boundary seam ex/ey orthogonal");
+                assert_near(v_dot(ps_seam_site_ex_local(site), ps_seam_site_ez_local(site)), 0, EPS, "boundary seam ex/ez orthogonal");
+                assert(ps_seam_site_len(site) > EPS, "boundary seam length positive");
+            }
+        }
+    }
+}
+
+module test_place_on_face_seam_segments__triangle_exposes_foreign_edge_aliases() {
+    place_on_faces(_test_punch_poly()) {
+        if ($ps_face_idx == TRI_FACE_IDX) {
+            records = ps_face_foreign_intrusion_records($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, EPS, MODE, true);
+            first_foreign = ps_intrusion_foreign_idx(records[0]);
+            expected_count = len([for (r = records) if (ps_intrusion_foreign_idx(r) == first_foreign) 1]);
+
+            place_on_face_seam_segments(
+                mode = MODE,
+                eps = EPS,
+                coords = "parent",
+                include_boundary = false,
+                include_foreign = true,
+                foreign_indices = first_foreign
+            ) {
+                assert_int_eq($ps_seam_count, expected_count, "filtered foreign seam count");
+                assert_int_eq($ps_seam_foreign_idx, first_foreign, "filtered foreign seam idx");
+                assert($ps_seam_source == "foreign", "foreign seam source");
+                assert($ps_seam_source_kind == "face_plane_cut", "foreign seam source kind");
+                assert($ps_seam_confidence == "exact", "foreign seam confidence");
+                assert_list_eq($ps_edge_pts_local, $ps_seam_edge_pts_local, "foreign seam edge alias points");
+                assert_near($ps_edge_len, $ps_seam_len, EPS, "foreign seam edge alias len");
+                assert_int_eq(len($ps_edge_adj_faces_idx), 2, "foreign seam edge adjacent-face alias arity");
+            }
+        }
+    }
+}
+
 module test_place_on_face_foreign_face_replay_sites__7_3_15_triangle_exposes_context() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
@@ -662,6 +725,8 @@ module run_TestSelfCrossing() {
     test_place_on_face_filled_boundary_source_edges__antitet_uses_span_direction();
     test_place_on_face_boundary_spans__kind_filter_exposes_generated_seams();
     test_place_on_face_foreign_intrusions__7_3_15_triangle_exposes_context();
+    test_ps_face_seam_segment_sites__triangle_builds_boundary_edge_records();
+    test_place_on_face_seam_segments__triangle_exposes_foreign_edge_aliases();
     test_place_on_face_foreign_face_replay_sites__7_3_15_triangle_exposes_context();
     test_place_on_face_foreign_proxy_sites__7_3_15_triangle_dispatches_face_child();
     test_place_on_face_foreign_proxy_sites__7_3_15_triangle_element_child_uses_source_face_context();
