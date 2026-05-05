@@ -659,6 +659,10 @@ The returned records use the same accessor style as the other segment APIs:
 - `ps_seam_site_dihedral(site)`
 - `ps_seam_site_confidence(site)`
 - `ps_seam_site_record(site)`
+- `ps_seam_site_foreign_normal_local(site)`
+- `ps_seam_site_support_kind(site)`
+- `ps_seam_site_support_reason(site)`
+- `ps_seam_site_is_support_candidate(site)`
 
 The seam frame is deliberately edge-like:
 
@@ -669,6 +673,21 @@ The seam frame is deliberately edge-like:
 
 This makes seam segments usable by child modules that already understand the
 usual edge placement convention.
+
+Support classification is conservative:
+
+- `"generated_cut"`
+  A boundary seam that did not descend from a source face-loop edge. This is the
+  future path for genuine cut-generated face boundaries.
+- `"foreign_simple_face_cut"`
+  An exact foreign face-plane cut where both the target and foreign face loops
+  are simple in their own local frames. For example, the crossing triangle
+  side faces in `poly_antiprism(5, 2, angle=0)` classify this way.
+- `"none"`
+  Not an automatic printable support candidate. Split source-edge spans on a
+  self-crossing star face, such as the star cap of a `5/2` antiprism, are
+  intentionally classified as `"none"` so ordinary star arms do not receive
+  duplicate support bars.
 
 ### `place_on_face_seam_segments(...)`
 
@@ -688,6 +707,9 @@ Important parameters:
 - `foreign_indices`
   optionally filters by foreign element id. It accepts either a scalar id or a
   list of ids.
+- `support_only`
+  when true, visits only seam sites with
+  `ps_seam_site_is_support_candidate(site)`.
 
 Provides:
 
@@ -704,6 +726,10 @@ Provides:
 - `$ps_seam_dihedral`
 - `$ps_seam_confidence`
 - `$ps_seam_record`
+- `$ps_seam_foreign_normal_local`
+- `$ps_seam_support_kind`
+- `$ps_seam_support_reason`
+- `$ps_seam_is_support_candidate`
 
 It also exposes edge-compatible aliases for reusable edge children:
 
