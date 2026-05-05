@@ -1498,6 +1498,230 @@ module place_on_face_foreign_intrusions(mode="nonzero", eps=1e-8, filter_parent=
 }
 
 /**
+ * Function: Build one edge-like seam-segment placement site.
+ * Params: site_idx (site index), seg2d (face-local seam segment), seam_source/source_kind (source labels), foreign_kind/foreign_idx (foreign element metadata), foreign_n (foreign face normal in target-local coords), dihedral/confidence/record (source metadata), poly_center_local (target-local poly center), eps (tolerance)
+ * Returns: seam site record `[idx, center, ex, ey, ez, len, edge_pts_local, seg2d, seam_source, source_kind, foreign_kind, foreign_idx, dihedral, confidence, record]`
+ */
+function _ps_face_seam_segment_site(
+    site_idx,
+    seg2d,
+    seam_source,
+    source_kind,
+    foreign_kind,
+    foreign_idx,
+    foreign_n,
+    dihedral,
+    confidence,
+    record,
+    poly_center_local=undef,
+    eps=1e-8
+) =
+    let(
+        d2 = seg2d[1] - seg2d[0],
+        len_d = norm(d2),
+        ex = (len_d <= eps) ? [1, 0, 0] : [d2[0] / len_d, d2[1] / len_d, 0],
+        center = [(seg2d[0][0] + seg2d[1][0]) / 2, (seg2d[0][1] + seg2d[1][1]) / 2, 0],
+        n0 = [0, 0, 1],
+        n1 = (is_undef(foreign_n) || norm(foreign_n) <= eps) ? undef : v_norm(foreign_n),
+        poly_center = is_undef(poly_center_local) ? [0, 0, 0] : poly_center_local,
+        radial_raw = center - poly_center,
+        radial_ref = (norm(radial_raw) <= eps) ? _ps_any_perp(ex) : v_norm(radial_raw),
+        bisector_raw = is_undef(n1) ? radial_ref : n0 + n1,
+        bisector_signed =
+            (norm(bisector_raw) <= eps)
+                ? radial_ref
+                : ((v_dot(bisector_raw, radial_ref) < 0) ? -bisector_raw : bisector_raw),
+        ez_proj = bisector_signed - ex * v_dot(bisector_signed, ex),
+        radial_proj = radial_ref - ex * v_dot(radial_ref, ex),
+        ez_dir = (norm(ez_proj) <= eps) ? radial_proj : ez_proj,
+        ez = (norm(ez_dir) <= eps) ? _ps_any_perp(ex) : v_norm(ez_dir),
+        ey = v_norm(v_cross(ez, ex)),
+        edge_pts_local = [[-len_d / 2, 0, 0], [len_d / 2, 0, 0]]
+    )
+    [site_idx, center, ex, ey, ez, len_d, edge_pts_local, seg2d, seam_source, source_kind, foreign_kind, foreign_idx, dihedral, confidence, record];
+
+/**
+ * Function: Build edge-like placement sites for current-face seam segments.
+ * Params: face_pts3d_local/face_pts2d/face_idx/poly_faces_idx/poly_verts_local/face_neighbors_idx/face_dihedrals/poly_center_local (face placement context), mode/eps (segmentation controls), boundary_kind (boundary span kind filter), include_boundary/include_foreign/filter_parent (source controls)
+ * Returns: seam site records for `place_on_face_seam_segments(...)`
+ */
+function ps_face_seam_segment_sites(
+    face_pts3d_local,
+    face_pts2d,
+    face_idx,
+    poly_faces_idx,
+    poly_verts_local,
+    face_neighbors_idx,
+    face_dihedrals,
+    poly_center_local=undef,
+    mode="nonzero",
+    eps=1e-8,
+    boundary_kind="generated_cut",
+    include_boundary=true,
+    include_foreign=true,
+    filter_parent=true
+) =
+    let(
+        boundary_sites = include_boundary
+            ? _ps_face_boundary_span_sites(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local, face_neighbors_idx, face_dihedrals, mode, eps)
+            : [],
+        boundary_filtered = [
+            for (site = boundary_sites)
+                if (_ps_seg_boundary_span_kind_matches(site[19], boundary_kind))
+                    site
+        ],
+        boundary_out = [
+            for (bi = [0:1:len(boundary_filtered)-1])
+                let(site = boundary_filtered[bi])
+                _ps_face_seam_segment_site(
+                    bi,
+                    site[6],
+                    "boundary",
+                    site[19],
+                    is_undef(site[14]) ? undef : "face",
+                    site[14],
+                    site[16],
+                    site[15],
+                    "exact",
+                    site,
+                    poly_center_local,
+                    eps
+                )
+        ],
+        foreign_records = include_foreign
+            ? ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent)
+            : [],
+        foreign_out = [
+            for (fi = [0:1:len(foreign_records)-1])
+                let(
+                    record = foreign_records[fi],
+                    foreign_idx = ps_intrusion_foreign_idx(record),
+                    foreign_n = ps_intrusion_foreign_kind(record) == "face"
+                        ? ps_face_frame_normal(poly_verts_local, poly_faces_idx[foreign_idx], eps)
+                        : undef
+                )
+                _ps_face_seam_segment_site(
+                    len(boundary_out) + fi,
+                    ps_intrusion_segment2d_local(record),
+                    "foreign",
+                    ps_intrusion_kind(record),
+                    ps_intrusion_foreign_kind(record),
+                    foreign_idx,
+                    foreign_n,
+                    ps_intrusion_dihedral(record),
+                    ps_intrusion_confidence(record),
+                    record,
+                    poly_center_local,
+                    eps
+                )
+        ]
+    )
+    concat(boundary_out, foreign_out);
+
+function ps_seam_site_idx(site) = site[0];
+function ps_seam_site_center_local(site) = site[1];
+function ps_seam_site_ex_local(site) = site[2];
+function ps_seam_site_ey_local(site) = site[3];
+function ps_seam_site_ez_local(site) = site[4];
+function ps_seam_site_len(site) = site[5];
+function ps_seam_site_edge_pts_local(site) = site[6];
+function ps_seam_site_segment2d_local(site) = site[7];
+function ps_seam_site_source(site) = site[8];
+function ps_seam_site_source_kind(site) = site[9];
+function ps_seam_site_foreign_kind(site) = site[10];
+function ps_seam_site_foreign_idx(site) = site[11];
+function ps_seam_site_dihedral(site) = site[12];
+function ps_seam_site_confidence(site) = site[13];
+function ps_seam_site_record(site) = site[14];
+
+function _ps_seg_optional_idx_selected(idx, indices) =
+    is_undef(indices) || is_undef(idx)
+        ? true
+        : is_list(indices)
+            ? _ps_list_contains(indices, idx)
+            : idx == indices;
+
+/**
+ * Module: Place children on edge-like seam segments for the current placed face.
+ * Params: mode/eps (segmentation controls), coords (`"element"` or `"parent"`), boundary_kind (boundary span kind filter), include_boundary/include_foreign/filter_parent (source controls), foreign_indices (optional accepted foreign element id or ids)
+ * Returns: none; exposes `$ps_seam_*` metadata and edge-compatible `$ps_edge_*` aliases
+ * Limitations/Gotchas: requires `place_on_faces(...)`; foreign seams are exact face-plane intrusion segments, not yet classified as printable supports
+ */
+module place_on_face_seam_segments(
+    mode="nonzero",
+    eps=1e-8,
+    coords="element",
+    boundary_kind="generated_cut",
+    include_boundary=true,
+    include_foreign=true,
+    filter_parent=true,
+    foreign_indices=undef
+) {
+    assert(!is_undef($ps_face_pts3d_local), "place_on_face_seam_segments: requires place_on_faces context ($ps_face_pts3d_local)");
+    assert(!is_undef($ps_face_pts2d), "place_on_face_seam_segments: requires place_on_faces context ($ps_face_pts2d)");
+    assert(!is_undef($ps_face_idx), "place_on_face_seam_segments: requires place_on_faces context ($ps_face_idx)");
+    assert(!is_undef($ps_poly_faces_idx), "place_on_face_seam_segments: requires place_on_faces context ($ps_poly_faces_idx)");
+    assert(!is_undef($ps_poly_verts_local), "place_on_face_seam_segments: requires place_on_faces context ($ps_poly_verts_local)");
+    assert(!is_undef($ps_face_neighbors_idx), "place_on_face_seam_segments: requires place_on_faces context ($ps_face_neighbors_idx)");
+    assert(!is_undef($ps_face_dihedrals), "place_on_face_seam_segments: requires place_on_faces context ($ps_face_dihedrals)");
+    assert(coords == "element" || coords == "parent", "place_on_face_seam_segments: coords must be \"element\" or \"parent\"");
+
+    all_sites = ps_face_seam_segment_sites(
+        $ps_face_pts3d_local,
+        $ps_face_pts2d,
+        $ps_face_idx,
+        $ps_poly_faces_idx,
+        $ps_poly_verts_local,
+        $ps_face_neighbors_idx,
+        $ps_face_dihedrals,
+        $ps_poly_center_local,
+        mode,
+        eps,
+        boundary_kind,
+        include_boundary,
+        include_foreign,
+        filter_parent
+    );
+    sites = [
+        for (site = all_sites)
+            if (_ps_seg_optional_idx_selected(ps_seam_site_foreign_idx(site), foreign_indices))
+                site
+    ];
+
+    for (site = sites) {
+        $ps_seam_idx = ps_seam_site_idx(site);
+        $ps_seam_count = len(sites);
+        $ps_seam_total_count = len(all_sites);
+        $ps_seam_source = ps_seam_site_source(site);
+        $ps_seam_source_kind = ps_seam_site_source_kind(site);
+        $ps_seam_foreign_kind = ps_seam_site_foreign_kind(site);
+        $ps_seam_foreign_idx = ps_seam_site_foreign_idx(site);
+        $ps_seam_len = ps_seam_site_len(site);
+        $ps_seam_segment2d_local = ps_seam_site_segment2d_local(site);
+        $ps_seam_edge_pts_local = ps_seam_site_edge_pts_local(site);
+        $ps_seam_dihedral = ps_seam_site_dihedral(site);
+        $ps_seam_confidence = ps_seam_site_confidence(site);
+        $ps_seam_record = ps_seam_site_record(site);
+
+        // Edge-compatible aliases for reusable edge child modules.
+        $ps_edge_idx = undef;
+        $ps_edge_len = ps_seam_site_len(site);
+        $ps_edge_midradius = norm(ps_seam_site_center_local(site) - $ps_poly_center_local);
+        $ps_edge_pts_local = ps_seam_site_edge_pts_local(site);
+        $ps_edge_verts_idx = undef;
+        $ps_edge_adj_faces_idx = is_undef(ps_seam_site_foreign_idx(site)) ? [$ps_face_idx] : [$ps_face_idx, ps_seam_site_foreign_idx(site)];
+        $ps_edge_family_id = undef;
+        $ps_edge_family_count = undef;
+
+        if (coords == "element")
+            multmatrix(ps_frame_matrix(ps_seam_site_center_local(site), ps_seam_site_ex_local(site), ps_seam_site_ey_local(site), ps_seam_site_ez_local(site)))
+                children();
+        else
+            children();
+    }
+}
+
+/**
  * Module: Iterate the retained visible cells for the current placed face.
  * Params: mode (cell/cutter fill rule), eps (tolerance), filter_parent (drop cuts that coincide with parent edges)
  * Returns: none; exposes `$ps_vis_seg_*` metadata and calls children once per visible cell
