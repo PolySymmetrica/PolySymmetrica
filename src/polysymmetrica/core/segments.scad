@@ -1500,7 +1500,7 @@ module place_on_face_foreign_intrusions(mode="nonzero", eps=1e-8, filter_parent=
 /**
  * Function: Build one edge-like seam-segment placement site.
  * Params: site_idx (site index), seg2d (face-local seam segment), seam_source/source_kind (source labels), foreign_kind/foreign_idx (foreign element metadata), foreign_n (foreign face normal in target-local coords), dihedral/confidence/record (source metadata), poly_center_local (target-local poly center), eps (tolerance)
- * Returns: seam site record `[idx, center, ex, ey, ez, len, edge_pts_local, seg2d, seam_source, source_kind, foreign_kind, foreign_idx, dihedral, confidence, record, foreign_n, support_kind, support_reason]`
+ * Returns: seam site record `[idx, center, ex, ey, ez, len, edge_pts_local, seg2d, seam_source, source_kind, foreign_kind, foreign_idx, dihedral, confidence, record, foreign_n, support_kind, support_reason, current_normal_seam_local]`
  */
 function _ps_face_seam_segment_site(
     site_idx,
@@ -1538,9 +1538,10 @@ function _ps_face_seam_segment_site(
         ez_dir = (norm(ez_proj) <= eps) ? radial_proj : ez_proj,
         ez = (norm(ez_dir) <= eps) ? _ps_any_perp(ex) : v_norm(ez_dir),
         ey = v_norm(v_cross(ez, ex)),
-        edge_pts_local = [[-len_d / 2, 0, 0], [len_d / 2, 0, 0]]
+        edge_pts_local = [[-len_d / 2, 0, 0], [len_d / 2, 0, 0]],
+        current_normal_seam_local = [v_dot(n0, ex), v_dot(n0, ey), v_dot(n0, ez)]
     )
-    [site_idx, center, ex, ey, ez, len_d, edge_pts_local, seg2d, seam_source, source_kind, foreign_kind, foreign_idx, dihedral, confidence, record, n1, support_kind, support_reason];
+    [site_idx, center, ex, ey, ez, len_d, edge_pts_local, seg2d, seam_source, source_kind, foreign_kind, foreign_idx, dihedral, confidence, record, n1, support_kind, support_reason, current_normal_seam_local];
 
 /**
  * Function: Project one indexed face into its own best-fit local frame.
@@ -1735,6 +1736,7 @@ function ps_seam_site_record(site) = site[14];
 function ps_seam_site_foreign_normal_local(site) = site[15];
 function ps_seam_site_support_kind(site) = site[16];
 function ps_seam_site_support_reason(site) = site[17];
+function ps_seam_site_current_normal_seam_local(site) = site[18];
 function ps_seam_site_is_support_candidate(site) = ps_seam_site_support_kind(site) != "none";
 
 function _ps_seg_optional_idx_selected(idx, indices) =
@@ -1810,6 +1812,7 @@ module place_on_face_seam_segments(
         $ps_seam_foreign_normal_local = ps_seam_site_foreign_normal_local(site);
         $ps_seam_support_kind = ps_seam_site_support_kind(site);
         $ps_seam_support_reason = ps_seam_site_support_reason(site);
+        $ps_seam_current_normal_seam_local = ps_seam_site_current_normal_seam_local(site);
         $ps_seam_is_support_candidate = ps_seam_site_is_support_candidate(site);
 
         // Edge-compatible aliases for reusable edge child modules.

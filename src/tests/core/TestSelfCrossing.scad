@@ -507,9 +507,11 @@ module test_ps_face_seam_segment_sites__triangle_builds_boundary_edge_records() 
                 assert(ps_seam_site_source(site) == "boundary", "boundary seam site source");
                 assert(ps_seam_site_source_kind(site) == "source_edge", "boundary seam site kind");
                 assert_int_eq(len(ps_seam_site_edge_pts_local(site)), 2, "boundary seam edge point arity");
+                assert_int_eq(len(ps_seam_site_current_normal_seam_local(site)), 3, "boundary seam current normal arity");
                 assert_near(norm(ps_seam_site_ex_local(site)), 1, EPS, "boundary seam ex unit");
                 assert_near(norm(ps_seam_site_ey_local(site)), 1, EPS, "boundary seam ey unit");
                 assert_near(norm(ps_seam_site_ez_local(site)), 1, EPS, "boundary seam ez unit");
+                assert_near(norm(ps_seam_site_current_normal_seam_local(site)), 1, EPS, "boundary seam current normal unit");
                 assert_near(v_dot(ps_seam_site_ex_local(site), ps_seam_site_ey_local(site)), 0, EPS, "boundary seam ex/ey orthogonal");
                 assert_near(v_dot(ps_seam_site_ex_local(site), ps_seam_site_ez_local(site)), 0, EPS, "boundary seam ex/ez orthogonal");
                 assert(ps_seam_site_len(site) > EPS, "boundary seam length positive");
@@ -538,6 +540,8 @@ module test_place_on_face_seam_segments__triangle_exposes_foreign_edge_aliases()
                 assert($ps_seam_source == "foreign", "foreign seam source");
                 assert($ps_seam_source_kind == "face_plane_cut", "foreign seam source kind");
                 assert($ps_seam_confidence == "exact", "foreign seam confidence");
+                assert_int_eq(len($ps_seam_current_normal_seam_local), 3, "foreign seam current normal arity");
+                assert_near(norm($ps_seam_current_normal_seam_local), 1, EPS, "foreign seam current normal unit");
                 assert_list_eq($ps_edge_pts_local, $ps_seam_edge_pts_local, "foreign seam edge alias points");
                 assert_near($ps_edge_len, $ps_seam_len, EPS, "foreign seam edge alias len");
                 assert_int_eq(len($ps_edge_adj_faces_idx), 2, "foreign seam edge adjacent-face alias arity");

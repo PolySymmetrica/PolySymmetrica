@@ -662,6 +662,7 @@ The returned records use the same accessor style as the other segment APIs:
 - `ps_seam_site_foreign_normal_local(site)`
 - `ps_seam_site_support_kind(site)`
 - `ps_seam_site_support_reason(site)`
+- `ps_seam_site_current_normal_seam_local(site)`
 - `ps_seam_site_is_support_candidate(site)`
 
 The seam frame is deliberately edge-like:
@@ -670,6 +671,10 @@ The seam frame is deliberately edge-like:
 - `+Z` is the signed current/foreign face-normal bisector when a foreign face
   normal is known, with a radial fallback for boundary-only generated seams
 - `+Y` completes the local frame
+- `ps_seam_site_current_normal_seam_local(site)` / `$ps_seam_current_normal_seam_local`
+  gives the current face normal expressed in that seam element frame, so child
+  geometry can place itself relative to the current face plane without
+  rebuilding parent-frame segment math.
 
 This makes seam segments usable by child modules that already understand the
 usual edge placement convention.
@@ -729,6 +734,7 @@ Provides:
 - `$ps_seam_foreign_normal_local`
 - `$ps_seam_support_kind`
 - `$ps_seam_support_reason`
+- `$ps_seam_current_normal_seam_local`
 - `$ps_seam_is_support_candidate`
 
 It also exposes edge-compatible aliases for reusable edge children:
