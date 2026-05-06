@@ -387,6 +387,29 @@ module test_ps_face_foreign_proxy_volume_groups__preserves_duplicate_exact_face_
     assert_int_eq(len(ps_proxy_volume_group_vertex_idxs(groups[0])), 4, "duplicate volume group vertex provenance");
 }
 
+module test_ps_proxy_volume_group_face_replay_sites__7_3_15_triangle_builds_renderable_units() {
+    site = _test_face_site(_test_punch_poly(), TRI_FACE_IDX);
+    groups = ps_face_foreign_proxy_volume_groups(site[10], site[0], site[13], site[12], mode = MODE, filter_parent = true);
+    group_sites = [
+        for (g = groups)
+            ps_proxy_volume_group_face_replay_sites(g, site[13], site[12], site[9])
+    ];
+
+    assert_list_eq([for (sites = group_sites) len(sites)], [3, 3], "volume groups should build grouped face replay units");
+    assert_list_eq(
+        [for (sites = group_sites) [for (s = sites) ps_replay_site_foreign_idx(s)]],
+        [[3, 9, 10], [8, 14, 15]],
+        "volume group face replay units should preserve group face ids"
+    );
+
+    for (sites = group_sites)
+        for (s = sites) {
+            assert(ps_replay_site_foreign_kind(s) == "face", "volume group replay unit kind");
+            assert(ps_replay_site_intrusion_confidence(s) == "exact", "volume group replay unit confidence");
+            assert_int_eq(len(ps_replay_site_face_pts2d(s)), 3, "volume group replay unit face arity");
+        }
+}
+
 module test_place_on_face_foreign_proxy_volume_groups__7_3_15_triangle_exposes_context() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
@@ -402,6 +425,25 @@ module test_place_on_face_foreign_proxy_volume_groups__7_3_15_triangle_exposes_c
                 assert(len($ps_proxy_volume_group_records) == len($ps_proxy_volume_group_record_idxs), "volume-group record ids");
                 assert(len($ps_proxy_volume_group_edge_idxs) > 0, "volume-group edge provenance");
                 assert(len($ps_proxy_volume_group_vertex_idxs) > 0, "volume-group vertex provenance");
+            }
+        }
+    }
+}
+
+module test_place_on_face_foreign_proxy_volume_group_faces__7_3_15_triangle_exposes_render_context() {
+    place_on_faces(_test_punch_poly()) {
+        if ($ps_face_idx == TRI_FACE_IDX) {
+            place_on_face_foreign_proxy_volume_group_faces(mode = MODE) {
+                assert_int_eq($ps_proxy_volume_group_count, 2, "volume-group face iterator group count");
+                assert_int_eq($ps_proxy_volume_unit_count, 3, "volume-group face iterator unit count");
+                assert($ps_proxy_volume_unit_kind == "foreign_face", "volume-group face iterator unit kind");
+                assert($ps_proxy_kind == "foreign_face", "volume-group face iterator proxy kind");
+                assert($ps_proxy_source_kind == "face", "volume-group face iterator source kind");
+                assert($ps_proxy_intrusion_confidence == "exact", "volume-group face iterator confidence");
+                assert_int_eq($ps_proxy_volume_unit_record_idx, $ps_proxy_volume_group_record_idxs[$ps_proxy_volume_unit_idx], "volume-group face iterator record id");
+                assert_int_eq($ps_face_idx, $ps_proxy_source_idx, "volume-group face iterator should run in source face context");
+                assert_list_eq($ps_face_pts2d, $ps_proxy_face_pts2d, "volume-group face iterator face pts alias");
+                assert_int_eq(len($ps_proxy_face_pts2d), 3, "volume-group face iterator face arity");
             }
         }
     }
@@ -846,6 +888,7 @@ module run_TestSelfCrossing() {
     test_ps_face_foreign_proxy_replay_sites__preserves_duplicate_exact_face_cut_records();
     test_ps_face_foreign_proxy_volume_groups__7_3_15_triangle_groups_exact_face_cuts();
     test_ps_face_foreign_proxy_volume_groups__preserves_duplicate_exact_face_cut_records();
+    test_ps_proxy_volume_group_face_replay_sites__7_3_15_triangle_builds_renderable_units();
     test_ps_face_visible_segments__7_3_15_triangle_splits_into_visible_cells();
     test_ps_face_visible_segments__7_3_0_triangle_catches_meeting_cut_edges();
     test_ps_face_filled_boundary_source_edges__7_3_0_triangle_is_simple_boundary();
@@ -862,6 +905,7 @@ module run_TestSelfCrossing() {
     test_place_on_face_foreign_proxy_sites__7_3_15_triangle_element_child_uses_source_face_context();
     test_place_on_face_foreign_proxy_sites__7_3_15_triangle_dispatches_edge_and_vertex_children();
     test_place_on_face_foreign_proxy_volume_groups__7_3_15_triangle_exposes_context();
+    test_place_on_face_foreign_proxy_volume_group_faces__7_3_15_triangle_exposes_render_context();
     test_face_local_iterators__parent_coords_preserve_metadata();
 }
 

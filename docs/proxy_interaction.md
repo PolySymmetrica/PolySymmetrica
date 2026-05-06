@@ -113,6 +113,23 @@ aliases `$ps_proxy_kind="foreign_volume_group"`,
 `$ps_proxy_source_kind="volume_group"`, `$ps_proxy_source_idx`, and
 `$ps_proxy_target_face_idx`.
 
+`place_on_face_foreign_proxy_volume_group_faces(...)` is the renderable face-unit
+iterator for the same data. It visits each exact intruding face in each group,
+runs the child in that source-face frame by default, and also exposes the group
+metadata above. The child receives face-compatible `$ps_proxy_*` variables, so a
+proxy body authored for `place_on_face_foreign_proxy_sites(...)` can usually be
+reused unchanged:
+
+```scad
+place_on_face_foreign_proxy_volume_group_faces() {
+    color(example_color($ps_proxy_volume_group_idx))
+        my_foreign_face_proxy();
+}
+```
+
+This renders grouped face planes, not the filled solid between those planes.
+Closed proxy-cell volume construction is a later layer.
+
 ## Printable Face Plates
 
 `examples/printing/face_plate.scad` provides an opt-in printable wrapper:

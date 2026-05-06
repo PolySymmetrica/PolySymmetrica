@@ -377,10 +377,10 @@ module draw_proxy_face_plate_panel(face_idx, source_edge_idx, label_s) {
             color("white")
                 face_plate_with_proxy_cutouts();
 
-            color("crimson", 0.22)
-                place_on_face_foreign_proxy_sites(mode = MODE, filter_parent = FILTER_PARENT_CUTS) {
+            place_on_face_foreign_proxy_volume_group_faces(mode = MODE, filter_parent = FILTER_PARENT_CUTS) {
+                color(example_color($ps_proxy_volume_group_idx), 0.24)
                     foreign_face_proxy_body();
-                }
+            }
 
             draw_cut_strips();
             draw_source_edge_labels($ps_face_pts2d, source_edge_idx);
