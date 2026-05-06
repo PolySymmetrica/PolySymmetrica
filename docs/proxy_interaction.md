@@ -147,38 +147,45 @@ provided. It deliberately convexifies each group, so it can over-subtract
 concave groups, disconnected user geometry, or detailed proxy features. Treat it
 as inspection/tooling, not as the exact punch-through cell model.
 
+`examples/printing/face_plate.scad` exposes this as the opt-in printable wrapper
+`face_plate_minus_foreign_proxy_volume_group_hulls(...)`. It is just
+`face_plate(...)` minus the conservative group hulls, and has the same
+over-subtraction caveat as the hull iterator.
+
 ## Printable Face Plates
 
-`examples/printing/face_plate.scad` provides an opt-in printable wrapper:
+For exact caller-supplied proxy subtraction, keep the proxy bodies explicit:
 
 ```scad
 place_on_faces(poly) {
     if ($ps_face_idx == target_face_idx) {
-        face_plate_minus_foreign_proxies(
-            $ps_face_idx,
-            $ps_face_pts2d,
-            face_thk,
-            $ps_face_dihedrals,
-            undef,
-            false
-        ) {
-            my_foreign_face_proxy();   // child slot 0
-            my_foreign_edge_proxy();   // child slot 1
-            my_foreign_vertex_proxy(); // child slot 2
+        difference() {
+            face_plate(face_thk = face_thk);
+
+            place_on_face_foreign_proxy_sites() {
+                my_foreign_face_proxy();   // child slot 0
+                my_foreign_edge_proxy();   // child slot 1
+                my_foreign_vertex_proxy(); // child slot 2
+            }
         }
     }
 }
 ```
 
-This is just:
+For automatic best-effort volume removal, use the conservative grouped-hull
+wrapper:
 
 ```scad
-difference() {
-    face_plate(...);
-    place_on_face_foreign_proxy_sites(...) children();
+place_on_faces(poly) {
+    if ($ps_face_idx == target_face_idx) {
+        face_plate_minus_foreign_proxy_volume_group_hulls(
+            face_thk = 1.2,
+            mode = "nonzero"
+        );
+    }
 }
 ```
 
-The wrapper keeps the proxy layer separate from the positive face-body builder:
-it subtracts supplied foreign proxy bodies from `face_plate(...)`; it does not
-imply automatic clearance of arbitrary geometry.
+`face_plate_minus_foreign_proxy_volume_group_hulls(...)` is the current opt-in
+wrapper for automatically subtracting conservative grouped hulls. Keep using the
+explicit pattern when the proxy body must preserve user-authored detail.

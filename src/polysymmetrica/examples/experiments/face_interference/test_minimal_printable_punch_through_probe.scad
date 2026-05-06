@@ -189,19 +189,15 @@ module foreign_face_proxy_body() {
  * Returns: none
  */
 module face_plate_with_proxy_cutouts() {
-    difference() {
-        face_plate(
-            face_thk = FACE_THK,
-            clear_space = false,
-            pillow_min_rad = 1000000,
-            base_z = -FACE_THK / 2,
-            max_project = 10
-        );
-
-        place_on_face_foreign_proxy_sites(mode = MODE, filter_parent = FILTER_PARENT_CUTS) {
-            foreign_face_proxy_body();
-        }
-    }
+    face_plate_minus_foreign_proxy_volume_group_hulls(
+        face_thk = FACE_THK,
+        clear_space = false,
+        pillow_min_rad = 1000000,
+        base_z = -FACE_THK / 2,
+        max_project = 10,
+        mode = MODE,
+        filter_parent = FILTER_PARENT_CUTS
+    );
 }
 
 /**
