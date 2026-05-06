@@ -8,22 +8,19 @@ use <../../printing/face_plate.scad>
 
 // Minimal printable punch-through integration probe for poly_antiprism(7,3,15).
 // This deliberately stays narrow: it combines the stable face-local data APIs
-// into one positive keep-body, keeps the earlier strip-clearance result visible
-// as a reference, and demonstrates the opt-in face-plate proxy replay path.
+// into one positive keep-body and demonstrates the opt-in face-plate proxy
+// replay path.
 //
 // The keep-body panel in each row computes:
 //   raw face slab ∩ visible-cell mask ∩ positive anti-interference volume
-//
-// The strip-cleared reference panel then subtracts:
-//   exact-intrusion clearance strip-prisms
 //
 // The proxy face-plate panel then subtracts:
 //   caller-supplied closed foreign face proxy bodies replayed via
 //   place_on_face_foreign_proxy_sites(...)
 //
-// Orange intrusion strips and crimson clearance bodies are drawn as inspection
-// aids. The proxy panel is the production-shaped API demonstration; it still
-// requires the caller/library to supply the proxy body deliberately.
+// Orange intrusion strips are drawn as inspection aids. The proxy panel is the
+// production-shaped API demonstration; it still requires the caller/library to
+// supply the proxy body deliberately.
 
 IR = 32;
 MODE = "nonzero";
@@ -44,8 +41,6 @@ PANEL_X = 92;
 PANEL_Y = 112;
 PANEL_LABEL_Y = -50;
 CUT_KERF = 1.0;
-CLEARANCE_WIDTH = 3.2;
-CLEARANCE_EXTEND = 1.4;
 PROXY_FACE_THK = 3.6;
 PROXY_EDGE_INSET = 0.55;
 
@@ -179,34 +174,6 @@ module printable_keep_body() {
 }
 
 /**
- * Module: Emit the keep-body after subtracting exact intrusion clearance volumes.
- * Params: none
- * Returns: none
- */
-module printable_keep_body_with_clearance() {
-    difference() {
-        printable_keep_body();
-        intrusion_clearance_volume();
-    }
-}
-
-/**
- * Module: Emit simple strip-prism clearance volumes from exact intrusion records.
- * Params: none
- * Returns: none
- */
-module intrusion_clearance_volume() {
-    ps_face_intrusion_clearance_volume(
-        VOL_Z_MIN,
-        VOL_Z_MAX,
-        clearance_width = CLEARANCE_WIDTH,
-        extend = CLEARANCE_EXTEND,
-        mode = MODE,
-        filter_parent = FILTER_PARENT_CUTS
-    );
-}
-
-/**
  * Module: Emit one closed foreign face proxy body in the replayed source-face frame.
  * Params: none; uses `$ps_proxy_*` from `place_on_face_foreign_proxy_sites(...)`
  * Returns: none
@@ -325,28 +292,6 @@ module draw_visible_data_panel(face_idx, source_edge_idx, label_s) {
 }
 
 /**
- * Module: Draw generated intrusion clearance strip-prisms.
- * Params: face_idx (selected face), source_edge_idx (optional highlighted edge), label_s (panel label)
- * Returns: none
- */
-module draw_clearance_data_panel(face_idx, source_edge_idx, label_s) {
-    place_on_faces(P, IR) {
-        if ($ps_face_idx == face_idx) {
-            color("gainsboro", 0.14)
-                face_material_slab();
-
-            color("crimson", 0.36)
-                intrusion_clearance_volume();
-
-            draw_cut_strips();
-            draw_source_edge_labels($ps_face_pts2d, source_edge_idx);
-        }
-    }
-
-    draw_panel_label(label_s);
-}
-
-/**
  * Module: Draw anti-interference volume and its boundary span skeleton.
  * Params: face_idx (selected face), source_edge_idx (optional highlighted source edge), label_s (panel label)
  * Returns: none
@@ -384,28 +329,6 @@ module draw_printable_result_panel(face_idx, source_edge_idx, label_s) {
 
             color("deepskyblue", 0.18)
                 anti_interference_volume();
-
-            draw_cut_strips();
-            draw_source_edge_labels($ps_face_pts2d, source_edge_idx);
-        }
-    }
-
-    draw_panel_label(label_s);
-}
-
-/**
- * Module: Draw the minimal printable keep-body after intrusion clearance.
- * Params: face_idx (selected face), source_edge_idx (optional highlighted source edge), label_s (panel label)
- * Returns: none
- */
-module draw_cleared_result_panel(face_idx, source_edge_idx, label_s) {
-    place_on_faces(P, IR) {
-        if ($ps_face_idx == face_idx) {
-            color("white")
-                printable_keep_body_with_clearance();
-
-            color("crimson", 0.18)
-                intrusion_clearance_volume();
 
             draw_cut_strips();
             draw_source_edge_labels($ps_face_pts2d, source_edge_idx);
@@ -456,16 +379,6 @@ module echo_row_summary(label_s, face_idx) {
                 mode = MODE,
                 filter_parent = FILTER_PARENT_CUTS
             );
-            clearance_profiles = ps_face_intrusion_clearance_profiles(
-                $ps_face_pts2d,
-                $ps_face_idx,
-                $ps_poly_faces_idx,
-                $ps_poly_verts_local,
-                clearance_width = CLEARANCE_WIDTH,
-                extend = CLEARANCE_EXTEND,
-                mode = MODE,
-                filter_parent = FILTER_PARENT_CUTS
-            );
             visible = ps_face_visible_segments(
                 $ps_face_pts2d,
                 $ps_face_idx,
@@ -480,7 +393,6 @@ module echo_row_summary(label_s, face_idx) {
                 ": boundary_loops=", len(bm[2]),
                 " boundary_spans=", len(bm[3]),
                 " intrusions=", len(intrusions),
-                " clearance_profiles=", len(clearance_profiles),
                 " visible_segments=", len(visible)
             ));
         }
@@ -493,25 +405,19 @@ module echo_row_summary(label_s, face_idx) {
  * Returns: none
  */
 module draw_probe_row(face_idx, source_edge_idx, label_s, y) {
-    translate([-2.5 * PANEL_X, y, 0])
+    translate([-2 * PANEL_X, y, 0])
         draw_context_panel(face_idx, str(label_s, " context"));
 
-    translate([-1.5 * PANEL_X, y, 0])
+    translate([-1 * PANEL_X, y, 0])
         draw_visible_data_panel(face_idx, source_edge_idx, str(label_s, " visible/intrusions"));
 
-    translate([-0.5 * PANEL_X, y, 0])
-        draw_clearance_data_panel(face_idx, source_edge_idx, str(label_s, " clearance"));
-
-    translate([0.5 * PANEL_X, y, 0])
+    translate([0, y, 0])
         draw_volume_data_panel(face_idx, source_edge_idx, str(label_s, " anti-volume"));
 
-    translate([1.5 * PANEL_X, y, 0])
+    translate([1 * PANEL_X, y, 0])
         draw_printable_result_panel(face_idx, source_edge_idx, str(label_s, " keep-body"));
 
-    translate([2.5 * PANEL_X, y, 0])
-        draw_cleared_result_panel(face_idx, source_edge_idx, str(label_s, " cleared-body"));
-
-    translate([3.5 * PANEL_X, y, 0])
+    translate([2 * PANEL_X, y, 0])
         draw_proxy_face_plate_panel(face_idx, source_edge_idx, str(label_s, " proxy face-plate"));
 
     echo_row_summary(label_s, face_idx);
