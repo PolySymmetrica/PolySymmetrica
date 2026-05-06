@@ -130,6 +130,23 @@ place_on_face_foreign_proxy_volume_group_faces() {
 This renders grouped face planes, not the filled solid between those planes.
 Closed proxy-cell volume construction is a later layer.
 
+`place_on_face_foreign_proxy_volume_group_hulls(...)` is a debug/conservative
+step beyond face-unit replay. It emits one convex hull per group, using the
+grouped source-face vertices in the current target face-local frame:
+
+```scad
+color("mediumseagreen", 0.18)
+    place_on_face_foreign_proxy_volume_group_hulls();
+```
+
+The hull iterator exposes the same `$ps_proxy_volume_group_*` metadata, plus
+`$ps_proxy_volume_hull_vertex_idxs`,
+`$ps_proxy_volume_hull_vertex_count`, `$ps_proxy_volume_hull_vertex_idx`, and
+`$ps_proxy_volume_hull_vertex_pos_local` when a child point primitive is
+provided. It deliberately convexifies each group, so it can over-subtract
+concave groups, disconnected user geometry, or detailed proxy features. Treat it
+as inspection/tooling, not as the exact punch-through cell model.
+
 ## Printable Face Plates
 
 `examples/printing/face_plate.scad` provides an opt-in printable wrapper:

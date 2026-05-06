@@ -382,6 +382,9 @@ module draw_proxy_face_plate_panel(face_idx, source_edge_idx, label_s) {
                     foreign_face_proxy_body();
             }
 
+            color("mediumseagreen", 0.16)
+                place_on_face_foreign_proxy_volume_group_hulls(mode = MODE, filter_parent = FILTER_PARENT_CUTS);
+
             draw_cut_strips();
             draw_source_edge_labels($ps_face_pts2d, source_edge_idx);
         }

@@ -449,6 +449,27 @@ module test_place_on_face_foreign_proxy_volume_group_faces__7_3_15_triangle_expo
     }
 }
 
+module test_place_on_face_foreign_proxy_volume_group_hulls__7_3_15_triangle_exposes_hull_context() {
+    place_on_faces(_test_punch_poly()) {
+        if ($ps_face_idx == TRI_FACE_IDX) {
+            place_on_face_foreign_proxy_volume_group_hulls(mode = MODE, point_r = 0.01, point_fn = 4) {
+                assert_int_eq($ps_proxy_volume_group_count, 2, "volume-group hull iterator group count");
+                assert($ps_proxy_kind == "foreign_volume_group_hull", "volume-group hull proxy kind");
+                assert($ps_proxy_source_kind == "volume_group", "volume-group hull source kind");
+                assert_int_eq($ps_proxy_source_idx, $ps_proxy_volume_group_idx, "volume-group hull source index alias");
+                assert_int_eq($ps_proxy_volume_hull_vertex_count, len($ps_proxy_volume_group_vertex_idxs), "volume-group hull vertex count");
+                assert(_ps_list_contains($ps_proxy_volume_group_vertex_idxs, $ps_proxy_volume_hull_vertex_idx), "volume-group hull vertex id belongs to group");
+                assert_list_eq(
+                    $ps_proxy_volume_hull_vertex_pos_local,
+                    $ps_poly_verts_local[$ps_proxy_volume_hull_vertex_idx],
+                    "volume-group hull vertex position"
+                );
+                sphere(r = 0.01, $fn = 4);
+            }
+        }
+    }
+}
+
 module test_ps_face_visible_segments__7_3_15_triangle_splits_into_visible_cells() {
     site = _test_face_site(_test_punch_poly(), TRI_FACE_IDX);
     visible = ps_face_visible_segments(site[10], site[0], site[13], site[12], mode = MODE, filter_parent = true);
@@ -906,6 +927,7 @@ module run_TestSelfCrossing() {
     test_place_on_face_foreign_proxy_sites__7_3_15_triangle_dispatches_edge_and_vertex_children();
     test_place_on_face_foreign_proxy_volume_groups__7_3_15_triangle_exposes_context();
     test_place_on_face_foreign_proxy_volume_group_faces__7_3_15_triangle_exposes_render_context();
+    test_place_on_face_foreign_proxy_volume_group_hulls__7_3_15_triangle_exposes_hull_context();
     test_face_local_iterators__parent_coords_preserve_metadata();
 }
 

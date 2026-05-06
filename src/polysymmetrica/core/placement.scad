@@ -1429,6 +1429,46 @@ module place_on_face_foreign_proxy_volume_group_faces(
 }
 
 /**
+ * Module: Render one conservative convex hull per foreign proxy volume group.
+ * Params: mode (foreign face fill rule), eps (tolerance), filter_parent (drop parent-edge cuts), point_r (default hull point radius), point_fn (default hull point facets)
+ * Returns: none; emits a hull around grouped source-face vertices in the current face-local frame
+ * Limitations/Gotchas: debug/conservative helper only; convexifies each group and can over-subtract concave or disconnected real user geometry
+ */
+module place_on_face_foreign_proxy_volume_group_hulls(
+    mode="nonzero",
+    eps=1e-8,
+    filter_parent=true,
+    point_r=0.04,
+    point_fn=8
+) {
+    place_on_face_foreign_proxy_volume_groups(mode = mode, eps = eps, filter_parent = filter_parent) {
+        vertex_idxs = $ps_proxy_volume_group_vertex_idxs;
+
+        if (len(vertex_idxs) > 0) {
+            $ps_proxy_kind = "foreign_volume_group_hull";
+            $ps_proxy_source_kind = "volume_group";
+            $ps_proxy_source_idx = $ps_proxy_volume_group_idx;
+            $ps_proxy_volume_hull_vertex_idxs = vertex_idxs;
+            $ps_proxy_volume_hull_vertex_count = len(vertex_idxs);
+
+            hull() {
+                for (vi = vertex_idxs) {
+                    $ps_proxy_volume_hull_vertex_idx = vi;
+                    $ps_proxy_volume_hull_vertex_pos_local = $ps_poly_verts_local[vi];
+
+                    translate($ps_poly_verts_local[vi]) {
+                        if ($children > 0)
+                            children();
+                        else
+                            sphere(r = point_r, $fn = point_fn);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
  * Function: Build edge placement site records for `place_on_edges(...)`.
  * Params: poly (poly descriptor), inter_radius (scale input), edge_len (explicit scale override), classify/classify_opts (optional classification context)
  * Returns: list of edge site records `[edge_idx, center, ex, ey, ez, edge_len, edge_midradius, poly_center_local, edge_pts_local, edge_verts_idx, edge_adj_faces_idx, edge_family_id, face_family_count, edge_family_count, vertex_family_count]`
