@@ -74,59 +74,27 @@ module _face_plate_seam_support_bar(support_t, top_z, extend, eps) {
 }
 
 /**
- * Module: Emit printable support bars under generated cut seams.
- * Params: support_t (bar diameter), top_z (bar top plane; defaults to `base_z` or `0`), base_z (face underside used when `top_z` is omitted), extend (extra length at each span end), mode/eps/kind (boundary-span selection), support_only (skip spans not classified as printable support candidates)
+ * Module: Emit printable support bars on classified face seam candidates.
+ * Params: support_t (bar diameter), top_z/base_z (current face underside plane), extend (extra length at each seam end), mode/eps (seam analysis controls), boundary_kind/include_boundary/include_foreign/filter_parent/foreign_indices/support_only (seam candidate controls)
  * Returns: none
- * Limitations/Gotchas: intended for use inside `place_on_faces(...)`; defaults to `generated_cut` so split real source edges do not get duplicate support bars
+ * Limitations/Gotchas: example helper for `place_on_faces(...)`; real candidate semantics come from `place_on_face_seam_segments(...)`
  */
-module face_generated_seam_supports(
+module face_seam_supports(
     support_t = FACE_PLATE_SEAM_SUPPORT_T,
     top_z = undef,
     base_z = undef,
     extend = 0,
     mode = "nonzero",
     eps = 1e-4,
-    kind = "generated_cut",
-    support_only = true
-) {
-    assert(support_t > 0, "face_generated_seam_supports: support_t must be > 0");
-    assert(extend >= 0, "face_generated_seam_supports: extend must be >= 0");
-
-    top_z_eff = is_undef(top_z) ? (is_undef(base_z) ? 0 : base_z) : top_z;
-
-    place_on_face_seam_segments(
-        mode = mode,
-        eps = eps,
-        coords = "element",
-        boundary_kind = kind,
-        include_boundary = true,
-        include_foreign = false,
-        support_only = support_only
-    ) {
-        if ($ps_seam_len > eps)
-            _face_plate_seam_support_bar(support_t, top_z_eff, extend, eps);
-    }
-}
-
-/**
- * Module: Emit printable support bars under exact foreign face cut seams.
- * Params: support_t (bar diameter), top_z (bar top plane; defaults to `base_z` or `0`), base_z (face underside used when `top_z` is omitted), extend (extra length at each segment end), mode/eps/filter_parent (foreign cut selection), foreign_indices (optional accepted foreign face ids), support_only (skip cuts not classified as printable support candidates)
- * Returns: none
- * Limitations/Gotchas: intended for use inside `place_on_faces(...)`; these are face-plane cut supports, not arbitrary already-rendered child geometry
- */
-module face_foreign_cut_seam_supports(
-    support_t = FACE_PLATE_SEAM_SUPPORT_T,
-    top_z = undef,
-    base_z = undef,
-    extend = 0,
-    mode = "nonzero",
-    eps = 1e-4,
+    boundary_kind = "generated_cut",
+    include_boundary = true,
+    include_foreign = true,
     filter_parent = true,
     foreign_indices = undef,
     support_only = true
 ) {
-    assert(support_t > 0, "face_foreign_cut_seam_supports: support_t must be > 0");
-    assert(extend >= 0, "face_foreign_cut_seam_supports: extend must be >= 0");
+    assert(support_t > 0, "face_seam_supports: support_t must be > 0");
+    assert(extend >= 0, "face_seam_supports: extend must be >= 0");
 
     top_z_eff = is_undef(top_z) ? (is_undef(base_z) ? 0 : base_z) : top_z;
 
@@ -134,8 +102,9 @@ module face_foreign_cut_seam_supports(
         mode = mode,
         eps = eps,
         coords = "element",
-        include_boundary = false,
-        include_foreign = true,
+        boundary_kind = boundary_kind,
+        include_boundary = include_boundary,
+        include_foreign = include_foreign,
         filter_parent = filter_parent,
         foreign_indices = foreign_indices,
         support_only = support_only
