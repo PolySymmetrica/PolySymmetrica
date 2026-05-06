@@ -82,6 +82,37 @@ The library only identifies and positions replay contexts. It cannot discover
 already-rendered arbitrary geometry, and it does not infer a closed punch-through
 body from filtered face-plane cut segments.
 
+## Volume Group Records
+
+`ps_face_foreign_proxy_volume_groups(...)` and
+`place_on_face_foreign_proxy_volume_groups(...)` provide a first-pass,
+data-only view of possible solid punch-through groups. They group exact
+foreign face intrusions by source-topology connectivity: if two exact intruding
+source faces share an original source edge, they are reported in the same group.
+
+Volume groups are provenance records, not generated geometry. They are intended
+as the stable data layer for later optional volume replay, and for callers that
+want to inspect which source faces/edges/vertices are implicated before deciding
+what body to subtract.
+
+Each volume-group record exposes:
+
+- `ps_proxy_volume_group_kind(group)`: `"foreign_proxy_volume_group"`
+- `ps_proxy_volume_group_target_face_idx(group)`: target face being affected
+- `ps_proxy_volume_group_idx(group)`: zero-based group index
+- `ps_proxy_volume_group_face_idxs(group)`: connected exact foreign face ids
+- `ps_proxy_volume_group_record_idxs(group)`: positions of the exact intrusion records used by the group
+- `ps_proxy_volume_group_records(group)`: the exact intrusion records themselves
+- `ps_proxy_volume_group_edge_idxs(group)`: source edge ids from grouped exact foreign faces
+- `ps_proxy_volume_group_vertex_idxs(group)`: source vertex ids from grouped exact foreign faces
+- `ps_proxy_volume_group_support_face_idxs(group)`: adjacent non-seed source faces that may help future volume construction
+
+The iterator form runs in the current target face-local frame and exposes the
+same fields as `$ps_proxy_volume_group_*` variables. It also exposes the generic
+aliases `$ps_proxy_kind="foreign_volume_group"`,
+`$ps_proxy_source_kind="volume_group"`, `$ps_proxy_source_idx`, and
+`$ps_proxy_target_face_idx`.
+
 ## Printable Face Plates
 
 `examples/printing/face_plate.scad` provides an opt-in printable wrapper:

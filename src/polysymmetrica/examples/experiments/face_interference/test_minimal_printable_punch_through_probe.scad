@@ -234,6 +234,33 @@ module draw_cut_strips() {
 }
 
 /**
+ * Module: Draw grouped exact intrusion strips from proxy volume-group records.
+ * Params: none; uses current `place_on_faces(...)` metadata
+ * Returns: none
+ */
+module draw_proxy_volume_group_strips() {
+    place_on_face_foreign_proxy_volume_groups(mode = MODE, filter_parent = FILTER_PARENT_CUTS) {
+        records = $ps_proxy_volume_group_records;
+        mids = [for (r = records) ps_segment_midpoint2d(ps_intrusion_segment2d_local(r))];
+        label_pos = ps_centroid2d(mids);
+
+        color(example_color($ps_proxy_volume_group_idx), 0.84)
+            for (r = records)
+                draw_segment_stroke(ps_intrusion_segment2d_local(r), r = CUT_KERF * 0.58, z = FACE_THK * 1.2);
+
+        color("black")
+            translate([label_pos[0], label_pos[1], FACE_THK * 1.62])
+                draw_text2d(
+                    str(
+                        "vg", $ps_proxy_volume_group_idx,
+                        " f", $ps_proxy_volume_group_face_idxs
+                    ),
+                    size = 0.95
+                );
+    }
+}
+
+/**
  * Module: Draw the surrounding poly and label the selected face.
  * Params: face_idx (selected face), label_s (panel label)
  * Returns: none
@@ -284,6 +311,7 @@ module draw_visible_data_panel(face_idx, source_edge_idx, label_s) {
             }
 
             draw_cut_strips();
+            draw_proxy_volume_group_strips();
             draw_source_edge_labels($ps_face_pts2d, source_edge_idx);
         }
     }
@@ -387,13 +415,22 @@ module echo_row_summary(label_s, face_idx) {
                 mode = MODE,
                 filter_parent = FILTER_PARENT_CUTS
             );
+            volume_groups = ps_face_foreign_proxy_volume_groups(
+                $ps_face_pts2d,
+                $ps_face_idx,
+                $ps_poly_faces_idx,
+                $ps_poly_verts_local,
+                mode = MODE,
+                filter_parent = FILTER_PARENT_CUTS
+            );
 
             echo(str(
                 "minimal printable punch-through ", label_s, " f", face_idx,
                 ": boundary_loops=", len(bm[2]),
                 " boundary_spans=", len(bm[3]),
                 " intrusions=", len(intrusions),
-                " visible_segments=", len(visible)
+                " visible_segments=", len(visible),
+                " proxy_volume_groups=", len(volume_groups)
             ));
         }
     }

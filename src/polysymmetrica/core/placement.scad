@@ -569,6 +569,226 @@ function ps_face_foreign_proxy_replay_sites(face_pts2d, face_idx, poly_faces_idx
     _ps_face_foreign_proxy_replay_sites_from_records(face_idx, face_records, poly_faces_idx, poly_verts_local, poly_center_local, eps);
 
 /**
+ * Function: Test whether two faces share an undirected source edge.
+ * Params: face_a,face_b (face index loops)
+ * Returns: boolean
+ */
+function _ps_faces_share_source_edge(face_a, face_b) =
+    sum([
+        for (i = [0:1:len(face_a)-1])
+            let(a = face_a[i], b = face_a[(i + 1) % len(face_a)])
+            ps_face_has_edge(face_b, a, b) ? 1 : 0
+    ]) > 0;
+
+/**
+ * Function: Test whether a face is edge-adjacent to any face in a group.
+ * Params: face_idx (candidate face), group_face_ids (face ids), faces (face list), i (scan index)
+ * Returns: boolean
+ */
+function _ps_face_adjacent_to_group(face_idx, group_face_ids, faces, i=0) =
+    (i >= len(group_face_ids)) ? false :
+    _ps_faces_share_source_edge(faces[face_idx], faces[group_face_ids[i]]) ? true :
+    _ps_face_adjacent_to_group(face_idx, group_face_ids, faces, i + 1);
+
+/**
+ * Function: Expand a seed-face group through source-edge adjacency.
+ * Params: seed_face_ids (allowed face ids), faces (face list), group_face_ids (current connected group)
+ * Returns: connected component of seed face ids
+ */
+function _ps_proxy_grow_face_group(seed_face_ids, faces, group_face_ids) =
+    let(
+        additions = [
+            for (face_idx = seed_face_ids)
+                if (!_ps_list_contains(group_face_ids, face_idx) && _ps_face_adjacent_to_group(face_idx, group_face_ids, faces))
+                    face_idx
+        ],
+        next_group = _ps_unique_values(concat(group_face_ids, additions))
+    )
+    (len(next_group) == len(group_face_ids))
+        ? group_face_ids
+        : _ps_proxy_grow_face_group(seed_face_ids, faces, next_group);
+
+/**
+ * Function: Reorder a connected face group to match original seed order.
+ * Params: group_face_ids (connected face ids), seed_face_ids (original ordered seeds)
+ * Returns: group face ids in seed order
+ */
+function _ps_proxy_group_in_seed_order(group_face_ids, seed_face_ids) =
+    [for (face_idx = seed_face_ids) if (_ps_list_contains(group_face_ids, face_idx)) face_idx];
+
+/**
+ * Function: Group source face ids into edge-connected components.
+ * Params: seed_face_ids (face ids), faces (face list), acc (group accumulator)
+ * Returns: list of connected face-id groups
+ */
+function _ps_proxy_connected_face_groups(seed_face_ids, faces, acc=[]) =
+    (len(seed_face_ids) == 0) ? acc :
+    let(
+        group = _ps_proxy_group_in_seed_order(
+            _ps_proxy_grow_face_group(seed_face_ids, faces, [seed_face_ids[0]]),
+            seed_face_ids
+        ),
+        remaining = [for (face_idx = seed_face_ids) if (!_ps_list_contains(group, face_idx)) face_idx]
+    )
+    _ps_proxy_connected_face_groups(remaining, faces, concat(acc, [group]));
+
+/**
+ * Function: Find face-record positions belonging to a connected face group.
+ * Params: face_records (intrusion records), group_face_ids (connected source face ids)
+ * Returns: index positions into `face_records`
+ */
+function _ps_proxy_group_record_idxs(face_records, group_face_ids) =
+    [
+        for (ri = [0:1:len(face_records)-1])
+            if (_ps_list_contains(group_face_ids, ps_intrusion_foreign_idx(face_records[ri])))
+                ri
+    ];
+
+/**
+ * Function: Find adjacent non-seed faces that may later support a proxy volume.
+ * Params: group_face_ids (connected seed source faces), faces (face list), target_face_idx (current target face)
+ * Returns: source face ids adjacent to the group, excluding the target and seed faces
+ */
+function _ps_proxy_group_support_face_ids(group_face_ids, faces, target_face_idx) =
+    _ps_unique_values([
+        for (fi = [0:1:len(faces)-1])
+            if (
+                fi != target_face_idx
+                && !_ps_list_contains(group_face_ids, fi)
+                && _ps_face_adjacent_to_group(fi, group_face_ids, faces)
+            )
+                fi
+    ]);
+
+/**
+ * Function: Build one foreign proxy volume-group record.
+ * Params: group_idx (group index), target_face_idx (target face), group_face_ids (seed source faces), face_records (exact intrusion records), poly_faces_idx/poly_verts_local (target-local poly context), eps (tolerance)
+ * Returns: volume-group record `["foreign_proxy_volume_group", target_face_idx, group_idx, face_idxs, record_idxs, records, edge_idxs, vertex_idxs, support_face_idxs]`
+ */
+function _ps_proxy_volume_group_record(group_idx, target_face_idx, group_face_ids, face_records, poly_faces_idx, poly_verts_local, eps=1e-8) =
+    let(
+        record_idxs = _ps_proxy_group_record_idxs(face_records, group_face_ids),
+        records = [for (ri = record_idxs) face_records[ri]],
+        edge_idxs = _ps_unique_values([
+            for (r = records)
+                for (edge_idx = _ps_proxy_edge_ids_from_face_record(r, poly_faces_idx, poly_verts_local, eps))
+                    edge_idx
+        ]),
+        vertex_idxs = _ps_unique_values([
+            for (r = records)
+                for (vertex_idx = _ps_proxy_vertex_ids_from_face_record(r, poly_faces_idx, poly_verts_local, eps))
+                    vertex_idx
+        ]),
+        support_face_idxs = _ps_proxy_group_support_face_ids(group_face_ids, poly_faces_idx, target_face_idx)
+    )
+    [
+        "foreign_proxy_volume_group",
+        target_face_idx,
+        group_idx,
+        group_face_ids,
+        record_idxs,
+        records,
+        edge_idxs,
+        vertex_idxs,
+        support_face_idxs
+    ];
+
+/**
+ * Function: Build proxy volume groups from exact foreign face intrusion records.
+ * Params: target_face_idx (target face), face_records (exact foreign face records), poly_faces_idx/poly_verts_local (target-local poly context), eps (tolerance)
+ * Returns: connected source-face volume-group records
+ * Limitations/Gotchas: data only; does not construct a closed CSG/polyhedron volume
+ */
+function _ps_face_foreign_proxy_volume_groups_from_records(target_face_idx, face_records, poly_faces_idx, poly_verts_local, eps=1e-8) =
+    let(
+        seed_face_ids = _ps_unique_values([for (r = face_records) ps_intrusion_foreign_idx(r)]),
+        groups = _ps_proxy_connected_face_groups(seed_face_ids, poly_faces_idx)
+    )
+    [
+        for (gi = [0:1:len(groups)-1])
+            _ps_proxy_volume_group_record(gi, target_face_idx, groups[gi], face_records, poly_faces_idx, poly_verts_local, eps)
+    ];
+
+/**
+ * Function: Build connected foreign proxy volume-group records for a target face.
+ * Params: face_pts2d (target face loop), face_idx (target face index), poly_faces_idx/poly_verts_local (current `place_on_faces(...)` metadata), eps (tolerance), mode (foreign face fill rule), filter_parent (drop parent-edge cuts)
+ * Returns: data-only volume-group records for exact intruding foreign faces
+ * Limitations/Gotchas: groups describe source-topology provenance for later/user-supplied volume replay; they do not infer arbitrary solid geometry
+ */
+function ps_face_foreign_proxy_volume_groups(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero", filter_parent=true) =
+    let(
+        face_records = [
+            for (r = ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent))
+                if (ps_intrusion_foreign_kind(r) == "face" && ps_intrusion_confidence(r) == "exact")
+                    r
+        ]
+    )
+    _ps_face_foreign_proxy_volume_groups_from_records(face_idx, face_records, poly_faces_idx, poly_verts_local, eps);
+
+/**
+ * Function: Get volume-group record kind.
+ * Params: group (proxy volume-group record)
+ * Returns: `"foreign_proxy_volume_group"`
+ */
+function ps_proxy_volume_group_kind(group) = group[0];
+
+/**
+ * Function: Get target face index from a volume group.
+ * Params: group (proxy volume-group record)
+ * Returns: target face index
+ */
+function ps_proxy_volume_group_target_face_idx(group) = group[1];
+
+/**
+ * Function: Get zero-based volume-group index.
+ * Params: group (proxy volume-group record)
+ * Returns: group index
+ */
+function ps_proxy_volume_group_idx(group) = group[2];
+
+/**
+ * Function: Get exact intruding source face ids in a volume group.
+ * Params: group (proxy volume-group record)
+ * Returns: source face ids
+ */
+function ps_proxy_volume_group_face_idxs(group) = group[3];
+
+/**
+ * Function: Get exact intrusion-record positions in a volume group.
+ * Params: group (proxy volume-group record)
+ * Returns: indices into the exact face-record list used to build the group
+ */
+function ps_proxy_volume_group_record_idxs(group) = group[4];
+
+/**
+ * Function: Get exact intrusion records in a volume group.
+ * Params: group (proxy volume-group record)
+ * Returns: intrusion records
+ */
+function ps_proxy_volume_group_records(group) = group[5];
+
+/**
+ * Function: Get source edge ids implicated by a volume group.
+ * Params: group (proxy volume-group record)
+ * Returns: source edge ids from grouped exact foreign faces
+ */
+function ps_proxy_volume_group_edge_idxs(group) = group[6];
+
+/**
+ * Function: Get source vertex ids implicated by a volume group.
+ * Params: group (proxy volume-group record)
+ * Returns: source vertex ids from grouped exact foreign faces
+ */
+function ps_proxy_volume_group_vertex_idxs(group) = group[7];
+
+/**
+ * Function: Get adjacent non-seed support face ids for a volume group.
+ * Params: group (proxy volume-group record)
+ * Returns: adjacent source face ids, excluding seed faces and the target face
+ */
+function ps_proxy_volume_group_support_face_idxs(group) = group[8];
+
+/**
  * Function: Get replay site index.
  * Params: site (foreign replay site)
  * Returns: zero-based replay site index
@@ -1055,6 +1275,41 @@ module place_on_face_foreign_proxy_sites(
                 children(child_idx);
             }
         }
+    }
+}
+
+/**
+ * Module: Iterate data-only connected foreign proxy volume groups affecting the current placed face.
+ * Params: mode (foreign face fill rule), eps (tolerance), filter_parent (drop parent-edge cuts)
+ * Returns: none; exposes `$ps_proxy_volume_group_*` metadata and calls children in the current face-local frame
+ * Limitations/Gotchas: this is a provenance iterator only; it does not construct or transform a solid volume
+ */
+module place_on_face_foreign_proxy_volume_groups(mode="nonzero", eps=1e-8, filter_parent=true) {
+    assert(!is_undef($ps_face_pts2d), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_face_pts2d)");
+    assert(!is_undef($ps_face_idx), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_face_idx)");
+    assert(!is_undef($ps_poly_faces_idx), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_poly_faces_idx)");
+    assert(!is_undef($ps_poly_verts_local), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_poly_verts_local)");
+
+    groups = ps_face_foreign_proxy_volume_groups($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, eps, mode, filter_parent);
+    for (group = groups) {
+        $ps_proxy_volume_group_record = group;
+        $ps_proxy_volume_group_idx = ps_proxy_volume_group_idx(group);
+        $ps_proxy_volume_group_count = len(groups);
+        $ps_proxy_volume_group_kind = ps_proxy_volume_group_kind(group);
+        $ps_proxy_volume_group_target_face_idx = ps_proxy_volume_group_target_face_idx(group);
+        $ps_proxy_volume_group_face_idxs = ps_proxy_volume_group_face_idxs(group);
+        $ps_proxy_volume_group_record_idxs = ps_proxy_volume_group_record_idxs(group);
+        $ps_proxy_volume_group_records = ps_proxy_volume_group_records(group);
+        $ps_proxy_volume_group_edge_idxs = ps_proxy_volume_group_edge_idxs(group);
+        $ps_proxy_volume_group_vertex_idxs = ps_proxy_volume_group_vertex_idxs(group);
+        $ps_proxy_volume_group_support_face_idxs = ps_proxy_volume_group_support_face_idxs(group);
+
+        $ps_proxy_kind = "foreign_volume_group";
+        $ps_proxy_source_kind = "volume_group";
+        $ps_proxy_source_idx = ps_proxy_volume_group_idx(group);
+        $ps_proxy_target_face_idx = ps_proxy_volume_group_target_face_idx(group);
+
+        children();
     }
 }
 
