@@ -94,16 +94,10 @@ module model(show_faces = undef, clear_airspace = true) {
                     }
             }
 
-            // Supports for generated split seams that are not real polyhedron edges.
+            // Supports for classified printable seam candidates.
             color("darkorange")
             place_on_faces(p, IR) {
-                face_generated_seam_supports(
-                    support_t = SEAM_SUPPORT_T,
-                    top_z = BASE_Z,
-                    extend = SEAM_SUPPORT_T * 0.25
-                );
-
-                face_foreign_cut_seam_supports(
+                face_seam_supports(
                     support_t = SEAM_SUPPORT_T,
                     top_z = BASE_Z,
                     extend = SEAM_SUPPORT_T * 0.25
@@ -137,19 +131,10 @@ module demo_vert() {
 place_on_faces(p, IR, indices = DEMO_FACES) {
     union() {
         color("darkorange")
-            union() {
-                face_generated_seam_supports(
-                    support_t = SEAM_SUPPORT_T,
-                    top_z = BASE_Z,
-                    extend = SEAM_SUPPORT_T * 0.25
-                );
-
-                face_foreign_cut_seam_supports(
-                    support_t = SEAM_SUPPORT_T,
-                    top_z = BASE_Z,
-                    extend = SEAM_SUPPORT_T * 0.25
-                );
-            }
+            face_seam_supports(
+                support_t = SEAM_SUPPORT_T,
+                top_z = BASE_Z
+            );
 
         difference() {
             demo_face();

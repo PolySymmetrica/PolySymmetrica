@@ -44,121 +44,73 @@ module _face_plate_pillow_loop(pts, top_z, pillow_min_rad, pillow_inset, pillow_
 }
 
 /**
- * Function: Compute the centerline offset for a seam bar tangent to two face underside planes.
- * Params: foreign_n (foreign face +Z normal in current face-local coords), top_z (current underside plane), support_t (bar diameter), eps (degeneracy tolerance)
- * Returns: 3D offset from the source seam line to the support centerline
+ * Function: Compute a seam-frame support centerline offset tangent to the current face underside.
+ * Params: current_n_seam_local (current face normal in seam element coords), top_z (current underside plane), support_t (bar diameter), eps (degeneracy tolerance)
+ * Returns: 3D offset in seam element coords
  */
-function _face_plate_bisector_support_offset(foreign_n, top_z, support_t, eps=1e-8) =
+function _face_plate_seam_support_offset(current_n_seam_local, top_z, support_t, eps=1e-8) =
     let(
-        n0 = [0, 0, 1],
-        n1 = is_undef(foreign_n) || norm(foreign_n) <= eps ? undef : v_norm(foreign_n),
         q = top_z - support_t / 2,
-        c = is_undef(n1) ? undef : v_dot(n0, n1)
+        n = is_undef(current_n_seam_local) || norm(current_n_seam_local) <= eps
+            ? [0, 0, 1]
+            : v_norm(current_n_seam_local)
     )
-    (is_undef(n1) || abs(1 + c) <= eps)
-        ? [0, 0, q]
-        : (n0 + n1) * (q / (1 + c));
+    abs(n[2]) > eps ? [0, 0, q / n[2]] : n * q;
 
 /**
- * Module: Emit one rounded support bar along a face-local 2D segment on a bisector offset.
- * Params: seg2d (face-local seam segment), support_t (bar diameter), top_z (current underside plane), foreign_n (foreign face +Z normal in current face-local coords), extend (extra length at each end), eps (tolerance)
+ * Module: Emit one rounded support bar in the current seam element frame.
+ * Params: support_t (bar diameter), top_z (current underside plane), extend (extra length at each end), eps (tolerance)
  * Returns: none
  */
-module _face_plate_bisector_segment_support_bar(seg2d, support_t, top_z, foreign_n, extend, eps) {
-    d = seg2d[1] - seg2d[0];
-    len_d = norm(d);
-    u = (len_d <= eps) ? [1, 0] : d / len_d;
-    off = _face_plate_bisector_support_offset(foreign_n, top_z, support_t, eps);
+module _face_plate_seam_support_bar(support_t, top_z, extend, eps) {
+    off = _face_plate_seam_support_offset($ps_seam_current_normal_seam_local, top_z, support_t, eps);
 
     hull() {
-        translate([seg2d[0][0] - u[0] * extend, seg2d[0][1] - u[1] * extend, 0] + off)
+        translate($ps_edge_pts_local[0] - [extend, 0, 0] + off)
             sphere(d = support_t, $fn = 20);
-        translate([seg2d[1][0] + u[0] * extend, seg2d[1][1] + u[1] * extend, 0] + off)
+        translate($ps_edge_pts_local[1] + [extend, 0, 0] + off)
             sphere(d = support_t, $fn = 20);
     }
 }
 
 /**
- * Module: Emit printable support bars under generated cut seams.
- * Params: support_t (bar diameter), top_z (bar top plane; defaults to `base_z` or `0`), base_z (face underside used when `top_z` is omitted), extend (extra length at each span end), mode/eps/kind (boundary-span selection), support_only (skip spans not classified as printable support candidates)
+ * Module: Emit printable support bars on classified face seam candidates.
+ * Params: support_t (bar diameter), top_z/base_z (current face underside plane), extend (extra length at each seam end), mode/eps (seam analysis controls), boundary_kind/include_boundary/include_foreign/filter_parent/foreign_indices/support_only (seam candidate controls)
  * Returns: none
- * Limitations/Gotchas: intended for use inside `place_on_faces(...)`; defaults to `generated_cut` so split real source edges do not get duplicate support bars
+ * Limitations/Gotchas: example helper for `place_on_faces(...)`; real candidate semantics come from `place_on_face_seam_segments(...)`
  */
-module face_generated_seam_supports(
+module face_seam_supports(
     support_t = FACE_PLATE_SEAM_SUPPORT_T,
     top_z = undef,
     base_z = undef,
     extend = 0,
     mode = "nonzero",
     eps = 1e-4,
-    kind = "generated_cut",
-    support_only = true
-) {
-    assert(support_t > 0, "face_generated_seam_supports: support_t must be > 0");
-    assert(extend >= 0, "face_generated_seam_supports: extend must be >= 0");
-
-    top_z_eff = is_undef(top_z) ? (is_undef(base_z) ? 0 : base_z) : top_z;
-
-    place_on_face_seam_segments(
-        mode = mode,
-        eps = eps,
-        coords = "parent",
-        boundary_kind = kind,
-        include_boundary = true,
-        include_foreign = false,
-        support_only = support_only
-    ) {
-        if ($ps_seam_len > eps)
-            _face_plate_bisector_segment_support_bar(
-                $ps_seam_segment2d_local,
-                support_t,
-                top_z_eff,
-                $ps_seam_foreign_normal_local,
-                extend,
-                eps);
-    }
-}
-
-/**
- * Module: Emit printable support bars under exact foreign face cut seams.
- * Params: support_t (bar diameter), top_z (bar top plane; defaults to `base_z` or `0`), base_z (face underside used when `top_z` is omitted), extend (extra length at each segment end), mode/eps/filter_parent (foreign cut selection), foreign_indices (optional accepted foreign face ids), support_only (skip cuts not classified as printable support candidates)
- * Returns: none
- * Limitations/Gotchas: intended for use inside `place_on_faces(...)`; these are face-plane cut supports, not arbitrary already-rendered child geometry
- */
-module face_foreign_cut_seam_supports(
-    support_t = FACE_PLATE_SEAM_SUPPORT_T,
-    top_z = undef,
-    base_z = undef,
-    extend = 0,
-    mode = "nonzero",
-    eps = 1e-4,
+    boundary_kind = "generated_cut",
+    include_boundary = true,
+    include_foreign = true,
     filter_parent = true,
     foreign_indices = undef,
     support_only = true
 ) {
-    assert(support_t > 0, "face_foreign_cut_seam_supports: support_t must be > 0");
-    assert(extend >= 0, "face_foreign_cut_seam_supports: extend must be >= 0");
+    assert(support_t > 0, "face_seam_supports: support_t must be > 0");
+    assert(extend >= 0, "face_seam_supports: extend must be >= 0");
 
     top_z_eff = is_undef(top_z) ? (is_undef(base_z) ? 0 : base_z) : top_z;
 
     place_on_face_seam_segments(
         mode = mode,
         eps = eps,
-        coords = "parent",
-        include_boundary = false,
-        include_foreign = true,
+        coords = "element",
+        boundary_kind = boundary_kind,
+        include_boundary = include_boundary,
+        include_foreign = include_foreign,
         filter_parent = filter_parent,
         foreign_indices = foreign_indices,
         support_only = support_only
     ) {
         if ($ps_seam_len > eps)
-            _face_plate_bisector_segment_support_bar(
-                $ps_seam_segment2d_local,
-                support_t,
-                top_z_eff,
-                $ps_seam_foreign_normal_local,
-                extend,
-                eps);
+            _face_plate_seam_support_bar(support_t, top_z_eff, extend, eps);
     }
 }
 
