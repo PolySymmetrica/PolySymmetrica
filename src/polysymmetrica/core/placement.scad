@@ -1181,32 +1181,32 @@ module place_on_faces(poly, inter_radius = 1, edge_len = undef, classify = undef
     sites = ps_face_sites(poly, inter_radius, edge_len, classify, classify_opts);
 
     for (site = sites) {
-        fi = site[0];
+        fi = ps_face_site_idx(site);
         if (_ps_place_idx_selected(fi, indices)) {
-            center = site[1];
-            ex = site[2];
-            ey = site[3];
-            ez = site[4];
+            center = ps_face_site_center(site);
+            ex = ps_face_site_ex(site);
+            ey = ps_face_site_ey(site);
+            ez = ps_face_site_ez(site);
 
             // Per-face metadata (local-space friendly) - mean average values where faces are irregular
             $ps_face_idx           = fi;
-            $ps_edge_len           = site[5];
-            $ps_vertex_count       = site[6];
-            $ps_face_midradius     = site[7];
-            $ps_face_radius        = site[8];
-            $ps_poly_center_local  = site[9];
-            $ps_face_pts2d         = site[10];
-            $ps_face_pts3d_local   = site[11];
-            $ps_poly_verts_local   = site[12];
-            $ps_poly_faces_idx     = site[13];
-            $ps_face_planarity_err = site[14];
-            $ps_face_is_planar     = site[15];
-            $ps_face_family_id     = site[16];
-            $ps_face_family_count  = site[17];
-            $ps_edge_family_count  = site[18];
-            $ps_vertex_family_count = site[19];
-            $ps_face_neighbors_idx = site[20];
-            $ps_face_dihedrals     = site[21];
+            $ps_edge_len           = ps_face_site_edge_len(site);
+            $ps_vertex_count       = ps_face_site_vertex_count(site);
+            $ps_face_midradius     = ps_face_site_midradius(site);
+            $ps_face_radius        = ps_face_site_radius(site);
+            $ps_poly_center_local  = ps_face_site_poly_center_local(site);
+            $ps_face_pts2d         = ps_face_site_pts2d(site);
+            $ps_face_pts3d_local   = ps_face_site_pts3d_local(site);
+            $ps_poly_verts_local   = ps_face_site_poly_verts_local(site);
+            $ps_poly_faces_idx     = ps_face_site_poly_faces_idx(site);
+            $ps_face_planarity_err = ps_face_site_planarity_err(site);
+            $ps_face_is_planar     = ps_face_site_is_planar(site);
+            $ps_face_family_id     = ps_face_site_family_id(site);
+            $ps_face_family_count  = ps_face_site_face_family_count(site);
+            $ps_edge_family_count  = ps_face_site_edge_family_count(site);
+            $ps_vertex_family_count = ps_face_site_vertex_family_count(site);
+            $ps_face_neighbors_idx = ps_face_site_neighbors_idx(site);
+            $ps_face_dihedrals     = ps_face_site_dihedrals(site);
 
             multmatrix(ps_frame_matrix(center, ex, ey, ez))
                 children();
@@ -1980,22 +1980,27 @@ module place_on_vertices(poly, inter_radius = 1, edge_len = undef, classify = un
     sites = ps_vertex_sites(poly, inter_radius, edge_len, classify, classify_opts);
 
     for (site = sites) {
-        if (_ps_place_idx_selected(site[0], indices)) {
+        if (_ps_place_idx_selected(ps_vertex_site_idx(site), indices)) {
             // Metadata for children (local-space friendly)
-            $ps_vertex_idx                = site[0];
-            $ps_vertex_valence            = site[8];
-            $ps_vertex_neighbors_idx      = site[9];
-            $ps_vertex_neighbor_pts_local = site[10];
+            $ps_vertex_idx                = ps_vertex_site_idx(site);
+            $ps_vertex_valence            = ps_vertex_site_valence(site);
+            $ps_vertex_neighbors_idx      = ps_vertex_site_neighbors_idx(site);
+            $ps_vertex_neighbor_pts_local = ps_vertex_site_neighbor_pts_local(site);
 
-            $ps_edge_len                  = site[5];      // (target edge length parameter)
-            $ps_vert_radius               = site[6];
-            $ps_poly_center_local         = site[7];
-            $ps_vertex_family_id          = site[11];
-            $ps_face_family_count         = site[12];
-            $ps_edge_family_count         = site[13];
-            $ps_vertex_family_count       = site[14];
+            $ps_edge_len                  = ps_vertex_site_edge_len(site);      // (target edge length parameter)
+            $ps_vert_radius               = ps_vertex_site_radius(site);
+            $ps_poly_center_local         = ps_vertex_site_poly_center_local(site);
+            $ps_vertex_family_id          = ps_vertex_site_family_id(site);
+            $ps_face_family_count         = ps_vertex_site_face_family_count(site);
+            $ps_edge_family_count         = ps_vertex_site_edge_family_count(site);
+            $ps_vertex_family_count       = ps_vertex_site_vertex_family_count(site);
 
-            multmatrix(ps_frame_matrix(site[1], site[2], site[3], site[4]))
+            multmatrix(ps_frame_matrix(
+                ps_vertex_site_center(site),
+                ps_vertex_site_ex(site),
+                ps_vertex_site_ey(site),
+                ps_vertex_site_ez(site)
+            ))
                 children();
         }
     }
@@ -2012,22 +2017,27 @@ module place_on_edges(poly, inter_radius = 1, edge_len = undef, classify = undef
     sites = ps_edge_sites(poly, inter_radius, edge_len, classify, classify_opts);
 
     for (site = sites) {
-        if (_ps_place_idx_selected(site[0], indices)) {
+        if (_ps_place_idx_selected(ps_edge_site_idx(site), indices)) {
             // Metadata for children (edge-local)
-            $ps_edge_idx            = site[0];
-            $ps_edge_len            = site[5];      // actual length of this edge (vs supplied edge_len = scaling factor arg)
-            $ps_edge_midradius      = site[6];
-            $ps_poly_center_local   = site[7];
+            $ps_edge_idx            = ps_edge_site_idx(site);
+            $ps_edge_len            = ps_edge_site_edge_len(site);      // actual length of this edge (vs supplied edge_len = scaling factor arg)
+            $ps_edge_midradius      = ps_edge_site_midradius(site);
+            $ps_poly_center_local   = ps_edge_site_poly_center_local(site);
 
-            $ps_edge_pts_local      = site[8];
-            $ps_edge_verts_idx      = site[9];
-            $ps_edge_adj_faces_idx  = site[10];
-            $ps_edge_family_id      = site[11];
-            $ps_face_family_count   = site[12];
-            $ps_edge_family_count   = site[13];
-            $ps_vertex_family_count = site[14];
+            $ps_edge_pts_local      = ps_edge_site_pts_local(site);
+            $ps_edge_verts_idx      = ps_edge_site_verts_idx(site);
+            $ps_edge_adj_faces_idx  = ps_edge_site_adj_faces_idx(site);
+            $ps_edge_family_id      = ps_edge_site_family_id(site);
+            $ps_face_family_count   = ps_edge_site_face_family_count(site);
+            $ps_edge_family_count   = ps_edge_site_edge_family_count(site);
+            $ps_vertex_family_count = ps_edge_site_vertex_family_count(site);
 
-            multmatrix(ps_frame_matrix(site[1], site[2], site[3], site[4]))
+            multmatrix(ps_frame_matrix(
+                ps_edge_site_center(site),
+                ps_edge_site_ex(site),
+                ps_edge_site_ey(site),
+                ps_edge_site_ez(site)
+            ))
                 children();
         }
     }
