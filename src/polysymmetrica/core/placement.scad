@@ -1328,7 +1328,7 @@ module place_on_face_foreign_proxy_volume_groups(mode="nonzero", eps=1e-8, filte
 /**
  * Module: Iterate renderable exact foreign face units, grouped by proxy volume group.
  * Params: mode (foreign face fill rule), eps (tolerance), filter_parent (drop parent-edge cuts), coords (`"element"` or `"parent"`)
- * Returns: none; exposes `$ps_proxy_volume_group_*`, `$ps_proxy_volume_unit_*`, and face-compatible `$ps_proxy_*` metadata
+ * Returns: none; exposes `$ps_proxy_volume_group_*`, `$ps_proxy_volume_unit_*`, and face-compatible `$ps_proxy_*` metadata on child slot 0
  * Limitations/Gotchas: emits grouped face replay units only; it does not infer or close the volume enclosed by those faces
  */
 module place_on_face_foreign_proxy_volume_group_faces(
@@ -1420,9 +1420,9 @@ module place_on_face_foreign_proxy_volume_group_faces(
                     face_site[3],
                     face_site[4]
                 ))
-                    children();
+                    children(0);
             } else {
-                children();
+                children(0);
             }
         }
     }

@@ -115,15 +115,17 @@ aliases `$ps_proxy_kind="foreign_volume_group"`,
 
 `place_on_face_foreign_proxy_volume_group_faces(...)` is the renderable face-unit
 iterator for the same data. It visits each exact intruding face in each group,
-runs the child in that source-face frame by default, and also exposes the group
-metadata above. The child receives face-compatible `$ps_proxy_*` variables, so a
-proxy body authored for `place_on_face_foreign_proxy_sites(...)` can usually be
-reused unchanged:
+runs child slot 0 in that source-face frame by default, and also exposes the
+group metadata above. Slot 0 receives face-compatible `$ps_proxy_*` variables, so
+the face child from a `place_on_face_foreign_proxy_sites(...)` proxy body can
+usually be reused unchanged:
 
 ```scad
 place_on_face_foreign_proxy_volume_group_faces() {
     color(example_color($ps_proxy_volume_group_idx))
-        my_foreign_face_proxy();
+        my_foreign_face_proxy();   // child slot 0
+        my_foreign_edge_proxy();   // child slot 1, ignored here
+        my_foreign_vertex_proxy(); // child slot 2, ignored here
 }
 ```
 

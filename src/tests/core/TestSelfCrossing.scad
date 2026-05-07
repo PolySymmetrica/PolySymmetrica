@@ -444,6 +444,8 @@ module test_place_on_face_foreign_proxy_volume_group_faces__7_3_15_triangle_expo
                 assert_int_eq($ps_face_idx, $ps_proxy_source_idx, "volume-group face iterator should run in source face context");
                 assert_list_eq($ps_face_pts2d, $ps_proxy_face_pts2d, "volume-group face iterator face pts alias");
                 assert_int_eq(len($ps_proxy_face_pts2d), 3, "volume-group face iterator face arity");
+                assert(false, "volume-group face iterator should not dispatch child slot 1");
+                assert(false, "volume-group face iterator should not dispatch child slot 2");
             }
         }
     }
