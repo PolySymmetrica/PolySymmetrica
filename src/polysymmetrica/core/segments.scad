@@ -607,6 +607,167 @@ function _ps_face_boundary_span_sites(face_pts3d_local, face_idx, poly_faces_idx
     ];
 
 /**
+ * Function: Return the boundary span site index.
+ * Params: site (boundary span site record)
+ * Returns: source boundary span site index
+ */
+function ps_boundary_span_site_idx(site) = site[0];
+
+/**
+ * Function: Return the boundary span site center.
+ * Params: site (boundary span site record)
+ * Returns: span center in current face-local coordinates
+ */
+function ps_boundary_span_site_center_local(site) = site[1];
+
+/**
+ * Function: Return the boundary span site local X axis.
+ * Params: site (boundary span site record)
+ * Returns: span-local X axis in current face-local coordinates
+ */
+function ps_boundary_span_site_ex_local(site) = site[2];
+
+/**
+ * Function: Return the boundary span site local Y axis.
+ * Params: site (boundary span site record)
+ * Returns: span-local Y axis in current face-local coordinates
+ */
+function ps_boundary_span_site_ey_local(site) = site[3];
+
+/**
+ * Function: Return the boundary span site local Z axis.
+ * Params: site (boundary span site record)
+ * Returns: span-local Z axis in current face-local coordinates
+ */
+function ps_boundary_span_site_ez_local(site) = site[4];
+
+/**
+ * Function: Return the boundary span placement frame.
+ * Params: site (boundary span site record)
+ * Returns: placement frame `[center, ex, ey, ez]` in current face-local coordinates
+ */
+function ps_boundary_span_site_frame(site) =
+    ps_placement_frame(
+        ps_boundary_span_site_center_local(site),
+        ps_boundary_span_site_ex_local(site),
+        ps_boundary_span_site_ey_local(site),
+        ps_boundary_span_site_ez_local(site)
+    );
+
+/**
+ * Function: Return the boundary span length.
+ * Params: site (boundary span site record)
+ * Returns: span length in current face-local units
+ */
+function ps_boundary_span_site_len(site) = site[5];
+
+/**
+ * Function: Return the boundary span 2D segment.
+ * Params: site (boundary span site record)
+ * Returns: oriented `[[x0,y0],[x1,y1]]` segment in current face-local XY coordinates
+ */
+function ps_boundary_span_site_segment2d_local(site) = site[6];
+
+/**
+ * Function: Return the boundary loop index containing this span.
+ * Params: site (boundary span site record)
+ * Returns: boundary loop index
+ */
+function ps_boundary_span_site_loop_idx(site) = site[7];
+
+/**
+ * Function: Return the source edge index for this span.
+ * Params: site (boundary span site record)
+ * Returns: original current-face edge index, or `undef`
+ */
+function ps_boundary_span_site_source_edge_idx(site) = site[8];
+
+/**
+ * Function: Return the oriented source-edge start parameter.
+ * Params: site (boundary span site record)
+ * Returns: source-edge parameter at the span start
+ */
+function ps_boundary_span_site_source_t0(site) = site[9];
+
+/**
+ * Function: Return the oriented source-edge end parameter.
+ * Params: site (boundary span site record)
+ * Returns: source-edge parameter at the span end
+ */
+function ps_boundary_span_site_source_t1(site) = site[10];
+
+/**
+ * Function: Return the raw arrangement span kind.
+ * Params: site (boundary span site record)
+ * Returns: raw lineage kind such as `"source"`
+ */
+function ps_boundary_span_site_raw_kind(site) = site[11];
+
+/**
+ * Function: Return the filled cell index beside this boundary span.
+ * Params: site (boundary span site record)
+ * Returns: filled cell index, or `undef`
+ */
+function ps_boundary_span_site_filled_cell_idx(site) = site[12];
+
+/**
+ * Function: Return the non-filled/opposite cell index beside this boundary span.
+ * Params: site (boundary span site record)
+ * Returns: opposite cell index, or `undef`
+ */
+function ps_boundary_span_site_other_cell_idx(site) = site[13];
+
+/**
+ * Function: Return the adjacent source face index.
+ * Params: site (boundary span site record)
+ * Returns: adjacent face index inherited from the source edge, or `undef`
+ */
+function ps_boundary_span_site_adj_face_idx(site) = site[14];
+
+/**
+ * Function: Return the source-edge dihedral metadata.
+ * Params: site (boundary span site record)
+ * Returns: dihedral inherited from the source edge, or `undef`
+ */
+function ps_boundary_span_site_dihedral(site) = site[15];
+
+/**
+ * Function: Return the adjacent face normal in current face-local coordinates.
+ * Params: site (boundary span site record)
+ * Returns: adjacent-face normal, or `undef`
+ */
+function ps_boundary_span_site_adj_face_normal_local(site) = site[16];
+
+/**
+ * Function: Return which side of the oriented span is filled.
+ * Params: site (boundary span site record)
+ * Returns: `+1` for left, `-1` for right, or `0` for degenerate/ambiguous spans
+ */
+function ps_boundary_span_site_filled_side(site) = site[17];
+
+/**
+ * Function: Return adjacent-face direction in span-local coordinates.
+ * Params: site (boundary span site record)
+ * Returns: adjacent face plane direction in `[x,y,z]` span-local coordinates, or `undef`
+ */
+function ps_boundary_span_site_adj_face_dir_span_local(site) = site[18];
+
+/**
+ * Function: Return the public boundary span lineage kind.
+ * Params: site (boundary span site record)
+ * Returns: `"source_edge"`, `"source_partial"`, or `"generated_cut"`
+ */
+function ps_boundary_span_site_kind(site) = site[19];
+
+/**
+ * Function: Test whether a boundary span site is generated/split rather than a full source edge.
+ * Params: site (boundary span site record)
+ * Returns: true when the public kind is not `"source_edge"`
+ */
+function ps_boundary_span_site_is_generated(site) =
+    ps_boundary_span_site_kind(site) != "source_edge";
+
+/**
  * Function: Build the planar arrangement induced by one face loop.
  * Params: face_pts3d_local (loop in face-local 3D), eps (geometric tolerance)
  * Returns: `[face_pts2d, crossings, nodes, spans, cells]`
@@ -923,30 +1084,34 @@ module place_on_face_boundary_spans(mode="nonzero", eps=1e-8, coords="element", 
         mode,
         eps
     );
-    sites = [for (site = all_sites) if (_ps_seg_boundary_span_kind_matches(site[19], kind)) site];
+    sites = [
+        for (site = all_sites)
+            if (_ps_seg_boundary_span_kind_matches(ps_boundary_span_site_kind(site), kind))
+                site
+    ];
     for (site = sites) {
-        $ps_boundary_span_idx = site[0];
+        $ps_boundary_span_idx = ps_boundary_span_site_idx(site);
         $ps_boundary_span_count = len(sites);
         $ps_boundary_span_total_count = len(all_sites);
-        $ps_boundary_span_len = site[5];
-        $ps_boundary_span_segment2d_local = site[6];
-        $ps_boundary_span_loop_idx = site[7];
-        $ps_boundary_span_source_edge_idx = site[8];
-        $ps_boundary_span_source_t0 = site[9];
-        $ps_boundary_span_source_t1 = site[10];
-        $ps_boundary_span_raw_kind = site[11];
-        $ps_boundary_span_kind = site[19];
-        $ps_boundary_span_is_generated = site[19] != "source_edge";
-        $ps_boundary_span_filled_cell_idx = site[12];
-        $ps_boundary_span_other_cell_idx = site[13];
-        $ps_boundary_span_adj_face_idx = site[14];
-        $ps_boundary_span_dihedral = site[15];
-        $ps_boundary_span_adj_face_normal_local = site[16];
-        $ps_boundary_span_filled_side = site[17];
-        $ps_boundary_span_adj_face_dir_span_local = site[18];
+        $ps_boundary_span_len = ps_boundary_span_site_len(site);
+        $ps_boundary_span_segment2d_local = ps_boundary_span_site_segment2d_local(site);
+        $ps_boundary_span_loop_idx = ps_boundary_span_site_loop_idx(site);
+        $ps_boundary_span_source_edge_idx = ps_boundary_span_site_source_edge_idx(site);
+        $ps_boundary_span_source_t0 = ps_boundary_span_site_source_t0(site);
+        $ps_boundary_span_source_t1 = ps_boundary_span_site_source_t1(site);
+        $ps_boundary_span_raw_kind = ps_boundary_span_site_raw_kind(site);
+        $ps_boundary_span_kind = ps_boundary_span_site_kind(site);
+        $ps_boundary_span_is_generated = ps_boundary_span_site_is_generated(site);
+        $ps_boundary_span_filled_cell_idx = ps_boundary_span_site_filled_cell_idx(site);
+        $ps_boundary_span_other_cell_idx = ps_boundary_span_site_other_cell_idx(site);
+        $ps_boundary_span_adj_face_idx = ps_boundary_span_site_adj_face_idx(site);
+        $ps_boundary_span_dihedral = ps_boundary_span_site_dihedral(site);
+        $ps_boundary_span_adj_face_normal_local = ps_boundary_span_site_adj_face_normal_local(site);
+        $ps_boundary_span_filled_side = ps_boundary_span_site_filled_side(site);
+        $ps_boundary_span_adj_face_dir_span_local = ps_boundary_span_site_adj_face_dir_span_local(site);
 
         if (coords == "element")
-            multmatrix(ps_frame_matrix(site[1], site[2], site[3], site[4]))
+            multmatrix(ps_placement_frame_matrix(ps_boundary_span_site_frame(site)))
                 children();
         else
             children();
@@ -1658,7 +1823,7 @@ function _ps_face_seam_segment_sites_from_context(
             : [],
         boundary_filtered = [
             for (site = boundary_sites)
-                if (_ps_seg_boundary_span_kind_matches(site[19], boundary_kind))
+                if (_ps_seg_boundary_span_kind_matches(ps_boundary_span_site_kind(site), boundary_kind))
                     site
         ],
         target_simple = _ps_seg_face_loop_is_simple(face_pts3d_local, eps),
@@ -1667,17 +1832,17 @@ function _ps_face_seam_segment_sites_from_context(
                 let(site = boundary_filtered[bi])
                 _ps_face_seam_segment_site(
                     bi,
-                    site[6],
+                    ps_boundary_span_site_segment2d_local(site),
                     "boundary",
-                    site[19],
-                    is_undef(site[14]) ? undef : "face",
-                    site[14],
-                    site[16],
-                    site[15],
+                    ps_boundary_span_site_kind(site),
+                    is_undef(ps_boundary_span_site_adj_face_idx(site)) ? undef : "face",
+                    ps_boundary_span_site_adj_face_idx(site),
+                    ps_boundary_span_site_adj_face_normal_local(site),
+                    ps_boundary_span_site_dihedral(site),
                     "exact",
                     site,
-                    _ps_seg_boundary_support_kind(site[19]),
-                    _ps_seg_boundary_support_reason(site[19]),
+                    _ps_seg_boundary_support_kind(ps_boundary_span_site_kind(site)),
+                    _ps_seg_boundary_support_reason(ps_boundary_span_site_kind(site)),
                     poly_center_local,
                     eps
                 )

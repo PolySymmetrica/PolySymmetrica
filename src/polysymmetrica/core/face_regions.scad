@@ -55,7 +55,7 @@ function _ps_fr_line_intersection(line0, line1, eps=1e-9) =
  */
 function _ps_fr_span_source_point(face_pts3d_local, site, t) =
     let(
-        source_edge_idx = site[8],
+        source_edge_idx = ps_boundary_span_site_source_edge_idx(site),
         n = len(face_pts3d_local),
         a = is_undef(source_edge_idx) ? undef : face_pts3d_local[source_edge_idx],
         b = is_undef(source_edge_idx) ? undef : face_pts3d_local[(source_edge_idx + 1) % n]
@@ -69,9 +69,9 @@ function _ps_fr_span_source_point(face_pts3d_local, site, t) =
  */
 function _ps_fr_span_seg3d(face_pts3d_local, site) =
     let(
-        p0 = _ps_fr_span_source_point(face_pts3d_local, site, site[9]),
-        p1 = _ps_fr_span_source_point(face_pts3d_local, site, site[10]),
-        seg2d = site[6]
+        p0 = _ps_fr_span_source_point(face_pts3d_local, site, ps_boundary_span_site_source_t0(site)),
+        p1 = _ps_fr_span_source_point(face_pts3d_local, site, ps_boundary_span_site_source_t1(site)),
+        seg2d = ps_boundary_span_site_segment2d_local(site)
     )
     (is_undef(p0) || is_undef(p1))
         ? [[seg2d[0][0], seg2d[0][1], 0], [seg2d[1][0], seg2d[1][1], 0]]
@@ -83,7 +83,7 @@ function _ps_fr_span_seg3d(face_pts3d_local, site) =
  * Returns: span-local unit ray `[0,+/-1,0]` pointing outside the filled region
  */
 function _ps_fr_span_exterior_ray(site) =
-    [0, (site[17] < 0) ? 1 : -1, 0];
+    [0, (ps_boundary_span_site_filled_side(site) < 0) ? 1 : -1, 0];
 
 /**
  * Function: Return the current-face in-plane ray into the filled side of a span.
@@ -91,7 +91,7 @@ function _ps_fr_span_exterior_ray(site) =
  * Returns: span-local unit ray `[0,+/-1,0]` pointing inside the filled region
  */
 function _ps_fr_span_filled_ray(site) =
-    [0, (site[17] < 0) ? -1 : 1, 0];
+    [0, (ps_boundary_span_site_filled_side(site) < 0) ? -1 : 1, 0];
 
 /**
  * Function: Compute integer winding number of a 2D loop around a point.
@@ -140,7 +140,7 @@ function _ps_fr_cell_winding_signs(face_pts3d_local, cells, eps=1e-8) =
  */
 function _ps_fr_span_face_plane_ray(site, input_sign, cell_winding_signs) =
     let(
-        cell_idx = site[12],
+        cell_idx = ps_boundary_span_site_filled_cell_idx(site),
         cell_sign =
             (is_undef(cell_idx) || cell_idx < 0 || cell_idx >= len(cell_winding_signs))
                 ? 0
@@ -157,7 +157,7 @@ function _ps_fr_span_face_plane_ray(site, input_sign, cell_winding_signs) =
 function _ps_fr_span_bisector_dir_span_local(site, input_sign, cell_winding_signs, eps=1e-8) =
     let(
         face_ray = _ps_fr_span_face_plane_ray(site, input_sign, cell_winding_signs),
-        adj0 = site[18],
+        adj0 = ps_boundary_span_site_adj_face_dir_span_local(site),
         adj_unit = (is_undef(adj0) || norm(adj0) <= eps) ? undef : v_norm(adj0),
         raw = is_undef(adj_unit) ? [0, 0, 1] : face_ray + adj_unit
     )
@@ -169,7 +169,9 @@ function _ps_fr_span_bisector_dir_span_local(site, input_sign, cell_winding_sign
  * Returns: face-local vector
  */
 function _ps_fr_span_to_face_local(site, v_span) =
-    site[2] * v_span[0] + site[3] * v_span[1] + site[4] * v_span[2];
+    ps_boundary_span_site_ex_local(site) * v_span[0]
+        + ps_boundary_span_site_ey_local(site) * v_span[1]
+        + ps_boundary_span_site_ez_local(site) * v_span[2];
 
 /**
  * Function: Build the anti-interference bisector direction in face-local coords.
@@ -226,7 +228,7 @@ function _ps_fr_boundary_inset_face_offset(site, dir, boundary_inset=0, boundary
     (boundary_inset <= eps) ? 0 :
     (boundary_inset_mode == "face") ? boundary_inset :
     let(
-        edge_dir = site[2],
+        edge_dir = ps_boundary_span_site_ex_local(site),
         filled_dir = _ps_fr_span_to_face_local(site, _ps_fr_span_filled_ray(site)),
         side_n_raw = v_cross(edge_dir, dir),
         side_n = (norm(side_n_raw) <= eps) ? undef : v_norm(side_n_raw),
@@ -251,10 +253,17 @@ function _ps_fr_project_span_line(face_pts3d_local, site, z, input_sign, cell_wi
         inset_dir2 = (norm(inset_dir2_raw) <= eps) ? [0, 0] : v_norm(inset_dir2_raw),
         inset_offset = _ps_fr_boundary_inset_face_offset(site, dir, boundary_inset, boundary_inset_mode, eps),
         p_inset = [p[0], p[1]] + inset_dir2 * inset_offset,
-        ex2d = [site[2][0], site[2][1]],
+        ex = ps_boundary_span_site_ex_local(site),
+        ex2d = [ex[0], ex[1]],
         line_dir = (norm(ex2d) <= eps) ? [1, 0] : v_norm(ex2d)
     )
-    [p_inset, line_dir, _ps_fr_project_was_capped(z - mid[2], dir[2], max_project, eps), site[0], site[8]];
+    [
+        p_inset,
+        line_dir,
+        _ps_fr_project_was_capped(z - mid[2], dir[2], max_project, eps),
+        ps_boundary_span_site_idx(site),
+        ps_boundary_span_site_source_edge_idx(site)
+    ];
 
 /**
  * Function: Convert a circular list of projected boundary lines into loop vertices.
@@ -277,7 +286,7 @@ function _ps_fr_projected_loop(lines, eps=1e-8) =
  */
 function _ps_fr_unique_loop_ids(sites, i=0, acc=[]) =
     (i >= len(sites)) ? acc :
-    let(loop_idx = sites[i][7])
+    let(loop_idx = ps_boundary_span_site_loop_idx(sites[i]))
     _ps_fr_unique_loop_ids(
         sites,
         i + 1,
@@ -290,7 +299,7 @@ function _ps_fr_unique_loop_ids(sites, i=0, acc=[]) =
  * Returns: site records for that loop, in source boundary order
  */
 function _ps_fr_sites_for_loop(sites, loop_idx) =
-    [for (site = sites) if (site[7] == loop_idx) site];
+    [for (site = sites) if (ps_boundary_span_site_loop_idx(site) == loop_idx) site];
 
 /**
  * Function: Triangulate one projected cap loop into indexed polyhedron faces.

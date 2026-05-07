@@ -397,6 +397,36 @@ current face-local coordinates.
 Iterator wrapper over internal dihedral-aware boundary-span site records for
 use inside `place_on_faces(...)`.
 
+Boundary span site records are accessor-backed. Use the
+`ps_boundary_span_site_*` helpers when consuming records directly:
+
+- `ps_boundary_span_site_idx(site)`
+- `ps_boundary_span_site_center_local(site)`
+- `ps_boundary_span_site_ex_local(site)`
+- `ps_boundary_span_site_ey_local(site)`
+- `ps_boundary_span_site_ez_local(site)`
+- `ps_boundary_span_site_frame(site)`
+- `ps_boundary_span_site_len(site)`
+- `ps_boundary_span_site_segment2d_local(site)`
+- `ps_boundary_span_site_loop_idx(site)`
+- `ps_boundary_span_site_source_edge_idx(site)`
+- `ps_boundary_span_site_source_t0(site)`
+- `ps_boundary_span_site_source_t1(site)`
+- `ps_boundary_span_site_raw_kind(site)`
+- `ps_boundary_span_site_filled_cell_idx(site)`
+- `ps_boundary_span_site_other_cell_idx(site)`
+- `ps_boundary_span_site_adj_face_idx(site)`
+- `ps_boundary_span_site_dihedral(site)`
+- `ps_boundary_span_site_adj_face_normal_local(site)`
+- `ps_boundary_span_site_filled_side(site)`
+- `ps_boundary_span_site_adj_face_dir_span_local(site)`
+- `ps_boundary_span_site_kind(site)`
+- `ps_boundary_span_site_is_generated(site)`
+
+`ps_boundary_span_site_frame(site)` follows the same frame convention exposed by
+the iterator variables: `+X` along the oriented span, `+Y` to its in-face left,
+and `+Z` as current face-local `+Z`.
+
 Use this when later geometry needs both:
 
 - the face-local filled boundary span itself
