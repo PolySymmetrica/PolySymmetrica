@@ -642,36 +642,37 @@ module test_ps_boundary_span_site_accessors__match_record_layout_and_frame() {
             for (site = sites) {
                 fields = [
                     ["idx", ps_boundary_span_site_idx(site), site[0]],
-                    ["center", ps_boundary_span_site_center_local(site), site[1]],
-                    ["ex", ps_boundary_span_site_ex_local(site), site[2]],
-                    ["ey", ps_boundary_span_site_ey_local(site), site[3]],
-                    ["ez", ps_boundary_span_site_ez_local(site), site[4]],
-                    ["len", ps_boundary_span_site_len(site), site[5]],
-                    ["segment2d", ps_boundary_span_site_segment2d_local(site), site[6]],
-                    ["loop_idx", ps_boundary_span_site_loop_idx(site), site[7]],
-                    ["source_edge_idx", ps_boundary_span_site_source_edge_idx(site), site[8]],
-                    ["source_t0", ps_boundary_span_site_source_t0(site), site[9]],
-                    ["source_t1", ps_boundary_span_site_source_t1(site), site[10]],
-                    ["raw_kind", ps_boundary_span_site_raw_kind(site), site[11]],
-                    ["filled_cell_idx", ps_boundary_span_site_filled_cell_idx(site), site[12]],
-                    ["other_cell_idx", ps_boundary_span_site_other_cell_idx(site), site[13]],
-                    ["adj_face_idx", ps_boundary_span_site_adj_face_idx(site), site[14]],
-                    ["dihedral", ps_boundary_span_site_dihedral(site), site[15]],
-                    ["adj_face_normal", ps_boundary_span_site_adj_face_normal_local(site), site[16]],
-                    ["filled_side", ps_boundary_span_site_filled_side(site), site[17]],
-                    ["adj_face_dir", ps_boundary_span_site_adj_face_dir_span_local(site), site[18]],
-                    ["kind", ps_boundary_span_site_kind(site), site[19]]
+                    ["frame", ps_boundary_span_site_frame(site), site[1]],
+                    ["center", ps_boundary_span_site_center_local(site), ps_placement_frame_center(site[1])],
+                    ["ex", ps_boundary_span_site_ex_local(site), ps_placement_frame_ex(site[1])],
+                    ["ey", ps_boundary_span_site_ey_local(site), ps_placement_frame_ey(site[1])],
+                    ["ez", ps_boundary_span_site_ez_local(site), ps_placement_frame_ez(site[1])],
+                    ["len", ps_boundary_span_site_len(site), site[2]],
+                    ["segment2d", ps_boundary_span_site_segment2d_local(site), site[3]],
+                    ["loop_idx", ps_boundary_span_site_loop_idx(site), site[4]],
+                    ["source_edge_idx", ps_boundary_span_site_source_edge_idx(site), site[5]],
+                    ["source_t0", ps_boundary_span_site_source_t0(site), site[6]],
+                    ["source_t1", ps_boundary_span_site_source_t1(site), site[7]],
+                    ["raw_kind", ps_boundary_span_site_raw_kind(site), site[8]],
+                    ["filled_cell_idx", ps_boundary_span_site_filled_cell_idx(site), site[9]],
+                    ["other_cell_idx", ps_boundary_span_site_other_cell_idx(site), site[10]],
+                    ["adj_face_idx", ps_boundary_span_site_adj_face_idx(site), site[11]],
+                    ["dihedral", ps_boundary_span_site_dihedral(site), site[12]],
+                    ["adj_face_normal", ps_boundary_span_site_adj_face_normal_local(site), site[13]],
+                    ["filled_side", ps_boundary_span_site_filled_side(site), site[14]],
+                    ["adj_face_dir", ps_boundary_span_site_adj_face_dir_span_local(site), site[15]],
+                    ["kind", ps_boundary_span_site_kind(site), site[16]]
                 ];
 
                 for (field = fields)
                     assert(field[1] == field[2], str("boundary span site accessor mismatch field=", field[0], " site=", site[0]));
 
                 assert(
-                    ps_placement_frame_matrix(ps_boundary_span_site_frame(site)) == ps_frame_matrix(site[1], site[2], site[3], site[4]),
+                    ps_placement_frame_matrix(ps_boundary_span_site_frame(site)) == ps_placement_frame_matrix(site[1]),
                     str("boundary span site frame matrix site=", site[0])
                 );
                 assert(
-                    ps_boundary_span_site_is_generated(site) == (site[19] != "source_edge"),
+                    ps_boundary_span_site_is_generated(site) == (site[16] != "source_edge"),
                     str("boundary span generated flag site=", site[0])
                 );
             }

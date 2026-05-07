@@ -536,7 +536,7 @@ function _ps_seg_boundary_span_kind_matches(public_kind, kind="all") =
 /**
  * Function: Build internal dihedral-aware boundary-span site records for the current face.
  * Params: face_pts3d_local (loop in face-local 3D), face_idx (current face index), poly_faces_idx/poly_verts_local (full poly in current face-local coordinates), face_neighbors_idx/face_dihedrals (current face-edge metadata), mode (`"nonzero"`, `"evenodd"`, or `"all"`), eps (geometric tolerance)
- * Returns: list of boundary-span site records `[span_idx, center, ex, ey, ez, span_len, seg2d, loop_idx, source_edge_idx, source_t0, source_t1, raw_kind, filled_cell_idx, other_cell_idx, adj_face_idx, dihedral, adj_face_normal_local, filled_side, adj_face_dir_span_local, public_kind]`
+ * Returns: list of boundary-span site records `[span_idx, frame, span_len, seg2d, loop_idx, source_edge_idx, source_t0, source_t1, raw_kind, filled_cell_idx, other_cell_idx, adj_face_idx, dihedral, adj_face_normal_local, filled_side, adj_face_dir_span_local, public_kind]`
  * Limitations/Gotchas: internal helper for `place_on_face_boundary_spans(...)`; `filled_side` is `+1` when the filled region lies on the left side of `seg2d`, `-1` on the right, and `0` only for degenerate/ambiguous cases
  */
 function _ps_face_boundary_span_sites(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local, face_neighbors_idx, face_dihedrals, mode="nonzero", eps=1e-8) =
@@ -580,14 +580,12 @@ function _ps_face_boundary_span_sites(face_pts3d_local, face_idx, poly_faces_idx
                 filled_cell = is_undef(filled_cell_idx) ? undef : cells[filled_cell_idx],
                 filled_side = _ps_seg_boundary_span_filled_side(seg2d, filled_cell, eps),
                 adj_face_dir_span_local = _ps_seg_boundary_span_adj_face_dir_span_local(source_ex, ex, ey, ez, adj_face_normal_local, eps),
-                public_kind = _ps_seg_boundary_span_public_kind(span[5], span[3], span[4], eps)
+                public_kind = _ps_seg_boundary_span_public_kind(span[5], span[3], span[4], eps),
+                frame = ps_placement_frame(center, ex, ey, ez)
             )
             [
                 si,
-                center,
-                ex,
-                ey,
-                ez,
+                frame,
                 span_len,
                 seg2d,
                 span[1],
@@ -618,146 +616,144 @@ function ps_boundary_span_site_idx(site) = site[0];
  * Params: site (boundary span site record)
  * Returns: span center in current face-local coordinates
  */
-function ps_boundary_span_site_center_local(site) = site[1];
+function ps_boundary_span_site_center_local(site) =
+    ps_placement_frame_center(ps_boundary_span_site_frame(site));
 
 /**
  * Function: Return the boundary span site local X axis.
  * Params: site (boundary span site record)
  * Returns: span-local X axis in current face-local coordinates
  */
-function ps_boundary_span_site_ex_local(site) = site[2];
+function ps_boundary_span_site_ex_local(site) =
+    ps_placement_frame_ex(ps_boundary_span_site_frame(site));
 
 /**
  * Function: Return the boundary span site local Y axis.
  * Params: site (boundary span site record)
  * Returns: span-local Y axis in current face-local coordinates
  */
-function ps_boundary_span_site_ey_local(site) = site[3];
+function ps_boundary_span_site_ey_local(site) =
+    ps_placement_frame_ey(ps_boundary_span_site_frame(site));
 
 /**
  * Function: Return the boundary span site local Z axis.
  * Params: site (boundary span site record)
  * Returns: span-local Z axis in current face-local coordinates
  */
-function ps_boundary_span_site_ez_local(site) = site[4];
+function ps_boundary_span_site_ez_local(site) =
+    ps_placement_frame_ez(ps_boundary_span_site_frame(site));
 
 /**
  * Function: Return the boundary span placement frame.
  * Params: site (boundary span site record)
  * Returns: placement frame `[center, ex, ey, ez]` in current face-local coordinates
  */
-function ps_boundary_span_site_frame(site) =
-    ps_placement_frame(
-        ps_boundary_span_site_center_local(site),
-        ps_boundary_span_site_ex_local(site),
-        ps_boundary_span_site_ey_local(site),
-        ps_boundary_span_site_ez_local(site)
-    );
+function ps_boundary_span_site_frame(site) = site[1];
 
 /**
  * Function: Return the boundary span length.
  * Params: site (boundary span site record)
  * Returns: span length in current face-local units
  */
-function ps_boundary_span_site_len(site) = site[5];
+function ps_boundary_span_site_len(site) = site[2];
 
 /**
  * Function: Return the boundary span 2D segment.
  * Params: site (boundary span site record)
  * Returns: oriented `[[x0,y0],[x1,y1]]` segment in current face-local XY coordinates
  */
-function ps_boundary_span_site_segment2d_local(site) = site[6];
+function ps_boundary_span_site_segment2d_local(site) = site[3];
 
 /**
  * Function: Return the boundary loop index containing this span.
  * Params: site (boundary span site record)
  * Returns: boundary loop index
  */
-function ps_boundary_span_site_loop_idx(site) = site[7];
+function ps_boundary_span_site_loop_idx(site) = site[4];
 
 /**
  * Function: Return the source edge index for this span.
  * Params: site (boundary span site record)
  * Returns: original current-face edge index, or `undef`
  */
-function ps_boundary_span_site_source_edge_idx(site) = site[8];
+function ps_boundary_span_site_source_edge_idx(site) = site[5];
 
 /**
  * Function: Return the oriented source-edge start parameter.
  * Params: site (boundary span site record)
  * Returns: source-edge parameter at the span start
  */
-function ps_boundary_span_site_source_t0(site) = site[9];
+function ps_boundary_span_site_source_t0(site) = site[6];
 
 /**
  * Function: Return the oriented source-edge end parameter.
  * Params: site (boundary span site record)
  * Returns: source-edge parameter at the span end
  */
-function ps_boundary_span_site_source_t1(site) = site[10];
+function ps_boundary_span_site_source_t1(site) = site[7];
 
 /**
  * Function: Return the raw arrangement span kind.
  * Params: site (boundary span site record)
  * Returns: raw lineage kind such as `"source"`
  */
-function ps_boundary_span_site_raw_kind(site) = site[11];
+function ps_boundary_span_site_raw_kind(site) = site[8];
 
 /**
  * Function: Return the filled cell index beside this boundary span.
  * Params: site (boundary span site record)
  * Returns: filled cell index, or `undef`
  */
-function ps_boundary_span_site_filled_cell_idx(site) = site[12];
+function ps_boundary_span_site_filled_cell_idx(site) = site[9];
 
 /**
  * Function: Return the non-filled/opposite cell index beside this boundary span.
  * Params: site (boundary span site record)
  * Returns: opposite cell index, or `undef`
  */
-function ps_boundary_span_site_other_cell_idx(site) = site[13];
+function ps_boundary_span_site_other_cell_idx(site) = site[10];
 
 /**
  * Function: Return the adjacent source face index.
  * Params: site (boundary span site record)
  * Returns: adjacent face index inherited from the source edge, or `undef`
  */
-function ps_boundary_span_site_adj_face_idx(site) = site[14];
+function ps_boundary_span_site_adj_face_idx(site) = site[11];
 
 /**
  * Function: Return the source-edge dihedral metadata.
  * Params: site (boundary span site record)
  * Returns: dihedral inherited from the source edge, or `undef`
  */
-function ps_boundary_span_site_dihedral(site) = site[15];
+function ps_boundary_span_site_dihedral(site) = site[12];
 
 /**
  * Function: Return the adjacent face normal in current face-local coordinates.
  * Params: site (boundary span site record)
  * Returns: adjacent-face normal, or `undef`
  */
-function ps_boundary_span_site_adj_face_normal_local(site) = site[16];
+function ps_boundary_span_site_adj_face_normal_local(site) = site[13];
 
 /**
  * Function: Return which side of the oriented span is filled.
  * Params: site (boundary span site record)
  * Returns: `+1` for left, `-1` for right, or `0` for degenerate/ambiguous spans
  */
-function ps_boundary_span_site_filled_side(site) = site[17];
+function ps_boundary_span_site_filled_side(site) = site[14];
 
 /**
  * Function: Return adjacent-face direction in span-local coordinates.
  * Params: site (boundary span site record)
  * Returns: adjacent face plane direction in `[x,y,z]` span-local coordinates, or `undef`
  */
-function ps_boundary_span_site_adj_face_dir_span_local(site) = site[18];
+function ps_boundary_span_site_adj_face_dir_span_local(site) = site[15];
 
 /**
  * Function: Return the public boundary span lineage kind.
  * Params: site (boundary span site record)
  * Returns: `"source_edge"`, `"source_partial"`, or `"generated_cut"`
  */
-function ps_boundary_span_site_kind(site) = site[19];
+function ps_boundary_span_site_kind(site) = site[16];
 
 /**
  * Function: Test whether a boundary span site is generated/split rather than a full source edge.
