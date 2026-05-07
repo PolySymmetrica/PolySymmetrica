@@ -430,20 +430,24 @@ module test_place_on_face_foreign_proxy_volume_groups__7_3_15_triangle_exposes_c
     }
 }
 
+module _test_assert_volume_group_face_render_context() {
+    assert_int_eq($ps_proxy_volume_group_count, 2, "volume-group face iterator group count");
+    assert_int_eq($ps_proxy_volume_unit_count, 3, "volume-group face iterator unit count");
+    assert($ps_proxy_volume_unit_kind == "foreign_face", "volume-group face iterator unit kind");
+    assert($ps_proxy_kind == "foreign_face", "volume-group face iterator proxy kind");
+    assert($ps_proxy_source_kind == "face", "volume-group face iterator source kind");
+    assert($ps_proxy_intrusion_confidence == "exact", "volume-group face iterator confidence");
+    assert_int_eq($ps_proxy_volume_unit_record_idx, $ps_proxy_volume_group_record_idxs[$ps_proxy_volume_unit_idx], "volume-group face iterator record id");
+    assert_int_eq($ps_face_idx, $ps_proxy_source_idx, "volume-group face iterator should run in source face context");
+    assert_list_eq($ps_face_pts2d, $ps_proxy_face_pts2d, "volume-group face iterator face pts alias");
+    assert_int_eq(len($ps_proxy_face_pts2d), 3, "volume-group face iterator face arity");
+}
+
 module test_place_on_face_foreign_proxy_volume_group_faces__7_3_15_triangle_exposes_render_context() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
             place_on_face_foreign_proxy_volume_group_faces(mode = MODE) {
-                assert_int_eq($ps_proxy_volume_group_count, 2, "volume-group face iterator group count");
-                assert_int_eq($ps_proxy_volume_unit_count, 3, "volume-group face iterator unit count");
-                assert($ps_proxy_volume_unit_kind == "foreign_face", "volume-group face iterator unit kind");
-                assert($ps_proxy_kind == "foreign_face", "volume-group face iterator proxy kind");
-                assert($ps_proxy_source_kind == "face", "volume-group face iterator source kind");
-                assert($ps_proxy_intrusion_confidence == "exact", "volume-group face iterator confidence");
-                assert_int_eq($ps_proxy_volume_unit_record_idx, $ps_proxy_volume_group_record_idxs[$ps_proxy_volume_unit_idx], "volume-group face iterator record id");
-                assert_int_eq($ps_face_idx, $ps_proxy_source_idx, "volume-group face iterator should run in source face context");
-                assert_list_eq($ps_face_pts2d, $ps_proxy_face_pts2d, "volume-group face iterator face pts alias");
-                assert_int_eq(len($ps_proxy_face_pts2d), 3, "volume-group face iterator face arity");
+                _test_assert_volume_group_face_render_context();
                 assert(false, "volume-group face iterator should not dispatch child slot 1");
                 assert(false, "volume-group face iterator should not dispatch child slot 2");
             }
