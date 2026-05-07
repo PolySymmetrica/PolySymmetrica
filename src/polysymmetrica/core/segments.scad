@@ -1631,19 +1631,12 @@ function _ps_seg_boundary_support_reason(source_kind) =
     source_kind == "generated_cut" ? "generated_cut" : "not_generated_cut";
 
 /**
- * Function: Build edge-like placement sites for current-face seam segments.
- * Params: face_pts3d_local/face_pts2d/face_idx/poly_faces_idx/poly_verts_local/face_neighbors_idx/face_dihedrals/poly_center_local (face placement context), mode/eps (segmentation controls), boundary_kind (boundary span kind filter), include_boundary/include_foreign/filter_parent (source controls)
+ * Function: Build edge-like placement sites for current-face seam segments from a face-local context.
+ * Params: face_ctx (face-local context), mode/eps (segmentation controls), boundary_kind (boundary span kind filter), include_boundary/include_foreign/filter_parent (source controls)
  * Returns: seam site records for `place_on_face_seam_segments(...)`
  */
-function ps_face_seam_segment_sites(
-    face_pts3d_local,
-    face_pts2d,
-    face_idx,
-    poly_faces_idx,
-    poly_verts_local,
-    face_neighbors_idx,
-    face_dihedrals,
-    poly_center_local=undef,
+function _ps_face_seam_segment_sites_from_context(
+    face_ctx,
     mode="nonzero",
     eps=1e-8,
     boundary_kind="generated_cut",
@@ -1652,6 +1645,14 @@ function ps_face_seam_segment_sites(
     filter_parent=true
 ) =
     let(
+        face_pts3d_local = ps_face_local_context_pts3d_local(face_ctx),
+        face_pts2d = ps_face_local_context_pts2d(face_ctx),
+        face_idx = ps_face_local_context_idx(face_ctx),
+        poly_faces_idx = ps_face_local_context_poly_faces_idx(face_ctx),
+        poly_verts_local = ps_face_local_context_poly_verts_local(face_ctx),
+        face_neighbors_idx = ps_face_local_context_neighbors_idx(face_ctx),
+        face_dihedrals = ps_face_local_context_dihedrals(face_ctx),
+        poly_center_local = ps_face_local_context_poly_center_local(face_ctx),
         boundary_sites = include_boundary
             ? _ps_face_boundary_span_sites(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local, face_neighbors_idx, face_dihedrals, mode, eps)
             : [],
@@ -1717,6 +1718,46 @@ function ps_face_seam_segment_sites(
         ]
     )
     concat(boundary_out, foreign_out);
+
+/**
+ * Function: Build edge-like placement sites for current-face seam segments.
+ * Params: face_pts3d_local/face_pts2d/face_idx/poly_faces_idx/poly_verts_local/face_neighbors_idx/face_dihedrals/poly_center_local (face placement context), mode/eps (segmentation controls), boundary_kind (boundary span kind filter), include_boundary/include_foreign/filter_parent (source controls)
+ * Returns: seam site records for `place_on_face_seam_segments(...)`
+ */
+function ps_face_seam_segment_sites(
+    face_pts3d_local,
+    face_pts2d,
+    face_idx,
+    poly_faces_idx,
+    poly_verts_local,
+    face_neighbors_idx,
+    face_dihedrals,
+    poly_center_local=undef,
+    mode="nonzero",
+    eps=1e-8,
+    boundary_kind="generated_cut",
+    include_boundary=true,
+    include_foreign=true,
+    filter_parent=true
+) =
+    _ps_face_seam_segment_sites_from_context(
+        ps_face_local_context(
+            face_pts3d_local,
+            face_pts2d,
+            face_idx,
+            poly_faces_idx,
+            poly_verts_local,
+            face_neighbors_idx,
+            face_dihedrals,
+            poly_center_local
+        ),
+        mode,
+        eps,
+        boundary_kind,
+        include_boundary,
+        include_foreign,
+        filter_parent
+    );
 
 /**
  * Function: Get seam site index.
@@ -1904,16 +1945,18 @@ module place_on_face_seam_segments(
     assert(!is_undef($ps_face_dihedrals), "place_on_face_seam_segments: requires place_on_faces context ($ps_face_dihedrals)");
     assert(coords == "element" || coords == "parent", "place_on_face_seam_segments: coords must be \"element\" or \"parent\"");
 
-    target_ctx = ps_target_local_poly_context($ps_poly_faces_idx, $ps_poly_verts_local, $ps_poly_center_local);
-    all_sites = ps_face_seam_segment_sites(
+    face_ctx = ps_face_local_context(
         $ps_face_pts3d_local,
         $ps_face_pts2d,
         $ps_face_idx,
-        ps_target_local_poly_context_faces_idx(target_ctx),
-        ps_target_local_poly_context_verts_local(target_ctx),
+        $ps_poly_faces_idx,
+        $ps_poly_verts_local,
         $ps_face_neighbors_idx,
         $ps_face_dihedrals,
-        ps_target_local_poly_context_center_local(target_ctx),
+        $ps_poly_center_local
+    );
+    all_sites = _ps_face_seam_segment_sites_from_context(
+        face_ctx,
         mode,
         eps,
         boundary_kind,

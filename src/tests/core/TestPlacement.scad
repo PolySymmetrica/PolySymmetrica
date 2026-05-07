@@ -170,6 +170,7 @@ module test_ps_face_site_frame_and_context__match_site_accessors() {
     site = ps_face_sites(p)[0];
     frame = ps_face_site_frame(site);
     ctx = ps_face_site_target_local_poly_context(site);
+    face_ctx = ps_face_site_face_local_context(site);
 
     assert(ps_placement_frame_center(frame) == ps_face_site_center(site), "face site frame center");
     assert(ps_placement_frame_ex(frame) == ps_face_site_ex(site), "face site frame ex");
@@ -179,6 +180,14 @@ module test_ps_face_site_frame_and_context__match_site_accessors() {
     assert(ps_target_local_poly_context_faces_idx(ctx) == ps_face_site_poly_faces_idx(site), "face site context faces");
     assert(ps_target_local_poly_context_verts_local(ctx) == ps_face_site_poly_verts_local(site), "face site context vertices");
     assert(ps_target_local_poly_context_center_local(ctx) == ps_face_site_poly_center_local(site), "face site context center");
+    assert(ps_face_local_context_pts3d_local(face_ctx) == ps_face_site_pts3d_local(site), "face site face-local context pts3d");
+    assert(ps_face_local_context_pts2d(face_ctx) == ps_face_site_pts2d(site), "face site face-local context pts2d");
+    assert(ps_face_local_context_idx(face_ctx) == ps_face_site_idx(site), "face site face-local context idx");
+    assert(ps_face_local_context_poly_faces_idx(face_ctx) == ps_face_site_poly_faces_idx(site), "face site face-local context faces");
+    assert(ps_face_local_context_poly_verts_local(face_ctx) == ps_face_site_poly_verts_local(site), "face site face-local context vertices");
+    assert(ps_face_local_context_poly_center_local(face_ctx) == ps_face_site_poly_center_local(site), "face site face-local context center");
+    assert(ps_face_local_context_neighbors_idx(face_ctx) == ps_face_site_neighbors_idx(site), "face site face-local context neighbors");
+    assert(ps_face_local_context_dihedrals(face_ctx) == ps_face_site_dihedrals(site), "face site face-local context dihedrals");
 }
 
 module test_ps_edge_sites__cube_records_match_edge_structure() {
