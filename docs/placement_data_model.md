@@ -258,6 +258,12 @@ ps_face_foreign_proxy_replay_sites(...)
 ps_proxy_volume_group_face_replay_sites(...)
 ```
 
+Internally, replay builders should pass a `ps_target_local_poly_context(...)`
+through the call graph once the current target face frame is established. The
+public builders still accept the raw `$ps_poly_faces_idx`,
+`$ps_poly_verts_local`, and `$ps_poly_center_local` pieces for compatibility,
+but nested helpers should avoid unpacking and repacking those three fields.
+
 They are used by:
 
 ```scad
@@ -325,6 +331,9 @@ Accessors:
 Volume groups intentionally do not define arbitrary user geometry. They are a
 provenance and grouping layer that later render/replay code can use to decide
 which foreign faces, edges, vertices, or conservative hulls to emit.
+As with replay sites, internal volume-group builders should receive the
+target-local poly context directly and use its accessors when they need source
+topology or target-local vertex positions.
 
 ## Seam Segment Site Records
 

@@ -409,13 +409,12 @@ function _ps_proxy_candidate_records_dedupe(records, i=0, acc=[]) =
 
 /**
  * Function: Build one foreign face replay site from an intrusion record.
- * Params: replay_idx (site index), record (foreign intrusion record), poly_faces_idx/poly_verts_local/poly_center_local (target-local poly context), eps (degeneracy tolerance)
+ * Params: replay_idx (site index), record (foreign intrusion record), ctx (target-local poly context), eps (degeneracy tolerance)
  * Returns: replay site record for `place_on_face_foreign_face_replay_sites(...)`
  */
-function _ps_face_foreign_face_replay_site(replay_idx, record, poly_faces_idx, poly_verts_local, poly_center_local, eps=1e-12) =
+function _ps_face_foreign_face_replay_site(replay_idx, record, ctx, eps=1e-12) =
     let(
         foreign_face_idx = ps_intrusion_foreign_idx(record),
-        ctx = ps_target_local_poly_context(poly_faces_idx, poly_verts_local, poly_center_local),
         ctx_faces_idx = ps_target_local_poly_context_faces_idx(ctx),
         ctx_verts_local = ps_target_local_poly_context_verts_local(ctx),
         ctx_center_local = ps_target_local_poly_context_center_local(ctx),
@@ -446,13 +445,12 @@ function _ps_face_foreign_face_replay_site(replay_idx, record, poly_faces_idx, p
 
 /**
  * Function: Build one foreign edge replay site from a candidate intrusion record.
- * Params: replay_idx (site index), record (foreign edge candidate record), poly_faces_idx/poly_verts_local/poly_center_local (target-local poly context), eps (degeneracy tolerance)
+ * Params: replay_idx (site index), record (foreign edge candidate record), ctx (target-local poly context), eps (degeneracy tolerance)
  * Returns: replay site record for `place_on_face_foreign_proxy_sites(...)`
  */
-function _ps_face_foreign_edge_replay_site(replay_idx, record, poly_faces_idx, poly_verts_local, poly_center_local, eps=1e-12) =
+function _ps_face_foreign_edge_replay_site(replay_idx, record, ctx, eps=1e-12) =
     let(
         foreign_edge_idx = ps_intrusion_foreign_idx(record),
-        ctx = ps_target_local_poly_context(poly_faces_idx, poly_verts_local, poly_center_local),
         ctx_faces_idx = ps_target_local_poly_context_faces_idx(ctx),
         ctx_verts_local = ps_target_local_poly_context_verts_local(ctx),
         ctx_center_local = ps_target_local_poly_context_center_local(ctx),
@@ -482,13 +480,12 @@ function _ps_face_foreign_edge_replay_site(replay_idx, record, poly_faces_idx, p
 
 /**
  * Function: Build one foreign vertex replay site from a candidate intrusion record.
- * Params: replay_idx (site index), record (foreign vertex candidate record), poly_faces_idx/poly_verts_local/poly_center_local (target-local poly context), eps (degeneracy tolerance)
+ * Params: replay_idx (site index), record (foreign vertex candidate record), ctx (target-local poly context), eps (degeneracy tolerance)
  * Returns: replay site record for `place_on_face_foreign_proxy_sites(...)`
  */
-function _ps_face_foreign_vertex_replay_site(replay_idx, record, poly_faces_idx, poly_verts_local, poly_center_local, eps=1e-12) =
+function _ps_face_foreign_vertex_replay_site(replay_idx, record, ctx, eps=1e-12) =
     let(
         foreign_vertex_idx = ps_intrusion_foreign_idx(record),
-        ctx = ps_target_local_poly_context(poly_faces_idx, poly_verts_local, poly_center_local),
         ctx_faces_idx = ps_target_local_poly_context_faces_idx(ctx),
         ctx_verts_local = ps_target_local_poly_context_verts_local(ctx),
         ctx_center_local = ps_target_local_poly_context_center_local(ctx),
@@ -517,39 +514,59 @@ function _ps_face_foreign_vertex_replay_site(replay_idx, record, poly_faces_idx,
     ];
 
 /**
- * Function: Build target-local replay sites for exact foreign face intrusions.
- * Params: face_pts2d (target face loop), face_idx (target face index), poly_faces_idx/poly_verts_local/poly_center_local (current `place_on_faces(...)` metadata), eps (tolerance), mode (foreign face fill rule), filter_parent (drop parent-edge cuts)
+ * Function: Build target-local replay sites for exact foreign face intrusions from a target-local poly context.
+ * Params: face_pts2d (target face loop), face_idx (target face index), ctx (target-local poly context), eps (tolerance), mode (foreign face fill rule), filter_parent (drop parent-edge cuts)
  * Returns: replay site records for intruding foreign faces, with frames expressed in the target face-local coordinate system
  * Limitations/Gotchas: only exact `"face"` intrusion records are converted; use `ps_face_foreign_proxy_replay_sites(...)` for edge/vertex candidates
  */
-function ps_face_foreign_face_replay_sites(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, poly_center_local=undef, eps=1e-8, mode="nonzero", filter_parent=true) =
+function _ps_face_foreign_face_replay_sites_from_context(face_pts2d, face_idx, ctx, eps=1e-8, mode="nonzero", filter_parent=true) =
     let(
+        ctx_faces_idx = ps_target_local_poly_context_faces_idx(ctx),
+        ctx_verts_local = ps_target_local_poly_context_verts_local(ctx),
         records = [
-            for (r = ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent))
+            for (r = ps_face_foreign_intrusion_records(face_pts2d, face_idx, ctx_faces_idx, ctx_verts_local, eps, mode, filter_parent))
                 if (ps_intrusion_foreign_kind(r) == "face")
                     r
         ]
     )
     [
         for (ri = [0:1:len(records)-1])
-            _ps_face_foreign_face_replay_site(ri, records[ri], poly_faces_idx, poly_verts_local, poly_center_local, eps)
+            _ps_face_foreign_face_replay_site(ri, records[ri], ctx, eps)
     ];
 
 /**
+ * Function: Build target-local replay sites for exact foreign face intrusions.
+ * Params: face_pts2d (target face loop), face_idx (target face index), poly_faces_idx/poly_verts_local/poly_center_local (current `place_on_faces(...)` metadata), eps (tolerance), mode (foreign face fill rule), filter_parent (drop parent-edge cuts)
+ * Returns: replay site records for intruding foreign faces, with frames expressed in the target face-local coordinate system
+ * Limitations/Gotchas: public-compatible wrapper around context-based internals
+ */
+function ps_face_foreign_face_replay_sites(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, poly_center_local=undef, eps=1e-8, mode="nonzero", filter_parent=true) =
+    _ps_face_foreign_face_replay_sites_from_context(
+        face_pts2d,
+        face_idx,
+        ps_target_local_poly_context(poly_faces_idx, poly_verts_local, poly_center_local),
+        eps,
+        mode,
+        filter_parent
+    );
+
+/**
  * Function: Build proxy replay sites from already-derived exact foreign face records.
- * Params: face_idx (target face index), face_records (exact foreign face intrusion records), poly_faces_idx/poly_verts_local/poly_center_local (current `place_on_faces(...)` metadata), eps (tolerance)
+ * Params: face_idx (target face index), face_records (exact foreign face intrusion records), ctx (target-local poly context), eps (tolerance)
  * Returns: replay site records preserving every exact face record, plus deduped edge/vertex boundary candidates
  */
-function _ps_face_foreign_proxy_replay_sites_from_records(face_idx, face_records, poly_faces_idx, poly_verts_local, poly_center_local=undef, eps=1e-8) =
+function _ps_face_foreign_proxy_replay_sites_from_records_context(face_idx, face_records, ctx, eps=1e-8) =
     let(
+        ctx_faces_idx = ps_target_local_poly_context_faces_idx(ctx),
+        ctx_verts_local = ps_target_local_poly_context_verts_local(ctx),
         edge_records = [
             for (r = face_records)
-                for (edge_idx = _ps_proxy_edge_ids_from_face_record(r, poly_faces_idx, poly_verts_local, eps))
+                for (edge_idx = _ps_proxy_edge_ids_from_face_record(r, ctx_faces_idx, ctx_verts_local, eps))
                     ["face_plane_cut_candidate", face_idx, "edge", edge_idx, ps_intrusion_segment2d_local(r), ps_intrusion_dihedral(r), "candidate"]
         ],
         vertex_records = [
             for (r = face_records)
-                for (vertex_idx = _ps_proxy_vertex_ids_from_face_record(r, poly_faces_idx, poly_verts_local, eps))
+                for (vertex_idx = _ps_proxy_vertex_ids_from_face_record(r, ctx_faces_idx, ctx_verts_local, eps))
                     ["face_plane_cut_candidate", face_idx, "vertex", vertex_idx, ps_intrusion_segment2d_local(r), ps_intrusion_dihedral(r), "candidate"]
         ],
         candidate_records = _ps_proxy_candidate_records_dedupe(concat(edge_records, vertex_records)),
@@ -559,27 +576,58 @@ function _ps_face_foreign_proxy_replay_sites_from_records(face_idx, face_records
         for (ri = [0:1:len(records)-1])
             let(kind = ps_intrusion_foreign_kind(records[ri]))
                 kind == "face"
-                    ? _ps_face_foreign_face_replay_site(ri, records[ri], poly_faces_idx, poly_verts_local, poly_center_local, eps)
+                    ? _ps_face_foreign_face_replay_site(ri, records[ri], ctx, eps)
                     : kind == "edge"
-                    ? _ps_face_foreign_edge_replay_site(ri, records[ri], poly_faces_idx, poly_verts_local, poly_center_local, eps)
-                    : _ps_face_foreign_vertex_replay_site(ri, records[ri], poly_faces_idx, poly_verts_local, poly_center_local, eps)
+                    ? _ps_face_foreign_edge_replay_site(ri, records[ri], ctx, eps)
+                    : _ps_face_foreign_vertex_replay_site(ri, records[ri], ctx, eps)
     ];
+
+/**
+ * Function: Build proxy replay sites from already-derived exact foreign face records.
+ * Params: face_idx (target face index), face_records (exact foreign face intrusion records), poly_faces_idx/poly_verts_local/poly_center_local (current `place_on_faces(...)` metadata), eps (tolerance)
+ * Returns: replay site records preserving every exact face record, plus deduped edge/vertex boundary candidates
+ */
+function _ps_face_foreign_proxy_replay_sites_from_records(face_idx, face_records, poly_faces_idx, poly_verts_local, poly_center_local=undef, eps=1e-8) =
+    _ps_face_foreign_proxy_replay_sites_from_records_context(
+        face_idx,
+        face_records,
+        ps_target_local_poly_context(poly_faces_idx, poly_verts_local, poly_center_local),
+        eps
+    );
+
+/**
+ * Function: Build provenance-driven proxy replay sites for foreign face/edge/vertex sources from a target-local poly context.
+ * Params: face_pts2d (target face loop), face_idx (target face index), ctx (target-local poly context), eps (tolerance), mode (foreign face fill rule), filter_parent (drop parent-edge cuts)
+ * Returns: replay site records for exact foreign faces plus every boundary edge/vertex of those exact face intruders
+ * Limitations/Gotchas: edge and vertex sites are candidate/provenance records, not distance-envelope proximity tests
+ */
+function _ps_face_foreign_proxy_replay_sites_from_context(face_pts2d, face_idx, ctx, eps=1e-8, mode="nonzero", filter_parent=true) =
+    let(
+        ctx_faces_idx = ps_target_local_poly_context_faces_idx(ctx),
+        ctx_verts_local = ps_target_local_poly_context_verts_local(ctx),
+        face_records = [
+            for (r = ps_face_foreign_intrusion_records(face_pts2d, face_idx, ctx_faces_idx, ctx_verts_local, eps, mode, filter_parent))
+                if (ps_intrusion_foreign_kind(r) == "face")
+                    r
+        ]
+    )
+    _ps_face_foreign_proxy_replay_sites_from_records_context(face_idx, face_records, ctx, eps);
 
 /**
  * Function: Build provenance-driven proxy replay sites for foreign face/edge/vertex sources.
  * Params: face_pts2d (target face loop), face_idx (target face index), poly_faces_idx/poly_verts_local/poly_center_local (current `place_on_faces(...)` metadata), eps (tolerance), mode (foreign face fill rule), filter_parent (drop parent-edge cuts)
  * Returns: replay site records for exact foreign faces plus every boundary edge/vertex of those exact face intruders
- * Limitations/Gotchas: edge and vertex sites are candidate/provenance records, not distance-envelope proximity tests
+ * Limitations/Gotchas: public-compatible wrapper around context-based internals
  */
 function ps_face_foreign_proxy_replay_sites(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, poly_center_local=undef, eps=1e-8, mode="nonzero", filter_parent=true) =
-    let(
-        face_records = [
-            for (r = ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent))
-                if (ps_intrusion_foreign_kind(r) == "face")
-                    r
-        ]
-    )
-    _ps_face_foreign_proxy_replay_sites_from_records(face_idx, face_records, poly_faces_idx, poly_verts_local, poly_center_local, eps);
+    _ps_face_foreign_proxy_replay_sites_from_context(
+        face_pts2d,
+        face_idx,
+        ps_target_local_poly_context(poly_faces_idx, poly_verts_local, poly_center_local),
+        eps,
+        mode,
+        filter_parent
+    );
 
 /**
  * Function: Test whether two faces share an undirected source edge.
@@ -675,24 +723,26 @@ function _ps_proxy_group_support_face_ids(group_face_ids, faces, target_face_idx
 
 /**
  * Function: Build one foreign proxy volume-group record.
- * Params: group_idx (group index), target_face_idx (target face), group_face_ids (seed source faces), face_records (exact intrusion records), poly_faces_idx/poly_verts_local (target-local poly context), eps (tolerance)
+ * Params: group_idx (group index), target_face_idx (target face), group_face_ids (seed source faces), face_records (exact intrusion records), ctx (target-local poly context), eps (tolerance)
  * Returns: volume-group record `["foreign_proxy_volume_group", target_face_idx, group_idx, face_idxs, record_idxs, records, edge_idxs, vertex_idxs, support_face_idxs]`
  */
-function _ps_proxy_volume_group_record(group_idx, target_face_idx, group_face_ids, face_records, poly_faces_idx, poly_verts_local, eps=1e-8) =
+function _ps_proxy_volume_group_record(group_idx, target_face_idx, group_face_ids, face_records, ctx, eps=1e-8) =
     let(
+        ctx_faces_idx = ps_target_local_poly_context_faces_idx(ctx),
+        ctx_verts_local = ps_target_local_poly_context_verts_local(ctx),
         record_idxs = _ps_proxy_group_record_idxs(face_records, group_face_ids),
         records = [for (ri = record_idxs) face_records[ri]],
         edge_idxs = _ps_unique_values([
             for (r = records)
-                for (edge_idx = _ps_proxy_edge_ids_from_face_record(r, poly_faces_idx, poly_verts_local, eps))
+                for (edge_idx = _ps_proxy_edge_ids_from_face_record(r, ctx_faces_idx, ctx_verts_local, eps))
                     edge_idx
         ]),
         vertex_idxs = _ps_unique_values([
             for (r = records)
-                for (vertex_idx = _ps_proxy_vertex_ids_from_face_record(r, poly_faces_idx, poly_verts_local, eps))
+                for (vertex_idx = _ps_proxy_vertex_ids_from_face_record(r, ctx_faces_idx, ctx_verts_local, eps))
                     vertex_idx
         ]),
-        support_face_idxs = _ps_proxy_group_support_face_ids(group_face_ids, poly_faces_idx, target_face_idx)
+        support_face_idxs = _ps_proxy_group_support_face_ids(group_face_ids, ctx_faces_idx, target_face_idx)
     )
     [
         "foreign_proxy_volume_group",
@@ -708,35 +758,68 @@ function _ps_proxy_volume_group_record(group_idx, target_face_idx, group_face_id
 
 /**
  * Function: Build proxy volume groups from exact foreign face intrusion records.
- * Params: target_face_idx (target face), face_records (exact foreign face records), poly_faces_idx/poly_verts_local (target-local poly context), eps (tolerance)
+ * Params: target_face_idx (target face), face_records (exact foreign face records), ctx (target-local poly context), eps (tolerance)
  * Returns: connected source-face volume-group records
  * Limitations/Gotchas: data only; does not construct a closed CSG/polyhedron volume
  */
-function _ps_face_foreign_proxy_volume_groups_from_records(target_face_idx, face_records, poly_faces_idx, poly_verts_local, eps=1e-8) =
+function _ps_face_foreign_proxy_volume_groups_from_records_context(target_face_idx, face_records, ctx, eps=1e-8) =
     let(
+        ctx_faces_idx = ps_target_local_poly_context_faces_idx(ctx),
         seed_face_ids = _ps_unique_values([for (r = face_records) ps_intrusion_foreign_idx(r)]),
-        groups = _ps_proxy_connected_face_groups(seed_face_ids, poly_faces_idx)
+        groups = _ps_proxy_connected_face_groups(seed_face_ids, ctx_faces_idx)
     )
     [
         for (gi = [0:1:len(groups)-1])
-            _ps_proxy_volume_group_record(gi, target_face_idx, groups[gi], face_records, poly_faces_idx, poly_verts_local, eps)
+            _ps_proxy_volume_group_record(gi, target_face_idx, groups[gi], face_records, ctx, eps)
     ];
+
+/**
+ * Function: Build proxy volume groups from exact foreign face intrusion records.
+ * Params: target_face_idx (target face), face_records (exact foreign face records), poly_faces_idx/poly_verts_local (target-local poly context), eps (tolerance)
+ * Returns: connected source-face volume-group records
+ * Limitations/Gotchas: public-compatible wrapper around context-based internals
+ */
+function _ps_face_foreign_proxy_volume_groups_from_records(target_face_idx, face_records, poly_faces_idx, poly_verts_local, eps=1e-8) =
+    _ps_face_foreign_proxy_volume_groups_from_records_context(
+        target_face_idx,
+        face_records,
+        ps_target_local_poly_context(poly_faces_idx, poly_verts_local),
+        eps
+    );
+
+/**
+ * Function: Build connected foreign proxy volume-group records for a target face from a target-local poly context.
+ * Params: face_pts2d (target face loop), face_idx (target face index), ctx (target-local poly context), eps (tolerance), mode (foreign face fill rule), filter_parent (drop parent-edge cuts)
+ * Returns: data-only volume-group records for exact intruding foreign faces
+ * Limitations/Gotchas: groups describe source-topology provenance for later/user-supplied volume replay; they do not infer arbitrary solid geometry
+ */
+function _ps_face_foreign_proxy_volume_groups_from_context(face_pts2d, face_idx, ctx, eps=1e-8, mode="nonzero", filter_parent=true) =
+    let(
+        ctx_faces_idx = ps_target_local_poly_context_faces_idx(ctx),
+        ctx_verts_local = ps_target_local_poly_context_verts_local(ctx),
+        face_records = [
+            for (r = ps_face_foreign_intrusion_records(face_pts2d, face_idx, ctx_faces_idx, ctx_verts_local, eps, mode, filter_parent))
+                if (ps_intrusion_foreign_kind(r) == "face" && ps_intrusion_confidence(r) == "exact")
+                    r
+        ]
+    )
+    _ps_face_foreign_proxy_volume_groups_from_records_context(face_idx, face_records, ctx, eps);
 
 /**
  * Function: Build connected foreign proxy volume-group records for a target face.
  * Params: face_pts2d (target face loop), face_idx (target face index), poly_faces_idx/poly_verts_local (current `place_on_faces(...)` metadata), eps (tolerance), mode (foreign face fill rule), filter_parent (drop parent-edge cuts)
  * Returns: data-only volume-group records for exact intruding foreign faces
- * Limitations/Gotchas: groups describe source-topology provenance for later/user-supplied volume replay; they do not infer arbitrary solid geometry
+ * Limitations/Gotchas: public-compatible wrapper around context-based internals
  */
 function ps_face_foreign_proxy_volume_groups(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero", filter_parent=true) =
-    let(
-        face_records = [
-            for (r = ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent))
-                if (ps_intrusion_foreign_kind(r) == "face" && ps_intrusion_confidence(r) == "exact")
-                    r
-        ]
-    )
-    _ps_face_foreign_proxy_volume_groups_from_records(face_idx, face_records, poly_faces_idx, poly_verts_local, eps);
+    _ps_face_foreign_proxy_volume_groups_from_context(
+        face_pts2d,
+        face_idx,
+        ps_target_local_poly_context(poly_faces_idx, poly_verts_local),
+        eps,
+        mode,
+        filter_parent
+    );
 
 /**
  * Function: Get volume-group record kind.
@@ -802,16 +885,28 @@ function ps_proxy_volume_group_vertex_idxs(group) = group[7];
 function ps_proxy_volume_group_support_face_idxs(group) = group[8];
 
 /**
+ * Function: Build renderable exact face replay sites for one proxy volume group from a target-local poly context.
+ * Params: group (proxy volume-group record), ctx (target-local poly context), eps (tolerance)
+ * Returns: replay site records for exact foreign faces in the group
+ */
+function _ps_proxy_volume_group_face_replay_sites_from_context(group, ctx, eps=1e-8) =
+    let(records = ps_proxy_volume_group_records(group))
+    [
+        for (ri = [0:1:len(records)-1])
+            _ps_face_foreign_face_replay_site(ri, records[ri], ctx, eps)
+    ];
+
+/**
  * Function: Build renderable exact face replay sites for one proxy volume group.
  * Params: group (proxy volume-group record), poly_faces_idx/poly_verts_local/poly_center_local (current `place_on_faces(...)` metadata), eps (tolerance)
  * Returns: replay site records for exact foreign faces in the group
  */
 function ps_proxy_volume_group_face_replay_sites(group, poly_faces_idx, poly_verts_local, poly_center_local=undef, eps=1e-8) =
-    let(records = ps_proxy_volume_group_records(group))
-    [
-        for (ri = [0:1:len(records)-1])
-            _ps_face_foreign_face_replay_site(ri, records[ri], poly_faces_idx, poly_verts_local, poly_center_local, eps)
-    ];
+    _ps_proxy_volume_group_face_replay_sites_from_context(
+        group,
+        ps_target_local_poly_context(poly_faces_idx, poly_verts_local, poly_center_local),
+        eps
+    );
 
 /**
  * Function: Get replay site index.
@@ -1282,7 +1377,8 @@ module place_on_face_foreign_face_replay_sites(mode="nonzero", eps=1e-8, filter_
     assert(!is_undef($ps_poly_verts_local), "place_on_face_foreign_face_replay_sites: requires place_on_faces context ($ps_poly_verts_local)");
     assert(coords == "element" || coords == "parent", "place_on_face_foreign_face_replay_sites: coords must be \"element\" or \"parent\"");
 
-    sites = ps_face_foreign_face_replay_sites($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, $ps_poly_center_local, eps, mode, filter_parent);
+    target_ctx = ps_target_local_poly_context($ps_poly_faces_idx, $ps_poly_verts_local, $ps_poly_center_local);
+    sites = _ps_face_foreign_face_replay_sites_from_context($ps_face_pts2d, $ps_face_idx, target_ctx, eps, mode, filter_parent);
     for (site = sites) {
         face_site = ps_replay_site_face_site(site);
         $ps_replay_idx = ps_replay_site_idx(site);
@@ -1354,7 +1450,8 @@ module place_on_face_foreign_proxy_sites(
     assert(coords == "element" || coords == "parent", "place_on_face_foreign_proxy_sites: coords must be \"element\" or \"parent\"");
     assert(face_child >= 0 && edge_child >= 0 && vertex_child >= 0, "place_on_face_foreign_proxy_sites: child slot indices must be non-negative");
 
-    sites = ps_face_foreign_proxy_replay_sites($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, $ps_poly_center_local, eps, mode, filter_parent);
+    target_ctx = ps_target_local_poly_context($ps_poly_faces_idx, $ps_poly_verts_local, $ps_poly_center_local);
+    sites = _ps_face_foreign_proxy_replay_sites_from_context($ps_face_pts2d, $ps_face_idx, target_ctx, eps, mode, filter_parent);
     for (site = sites) {
         source_kind = ps_replay_site_foreign_kind(site);
         face_site = ps_replay_site_face_site(site);
@@ -1491,7 +1588,8 @@ module place_on_face_foreign_proxy_volume_groups(mode="nonzero", eps=1e-8, filte
     assert(!is_undef($ps_poly_faces_idx), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_poly_faces_idx)");
     assert(!is_undef($ps_poly_verts_local), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_poly_verts_local)");
 
-    groups = ps_face_foreign_proxy_volume_groups($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, eps, mode, filter_parent);
+    target_ctx = ps_target_local_poly_context($ps_poly_faces_idx, $ps_poly_verts_local, $ps_poly_center_local);
+    groups = _ps_face_foreign_proxy_volume_groups_from_context($ps_face_pts2d, $ps_face_idx, target_ctx, eps, mode, filter_parent);
     for (group = groups) {
         $ps_proxy_volume_group_record = group;
         $ps_proxy_volume_group_idx = ps_proxy_volume_group_idx(group);
@@ -1532,9 +1630,10 @@ module place_on_face_foreign_proxy_volume_group_faces(
     assert(!is_undef($ps_poly_verts_local), "place_on_face_foreign_proxy_volume_group_faces: requires place_on_faces context ($ps_poly_verts_local)");
     assert(coords == "element" || coords == "parent", "place_on_face_foreign_proxy_volume_group_faces: coords must be \"element\" or \"parent\"");
 
-    groups = ps_face_foreign_proxy_volume_groups($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, eps, mode, filter_parent);
+    target_ctx = ps_target_local_poly_context($ps_poly_faces_idx, $ps_poly_verts_local, $ps_poly_center_local);
+    groups = _ps_face_foreign_proxy_volume_groups_from_context($ps_face_pts2d, $ps_face_idx, target_ctx, eps, mode, filter_parent);
     for (group = groups) {
-        sites = ps_proxy_volume_group_face_replay_sites(group, $ps_poly_faces_idx, $ps_poly_verts_local, $ps_poly_center_local, eps);
+        sites = _ps_proxy_volume_group_face_replay_sites_from_context(group, target_ctx, eps);
         for (site = sites) {
             face_site = ps_replay_site_face_site(site);
 

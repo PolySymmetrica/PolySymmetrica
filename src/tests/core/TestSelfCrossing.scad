@@ -290,6 +290,21 @@ module test_ps_face_foreign_face_replay_sites__7_3_15_triangle_builds_target_loc
     }
 }
 
+module test_ps_face_foreign_replay_context_helpers__match_public_wrappers() {
+    site = _test_face_site(_test_punch_poly(), TRI_FACE_IDX);
+    target_ctx = ps_target_local_poly_context(site[13], site[12], site[9]);
+    face_public = ps_face_foreign_face_replay_sites(site[10], site[0], site[13], site[12], site[9], mode = MODE, filter_parent = true);
+    face_ctx = _ps_face_foreign_face_replay_sites_from_context(site[10], site[0], target_ctx, EPS, MODE, true);
+    proxy_public = ps_face_foreign_proxy_replay_sites(site[10], site[0], site[13], site[12], site[9], mode = MODE, filter_parent = true);
+    proxy_ctx = _ps_face_foreign_proxy_replay_sites_from_context(site[10], site[0], target_ctx, EPS, MODE, true);
+
+    assert(face_ctx == face_public, "context face replay helper should match public wrapper output");
+    assert(proxy_ctx == proxy_public, "context proxy replay helper should match public wrapper output");
+    assert_int_eq(_test_replay_kind_count(proxy_ctx, "face"), 6, "context proxy replay face count");
+    assert(_test_replay_kind_count(proxy_ctx, "edge") > 0, "context proxy replay should include edge candidates");
+    assert(_test_replay_kind_count(proxy_ctx, "vertex") > 0, "context proxy replay should include vertex candidates");
+}
+
 module test_ps_face_foreign_proxy_replay_sites__7_3_15_triangle_includes_edge_and_vertex_candidates() {
     site = _test_face_site(_test_punch_poly(), TRI_FACE_IDX);
     replay = ps_face_foreign_proxy_replay_sites(site[10], site[0], site[13], site[12], site[9], mode = MODE, filter_parent = true);
@@ -408,6 +423,24 @@ module test_ps_proxy_volume_group_face_replay_sites__7_3_15_triangle_builds_rend
             assert(ps_replay_site_intrusion_confidence(s) == "exact", "volume group replay unit confidence");
             assert_int_eq(len(ps_replay_site_face_pts2d(s)), 3, "volume group replay unit face arity");
         }
+}
+
+module test_ps_proxy_volume_group_context_helpers__match_public_wrappers() {
+    site = _test_face_site(_test_punch_poly(), TRI_FACE_IDX);
+    target_ctx = ps_target_local_poly_context(site[13], site[12], site[9]);
+    groups_public = ps_face_foreign_proxy_volume_groups(site[10], site[0], site[13], site[12], mode = MODE, filter_parent = true);
+    groups_ctx = _ps_face_foreign_proxy_volume_groups_from_context(site[10], site[0], target_ctx, EPS, MODE, true);
+    group_sites_public = [
+        for (g = groups_public)
+            ps_proxy_volume_group_face_replay_sites(g, site[13], site[12], site[9])
+    ];
+    group_sites_ctx = [
+        for (g = groups_ctx)
+            _ps_proxy_volume_group_face_replay_sites_from_context(g, target_ctx)
+    ];
+
+    assert(groups_ctx == groups_public, "context volume group helper should match public wrapper output");
+    assert(group_sites_ctx == group_sites_public, "context volume group face replay helper should match public wrapper output");
 }
 
 module test_place_on_face_foreign_proxy_volume_groups__7_3_15_triangle_exposes_context() {
@@ -956,12 +989,14 @@ module run_TestSelfCrossing() {
     test_ps_face_foreign_intrusion_records__7_3_15_triangle_wraps_exact_face_cuts();
     test_ps_face_foreign_intrusion_records__preserves_coincident_foreign_face_provenance();
     test_ps_face_foreign_face_replay_sites__7_3_15_triangle_builds_target_local_frames();
+    test_ps_face_foreign_replay_context_helpers__match_public_wrappers();
     test_ps_face_foreign_proxy_replay_sites__7_3_15_triangle_includes_edge_and_vertex_candidates();
     test_ps_face_foreign_proxy_replay_sites__5_2_15_triangle_includes_all_intruding_face_boundary_edges();
     test_ps_face_foreign_proxy_replay_sites__preserves_duplicate_exact_face_cut_records();
     test_ps_face_foreign_proxy_volume_groups__7_3_15_triangle_groups_exact_face_cuts();
     test_ps_face_foreign_proxy_volume_groups__preserves_duplicate_exact_face_cut_records();
     test_ps_proxy_volume_group_face_replay_sites__7_3_15_triangle_builds_renderable_units();
+    test_ps_proxy_volume_group_context_helpers__match_public_wrappers();
     test_ps_face_visible_segments__7_3_15_triangle_splits_into_visible_cells();
     test_ps_face_visible_segments__7_3_0_triangle_catches_meeting_cut_edges();
     test_ps_face_filled_boundary_source_edges__7_3_0_triangle_is_simple_boundary();
