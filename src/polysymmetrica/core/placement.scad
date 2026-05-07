@@ -415,21 +415,26 @@ function _ps_proxy_candidate_records_dedupe(records, i=0, acc=[]) =
 function _ps_face_foreign_face_replay_site(replay_idx, record, poly_faces_idx, poly_verts_local, poly_center_local, eps=1e-12) =
     let(
         foreign_face_idx = ps_intrusion_foreign_idx(record),
-        face_site = _ps_face_site_from_local_poly(foreign_face_idx, poly_faces_idx, poly_verts_local, poly_center_local, eps)
+        ctx = ps_target_local_poly_context(poly_faces_idx, poly_verts_local, poly_center_local),
+        ctx_faces_idx = ps_target_local_poly_context_faces_idx(ctx),
+        ctx_verts_local = ps_target_local_poly_context_verts_local(ctx),
+        ctx_center_local = ps_target_local_poly_context_center_local(ctx),
+        face_site = _ps_face_site_from_local_poly(foreign_face_idx, ctx_faces_idx, ctx_verts_local, ctx_center_local, eps),
+        face_site_faces_idx = ps_face_site_poly_faces_idx(face_site)
     )
     [
         replay_idx,
         record,
-        face_site[1],
-        face_site[2],
-        face_site[3],
-        face_site[4],
+        ps_face_site_center(face_site),
+        ps_face_site_ex(face_site),
+        ps_face_site_ey(face_site),
+        ps_face_site_ez(face_site),
         foreign_face_idx,
-        face_site[10],
-        face_site[11],
-        face_site[12],
-        face_site[9],
-        face_site[13][foreign_face_idx],
+        ps_face_site_pts2d(face_site),
+        ps_face_site_pts3d_local(face_site),
+        ps_face_site_poly_verts_local(face_site),
+        ps_face_site_poly_center_local(face_site),
+        face_site_faces_idx[foreign_face_idx],
         ps_intrusion_foreign_kind(record),
         ps_intrusion_segment2d_local(record),
         ps_intrusion_dihedral(record),
@@ -447,20 +452,24 @@ function _ps_face_foreign_face_replay_site(replay_idx, record, poly_faces_idx, p
 function _ps_face_foreign_edge_replay_site(replay_idx, record, poly_faces_idx, poly_verts_local, poly_center_local, eps=1e-12) =
     let(
         foreign_edge_idx = ps_intrusion_foreign_idx(record),
-        edge_site = _ps_edge_site_from_local_poly(foreign_edge_idx, poly_faces_idx, poly_verts_local, poly_center_local, eps)
+        ctx = ps_target_local_poly_context(poly_faces_idx, poly_verts_local, poly_center_local),
+        ctx_faces_idx = ps_target_local_poly_context_faces_idx(ctx),
+        ctx_verts_local = ps_target_local_poly_context_verts_local(ctx),
+        ctx_center_local = ps_target_local_poly_context_center_local(ctx),
+        edge_site = _ps_edge_site_from_local_poly(foreign_edge_idx, ctx_faces_idx, ctx_verts_local, ctx_center_local, eps)
     )
     [
         replay_idx,
         record,
-        edge_site[1],
-        edge_site[2],
-        edge_site[3],
-        edge_site[4],
+        ps_edge_site_center(edge_site),
+        ps_edge_site_ex(edge_site),
+        ps_edge_site_ey(edge_site),
+        ps_edge_site_ez(edge_site),
         foreign_edge_idx,
         undef,
         undef,
         undef,
-        edge_site[7],
+        ps_edge_site_poly_center_local(edge_site),
         undef,
         ps_intrusion_foreign_kind(record),
         ps_intrusion_segment2d_local(record),
@@ -479,20 +488,24 @@ function _ps_face_foreign_edge_replay_site(replay_idx, record, poly_faces_idx, p
 function _ps_face_foreign_vertex_replay_site(replay_idx, record, poly_faces_idx, poly_verts_local, poly_center_local, eps=1e-12) =
     let(
         foreign_vertex_idx = ps_intrusion_foreign_idx(record),
-        vertex_site = _ps_vertex_site_from_local_poly(foreign_vertex_idx, poly_faces_idx, poly_verts_local, poly_center_local, eps)
+        ctx = ps_target_local_poly_context(poly_faces_idx, poly_verts_local, poly_center_local),
+        ctx_faces_idx = ps_target_local_poly_context_faces_idx(ctx),
+        ctx_verts_local = ps_target_local_poly_context_verts_local(ctx),
+        ctx_center_local = ps_target_local_poly_context_center_local(ctx),
+        vertex_site = _ps_vertex_site_from_local_poly(foreign_vertex_idx, ctx_faces_idx, ctx_verts_local, ctx_center_local, eps)
     )
     [
         replay_idx,
         record,
-        vertex_site[1],
-        vertex_site[2],
-        vertex_site[3],
-        vertex_site[4],
+        ps_vertex_site_center(vertex_site),
+        ps_vertex_site_ex(vertex_site),
+        ps_vertex_site_ey(vertex_site),
+        ps_vertex_site_ez(vertex_site),
         foreign_vertex_idx,
         undef,
         undef,
         undef,
-        vertex_site[7],
+        ps_vertex_site_poly_center_local(vertex_site),
         undef,
         ps_intrusion_foreign_kind(record),
         ps_intrusion_segment2d_local(record),
@@ -1357,31 +1370,26 @@ module place_on_face_foreign_face_replay_sites(mode="nonzero", eps=1e-8, filter_
         $ps_replay_intrusion_confidence = ps_replay_site_intrusion_confidence(site);
 
         if (coords == "element") {
-            $ps_face_idx           = face_site[0];
-            $ps_edge_len           = face_site[5];
-            $ps_vertex_count       = face_site[6];
-            $ps_face_midradius     = face_site[7];
-            $ps_face_radius        = face_site[8];
-            $ps_poly_center_local  = face_site[9];
-            $ps_face_pts2d         = face_site[10];
-            $ps_face_pts3d_local   = face_site[11];
-            $ps_poly_verts_local   = face_site[12];
-            $ps_poly_faces_idx     = face_site[13];
-            $ps_face_planarity_err = face_site[14];
-            $ps_face_is_planar     = face_site[15];
-            $ps_face_family_id     = face_site[16];
-            $ps_face_family_count  = face_site[17];
-            $ps_edge_family_count  = face_site[18];
-            $ps_vertex_family_count = face_site[19];
-            $ps_face_neighbors_idx = face_site[20];
-            $ps_face_dihedrals     = face_site[21];
+            $ps_face_idx           = ps_face_site_idx(face_site);
+            $ps_edge_len           = ps_face_site_edge_len(face_site);
+            $ps_vertex_count       = ps_face_site_vertex_count(face_site);
+            $ps_face_midradius     = ps_face_site_midradius(face_site);
+            $ps_face_radius        = ps_face_site_radius(face_site);
+            $ps_poly_center_local  = ps_face_site_poly_center_local(face_site);
+            $ps_face_pts2d         = ps_face_site_pts2d(face_site);
+            $ps_face_pts3d_local   = ps_face_site_pts3d_local(face_site);
+            $ps_poly_verts_local   = ps_face_site_poly_verts_local(face_site);
+            $ps_poly_faces_idx     = ps_face_site_poly_faces_idx(face_site);
+            $ps_face_planarity_err = ps_face_site_planarity_err(face_site);
+            $ps_face_is_planar     = ps_face_site_is_planar(face_site);
+            $ps_face_family_id     = ps_face_site_family_id(face_site);
+            $ps_face_family_count  = ps_face_site_face_family_count(face_site);
+            $ps_edge_family_count  = ps_face_site_edge_family_count(face_site);
+            $ps_vertex_family_count = ps_face_site_vertex_family_count(face_site);
+            $ps_face_neighbors_idx = ps_face_site_neighbors_idx(face_site);
+            $ps_face_dihedrals     = ps_face_site_dihedrals(face_site);
 
-            multmatrix(ps_frame_matrix(
-                face_site[1],
-                face_site[2],
-                face_site[3],
-                face_site[4]
-            ))
+            multmatrix(ps_placement_frame_matrix(ps_face_site_frame(face_site)))
                 children();
         } else {
             children();
@@ -1441,12 +1449,12 @@ module place_on_face_foreign_proxy_sites(
         $ps_proxy_face_pts2d = ps_replay_site_face_pts2d(site);
         $ps_proxy_face_pts3d_local = ps_replay_site_face_pts3d_local(site);
         $ps_proxy_face_verts_idx = ps_replay_site_face_verts_idx(site);
-        $ps_proxy_edge_pts_local = is_undef(edge_site) ? undef : edge_site[8];
-        $ps_proxy_edge_verts_idx = is_undef(edge_site) ? undef : edge_site[9];
-        $ps_proxy_edge_adj_faces_idx = is_undef(edge_site) ? undef : edge_site[10];
-        $ps_proxy_vertex_valence = is_undef(vertex_site) ? undef : vertex_site[8];
-        $ps_proxy_vertex_neighbors_idx = is_undef(vertex_site) ? undef : vertex_site[9];
-        $ps_proxy_vertex_neighbor_pts_local = is_undef(vertex_site) ? undef : vertex_site[10];
+        $ps_proxy_edge_pts_local = is_undef(edge_site) ? undef : ps_edge_site_pts_local(edge_site);
+        $ps_proxy_edge_verts_idx = is_undef(edge_site) ? undef : ps_edge_site_verts_idx(edge_site);
+        $ps_proxy_edge_adj_faces_idx = is_undef(edge_site) ? undef : ps_edge_site_adj_faces_idx(edge_site);
+        $ps_proxy_vertex_valence = is_undef(vertex_site) ? undef : ps_vertex_site_valence(vertex_site);
+        $ps_proxy_vertex_neighbors_idx = is_undef(vertex_site) ? undef : ps_vertex_site_neighbors_idx(vertex_site);
+        $ps_proxy_vertex_neighbor_pts_local = is_undef(vertex_site) ? undef : ps_vertex_site_neighbor_pts_local(vertex_site);
         $ps_proxy_poly_verts_local = ps_replay_site_poly_verts_local(site);
         $ps_proxy_poly_center_local = ps_replay_site_poly_center_local(site);
         $ps_replay_idx = ps_replay_site_idx(site);
@@ -1464,12 +1472,12 @@ module place_on_face_foreign_proxy_sites(
         $ps_replay_poly_verts_local = ps_replay_site_poly_verts_local(site);
         $ps_replay_poly_center_local = ps_replay_site_poly_center_local(site);
         $ps_replay_face_verts_idx = ps_replay_site_face_verts_idx(site);
-        $ps_replay_edge_pts_local = is_undef(edge_site) ? undef : edge_site[8];
-        $ps_replay_edge_verts_idx = is_undef(edge_site) ? undef : edge_site[9];
-        $ps_replay_edge_adj_faces_idx = is_undef(edge_site) ? undef : edge_site[10];
-        $ps_replay_vertex_valence = is_undef(vertex_site) ? undef : vertex_site[8];
-        $ps_replay_vertex_neighbors_idx = is_undef(vertex_site) ? undef : vertex_site[9];
-        $ps_replay_vertex_neighbor_pts_local = is_undef(vertex_site) ? undef : vertex_site[10];
+        $ps_replay_edge_pts_local = is_undef(edge_site) ? undef : ps_edge_site_pts_local(edge_site);
+        $ps_replay_edge_verts_idx = is_undef(edge_site) ? undef : ps_edge_site_verts_idx(edge_site);
+        $ps_replay_edge_adj_faces_idx = is_undef(edge_site) ? undef : ps_edge_site_adj_faces_idx(edge_site);
+        $ps_replay_vertex_valence = is_undef(vertex_site) ? undef : ps_vertex_site_valence(vertex_site);
+        $ps_replay_vertex_neighbors_idx = is_undef(vertex_site) ? undef : ps_vertex_site_neighbors_idx(vertex_site);
+        $ps_replay_vertex_neighbor_pts_local = is_undef(vertex_site) ? undef : ps_vertex_site_neighbor_pts_local(vertex_site);
         $ps_replay_intrusion_segment2d_local = ps_replay_site_intrusion_segment2d_local(site);
         $ps_replay_intrusion_dihedral = ps_replay_site_intrusion_dihedral(site);
         $ps_replay_intrusion_confidence = ps_replay_site_intrusion_confidence(site);
@@ -1477,71 +1485,56 @@ module place_on_face_foreign_proxy_sites(
         if (!is_undef(child_idx) && child_idx < $children) {
             if (coords == "element") {
                 if (source_kind == "face") {
-                    $ps_face_idx           = face_site[0];
-                    $ps_edge_len           = face_site[5];
-                    $ps_vertex_count       = face_site[6];
-                    $ps_face_midradius     = face_site[7];
-                    $ps_face_radius        = face_site[8];
-                    $ps_poly_center_local  = face_site[9];
-                    $ps_face_pts2d         = face_site[10];
-                    $ps_face_pts3d_local   = face_site[11];
-                    $ps_poly_verts_local   = face_site[12];
-                    $ps_poly_faces_idx     = face_site[13];
-                    $ps_face_planarity_err = face_site[14];
-                    $ps_face_is_planar     = face_site[15];
-                    $ps_face_family_id     = face_site[16];
-                    $ps_face_family_count  = face_site[17];
-                    $ps_edge_family_count  = face_site[18];
-                    $ps_vertex_family_count = face_site[19];
-                    $ps_face_neighbors_idx = face_site[20];
-                    $ps_face_dihedrals     = face_site[21];
+                    $ps_face_idx           = ps_face_site_idx(face_site);
+                    $ps_edge_len           = ps_face_site_edge_len(face_site);
+                    $ps_vertex_count       = ps_face_site_vertex_count(face_site);
+                    $ps_face_midradius     = ps_face_site_midradius(face_site);
+                    $ps_face_radius        = ps_face_site_radius(face_site);
+                    $ps_poly_center_local  = ps_face_site_poly_center_local(face_site);
+                    $ps_face_pts2d         = ps_face_site_pts2d(face_site);
+                    $ps_face_pts3d_local   = ps_face_site_pts3d_local(face_site);
+                    $ps_poly_verts_local   = ps_face_site_poly_verts_local(face_site);
+                    $ps_poly_faces_idx     = ps_face_site_poly_faces_idx(face_site);
+                    $ps_face_planarity_err = ps_face_site_planarity_err(face_site);
+                    $ps_face_is_planar     = ps_face_site_is_planar(face_site);
+                    $ps_face_family_id     = ps_face_site_family_id(face_site);
+                    $ps_face_family_count  = ps_face_site_face_family_count(face_site);
+                    $ps_edge_family_count  = ps_face_site_edge_family_count(face_site);
+                    $ps_vertex_family_count = ps_face_site_vertex_family_count(face_site);
+                    $ps_face_neighbors_idx = ps_face_site_neighbors_idx(face_site);
+                    $ps_face_dihedrals     = ps_face_site_dihedrals(face_site);
 
-                    multmatrix(ps_frame_matrix(
-                        face_site[1],
-                        face_site[2],
-                        face_site[3],
-                        face_site[4]
-                    ))
+                    multmatrix(ps_placement_frame_matrix(ps_face_site_frame(face_site)))
                         children(child_idx);
                 } else if (source_kind == "edge") {
-                    $ps_edge_idx            = edge_site[0];
-                    $ps_edge_len            = edge_site[5];
-                    $ps_edge_midradius      = edge_site[6];
-                    $ps_poly_center_local   = edge_site[7];
-                    $ps_edge_pts_local      = edge_site[8];
-                    $ps_edge_verts_idx      = edge_site[9];
-                    $ps_edge_adj_faces_idx  = edge_site[10];
-                    $ps_edge_family_id      = edge_site[11];
-                    $ps_face_family_count   = edge_site[12];
-                    $ps_edge_family_count   = edge_site[13];
-                    $ps_vertex_family_count = edge_site[14];
+                    $ps_edge_idx            = ps_edge_site_idx(edge_site);
+                    $ps_edge_len            = ps_edge_site_edge_len(edge_site);
+                    $ps_edge_midradius      = ps_edge_site_midradius(edge_site);
+                    $ps_poly_center_local   = ps_edge_site_poly_center_local(edge_site);
+                    $ps_edge_pts_local      = ps_edge_site_pts_local(edge_site);
+                    $ps_edge_verts_idx      = ps_edge_site_verts_idx(edge_site);
+                    $ps_edge_adj_faces_idx  = ps_edge_site_adj_faces_idx(edge_site);
+                    $ps_edge_family_id      = ps_edge_site_family_id(edge_site);
+                    $ps_face_family_count   = ps_edge_site_face_family_count(edge_site);
+                    $ps_edge_family_count   = ps_edge_site_edge_family_count(edge_site);
+                    $ps_vertex_family_count = ps_edge_site_vertex_family_count(edge_site);
 
-                    multmatrix(ps_frame_matrix(
-                        edge_site[1],
-                        edge_site[2],
-                        edge_site[3],
-                        edge_site[4]
-                    ))
+                    multmatrix(ps_placement_frame_matrix(ps_edge_site_frame(edge_site)))
                         children(child_idx);
                 } else if (source_kind == "vertex") {
-                    $ps_vertex_idx                = vertex_site[0];
-                    $ps_vertex_valence            = vertex_site[8];
-                    $ps_vertex_neighbors_idx      = vertex_site[9];
-                    $ps_vertex_neighbor_pts_local = vertex_site[10];
-                    $ps_edge_len                  = vertex_site[5];
-                    $ps_vert_radius               = vertex_site[6];
-                    $ps_poly_center_local         = vertex_site[7];
-                    $ps_vertex_family_id          = vertex_site[11];
-                    $ps_face_family_count         = vertex_site[12];
-                    $ps_edge_family_count         = vertex_site[13];
-                    $ps_vertex_family_count       = vertex_site[14];
+                    $ps_vertex_idx                = ps_vertex_site_idx(vertex_site);
+                    $ps_vertex_valence            = ps_vertex_site_valence(vertex_site);
+                    $ps_vertex_neighbors_idx      = ps_vertex_site_neighbors_idx(vertex_site);
+                    $ps_vertex_neighbor_pts_local = ps_vertex_site_neighbor_pts_local(vertex_site);
+                    $ps_edge_len                  = ps_vertex_site_edge_len(vertex_site);
+                    $ps_vert_radius               = ps_vertex_site_radius(vertex_site);
+                    $ps_poly_center_local         = ps_vertex_site_poly_center_local(vertex_site);
+                    $ps_vertex_family_id          = ps_vertex_site_family_id(vertex_site);
+                    $ps_face_family_count         = ps_vertex_site_face_family_count(vertex_site);
+                    $ps_edge_family_count         = ps_vertex_site_edge_family_count(vertex_site);
+                    $ps_vertex_family_count       = ps_vertex_site_vertex_family_count(vertex_site);
 
-                    multmatrix(ps_frame_matrix(
-                        vertex_site[1],
-                        vertex_site[2],
-                        vertex_site[3],
-                        vertex_site[4]
-                    ))
+                    multmatrix(ps_placement_frame_matrix(ps_vertex_site_frame(vertex_site)))
                         children(child_idx);
                 }
             } else {
@@ -1656,31 +1649,26 @@ module place_on_face_foreign_proxy_volume_group_faces(
             $ps_proxy_poly_center_local = ps_replay_site_poly_center_local(site);
 
             if (coords == "element") {
-                $ps_face_idx           = face_site[0];
-                $ps_edge_len           = face_site[5];
-                $ps_vertex_count       = face_site[6];
-                $ps_face_midradius     = face_site[7];
-                $ps_face_radius        = face_site[8];
-                $ps_poly_center_local  = face_site[9];
-                $ps_face_pts2d         = face_site[10];
-                $ps_face_pts3d_local   = face_site[11];
-                $ps_poly_verts_local   = face_site[12];
-                $ps_poly_faces_idx     = face_site[13];
-                $ps_face_planarity_err = face_site[14];
-                $ps_face_is_planar     = face_site[15];
-                $ps_face_family_id     = face_site[16];
-                $ps_face_family_count  = face_site[17];
-                $ps_edge_family_count  = face_site[18];
-                $ps_vertex_family_count = face_site[19];
-                $ps_face_neighbors_idx = face_site[20];
-                $ps_face_dihedrals     = face_site[21];
+                $ps_face_idx           = ps_face_site_idx(face_site);
+                $ps_edge_len           = ps_face_site_edge_len(face_site);
+                $ps_vertex_count       = ps_face_site_vertex_count(face_site);
+                $ps_face_midradius     = ps_face_site_midradius(face_site);
+                $ps_face_radius        = ps_face_site_radius(face_site);
+                $ps_poly_center_local  = ps_face_site_poly_center_local(face_site);
+                $ps_face_pts2d         = ps_face_site_pts2d(face_site);
+                $ps_face_pts3d_local   = ps_face_site_pts3d_local(face_site);
+                $ps_poly_verts_local   = ps_face_site_poly_verts_local(face_site);
+                $ps_poly_faces_idx     = ps_face_site_poly_faces_idx(face_site);
+                $ps_face_planarity_err = ps_face_site_planarity_err(face_site);
+                $ps_face_is_planar     = ps_face_site_is_planar(face_site);
+                $ps_face_family_id     = ps_face_site_family_id(face_site);
+                $ps_face_family_count  = ps_face_site_face_family_count(face_site);
+                $ps_edge_family_count  = ps_face_site_edge_family_count(face_site);
+                $ps_vertex_family_count = ps_face_site_vertex_family_count(face_site);
+                $ps_face_neighbors_idx = ps_face_site_neighbors_idx(face_site);
+                $ps_face_dihedrals     = ps_face_site_dihedrals(face_site);
 
-                multmatrix(ps_frame_matrix(
-                    face_site[1],
-                    face_site[2],
-                    face_site[3],
-                    face_site[4]
-                ))
+                multmatrix(ps_placement_frame_matrix(ps_face_site_frame(face_site)))
                     children(0);
             } else {
                 children(0);
