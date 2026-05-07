@@ -1030,6 +1030,88 @@ function ps_frame_matrix(center, ex, ey, ez) = [
     [0,      0,     0,     1]
 ];
 
+/**
+ * Function: Build a semantic placement-frame record.
+ * Params: center (origin in parent coordinates), ex/ey/ez (orthonormal axes in parent coordinates)
+ * Returns: placement frame `[center, ex, ey, ez]`
+ * Limitations: stores axes as supplied; callers remain responsible for orthonormal frame construction
+ */
+function ps_placement_frame(center, ex, ey, ez) = [center, ex, ey, ez];
+
+/**
+ * Function: Get center from a placement-frame record.
+ * Params: frame (placement frame)
+ * Returns: origin in parent coordinates
+ */
+function ps_placement_frame_center(frame) = frame[0];
+
+/**
+ * Function: Get local X axis from a placement-frame record.
+ * Params: frame (placement frame)
+ * Returns: unit X axis in parent coordinates
+ */
+function ps_placement_frame_ex(frame) = frame[1];
+
+/**
+ * Function: Get local Y axis from a placement-frame record.
+ * Params: frame (placement frame)
+ * Returns: unit Y axis in parent coordinates
+ */
+function ps_placement_frame_ey(frame) = frame[2];
+
+/**
+ * Function: Get local Z axis from a placement-frame record.
+ * Params: frame (placement frame)
+ * Returns: unit Z axis in parent coordinates
+ */
+function ps_placement_frame_ez(frame) = frame[3];
+
+/**
+ * Function: Convert a placement-frame record to an OpenSCAD transform matrix.
+ * Params: frame (placement frame)
+ * Returns: matrix compatible with `multmatrix(...)`
+ */
+function ps_placement_frame_matrix(frame) =
+    ps_frame_matrix(
+        ps_placement_frame_center(frame),
+        ps_placement_frame_ex(frame),
+        ps_placement_frame_ey(frame),
+        ps_placement_frame_ez(frame)
+    );
+
+/**
+ * Function: Build a target-local poly context record.
+ * Params: poly_faces_idx (poly face index loops), poly_verts_local (poly vertices in target-local coordinates), poly_center_local (optional poly center in target-local coordinates)
+ * Returns: target-local poly context `[poly_faces_idx, poly_verts_local, poly_center_local]`
+ */
+function ps_target_local_poly_context(poly_faces_idx, poly_verts_local, poly_center_local=undef) =
+    [
+        poly_faces_idx,
+        poly_verts_local,
+        is_undef(poly_center_local) ? [0, 0, 0] : poly_center_local
+    ];
+
+/**
+ * Function: Get face index loops from a target-local poly context.
+ * Params: ctx (target-local poly context)
+ * Returns: poly face index loops
+ */
+function ps_target_local_poly_context_faces_idx(ctx) = ctx[0];
+
+/**
+ * Function: Get local vertices from a target-local poly context.
+ * Params: ctx (target-local poly context)
+ * Returns: poly vertices in target-local coordinates
+ */
+function ps_target_local_poly_context_verts_local(ctx) = ctx[1];
+
+/**
+ * Function: Get local poly center from a target-local poly context.
+ * Params: ctx (target-local poly context)
+ * Returns: poly center in target-local coordinates
+ */
+function ps_target_local_poly_context_center_local(ctx) = ctx[2];
+
 
 /**
  * Function: Orient one face so its normal points away from origin.

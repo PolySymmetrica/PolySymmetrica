@@ -638,6 +638,8 @@ module test_ps_face_seam_segment_sites__triangle_builds_boundary_edge_records() 
 
             assert_int_eq(len(sites), 3, "triangle source-edge seam site count");
             for (site = sites) {
+                frame = ps_seam_site_frame(site);
+
                 assert(ps_seam_site_source(site) == "boundary", "boundary seam site source");
                 assert(ps_seam_site_source_kind(site) == "source_edge", "boundary seam site kind");
                 assert_int_eq(len(ps_seam_site_edge_pts_local(site)), 2, "boundary seam edge point arity");
@@ -648,6 +650,16 @@ module test_ps_face_seam_segment_sites__triangle_builds_boundary_edge_records() 
                 assert_near(norm(ps_seam_site_current_normal_seam_local(site)), 1, EPS, "boundary seam current normal unit");
                 assert_near(v_dot(ps_seam_site_ex_local(site), ps_seam_site_ey_local(site)), 0, EPS, "boundary seam ex/ey orthogonal");
                 assert_near(v_dot(ps_seam_site_ex_local(site), ps_seam_site_ez_local(site)), 0, EPS, "boundary seam ex/ez orthogonal");
+                assert(ps_placement_frame_center(frame) == ps_seam_site_center_local(site), "boundary seam frame center accessor");
+                assert(ps_placement_frame_ex(frame) == ps_seam_site_ex_local(site), "boundary seam frame ex accessor");
+                assert(ps_placement_frame_ey(frame) == ps_seam_site_ey_local(site), "boundary seam frame ey accessor");
+                assert(ps_placement_frame_ez(frame) == ps_seam_site_ez_local(site), "boundary seam frame ez accessor");
+                assert(ps_placement_frame_matrix(frame) == ps_frame_matrix(
+                    ps_seam_site_center_local(site),
+                    ps_seam_site_ex_local(site),
+                    ps_seam_site_ey_local(site),
+                    ps_seam_site_ez_local(site)
+                ), "boundary seam frame matrix");
                 assert(ps_seam_site_len(site) > EPS, "boundary seam length positive");
             }
         }
@@ -679,6 +691,28 @@ module test_place_on_face_seam_segments__triangle_exposes_foreign_edge_aliases()
                 assert_list_eq($ps_edge_pts_local, $ps_seam_edge_pts_local, "foreign seam edge alias points");
                 assert_near($ps_edge_len, $ps_seam_len, EPS, "foreign seam edge alias len");
                 assert_int_eq(len($ps_edge_adj_faces_idx), 2, "foreign seam edge adjacent-face alias arity");
+            }
+        }
+    }
+}
+
+module test_place_on_face_seam_segments__element_coords_exposes_frame_backed_edge_aliases() {
+    place_on_faces(_test_punch_poly()) {
+        if ($ps_face_idx == TRI_FACE_IDX) {
+            place_on_face_seam_segments(
+                mode = MODE,
+                eps = EPS,
+                coords = "element",
+                include_boundary = false,
+                include_foreign = true,
+                support_only = true
+            ) {
+                assert($ps_seam_is_support_candidate, "element seam should be support candidate");
+                assert($ps_seam_source == "foreign", "element seam source");
+                assert($ps_seam_support_kind == "foreign_simple_face_cut", "element seam support kind");
+                assert_list_eq($ps_edge_pts_local, $ps_seam_edge_pts_local, "element seam edge alias points");
+                assert_near($ps_edge_len, $ps_seam_len, EPS, "element seam edge alias len");
+                assert_int_eq(len($ps_edge_adj_faces_idx), 2, "element seam edge adjacent-face alias arity");
             }
         }
     }
@@ -925,6 +959,7 @@ module run_TestSelfCrossing() {
     test_place_on_face_foreign_intrusions__7_3_15_triangle_exposes_context();
     test_ps_face_seam_segment_sites__triangle_builds_boundary_edge_records();
     test_place_on_face_seam_segments__triangle_exposes_foreign_edge_aliases();
+    test_place_on_face_seam_segments__element_coords_exposes_frame_backed_edge_aliases();
     test_ps_face_seam_segment_sites__source_partial_spans_are_not_support_candidates();
     test_ps_face_seam_segment_sites__5_2_triangle_cuts_are_support_candidates();
     test_place_on_face_foreign_face_replay_sites__7_3_15_triangle_exposes_context();
