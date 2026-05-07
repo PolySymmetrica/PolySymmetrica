@@ -101,6 +101,42 @@ module test_ps_face_sites__cube_records_match_face_structure() {
     }
 }
 
+module test_ps_face_site_accessors__match_record_layout() {
+    p = rhombicuboctahedron();
+    cls = poly_classify(p, 1, 1e-6, 1, false);
+    sites = ps_face_sites(p, classify = cls);
+
+    for (site = sites) {
+        fields = [
+            ["idx", ps_face_site_idx(site), site[0]],
+            ["center", ps_face_site_center(site), site[1]],
+            ["ex", ps_face_site_ex(site), site[2]],
+            ["ey", ps_face_site_ey(site), site[3]],
+            ["ez", ps_face_site_ez(site), site[4]],
+            ["edge_len", ps_face_site_edge_len(site), site[5]],
+            ["vertex_count", ps_face_site_vertex_count(site), site[6]],
+            ["midradius", ps_face_site_midradius(site), site[7]],
+            ["radius", ps_face_site_radius(site), site[8]],
+            ["poly_center_local", ps_face_site_poly_center_local(site), site[9]],
+            ["pts2d", ps_face_site_pts2d(site), site[10]],
+            ["pts3d_local", ps_face_site_pts3d_local(site), site[11]],
+            ["poly_verts_local", ps_face_site_poly_verts_local(site), site[12]],
+            ["poly_faces_idx", ps_face_site_poly_faces_idx(site), site[13]],
+            ["planarity_err", ps_face_site_planarity_err(site), site[14]],
+            ["is_planar", ps_face_site_is_planar(site), site[15]],
+            ["family_id", ps_face_site_family_id(site), site[16]],
+            ["face_family_count", ps_face_site_face_family_count(site), site[17]],
+            ["edge_family_count", ps_face_site_edge_family_count(site), site[18]],
+            ["vertex_family_count", ps_face_site_vertex_family_count(site), site[19]],
+            ["neighbors_idx", ps_face_site_neighbors_idx(site), site[20]],
+            ["dihedrals", ps_face_site_dihedrals(site), site[21]]
+        ];
+
+        for (field = fields)
+            assert(field[1] == field[2], str("face site accessor mismatch field=", field[0], " site=", site[0]));
+    }
+}
+
 module test_ps_edge_sites__cube_records_match_edge_structure() {
     p = hexahedron();
     faces = poly_faces(p);
@@ -124,6 +160,35 @@ module test_ps_edge_sites__cube_records_match_edge_structure() {
         assert_int_eq(site[12], counts[0], "site face family count");
         assert_int_eq(site[13], counts[1], "site edge family count");
         assert_int_eq(site[14], counts[2], "site vertex family count");
+    }
+}
+
+module test_ps_edge_site_accessors__match_record_layout() {
+    p = rhombicuboctahedron();
+    cls = poly_classify(p, 1, 1e-6, 1, false);
+    sites = ps_edge_sites(p, classify = cls);
+
+    for (site = sites) {
+        fields = [
+            ["idx", ps_edge_site_idx(site), site[0]],
+            ["center", ps_edge_site_center(site), site[1]],
+            ["ex", ps_edge_site_ex(site), site[2]],
+            ["ey", ps_edge_site_ey(site), site[3]],
+            ["ez", ps_edge_site_ez(site), site[4]],
+            ["edge_len", ps_edge_site_edge_len(site), site[5]],
+            ["midradius", ps_edge_site_midradius(site), site[6]],
+            ["poly_center_local", ps_edge_site_poly_center_local(site), site[7]],
+            ["pts_local", ps_edge_site_pts_local(site), site[8]],
+            ["verts_idx", ps_edge_site_verts_idx(site), site[9]],
+            ["adj_faces_idx", ps_edge_site_adj_faces_idx(site), site[10]],
+            ["family_id", ps_edge_site_family_id(site), site[11]],
+            ["face_family_count", ps_edge_site_face_family_count(site), site[12]],
+            ["edge_family_count", ps_edge_site_edge_family_count(site), site[13]],
+            ["vertex_family_count", ps_edge_site_vertex_family_count(site), site[14]]
+        ];
+
+        for (field = fields)
+            assert(field[1] == field[2], str("edge site accessor mismatch field=", field[0], " site=", site[0]));
     }
 }
 
@@ -194,6 +259,35 @@ module test_ps_vertex_sites__cube_records_match_vertex_structure() {
         assert_int_eq(site[12], counts[0], "site face family count");
         assert_int_eq(site[13], counts[1], "site edge family count");
         assert_int_eq(site[14], counts[2], "site vertex family count");
+    }
+}
+
+module test_ps_vertex_site_accessors__match_record_layout() {
+    p = rhombicuboctahedron();
+    cls = poly_classify(p, 1, 1e-6, 1, false);
+    sites = ps_vertex_sites(p, classify = cls);
+
+    for (site = sites) {
+        fields = [
+            ["idx", ps_vertex_site_idx(site), site[0]],
+            ["center", ps_vertex_site_center(site), site[1]],
+            ["ex", ps_vertex_site_ex(site), site[2]],
+            ["ey", ps_vertex_site_ey(site), site[3]],
+            ["ez", ps_vertex_site_ez(site), site[4]],
+            ["edge_len", ps_vertex_site_edge_len(site), site[5]],
+            ["radius", ps_vertex_site_radius(site), site[6]],
+            ["poly_center_local", ps_vertex_site_poly_center_local(site), site[7]],
+            ["valence", ps_vertex_site_valence(site), site[8]],
+            ["neighbors_idx", ps_vertex_site_neighbors_idx(site), site[9]],
+            ["neighbor_pts_local", ps_vertex_site_neighbor_pts_local(site), site[10]],
+            ["family_id", ps_vertex_site_family_id(site), site[11]],
+            ["face_family_count", ps_vertex_site_face_family_count(site), site[12]],
+            ["edge_family_count", ps_vertex_site_edge_family_count(site), site[13]],
+            ["vertex_family_count", ps_vertex_site_vertex_family_count(site), site[14]]
+        ];
+
+        for (field = fields)
+            assert(field[1] == field[2], str("vertex site accessor mismatch field=", field[0], " site=", site[0]));
     }
 }
 
@@ -604,10 +698,13 @@ module run_TestPlacement() {
     test_place_on_vertices__family_ids_and_counts_from_classify();
     test_place_on_faces__auto_classify_matches_precomputed();
     test_ps_face_sites__cube_records_match_face_structure();
+    test_ps_face_site_accessors__match_record_layout();
     test_ps_edge_sites__cube_records_match_edge_structure();
+    test_ps_edge_site_accessors__match_record_layout();
     test_ps_edge_sites__cube_uses_adjacent_face_normal_bisector();
     test_ps_edge_sites__preserves_raw_edge_order_for_classify_ids();
     test_ps_vertex_sites__cube_records_match_vertex_structure();
+    test_ps_vertex_site_accessors__match_record_layout();
     test_place_on_all__cube_single_family();
     test_place_on_edges__no_auto_classify_by_default();
     test_place_on_all__indices_filter_selected_ids();
