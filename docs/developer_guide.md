@@ -104,6 +104,7 @@ Related deep-dive notes:
 - [Params overrides](params_overrides.md)
 - [Face attachment](attach.md)
 - [Construction helpers](construction.md)
+- [Placement data model](placement_data_model.md)
 
 ---
 
@@ -219,6 +220,9 @@ placement context metadata surface.
 
 The contract is about **semantics**, not implementation details. Future helper
 functions such as site-record builders should preserve these meanings.
+
+For the underlying site records, frame helpers, target-local poly context, and
+proxy/replay records, see [placement_data_model.md](placement_data_model.md).
 
 #### Common guarantees
 

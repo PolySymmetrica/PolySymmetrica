@@ -1718,25 +1718,157 @@ function ps_face_seam_segment_sites(
     )
     concat(boundary_out, foreign_out);
 
+/**
+ * Function: Get seam site index.
+ * Params: site (seam segment site record)
+ * Returns: zero-based seam site index
+ */
 function ps_seam_site_idx(site) = site[0];
+
+/**
+ * Function: Get seam center in target face-local coordinates.
+ * Params: site (seam segment site record)
+ * Returns: seam midpoint in target face-local coordinates
+ */
 function ps_seam_site_center_local(site) = site[1];
+
+/**
+ * Function: Get seam-local X axis in target face-local coordinates.
+ * Params: site (seam segment site record)
+ * Returns: unit X axis along the seam segment
+ */
 function ps_seam_site_ex_local(site) = site[2];
+
+/**
+ * Function: Get seam-local Y axis in target face-local coordinates.
+ * Params: site (seam segment site record)
+ * Returns: unit Y axis completing the seam frame
+ */
 function ps_seam_site_ey_local(site) = site[3];
+
+/**
+ * Function: Get seam-local Z axis in target face-local coordinates.
+ * Params: site (seam segment site record)
+ * Returns: unit Z axis following the face-normal bisector/radial fallback
+ */
 function ps_seam_site_ez_local(site) = site[4];
+
+/**
+ * Function: Get seam segment length.
+ * Params: site (seam segment site record)
+ * Returns: seam length in target face-local units
+ */
 function ps_seam_site_len(site) = site[5];
+
+/**
+ * Function: Get seam endpoints in seam-local coordinates.
+ * Params: site (seam segment site record)
+ * Returns: edge-like endpoint pair `[[ -len/2, 0, 0 ], [ len/2, 0, 0 ]]`
+ */
 function ps_seam_site_edge_pts_local(site) = site[6];
+
+/**
+ * Function: Get source seam segment in target face-local 2D.
+ * Params: site (seam segment site record)
+ * Returns: `seg2d` endpoints in target face-local XY
+ */
 function ps_seam_site_segment2d_local(site) = site[7];
+
+/**
+ * Function: Get seam source family.
+ * Params: site (seam segment site record)
+ * Returns: `"boundary"` or `"foreign"`
+ */
 function ps_seam_site_source(site) = site[8];
+
+/**
+ * Function: Get source kind within the seam source family.
+ * Params: site (seam segment site record)
+ * Returns: boundary span kind or intrusion kind string
+ */
 function ps_seam_site_source_kind(site) = site[9];
+
+/**
+ * Function: Get foreign source kind for foreign-linked seams.
+ * Params: site (seam segment site record)
+ * Returns: `"face"` for current exact cuts, or `undef`
+ */
 function ps_seam_site_foreign_kind(site) = site[10];
+
+/**
+ * Function: Get foreign source index for foreign-linked seams.
+ * Params: site (seam segment site record)
+ * Returns: foreign face index, or `undef`
+ */
 function ps_seam_site_foreign_idx(site) = site[11];
+
+/**
+ * Function: Get seam dihedral metadata.
+ * Params: site (seam segment site record)
+ * Returns: dihedral angle when known, otherwise `undef`
+ */
 function ps_seam_site_dihedral(site) = site[12];
+
+/**
+ * Function: Get seam confidence metadata.
+ * Params: site (seam segment site record)
+ * Returns: confidence string such as `"exact"`
+ */
 function ps_seam_site_confidence(site) = site[13];
+
+/**
+ * Function: Get source record used to build the seam site.
+ * Params: site (seam segment site record)
+ * Returns: boundary span site or intrusion record
+ */
 function ps_seam_site_record(site) = site[14];
+
+/**
+ * Function: Get foreign normal in target face-local coordinates.
+ * Params: site (seam segment site record)
+ * Returns: unit foreign normal, or `undef`
+ */
 function ps_seam_site_foreign_normal_local(site) = site[15];
+
+/**
+ * Function: Get printable support classification.
+ * Params: site (seam segment site record)
+ * Returns: support kind string, or `"none"`
+ */
 function ps_seam_site_support_kind(site) = site[16];
+
+/**
+ * Function: Get printable support classification reason.
+ * Params: site (seam segment site record)
+ * Returns: reason string explaining support classification
+ */
 function ps_seam_site_support_reason(site) = site[17];
+
+/**
+ * Function: Get current face normal in seam-local coordinates.
+ * Params: site (seam segment site record)
+ * Returns: current target face normal expressed in the seam frame
+ */
 function ps_seam_site_current_normal_seam_local(site) = site[18];
+
+/**
+ * Function: Get placement frame from a seam segment site.
+ * Params: site (seam segment site record)
+ * Returns: placement frame `[center, ex, ey, ez]` in target face-local coordinates
+ */
+function ps_seam_site_frame(site) =
+    ps_placement_frame(
+        ps_seam_site_center_local(site),
+        ps_seam_site_ex_local(site),
+        ps_seam_site_ey_local(site),
+        ps_seam_site_ez_local(site)
+    );
+
+/**
+ * Function: Test whether a seam site is a printable support candidate.
+ * Params: site (seam segment site record)
+ * Returns: true when support kind is not `"none"`
+ */
 function ps_seam_site_is_support_candidate(site) = ps_seam_site_support_kind(site) != "none";
 
 function _ps_seg_optional_idx_selected(idx, indices) =
@@ -1772,15 +1904,16 @@ module place_on_face_seam_segments(
     assert(!is_undef($ps_face_dihedrals), "place_on_face_seam_segments: requires place_on_faces context ($ps_face_dihedrals)");
     assert(coords == "element" || coords == "parent", "place_on_face_seam_segments: coords must be \"element\" or \"parent\"");
 
+    target_ctx = ps_target_local_poly_context($ps_poly_faces_idx, $ps_poly_verts_local, $ps_poly_center_local);
     all_sites = ps_face_seam_segment_sites(
         $ps_face_pts3d_local,
         $ps_face_pts2d,
         $ps_face_idx,
-        $ps_poly_faces_idx,
-        $ps_poly_verts_local,
+        ps_target_local_poly_context_faces_idx(target_ctx),
+        ps_target_local_poly_context_verts_local(target_ctx),
         $ps_face_neighbors_idx,
         $ps_face_dihedrals,
-        $ps_poly_center_local,
+        ps_target_local_poly_context_center_local(target_ctx),
         mode,
         eps,
         boundary_kind,
@@ -1826,7 +1959,7 @@ module place_on_face_seam_segments(
         $ps_edge_family_count = undef;
 
         if (coords == "element")
-            multmatrix(ps_frame_matrix(ps_seam_site_center_local(site), ps_seam_site_ex_local(site), ps_seam_site_ey_local(site), ps_seam_site_ez_local(site)))
+            multmatrix(ps_placement_frame_matrix(ps_seam_site_frame(site)))
                 children();
         else
             children();

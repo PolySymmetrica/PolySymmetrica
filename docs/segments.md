@@ -649,6 +649,7 @@ The returned records use the same accessor style as the other segment APIs:
 - `ps_seam_site_ex_local(site)`
 - `ps_seam_site_ey_local(site)`
 - `ps_seam_site_ez_local(site)`
+- `ps_seam_site_frame(site)`
 - `ps_seam_site_len(site)`
 - `ps_seam_site_edge_pts_local(site)`
 - `ps_seam_site_segment2d_local(site)`
