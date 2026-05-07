@@ -335,6 +335,62 @@ As with replay sites, internal volume-group builders should receive the
 target-local poly context directly and use its accessors when they need source
 topology or target-local vertex positions.
 
+## Boundary Span Site Records
+
+Boundary span sites are built internally by:
+
+```scad
+sites = _ps_face_boundary_span_sites(...);
+```
+
+They are consumed by:
+
+```scad
+place_on_face_boundary_spans(...);
+ps_face_seam_segment_sites(...);
+```
+
+Boundary span sites describe one oriented span of the current face's filled
+boundary in current face-local coordinates. They carry both the planar boundary
+span and the adjacent-face/dihedral metadata inherited from the original source
+edge.
+
+Accessors:
+
+| Accessor | Meaning |
+| --- | --- |
+| `ps_boundary_span_site_idx(site)` | Zero-based boundary span site index. |
+| `ps_boundary_span_site_center_local(site)` | Span midpoint in current face-local coordinates. |
+| `ps_boundary_span_site_ex_local(site)` | Span-local X axis in current face-local coordinates. |
+| `ps_boundary_span_site_ey_local(site)` | Span-local Y axis in current face-local coordinates. |
+| `ps_boundary_span_site_ez_local(site)` | Span-local Z axis in current face-local coordinates. |
+| `ps_boundary_span_site_frame(site)` | Placement frame for the span, expressed in current face-local coordinates. |
+| `ps_boundary_span_site_len(site)` | Span length. |
+| `ps_boundary_span_site_segment2d_local(site)` | Oriented 2D span in current face-local XY coordinates. |
+| `ps_boundary_span_site_loop_idx(site)` | Filled-boundary loop index containing the span. |
+| `ps_boundary_span_site_source_edge_idx(site)` | Current-face source edge index, or `undef`. |
+| `ps_boundary_span_site_source_t0(site)` | Source-edge parameter at the oriented span start. |
+| `ps_boundary_span_site_source_t1(site)` | Source-edge parameter at the oriented span end. |
+| `ps_boundary_span_site_raw_kind(site)` | Lower-level arrangement lineage such as `"source"`. |
+| `ps_boundary_span_site_filled_cell_idx(site)` | Filled arrangement cell beside the span, or `undef`. |
+| `ps_boundary_span_site_other_cell_idx(site)` | Opposite/non-filled arrangement cell beside the span, or `undef`. |
+| `ps_boundary_span_site_adj_face_idx(site)` | Adjacent source face inherited from the source edge, or `undef`. |
+| `ps_boundary_span_site_dihedral(site)` | Source-edge dihedral metadata, or `undef`. |
+| `ps_boundary_span_site_adj_face_normal_local(site)` | Adjacent face normal in current face-local coordinates, or `undef`. |
+| `ps_boundary_span_site_filled_side(site)` | `+1` when filled area is on the span's left, `-1` on its right, `0` for ambiguous/degenerate spans. |
+| `ps_boundary_span_site_adj_face_dir_span_local(site)` | Adjacent face plane direction in span-local coordinates, oriented toward current face-local `+Z`. |
+| `ps_boundary_span_site_kind(site)` | Public lineage: `"source_edge"`, `"source_partial"`, or `"generated_cut"`. |
+| `ps_boundary_span_site_is_generated(site)` | True when kind is not `"source_edge"`. |
+
+The span frame convention is:
+
+- `+X` follows `ps_boundary_span_site_segment2d_local(site)`.
+- `+Y` is the in-face left normal of that span.
+- `+Z` is current face-local `+Z`.
+
+Use `ps_placement_frame_matrix(ps_boundary_span_site_frame(site))` when placing
+children manually.
+
 ## Seam Segment Site Records
 
 Seam segment sites are built by:

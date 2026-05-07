@@ -48,7 +48,7 @@ function _test_replay_kind_count(sites, kind) =
     len([for (s = sites) if (ps_replay_site_foreign_kind(s) == kind) 1]);
 
 function _test_span_kind_count(sites, kind) =
-    len([for (s = sites) if (s[19] == kind) 1]);
+    len([for (s = sites) if (ps_boundary_span_site_kind(s) == kind) 1]);
 
 function _test_coincident_intrusion_verts_local() =
     [
