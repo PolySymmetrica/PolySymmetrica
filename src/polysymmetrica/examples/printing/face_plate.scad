@@ -197,6 +197,113 @@ module face_plate(face_thk,
                     }
 }
 
+/**
+ * Module: Emit conservative foreign proxy volume-group hull cutters from explicit face context.
+ * Params: face_pts2d/idx/poly_faces_idx/poly_verts_local (face-local proxy context), mode/eps/filter_parent (intrusion grouping controls), point_r/point_fn (hull point primitive)
+ * Returns: none
+ * Limitations/Gotchas: internal helper; convexifies each grouped source vertex set
+ */
+module _face_plate_foreign_proxy_volume_group_hulls(
+    face_pts2d,
+    idx,
+    poly_faces_idx,
+    poly_verts_local,
+    mode,
+    eps,
+    filter_parent,
+    point_r,
+    point_fn
+) {
+    groups = ps_face_foreign_proxy_volume_groups(
+        face_pts2d,
+        idx,
+        poly_faces_idx,
+        poly_verts_local,
+        eps,
+        mode,
+        filter_parent
+    );
+
+    for (group = groups) {
+        vertex_idxs = ps_proxy_volume_group_vertex_idxs(group);
+        if (len(vertex_idxs) > 0) {
+            hull() {
+                for (vi = vertex_idxs)
+                    translate(poly_verts_local[vi])
+                        sphere(r = point_r, $fn = point_fn);
+            }
+        }
+    }
+}
+
+/**
+ * Module: Emit a face plate after subtracting conservative foreign proxy volume-group hulls.
+ * Params: face_thk (plate thickness), idx/face_pts3d_local/poly_faces_idx/poly_verts_local/face_neighbors_idx/face_dihedrals (optional overrides; default from `place_on_faces` context), clear_space/pillow params/base_z/clear_height/mode/max_project/boundary_inset/boundary_inset_mode/eps/convexity (forwarded to `face_plate`), filter_parent (foreign intrusion filtering), hull_point_r/hull_point_fn (hull point primitive)
+ * Returns: none
+ * Limitations/Gotchas: subtracts convex hulls of proxy volume groups computed from the same explicit face context as the plate; this is conservative and can over-subtract concave or detailed user geometry
+ */
+module face_plate_minus_foreign_proxy_volume_group_hulls(face_thk,
+    idx = $ps_face_idx,
+    face_pts3d_local = $ps_face_pts3d_local,
+    poly_faces_idx = $ps_poly_faces_idx,
+    poly_verts_local = $ps_poly_verts_local,
+    face_neighbors_idx = $ps_face_neighbors_idx,
+    face_dihedrals = $ps_face_dihedrals,
+    clear_space=false,
+    pillow_min_rad = FACE_PLATE_PILLOW_MIN_RAD,
+    pillow_inset = FACE_PLATE_PILLOW_INSET,
+    pillow_ramp = FACE_PLATE_PILLOW_RAMP,
+    pillow_thk = FACE_PLATE_PILLOW_THK,
+    base_z = undef,
+    clear_height = FACE_PLATE_CLEAR_HEIGHT,
+    mode = "nonzero",
+    max_project = undef,
+    boundary_inset = 0,
+    boundary_inset_mode = "side",
+    eps = 1e-4,
+    convexity = 6,
+    filter_parent = true,
+    hull_point_r = 0.04,
+    hull_point_fn = 8
+) {
+    difference() {
+        face_plate(
+            face_thk = face_thk,
+            idx = idx,
+            face_pts3d_local = face_pts3d_local,
+            poly_faces_idx = poly_faces_idx,
+            poly_verts_local = poly_verts_local,
+            face_neighbors_idx = face_neighbors_idx,
+            face_dihedrals = face_dihedrals,
+            clear_space = clear_space,
+            pillow_min_rad = pillow_min_rad,
+            pillow_inset = pillow_inset,
+            pillow_ramp = pillow_ramp,
+            pillow_thk = pillow_thk,
+            base_z = base_z,
+            clear_height = clear_height,
+            mode = mode,
+            max_project = max_project,
+            boundary_inset = boundary_inset,
+            boundary_inset_mode = boundary_inset_mode,
+            eps = eps,
+            convexity = convexity
+        );
+
+        _face_plate_foreign_proxy_volume_group_hulls(
+            face_pts2d = ps_xy(face_pts3d_local),
+            idx = idx,
+            poly_faces_idx = poly_faces_idx,
+            poly_verts_local = poly_verts_local,
+            mode = mode,
+            eps = eps,
+            filter_parent = filter_parent,
+            point_r = hull_point_r,
+            point_fn = hull_point_fn
+        );
+    }
+}
+
 // Direct smoke demo: subtract one placed star face cutter from a cube.
 _demo_poly = poly_antiprism(n=5, p=2, angle=15);
 difference() {

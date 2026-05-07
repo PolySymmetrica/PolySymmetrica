@@ -342,6 +342,140 @@ module test_ps_face_foreign_proxy_replay_sites__preserves_duplicate_exact_face_c
     );
 }
 
+module test_ps_face_foreign_proxy_volume_groups__7_3_15_triangle_groups_exact_face_cuts() {
+    site = _test_face_site(_test_punch_poly(), TRI_FACE_IDX);
+    groups = ps_face_foreign_proxy_volume_groups(site[10], site[0], site[13], site[12], mode = MODE, filter_parent = true);
+
+    assert(len(groups) > 0, "triangle proxy volume groups should be present");
+    assert_list_eq(
+        [for (g = groups) ps_proxy_volume_group_face_idxs(g)],
+        [[3, 9, 10], [8, 14, 15]],
+        "triangle proxy volume groups should split into connected foreign face groups"
+    );
+    assert_list_eq(
+        [for (g = groups) ps_proxy_volume_group_record_idxs(g)],
+        [[0, 2, 3], [1, 4, 5]],
+        "triangle proxy volume groups should preserve exact record ids"
+    );
+
+    for (g = groups) {
+        assert(ps_proxy_volume_group_kind(g) == "foreign_proxy_volume_group", "volume group kind");
+        assert_int_eq(ps_proxy_volume_group_target_face_idx(g), TRI_FACE_IDX, "volume group target face id");
+        assert(len(ps_proxy_volume_group_edge_idxs(g)) > 0, "volume group should expose source edge provenance");
+        assert(len(ps_proxy_volume_group_vertex_idxs(g)) > 0, "volume group should expose source vertex provenance");
+        assert(len(ps_proxy_volume_group_records(g)) == len(ps_proxy_volume_group_record_idxs(g)), "volume group record arity");
+    }
+}
+
+module test_ps_face_foreign_proxy_volume_groups__preserves_duplicate_exact_face_cut_records() {
+    records = [
+        ["face_plane_cut", 0, "face", 1, [[-1, -0.5], [1, -0.5]], 90, "exact"],
+        ["face_plane_cut", 0, "face", 1, [[-1, 0.5], [1, 0.5]], 90, "exact"]
+    ];
+    groups = _ps_face_foreign_proxy_volume_groups_from_records(
+        0,
+        records,
+        _test_duplicate_face_cut_faces_idx(),
+        _test_duplicate_face_cut_verts_local()
+    );
+
+    assert_int_eq(len(groups), 1, "duplicate exact records from one face should form one volume group");
+    assert_list_eq(ps_proxy_volume_group_face_idxs(groups[0]), [1], "duplicate volume group face ids");
+    assert_list_eq(ps_proxy_volume_group_record_idxs(groups[0]), [0, 1], "duplicate volume group should preserve both record ids");
+    assert_int_eq(len(ps_proxy_volume_group_records(groups[0])), 2, "duplicate volume group should preserve both records");
+    assert_int_eq(len(ps_proxy_volume_group_edge_idxs(groups[0])), 4, "duplicate volume group edge provenance");
+    assert_int_eq(len(ps_proxy_volume_group_vertex_idxs(groups[0])), 4, "duplicate volume group vertex provenance");
+}
+
+module test_ps_proxy_volume_group_face_replay_sites__7_3_15_triangle_builds_renderable_units() {
+    site = _test_face_site(_test_punch_poly(), TRI_FACE_IDX);
+    groups = ps_face_foreign_proxy_volume_groups(site[10], site[0], site[13], site[12], mode = MODE, filter_parent = true);
+    group_sites = [
+        for (g = groups)
+            ps_proxy_volume_group_face_replay_sites(g, site[13], site[12], site[9])
+    ];
+
+    assert_list_eq([for (sites = group_sites) len(sites)], [3, 3], "volume groups should build grouped face replay units");
+    assert_list_eq(
+        [for (sites = group_sites) [for (s = sites) ps_replay_site_foreign_idx(s)]],
+        [[3, 9, 10], [8, 14, 15]],
+        "volume group face replay units should preserve group face ids"
+    );
+
+    for (sites = group_sites)
+        for (s = sites) {
+            assert(ps_replay_site_foreign_kind(s) == "face", "volume group replay unit kind");
+            assert(ps_replay_site_intrusion_confidence(s) == "exact", "volume group replay unit confidence");
+            assert_int_eq(len(ps_replay_site_face_pts2d(s)), 3, "volume group replay unit face arity");
+        }
+}
+
+module test_place_on_face_foreign_proxy_volume_groups__7_3_15_triangle_exposes_context() {
+    place_on_faces(_test_punch_poly()) {
+        if ($ps_face_idx == TRI_FACE_IDX) {
+            place_on_face_foreign_proxy_volume_groups(mode = MODE) {
+                assert($ps_proxy_volume_group_count > 0, "volume-group iterator count");
+                assert($ps_proxy_volume_group_idx >= 0 && $ps_proxy_volume_group_idx < $ps_proxy_volume_group_count, "volume-group iterator idx bounds");
+                assert($ps_proxy_volume_group_kind == "foreign_proxy_volume_group", "volume-group iterator kind");
+                assert_int_eq($ps_proxy_volume_group_target_face_idx, TRI_FACE_IDX, "volume-group iterator target face id");
+                assert($ps_proxy_kind == "foreign_volume_group", "volume-group proxy kind alias");
+                assert($ps_proxy_source_kind == "volume_group", "volume-group proxy source-kind alias");
+                assert_int_eq($ps_proxy_source_idx, $ps_proxy_volume_group_idx, "volume-group proxy source index alias");
+                assert(len($ps_proxy_volume_group_face_idxs) > 0, "volume-group face ids");
+                assert(len($ps_proxy_volume_group_records) == len($ps_proxy_volume_group_record_idxs), "volume-group record ids");
+                assert(len($ps_proxy_volume_group_edge_idxs) > 0, "volume-group edge provenance");
+                assert(len($ps_proxy_volume_group_vertex_idxs) > 0, "volume-group vertex provenance");
+            }
+        }
+    }
+}
+
+module _test_assert_volume_group_face_render_context() {
+    assert_int_eq($ps_proxy_volume_group_count, 2, "volume-group face iterator group count");
+    assert_int_eq($ps_proxy_volume_unit_count, 3, "volume-group face iterator unit count");
+    assert($ps_proxy_volume_unit_kind == "foreign_face", "volume-group face iterator unit kind");
+    assert($ps_proxy_kind == "foreign_face", "volume-group face iterator proxy kind");
+    assert($ps_proxy_source_kind == "face", "volume-group face iterator source kind");
+    assert($ps_proxy_intrusion_confidence == "exact", "volume-group face iterator confidence");
+    assert_int_eq($ps_proxy_volume_unit_record_idx, $ps_proxy_volume_group_record_idxs[$ps_proxy_volume_unit_idx], "volume-group face iterator record id");
+    assert_int_eq($ps_face_idx, $ps_proxy_source_idx, "volume-group face iterator should run in source face context");
+    assert_list_eq($ps_face_pts2d, $ps_proxy_face_pts2d, "volume-group face iterator face pts alias");
+    assert_int_eq(len($ps_proxy_face_pts2d), 3, "volume-group face iterator face arity");
+}
+
+module test_place_on_face_foreign_proxy_volume_group_faces__7_3_15_triangle_exposes_render_context() {
+    place_on_faces(_test_punch_poly()) {
+        if ($ps_face_idx == TRI_FACE_IDX) {
+            place_on_face_foreign_proxy_volume_group_faces(mode = MODE) {
+                _test_assert_volume_group_face_render_context();
+                assert(false, "volume-group face iterator should not dispatch child slot 1");
+                assert(false, "volume-group face iterator should not dispatch child slot 2");
+            }
+        }
+    }
+}
+
+module test_place_on_face_foreign_proxy_volume_group_hulls__7_3_15_triangle_exposes_hull_context() {
+    place_on_faces(_test_punch_poly()) {
+        if ($ps_face_idx == TRI_FACE_IDX) {
+            place_on_face_foreign_proxy_volume_group_hulls(mode = MODE, point_r = 0.01, point_fn = 4) {
+                assert_int_eq($ps_proxy_volume_group_count, 2, "volume-group hull iterator group count");
+                assert($ps_proxy_kind == "foreign_volume_group_hull", "volume-group hull proxy kind");
+                assert($ps_proxy_source_kind == "volume_group", "volume-group hull source kind");
+                assert_int_eq($ps_proxy_source_idx, $ps_proxy_volume_group_idx, "volume-group hull source index alias");
+                assert_int_eq($ps_proxy_volume_hull_vertex_count, len($ps_proxy_volume_group_vertex_idxs), "volume-group hull vertex count");
+                assert(_ps_list_contains($ps_proxy_volume_group_vertex_idxs, $ps_proxy_volume_hull_vertex_idx), "volume-group hull vertex id belongs to group");
+                assert_list_eq(
+                    $ps_proxy_volume_hull_vertex_pos_local,
+                    $ps_poly_verts_local[$ps_proxy_volume_hull_vertex_idx],
+                    "volume-group hull vertex position"
+                );
+                sphere(r = 0.01, $fn = 4);
+            }
+        }
+    }
+}
+
 module test_ps_face_visible_segments__7_3_15_triangle_splits_into_visible_cells() {
     site = _test_face_site(_test_punch_poly(), TRI_FACE_IDX);
     visible = ps_face_visible_segments(site[10], site[0], site[13], site[12], mode = MODE, filter_parent = true);
@@ -779,6 +913,9 @@ module run_TestSelfCrossing() {
     test_ps_face_foreign_proxy_replay_sites__7_3_15_triangle_includes_edge_and_vertex_candidates();
     test_ps_face_foreign_proxy_replay_sites__5_2_15_triangle_includes_all_intruding_face_boundary_edges();
     test_ps_face_foreign_proxy_replay_sites__preserves_duplicate_exact_face_cut_records();
+    test_ps_face_foreign_proxy_volume_groups__7_3_15_triangle_groups_exact_face_cuts();
+    test_ps_face_foreign_proxy_volume_groups__preserves_duplicate_exact_face_cut_records();
+    test_ps_proxy_volume_group_face_replay_sites__7_3_15_triangle_builds_renderable_units();
     test_ps_face_visible_segments__7_3_15_triangle_splits_into_visible_cells();
     test_ps_face_visible_segments__7_3_0_triangle_catches_meeting_cut_edges();
     test_ps_face_filled_boundary_source_edges__7_3_0_triangle_is_simple_boundary();
@@ -794,6 +931,9 @@ module run_TestSelfCrossing() {
     test_place_on_face_foreign_proxy_sites__7_3_15_triangle_dispatches_face_child();
     test_place_on_face_foreign_proxy_sites__7_3_15_triangle_element_child_uses_source_face_context();
     test_place_on_face_foreign_proxy_sites__7_3_15_triangle_dispatches_edge_and_vertex_children();
+    test_place_on_face_foreign_proxy_volume_groups__7_3_15_triangle_exposes_context();
+    test_place_on_face_foreign_proxy_volume_group_faces__7_3_15_triangle_exposes_render_context();
+    test_place_on_face_foreign_proxy_volume_group_hulls__7_3_15_triangle_exposes_hull_context();
     test_face_local_iterators__parent_coords_preserve_metadata();
 }
 

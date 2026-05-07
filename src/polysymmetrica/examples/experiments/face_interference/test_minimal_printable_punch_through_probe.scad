@@ -189,19 +189,15 @@ module foreign_face_proxy_body() {
  * Returns: none
  */
 module face_plate_with_proxy_cutouts() {
-    difference() {
-        face_plate(
-            face_thk = FACE_THK,
-            clear_space = false,
-            pillow_min_rad = 1000000,
-            base_z = -FACE_THK / 2,
-            max_project = 10
-        );
-
-        place_on_face_foreign_proxy_sites(mode = MODE, filter_parent = FILTER_PARENT_CUTS) {
-            foreign_face_proxy_body();
-        }
-    }
+    face_plate_minus_foreign_proxy_volume_group_hulls(
+        face_thk = FACE_THK,
+        clear_space = false,
+        pillow_min_rad = 1000000,
+        base_z = -FACE_THK / 2,
+        max_project = 10,
+        mode = MODE,
+        filter_parent = FILTER_PARENT_CUTS
+    );
 }
 
 /**
@@ -230,6 +226,33 @@ module draw_cut_strips() {
         color("black")
             translate([mid[0], mid[1], FACE_THK * 0.95])
                 draw_text2d(str("i", ii, "/f", ps_intrusion_foreign_idx(intrusion)), size = 1.05);
+    }
+}
+
+/**
+ * Module: Draw grouped exact intrusion strips from proxy volume-group records.
+ * Params: none; uses current `place_on_faces(...)` metadata
+ * Returns: none
+ */
+module draw_proxy_volume_group_strips() {
+    place_on_face_foreign_proxy_volume_groups(mode = MODE, filter_parent = FILTER_PARENT_CUTS) {
+        records = $ps_proxy_volume_group_records;
+        mids = [for (r = records) ps_segment_midpoint2d(ps_intrusion_segment2d_local(r))];
+        label_pos = ps_centroid2d(mids);
+
+        color(example_color($ps_proxy_volume_group_idx), 0.84)
+            for (r = records)
+                draw_segment_stroke(ps_intrusion_segment2d_local(r), r = CUT_KERF * 0.58, z = FACE_THK * 1.2);
+
+        color("black")
+            translate([label_pos[0], label_pos[1], FACE_THK * 1.62])
+                draw_text2d(
+                    str(
+                        "vg", $ps_proxy_volume_group_idx,
+                        " f", $ps_proxy_volume_group_face_idxs
+                    ),
+                    size = 0.95
+                );
     }
 }
 
@@ -284,6 +307,7 @@ module draw_visible_data_panel(face_idx, source_edge_idx, label_s) {
             }
 
             draw_cut_strips();
+            draw_proxy_volume_group_strips();
             draw_source_edge_labels($ps_face_pts2d, source_edge_idx);
         }
     }
@@ -349,10 +373,13 @@ module draw_proxy_face_plate_panel(face_idx, source_edge_idx, label_s) {
             color("white")
                 face_plate_with_proxy_cutouts();
 
-            color("crimson", 0.22)
-                place_on_face_foreign_proxy_sites(mode = MODE, filter_parent = FILTER_PARENT_CUTS) {
+            place_on_face_foreign_proxy_volume_group_faces(mode = MODE, filter_parent = FILTER_PARENT_CUTS) {
+                color(example_color($ps_proxy_volume_group_idx), 0.24)
                     foreign_face_proxy_body();
-                }
+            }
+
+            color("mediumseagreen", 0.16)
+                place_on_face_foreign_proxy_volume_group_hulls(mode = MODE, filter_parent = FILTER_PARENT_CUTS);
 
             draw_cut_strips();
             draw_source_edge_labels($ps_face_pts2d, source_edge_idx);
@@ -387,13 +414,22 @@ module echo_row_summary(label_s, face_idx) {
                 mode = MODE,
                 filter_parent = FILTER_PARENT_CUTS
             );
+            volume_groups = ps_face_foreign_proxy_volume_groups(
+                $ps_face_pts2d,
+                $ps_face_idx,
+                $ps_poly_faces_idx,
+                $ps_poly_verts_local,
+                mode = MODE,
+                filter_parent = FILTER_PARENT_CUTS
+            );
 
             echo(str(
                 "minimal printable punch-through ", label_s, " f", face_idx,
                 ": boundary_loops=", len(bm[2]),
                 " boundary_spans=", len(bm[3]),
                 " intrusions=", len(intrusions),
-                " visible_segments=", len(visible)
+                " visible_segments=", len(visible),
+                " proxy_volume_groups=", len(volume_groups)
             ));
         }
     }

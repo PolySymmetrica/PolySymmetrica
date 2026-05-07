@@ -82,38 +82,114 @@ The library only identifies and positions replay contexts. It cannot discover
 already-rendered arbitrary geometry, and it does not infer a closed punch-through
 body from filtered face-plane cut segments.
 
+## Volume Group Records
+
+`ps_face_foreign_proxy_volume_groups(...)` and
+`place_on_face_foreign_proxy_volume_groups(...)` provide a first-pass,
+data-only view of possible solid punch-through groups. They group exact
+foreign face intrusions by source-topology connectivity: if two exact intruding
+source faces share an original source edge, they are reported in the same group.
+
+Volume groups are provenance records, not generated geometry. They are intended
+as the stable data layer for later optional volume replay, and for callers that
+want to inspect which source faces/edges/vertices are implicated before deciding
+what body to subtract.
+
+Each volume-group record exposes:
+
+- `ps_proxy_volume_group_kind(group)`: `"foreign_proxy_volume_group"`
+- `ps_proxy_volume_group_target_face_idx(group)`: target face being affected
+- `ps_proxy_volume_group_idx(group)`: zero-based group index
+- `ps_proxy_volume_group_face_idxs(group)`: connected exact foreign face ids
+- `ps_proxy_volume_group_record_idxs(group)`: positions of the exact intrusion records used by the group
+- `ps_proxy_volume_group_records(group)`: the exact intrusion records themselves
+- `ps_proxy_volume_group_edge_idxs(group)`: source edge ids from grouped exact foreign faces
+- `ps_proxy_volume_group_vertex_idxs(group)`: source vertex ids from grouped exact foreign faces
+- `ps_proxy_volume_group_support_face_idxs(group)`: adjacent non-seed source faces that may help future volume construction
+
+The iterator form runs in the current target face-local frame and exposes the
+same fields as `$ps_proxy_volume_group_*` variables. It also exposes the generic
+aliases `$ps_proxy_kind="foreign_volume_group"`,
+`$ps_proxy_source_kind="volume_group"`, `$ps_proxy_source_idx`, and
+`$ps_proxy_target_face_idx`.
+
+`place_on_face_foreign_proxy_volume_group_faces(...)` is the renderable face-unit
+iterator for the same data. It visits each exact intruding face in each group,
+runs child slot 0 in that source-face frame by default, and also exposes the
+group metadata above. Slot 0 receives face-compatible `$ps_proxy_*` variables, so
+the face child from a `place_on_face_foreign_proxy_sites(...)` proxy body can
+usually be reused unchanged:
+
+```scad
+place_on_face_foreign_proxy_volume_group_faces() {
+    color(example_color($ps_proxy_volume_group_idx))
+        my_foreign_face_proxy();   // child slot 0
+        my_foreign_edge_proxy();   // child slot 1, ignored here
+        my_foreign_vertex_proxy(); // child slot 2, ignored here
+}
+```
+
+This renders grouped face planes, not the filled solid between those planes.
+Closed proxy-cell volume construction is a later layer.
+
+`place_on_face_foreign_proxy_volume_group_hulls(...)` is a debug/conservative
+step beyond face-unit replay. It emits one convex hull per group, using the
+grouped source-face vertices in the current target face-local frame:
+
+```scad
+color("mediumseagreen", 0.18)
+    place_on_face_foreign_proxy_volume_group_hulls();
+```
+
+The hull iterator exposes the same `$ps_proxy_volume_group_*` metadata, plus
+`$ps_proxy_volume_hull_vertex_idxs`,
+`$ps_proxy_volume_hull_vertex_count`, `$ps_proxy_volume_hull_vertex_idx`, and
+`$ps_proxy_volume_hull_vertex_pos_local` when a child point primitive is
+provided. It deliberately convexifies each group, so it can over-subtract
+concave groups, disconnected user geometry, or detailed proxy features. Treat it
+as inspection/tooling, not as the exact punch-through cell model.
+
+`examples/printing/face_plate.scad` exposes this as the opt-in printable wrapper
+`face_plate_minus_foreign_proxy_volume_group_hulls(...)`. It is just
+`face_plate(...)` minus the conservative group hulls, and has the same
+over-subtraction caveat as the hull iterator. When explicit face/poly overrides
+are passed, both the positive plate body and the subtractive hulls are computed
+from those same overrides.
+
 ## Printable Face Plates
 
-`examples/printing/face_plate.scad` provides an opt-in printable wrapper:
+For exact caller-supplied proxy subtraction, keep the proxy bodies explicit:
 
 ```scad
 place_on_faces(poly) {
     if ($ps_face_idx == target_face_idx) {
-        face_plate_minus_foreign_proxies(
-            $ps_face_idx,
-            $ps_face_pts2d,
-            face_thk,
-            $ps_face_dihedrals,
-            undef,
-            false
-        ) {
-            my_foreign_face_proxy();   // child slot 0
-            my_foreign_edge_proxy();   // child slot 1
-            my_foreign_vertex_proxy(); // child slot 2
+        difference() {
+            face_plate(face_thk = face_thk);
+
+            place_on_face_foreign_proxy_sites() {
+                my_foreign_face_proxy();   // child slot 0
+                my_foreign_edge_proxy();   // child slot 1
+                my_foreign_vertex_proxy(); // child slot 2
+            }
         }
     }
 }
 ```
 
-This is just:
+For automatic best-effort volume removal, use the conservative grouped-hull
+wrapper:
 
 ```scad
-difference() {
-    face_plate(...);
-    place_on_face_foreign_proxy_sites(...) children();
+place_on_faces(poly) {
+    if ($ps_face_idx == target_face_idx) {
+        face_plate_minus_foreign_proxy_volume_group_hulls(
+            face_thk = 1.2,
+            mode = "nonzero"
+        );
+    }
 }
 ```
 
-The wrapper keeps the proxy layer separate from the positive face-body builder:
-it subtracts supplied foreign proxy bodies from `face_plate(...)`; it does not
-imply automatic clearance of arbitrary geometry.
+`face_plate_minus_foreign_proxy_volume_group_hulls(...)` is the current opt-in
+wrapper for automatically subtracting conservative grouped hulls. Keep using the
+explicit pattern when the proxy body must preserve user-authored detail.
