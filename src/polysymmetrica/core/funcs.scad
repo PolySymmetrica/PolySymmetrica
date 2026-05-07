@@ -1112,6 +1112,96 @@ function ps_target_local_poly_context_verts_local(ctx) = ctx[1];
  */
 function ps_target_local_poly_context_center_local(ctx) = ctx[2];
 
+/**
+ * Function: Build a face-local context record for nested face operations.
+ * Params: face_pts3d_local (face vertices in target face-local 3D), face_pts2d (face vertices in target face-local XY), face_idx (source face index), poly_faces_idx/poly_verts_local (target-local poly topology/vertices), face_neighbors_idx (optional adjacent face ids), face_dihedrals (optional edge dihedrals), poly_center_local (optional poly center in target-local coordinates)
+ * Returns: face-local context `[face_pts3d_local, face_pts2d, face_idx, target_ctx, face_neighbors_idx, face_dihedrals]`
+ */
+function ps_face_local_context(
+    face_pts3d_local,
+    face_pts2d,
+    face_idx,
+    poly_faces_idx,
+    poly_verts_local,
+    face_neighbors_idx=undef,
+    face_dihedrals=undef,
+    poly_center_local=undef
+) =
+    [
+        face_pts3d_local,
+        face_pts2d,
+        face_idx,
+        ps_target_local_poly_context(poly_faces_idx, poly_verts_local, poly_center_local),
+        face_neighbors_idx,
+        face_dihedrals
+    ];
+
+/**
+ * Function: Get face-local 3D vertices from a face-local context.
+ * Params: ctx (face-local context)
+ * Returns: face vertices in target face-local 3D
+ */
+function ps_face_local_context_pts3d_local(ctx) = ctx[0];
+
+/**
+ * Function: Get face-local 2D vertices from a face-local context.
+ * Params: ctx (face-local context)
+ * Returns: face vertices in target face-local XY
+ */
+function ps_face_local_context_pts2d(ctx) = ctx[1];
+
+/**
+ * Function: Get source face index from a face-local context.
+ * Params: ctx (face-local context)
+ * Returns: source face index
+ */
+function ps_face_local_context_idx(ctx) = ctx[2];
+
+/**
+ * Function: Get target-local poly context from a face-local context.
+ * Params: ctx (face-local context)
+ * Returns: nested target-local poly context
+ */
+function ps_face_local_context_target_local_poly_context(ctx) = ctx[3];
+
+/**
+ * Function: Get target-local face index loops from a face-local context.
+ * Params: ctx (face-local context)
+ * Returns: poly face index loops
+ */
+function ps_face_local_context_poly_faces_idx(ctx) =
+    ps_target_local_poly_context_faces_idx(ps_face_local_context_target_local_poly_context(ctx));
+
+/**
+ * Function: Get target-local vertices from a face-local context.
+ * Params: ctx (face-local context)
+ * Returns: poly vertices in target-local coordinates
+ */
+function ps_face_local_context_poly_verts_local(ctx) =
+    ps_target_local_poly_context_verts_local(ps_face_local_context_target_local_poly_context(ctx));
+
+/**
+ * Function: Get target-local poly center from a face-local context.
+ * Params: ctx (face-local context)
+ * Returns: poly center in target-local coordinates
+ */
+function ps_face_local_context_poly_center_local(ctx) =
+    ps_target_local_poly_context_center_local(ps_face_local_context_target_local_poly_context(ctx));
+
+/**
+ * Function: Get neighboring face indices from a face-local context.
+ * Params: ctx (face-local context)
+ * Returns: adjacent face index per source face edge, or `undef`
+ */
+function ps_face_local_context_neighbors_idx(ctx) = ctx[4];
+
+/**
+ * Function: Get edge dihedrals from a face-local context.
+ * Params: ctx (face-local context)
+ * Returns: dihedral metadata per source face edge, or `undef`
+ */
+function ps_face_local_context_dihedrals(ctx) = ctx[5];
+
 
 /**
  * Function: Orient one face so its normal points away from origin.

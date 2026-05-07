@@ -635,8 +635,20 @@ module test_ps_face_seam_segment_sites__triangle_builds_boundary_edge_records() 
                 true,
                 false
             );
+            face_ctx = ps_face_local_context(
+                $ps_face_pts3d_local,
+                $ps_face_pts2d,
+                $ps_face_idx,
+                $ps_poly_faces_idx,
+                $ps_poly_verts_local,
+                $ps_face_neighbors_idx,
+                $ps_face_dihedrals,
+                $ps_poly_center_local
+            );
+            ctx_sites = _ps_face_seam_segment_sites_from_context(face_ctx, MODE, EPS, "source_edge", true, false);
 
             assert_int_eq(len(sites), 3, "triangle source-edge seam site count");
+            assert(ctx_sites == sites, "context seam-site builder should match public wrapper");
             for (site = sites) {
                 frame = ps_seam_site_frame(site);
 

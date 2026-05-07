@@ -503,6 +503,33 @@ module test_ps_frame_matrix__basic_layout() {
     assert_near(m[2][3], 3, EPS, "row2 w");
 }
 
+module test_ps_face_local_context__accessors_and_default_center() {
+    pts3d_local = [[0, 0, 0], [1, 0, 0], [0, 1, 0]];
+    pts2d = [[0, 0], [1, 0], [0, 1]];
+    face_idx = 7;
+    faces = [[0, 1, 2], [2, 1, 3]];
+    verts_local = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0.2]];
+    neighbors_idx = [3, 4, 5];
+    dihedrals = [120, 130, 140];
+    center_local = [0.2, -0.3, 0.4];
+    ctx = ps_face_local_context(pts3d_local, pts2d, face_idx, faces, verts_local, neighbors_idx, dihedrals, center_local);
+    ctx_default = ps_face_local_context(pts3d_local, pts2d, face_idx, faces, verts_local);
+    target_ctx = ps_face_local_context_target_local_poly_context(ctx);
+
+    assert(ps_face_local_context_pts3d_local(ctx) == pts3d_local, "face-local context pts3d");
+    assert(ps_face_local_context_pts2d(ctx) == pts2d, "face-local context pts2d");
+    assert_int_eq(ps_face_local_context_idx(ctx), face_idx, "face-local context idx");
+    assert(ps_target_local_poly_context_faces_idx(target_ctx) == faces, "face-local context nested target faces");
+    assert(ps_face_local_context_poly_faces_idx(ctx) == faces, "face-local context faces");
+    assert(ps_face_local_context_poly_verts_local(ctx) == verts_local, "face-local context verts");
+    assert(ps_face_local_context_poly_center_local(ctx) == center_local, "face-local context center");
+    assert(ps_face_local_context_neighbors_idx(ctx) == neighbors_idx, "face-local context neighbors");
+    assert(ps_face_local_context_dihedrals(ctx) == dihedrals, "face-local context dihedrals");
+    assert(ps_face_local_context_poly_center_local(ctx_default) == [0, 0, 0], "face-local context default center");
+    assert(is_undef(ps_face_local_context_neighbors_idx(ctx_default)), "face-local context default neighbors");
+    assert(is_undef(ps_face_local_context_dihedrals(ctx_default)), "face-local context default dihedrals");
+}
+
 // --- params-overrides helpers ---
 module test_params_overrides__lookup_and_count() {
     pbf = [
@@ -709,6 +736,7 @@ module run_TestFuncs() {
     test_ps_sort__empty();
     test_ps_solve3__identity_and_scale();
     test_ps_frame_matrix__basic_layout();
+    test_ps_face_local_context__accessors_and_default_center();
     test_params_overrides__lookup_and_count();
     test_params_overrides__compile_dense_arrays();
     test_params_overrides__compile_single_key();

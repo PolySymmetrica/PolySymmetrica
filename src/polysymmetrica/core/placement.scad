@@ -1126,6 +1126,23 @@ function ps_face_site_target_local_poly_context(site) =
     );
 
 /**
+ * Function: Get face-local context from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: face-local context for nested face operations
+ */
+function ps_face_site_face_local_context(site) =
+    ps_face_local_context(
+        ps_face_site_pts3d_local(site),
+        ps_face_site_pts2d(site),
+        ps_face_site_idx(site),
+        ps_face_site_poly_faces_idx(site),
+        ps_face_site_poly_verts_local(site),
+        ps_face_site_neighbors_idx(site),
+        ps_face_site_dihedrals(site),
+        ps_face_site_poly_center_local(site)
+    );
+
+/**
  * Function: Build face placement site records for `place_on_faces(...)`.
  * Params: poly (poly descriptor), inter_radius (scale input), edge_len (explicit scale override), classify/classify_opts (optional classification context)
  * Returns: list of face site records `[face_idx, center, ex, ey, ez, edge_len, vertex_count, face_midradius, face_radius, poly_center_local, face_pts2d, face_pts3d_local, poly_verts_local, poly_faces_idx, face_planarity_err, face_is_planar, face_family_id, face_family_count, edge_family_count, vertex_family_count, face_neighbors_idx, face_dihedrals]`
