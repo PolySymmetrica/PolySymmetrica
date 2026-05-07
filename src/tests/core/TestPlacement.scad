@@ -73,6 +73,34 @@ module test_place_on_faces__auto_classify_matches_precomputed() {
     }
 }
 
+module test_ps_placement_frame__accessors_and_matrix_match_raw_frame() {
+    center = [1, 2, 3];
+    ex = [1, 0, 0];
+    ey = [0, 1, 0];
+    ez = [0, 0, 1];
+    frame = ps_placement_frame(center, ex, ey, ez);
+
+    assert(frame == [center, ex, ey, ez], "placement frame record layout");
+    assert(ps_placement_frame_center(frame) == center, "placement frame center accessor");
+    assert(ps_placement_frame_ex(frame) == ex, "placement frame ex accessor");
+    assert(ps_placement_frame_ey(frame) == ey, "placement frame ey accessor");
+    assert(ps_placement_frame_ez(frame) == ez, "placement frame ez accessor");
+    assert(ps_placement_frame_matrix(frame) == ps_frame_matrix(center, ex, ey, ez), "placement frame matrix");
+}
+
+module test_ps_target_local_poly_context__accessors_and_default_center() {
+    faces = [[0, 1, 2]];
+    verts_local = [[0, 0, 0], [1, 0, 0], [0, 1, 0]];
+    center_local = [0.2, 0.3, -1];
+    ctx = ps_target_local_poly_context(faces, verts_local, center_local);
+    ctx_default = ps_target_local_poly_context(faces, verts_local);
+
+    assert(ps_target_local_poly_context_faces_idx(ctx) == faces, "target-local context faces");
+    assert(ps_target_local_poly_context_verts_local(ctx) == verts_local, "target-local context vertices");
+    assert(ps_target_local_poly_context_center_local(ctx) == center_local, "target-local context center");
+    assert(ps_target_local_poly_context_center_local(ctx_default) == [0, 0, 0], "target-local context default center");
+}
+
 module test_ps_face_sites__cube_records_match_face_structure() {
     p = hexahedron();
     faces = poly_faces(p);
@@ -137,6 +165,22 @@ module test_ps_face_site_accessors__match_record_layout() {
     }
 }
 
+module test_ps_face_site_frame_and_context__match_site_accessors() {
+    p = hexahedron();
+    site = ps_face_sites(p)[0];
+    frame = ps_face_site_frame(site);
+    ctx = ps_face_site_target_local_poly_context(site);
+
+    assert(ps_placement_frame_center(frame) == ps_face_site_center(site), "face site frame center");
+    assert(ps_placement_frame_ex(frame) == ps_face_site_ex(site), "face site frame ex");
+    assert(ps_placement_frame_ey(frame) == ps_face_site_ey(site), "face site frame ey");
+    assert(ps_placement_frame_ez(frame) == ps_face_site_ez(site), "face site frame ez");
+    assert(ps_placement_frame_matrix(frame) == ps_frame_matrix(site[1], site[2], site[3], site[4]), "face site frame matrix");
+    assert(ps_target_local_poly_context_faces_idx(ctx) == ps_face_site_poly_faces_idx(site), "face site context faces");
+    assert(ps_target_local_poly_context_verts_local(ctx) == ps_face_site_poly_verts_local(site), "face site context vertices");
+    assert(ps_target_local_poly_context_center_local(ctx) == ps_face_site_poly_center_local(site), "face site context center");
+}
+
 module test_ps_edge_sites__cube_records_match_edge_structure() {
     p = hexahedron();
     faces = poly_faces(p);
@@ -190,6 +234,18 @@ module test_ps_edge_site_accessors__match_record_layout() {
         for (field = fields)
             assert(field[1] == field[2], str("edge site accessor mismatch field=", field[0], " site=", site[0]));
     }
+}
+
+module test_ps_edge_site_frame__matches_site_accessors() {
+    p = hexahedron();
+    site = ps_edge_sites(p)[0];
+    frame = ps_edge_site_frame(site);
+
+    assert(ps_placement_frame_center(frame) == ps_edge_site_center(site), "edge site frame center");
+    assert(ps_placement_frame_ex(frame) == ps_edge_site_ex(site), "edge site frame ex");
+    assert(ps_placement_frame_ey(frame) == ps_edge_site_ey(site), "edge site frame ey");
+    assert(ps_placement_frame_ez(frame) == ps_edge_site_ez(site), "edge site frame ez");
+    assert(ps_placement_frame_matrix(frame) == ps_frame_matrix(site[1], site[2], site[3], site[4]), "edge site frame matrix");
 }
 
 module test_ps_edge_sites__cube_uses_adjacent_face_normal_bisector() {
@@ -289,6 +345,18 @@ module test_ps_vertex_site_accessors__match_record_layout() {
         for (field = fields)
             assert(field[1] == field[2], str("vertex site accessor mismatch field=", field[0], " site=", site[0]));
     }
+}
+
+module test_ps_vertex_site_frame__matches_site_accessors() {
+    p = hexahedron();
+    site = ps_vertex_sites(p)[0];
+    frame = ps_vertex_site_frame(site);
+
+    assert(ps_placement_frame_center(frame) == ps_vertex_site_center(site), "vertex site frame center");
+    assert(ps_placement_frame_ex(frame) == ps_vertex_site_ex(site), "vertex site frame ex");
+    assert(ps_placement_frame_ey(frame) == ps_vertex_site_ey(site), "vertex site frame ey");
+    assert(ps_placement_frame_ez(frame) == ps_vertex_site_ez(site), "vertex site frame ez");
+    assert(ps_placement_frame_matrix(frame) == ps_frame_matrix(site[1], site[2], site[3], site[4]), "vertex site frame matrix");
 }
 
 module test_place_on_all__cube_single_family() {
@@ -697,14 +765,19 @@ module run_TestPlacement() {
     test_place_on_edges__family_ids_and_counts_from_classify();
     test_place_on_vertices__family_ids_and_counts_from_classify();
     test_place_on_faces__auto_classify_matches_precomputed();
+    test_ps_placement_frame__accessors_and_matrix_match_raw_frame();
+    test_ps_target_local_poly_context__accessors_and_default_center();
     test_ps_face_sites__cube_records_match_face_structure();
     test_ps_face_site_accessors__match_record_layout();
+    test_ps_face_site_frame_and_context__match_site_accessors();
     test_ps_edge_sites__cube_records_match_edge_structure();
     test_ps_edge_site_accessors__match_record_layout();
+    test_ps_edge_site_frame__matches_site_accessors();
     test_ps_edge_sites__cube_uses_adjacent_face_normal_bisector();
     test_ps_edge_sites__preserves_raw_edge_order_for_classify_ids();
     test_ps_vertex_sites__cube_records_match_vertex_structure();
     test_ps_vertex_site_accessors__match_record_layout();
+    test_ps_vertex_site_frame__matches_site_accessors();
     test_place_on_all__cube_single_family();
     test_place_on_edges__no_auto_classify_by_default();
     test_place_on_all__indices_filter_selected_ids();
