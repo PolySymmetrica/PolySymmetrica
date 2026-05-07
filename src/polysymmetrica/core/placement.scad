@@ -934,6 +934,160 @@ function ps_replay_site_edge_site(site) = site[17];
 function ps_replay_site_vertex_site(site) = site[18];
 
 /**
+ * Function: Get face index from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: source face index
+ */
+function ps_face_site_idx(site) = site[0];
+
+/**
+ * Function: Get center from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: face center in parent coordinates
+ */
+function ps_face_site_center(site) = site[1];
+
+/**
+ * Function: Get local X axis from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: unit X axis in parent coordinates
+ */
+function ps_face_site_ex(site) = site[2];
+
+/**
+ * Function: Get local Y axis from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: unit Y axis in parent coordinates
+ */
+function ps_face_site_ey(site) = site[3];
+
+/**
+ * Function: Get local Z axis from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: unit Z axis in parent coordinates
+ */
+function ps_face_site_ez(site) = site[4];
+
+/**
+ * Function: Get target edge length from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: edge length scale used to build the site
+ */
+function ps_face_site_edge_len(site) = site[5];
+
+/**
+ * Function: Get vertex count from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: number of vertices in the source face loop
+ */
+function ps_face_site_vertex_count(site) = site[6];
+
+/**
+ * Function: Get face midradius from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: distance from parent origin to face center
+ */
+function ps_face_site_midradius(site) = site[7];
+
+/**
+ * Function: Get face radius from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: mean distance from face center to face vertices
+ */
+function ps_face_site_radius(site) = site[8];
+
+/**
+ * Function: Get poly center from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: poly center in face-local coordinates
+ */
+function ps_face_site_poly_center_local(site) = site[9];
+
+/**
+ * Function: Get 2D face points from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: source face loop in face-local XY coordinates
+ */
+function ps_face_site_pts2d(site) = site[10];
+
+/**
+ * Function: Get 3D local face points from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: source face loop in face-local XYZ coordinates
+ */
+function ps_face_site_pts3d_local(site) = site[11];
+
+/**
+ * Function: Get local poly vertices from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: all poly vertices in face-local coordinates
+ */
+function ps_face_site_poly_verts_local(site) = site[12];
+
+/**
+ * Function: Get poly face indices from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: poly face index loops used to build the site
+ */
+function ps_face_site_poly_faces_idx(site) = site[13];
+
+/**
+ * Function: Get planarity error from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: maximum local Z deviation from the face plane
+ */
+function ps_face_site_planarity_err(site) = site[14];
+
+/**
+ * Function: Get planarity flag from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: true when the face is planar within placement tolerance
+ */
+function ps_face_site_is_planar(site) = site[15];
+
+/**
+ * Function: Get face family id from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: classification family id, or `undef`
+ */
+function ps_face_site_family_id(site) = site[16];
+
+/**
+ * Function: Get face family count from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: number of face families in the classification context, or `undef`
+ */
+function ps_face_site_face_family_count(site) = site[17];
+
+/**
+ * Function: Get edge family count from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: number of edge families in the classification context, or `undef`
+ */
+function ps_face_site_edge_family_count(site) = site[18];
+
+/**
+ * Function: Get vertex family count from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: number of vertex families in the classification context, or `undef`
+ */
+function ps_face_site_vertex_family_count(site) = site[19];
+
+/**
+ * Function: Get neighboring face indices from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: adjacent face index per source face edge
+ */
+function ps_face_site_neighbors_idx(site) = site[20];
+
+/**
+ * Function: Get edge dihedrals from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: dihedral metadata per source face edge
+ */
+function ps_face_site_dihedrals(site) = site[21];
+
+/**
  * Function: Build face placement site records for `place_on_faces(...)`.
  * Params: poly (poly descriptor), inter_radius (scale input), edge_len (explicit scale override), classify/classify_opts (optional classification context)
  * Returns: list of face site records `[face_idx, center, ex, ey, ez, edge_len, vertex_count, face_midradius, face_radius, poly_center_local, face_pts2d, face_pts3d_local, poly_verts_local, poly_faces_idx, face_planarity_err, face_is_planar, face_family_id, face_family_count, edge_family_count, vertex_family_count, face_neighbors_idx, face_dihedrals]`
@@ -1469,6 +1623,111 @@ module place_on_face_foreign_proxy_volume_group_hulls(
 }
 
 /**
+ * Function: Get edge index from an edge placement site.
+ * Params: site (edge placement site record)
+ * Returns: source edge index
+ */
+function ps_edge_site_idx(site) = site[0];
+
+/**
+ * Function: Get center from an edge placement site.
+ * Params: site (edge placement site record)
+ * Returns: edge midpoint in parent coordinates
+ */
+function ps_edge_site_center(site) = site[1];
+
+/**
+ * Function: Get local X axis from an edge placement site.
+ * Params: site (edge placement site record)
+ * Returns: unit X axis in parent coordinates
+ */
+function ps_edge_site_ex(site) = site[2];
+
+/**
+ * Function: Get local Y axis from an edge placement site.
+ * Params: site (edge placement site record)
+ * Returns: unit Y axis in parent coordinates
+ */
+function ps_edge_site_ey(site) = site[3];
+
+/**
+ * Function: Get local Z axis from an edge placement site.
+ * Params: site (edge placement site record)
+ * Returns: unit Z axis in parent coordinates
+ */
+function ps_edge_site_ez(site) = site[4];
+
+/**
+ * Function: Get actual edge length from an edge placement site.
+ * Params: site (edge placement site record)
+ * Returns: placed edge length
+ */
+function ps_edge_site_edge_len(site) = site[5];
+
+/**
+ * Function: Get edge midradius from an edge placement site.
+ * Params: site (edge placement site record)
+ * Returns: distance from parent origin to edge midpoint
+ */
+function ps_edge_site_midradius(site) = site[6];
+
+/**
+ * Function: Get poly center from an edge placement site.
+ * Params: site (edge placement site record)
+ * Returns: poly center in edge-local coordinates
+ */
+function ps_edge_site_poly_center_local(site) = site[7];
+
+/**
+ * Function: Get local edge endpoints from an edge placement site.
+ * Params: site (edge placement site record)
+ * Returns: two edge endpoints in edge-local coordinates
+ */
+function ps_edge_site_pts_local(site) = site[8];
+
+/**
+ * Function: Get source vertex indices from an edge placement site.
+ * Params: site (edge placement site record)
+ * Returns: source edge vertex pair
+ */
+function ps_edge_site_verts_idx(site) = site[9];
+
+/**
+ * Function: Get adjacent face indices from an edge placement site.
+ * Params: site (edge placement site record)
+ * Returns: face indices adjacent to the source edge
+ */
+function ps_edge_site_adj_faces_idx(site) = site[10];
+
+/**
+ * Function: Get edge family id from an edge placement site.
+ * Params: site (edge placement site record)
+ * Returns: classification family id, or `undef`
+ */
+function ps_edge_site_family_id(site) = site[11];
+
+/**
+ * Function: Get face family count from an edge placement site.
+ * Params: site (edge placement site record)
+ * Returns: number of face families in the classification context, or `undef`
+ */
+function ps_edge_site_face_family_count(site) = site[12];
+
+/**
+ * Function: Get edge family count from an edge placement site.
+ * Params: site (edge placement site record)
+ * Returns: number of edge families in the classification context, or `undef`
+ */
+function ps_edge_site_edge_family_count(site) = site[13];
+
+/**
+ * Function: Get vertex family count from an edge placement site.
+ * Params: site (edge placement site record)
+ * Returns: number of vertex families in the classification context, or `undef`
+ */
+function ps_edge_site_vertex_family_count(site) = site[14];
+
+/**
  * Function: Build edge placement site records for `place_on_edges(...)`.
  * Params: poly (poly descriptor), inter_radius (scale input), edge_len (explicit scale override), classify/classify_opts (optional classification context)
  * Returns: list of edge site records `[edge_idx, center, ex, ey, ez, edge_len, edge_midradius, poly_center_local, edge_pts_local, edge_verts_idx, edge_adj_faces_idx, edge_family_id, face_family_count, edge_family_count, vertex_family_count]`
@@ -1544,6 +1803,111 @@ function ps_edge_sites(poly, inter_radius = 1, edge_len = undef, classify = unde
                 vert_family_count
             ]
     ];
+
+/**
+ * Function: Get vertex index from a vertex placement site.
+ * Params: site (vertex placement site record)
+ * Returns: source vertex index
+ */
+function ps_vertex_site_idx(site) = site[0];
+
+/**
+ * Function: Get center from a vertex placement site.
+ * Params: site (vertex placement site record)
+ * Returns: vertex position in parent coordinates
+ */
+function ps_vertex_site_center(site) = site[1];
+
+/**
+ * Function: Get local X axis from a vertex placement site.
+ * Params: site (vertex placement site record)
+ * Returns: unit X axis in parent coordinates
+ */
+function ps_vertex_site_ex(site) = site[2];
+
+/**
+ * Function: Get local Y axis from a vertex placement site.
+ * Params: site (vertex placement site record)
+ * Returns: unit Y axis in parent coordinates
+ */
+function ps_vertex_site_ey(site) = site[3];
+
+/**
+ * Function: Get local Z axis from a vertex placement site.
+ * Params: site (vertex placement site record)
+ * Returns: unit Z axis in parent coordinates
+ */
+function ps_vertex_site_ez(site) = site[4];
+
+/**
+ * Function: Get target edge length from a vertex placement site.
+ * Params: site (vertex placement site record)
+ * Returns: edge length scale used to build the site
+ */
+function ps_vertex_site_edge_len(site) = site[5];
+
+/**
+ * Function: Get vertex radius from a vertex placement site.
+ * Params: site (vertex placement site record)
+ * Returns: distance from parent origin to vertex
+ */
+function ps_vertex_site_radius(site) = site[6];
+
+/**
+ * Function: Get poly center from a vertex placement site.
+ * Params: site (vertex placement site record)
+ * Returns: poly center in vertex-local coordinates
+ */
+function ps_vertex_site_poly_center_local(site) = site[7];
+
+/**
+ * Function: Get vertex valence from a vertex placement site.
+ * Params: site (vertex placement site record)
+ * Returns: number of incident source edges
+ */
+function ps_vertex_site_valence(site) = site[8];
+
+/**
+ * Function: Get neighbor vertex indices from a vertex placement site.
+ * Params: site (vertex placement site record)
+ * Returns: adjacent vertex indices
+ */
+function ps_vertex_site_neighbors_idx(site) = site[9];
+
+/**
+ * Function: Get local neighbor points from a vertex placement site.
+ * Params: site (vertex placement site record)
+ * Returns: adjacent vertex positions in vertex-local coordinates
+ */
+function ps_vertex_site_neighbor_pts_local(site) = site[10];
+
+/**
+ * Function: Get vertex family id from a vertex placement site.
+ * Params: site (vertex placement site record)
+ * Returns: classification family id, or `undef`
+ */
+function ps_vertex_site_family_id(site) = site[11];
+
+/**
+ * Function: Get face family count from a vertex placement site.
+ * Params: site (vertex placement site record)
+ * Returns: number of face families in the classification context, or `undef`
+ */
+function ps_vertex_site_face_family_count(site) = site[12];
+
+/**
+ * Function: Get edge family count from a vertex placement site.
+ * Params: site (vertex placement site record)
+ * Returns: number of edge families in the classification context, or `undef`
+ */
+function ps_vertex_site_edge_family_count(site) = site[13];
+
+/**
+ * Function: Get vertex family count from a vertex placement site.
+ * Params: site (vertex placement site record)
+ * Returns: number of vertex families in the classification context, or `undef`
+ */
+function ps_vertex_site_vertex_family_count(site) = site[14];
 
 /**
  * Function: Build vertex placement site records for `place_on_vertices(...)`.
