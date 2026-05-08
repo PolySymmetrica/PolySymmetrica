@@ -2100,22 +2100,10 @@ module place_on_face_seam_segments(
     assert(!is_undef($ps_face_pts3d_local), "place_on_face_seam_segments: requires place_on_faces context ($ps_face_pts3d_local)");
     assert(!is_undef($ps_face_pts2d), "place_on_face_seam_segments: requires place_on_faces context ($ps_face_pts2d)");
     assert(!is_undef($ps_face_idx), "place_on_face_seam_segments: requires place_on_faces context ($ps_face_idx)");
-    assert(!is_undef($ps_poly_faces_idx), "place_on_face_seam_segments: requires place_on_faces context ($ps_poly_faces_idx)");
-    assert(!is_undef($ps_poly_verts_local), "place_on_face_seam_segments: requires place_on_faces context ($ps_poly_verts_local)");
-    assert(!is_undef($ps_face_neighbors_idx), "place_on_face_seam_segments: requires place_on_faces context ($ps_face_neighbors_idx)");
-    assert(!is_undef($ps_face_dihedrals), "place_on_face_seam_segments: requires place_on_faces context ($ps_face_dihedrals)");
+    assert(!is_undef($ps_face_local_context), "place_on_face_seam_segments: requires place_on_faces context ($ps_face_local_context)");
     assert(coords == "element" || coords == "parent", "place_on_face_seam_segments: coords must be \"element\" or \"parent\"");
 
-    face_ctx = ps_face_local_context(
-        $ps_face_pts3d_local,
-        $ps_face_pts2d,
-        $ps_face_idx,
-        $ps_poly_faces_idx,
-        $ps_poly_verts_local,
-        $ps_face_neighbors_idx,
-        $ps_face_dihedrals,
-        $ps_poly_center_local
-    );
+    face_ctx = $ps_face_local_context;
     all_sites = _ps_face_seam_segment_sites_from_context(
         face_ctx,
         mode,

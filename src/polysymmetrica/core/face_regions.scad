@@ -541,21 +541,9 @@ function ps_face_anti_interference_shells(
 module ps_face_anti_interference_volume(z0, z1, mode="nonzero", max_project=undef, eps=1e-8, convexity=6, boundary_inset=0, boundary_inset_mode="side") {
     assert(!is_undef($ps_face_pts3d_local), "ps_face_anti_interference_volume: requires place_on_faces context ($ps_face_pts3d_local)");
     assert(!is_undef($ps_face_idx), "ps_face_anti_interference_volume: requires place_on_faces context ($ps_face_idx)");
-    assert(!is_undef($ps_poly_faces_idx), "ps_face_anti_interference_volume: requires place_on_faces context ($ps_poly_faces_idx)");
-    assert(!is_undef($ps_poly_verts_local), "ps_face_anti_interference_volume: requires place_on_faces context ($ps_poly_verts_local)");
-    assert(!is_undef($ps_face_neighbors_idx), "ps_face_anti_interference_volume: requires place_on_faces context ($ps_face_neighbors_idx)");
-    assert(!is_undef($ps_face_dihedrals), "ps_face_anti_interference_volume: requires place_on_faces context ($ps_face_dihedrals)");
+    assert(!is_undef($ps_face_local_context), "ps_face_anti_interference_volume: requires place_on_faces context ($ps_face_local_context)");
 
-    face_ctx = ps_face_local_context(
-        $ps_face_pts3d_local,
-        $ps_face_pts2d,
-        $ps_face_idx,
-        $ps_poly_faces_idx,
-        $ps_poly_verts_local,
-        $ps_face_neighbors_idx,
-        $ps_face_dihedrals,
-        $ps_poly_center_local
-    );
+    face_ctx = $ps_face_local_context;
     shells = _ps_face_anti_interference_shells_from_context(
         face_ctx,
         z0,

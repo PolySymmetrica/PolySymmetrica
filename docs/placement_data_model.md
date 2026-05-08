@@ -176,7 +176,7 @@ Face site accessors:
 | `ps_face_site_poly_verts_local(site)` | All poly vertices in face-local coordinates. |
 | `ps_face_site_poly_faces_idx(site)` | Source poly face index loops. |
 | `ps_face_site_target_local_poly_context(site)` | Target-local context derived from this face site. |
-| `ps_face_site_face_local_context(site)` | Face-local context derived from this face site. |
+| `ps_face_site_face_local_context(site)` | Stored face-local context for this face site. |
 | `ps_face_site_planarity_err(site)` | Maximum local-Z deviation from the face plane. |
 | `ps_face_site_is_planar(site)` | Planarity flag from the placement tolerance. |
 | `ps_face_site_family_id(site)` | Classification family id, or `undef`. |
@@ -187,11 +187,13 @@ Face site accessors:
 | `ps_face_site_dihedrals(site)` | Dihedral metadata per source face edge. |
 
 `place_on_faces(...)` exposes the same semantic data as `$ps_face_*`,
-`$ps_face_frame`, `$ps_poly_*`, and family-count variables. The accessor layer
-is the function form of that public metadata contract. `ps_face_sites(...)`
-appends a `ps_placement_frame(...)` tail element to each site record; the
-stored frame is the primary placement contract, and the center/axis accessors
-derive from it.
+`$ps_face_frame`, `$ps_face_local_context`, `$ps_target_local_poly_context`,
+`$ps_poly_*`, and family-count variables. The accessor layer is the function
+form of that public metadata contract. `ps_face_sites(...)` appends a
+`ps_placement_frame(...)` tail element to each site record; the stored frame
+is the primary placement contract, and the center/axis accessors derive from
+it. The stored face-local context is the next-level shared object for nested
+face helpers.
 
 ## Edge Site Records
 
@@ -348,7 +350,9 @@ provenance and grouping layer that later render/replay code can use to decide
 which foreign faces, edges, vertices, or conservative hulls to emit.
 As with replay sites, internal volume-group builders should receive the
 target-local poly context directly and use its accessors when they need source
-topology or target-local vertex positions.
+topology or target-local vertex positions. When a face site is already in
+hand, prefer the stored face-local context and its nested target-local context
+rather than rebuilding them from sibling fields.
 
 ## Boundary Span Site Records
 

@@ -165,7 +165,17 @@ function _ps_face_site_from_local_poly(face_idx, faces, verts_local, poly_center
         face_n = [for (face = faces) ps_face_normal(verts_local, face)],
         face_neighbors_idx = _ps_face_site_neighbors_idx(f, face_idx, faces, edges, edge_faces),
         face_dihedrals = _ps_face_site_dihedrals(f, face_idx, faces, edges, edge_faces, face_n),
-        frame = ps_placement_frame(center, ex, ey, ez)
+        frame = ps_placement_frame(center, ex, ey, ez),
+        face_local_context = ps_face_local_context(
+            face_pts3d_local,
+            face_pts2d,
+            face_idx,
+            faces,
+            poly_verts_local,
+            face_neighbors_idx,
+            face_dihedrals,
+            poly_center_local
+        )
     )
     [
         face_idx,
@@ -186,7 +196,8 @@ function _ps_face_site_from_local_poly(face_idx, faces, verts_local, poly_center
         undef,
         face_neighbors_idx,
         face_dihedrals,
-        frame
+        frame,
+        face_local_context
     ];
 
 /**
@@ -1197,38 +1208,24 @@ function ps_face_site_dihedrals(site) = site[17];
 function ps_face_site_frame(site) = site[18];
 
 /**
+ * Function: Get face-local context from a face placement site.
+ * Params: site (face placement site record)
+ * Returns: stored face-local context record
+ */
+function ps_face_site_face_local_context(site) = site[19];
+
+/**
  * Function: Get target-local poly context from a face placement site.
  * Params: site (face placement site record)
  * Returns: target-local poly context for the placed face
  */
 function ps_face_site_target_local_poly_context(site) =
-    ps_target_local_poly_context(
-        ps_face_site_poly_faces_idx(site),
-        ps_face_site_poly_verts_local(site),
-        ps_face_site_poly_center_local(site)
-    );
-
-/**
- * Function: Get face-local context from a face placement site.
- * Params: site (face placement site record)
- * Returns: face-local context for nested face operations
- */
-function ps_face_site_face_local_context(site) =
-    ps_face_local_context(
-        ps_face_site_pts3d_local(site),
-        ps_face_site_pts2d(site),
-        ps_face_site_idx(site),
-        ps_face_site_poly_faces_idx(site),
-        ps_face_site_poly_verts_local(site),
-        ps_face_site_neighbors_idx(site),
-        ps_face_site_dihedrals(site),
-        ps_face_site_poly_center_local(site)
-    );
+    ps_face_local_context_target_local_poly_context(ps_face_site_face_local_context(site));
 
 /**
  * Function: Build face placement site records for `place_on_faces(...)`.
  * Params: poly (poly descriptor), inter_radius (scale input), edge_len (explicit scale override), classify/classify_opts (optional classification context)
- * Returns: list of face site records `[face_idx, edge_len, vertex_count, face_midradius, face_radius, poly_center_local, face_pts2d, face_pts3d_local, poly_verts_local, poly_faces_idx, face_planarity_err, face_is_planar, face_family_id, face_family_count, edge_family_count, vertex_family_count, face_neighbors_idx, face_dihedrals, frame]`
+ * Returns: list of face site records `[face_idx, edge_len, vertex_count, face_midradius, face_radius, poly_center_local, face_pts2d, face_pts3d_local, poly_verts_local, poly_faces_idx, face_planarity_err, face_is_planar, face_family_id, face_family_count, edge_family_count, vertex_family_count, face_neighbors_idx, face_dihedrals, frame, face_local_context]`
  * Limitations: record shape is currently positional; keep the semantics stable even if the internal representation changes later
  */
 function ps_face_sites(poly, inter_radius = 1, edge_len = undef, classify = undef, classify_opts = undef) =
@@ -1303,14 +1300,24 @@ function ps_face_sites(poly, inter_radius = 1, edge_len = undef, classify = unde
                 vert_family_count,
                 face_neighbors_idx,
                 face_dihedrals,
-                frame
+                frame,
+                ps_face_local_context(
+                    face_pts3d_local,
+                    face_pts2d,
+                    fi,
+                    faces,
+                    poly_verts_local,
+                    face_neighbors_idx,
+                    face_dihedrals,
+                    poly_center_local
+                )
             ]
     ];
 
 /**
  * Module: Place children on selected faces of a polyhedron.
  * Params: poly (poly descriptor), inter_radius (scale input), edge_len (explicit scale override), classify/classify_opts (optional classification context), indices (`undef`, scalar face index, or list of face indices)
- * Returns: none; exposes `$ps_face_*` metadata and `$ps_face_frame` for each selected face
+ * Returns: none; exposes `$ps_face_*` metadata, `$ps_face_frame`, `$ps_face_local_context`, and `$ps_target_local_poly_context` for each selected face
  * Limitations: `indices` filters the placement loop only; `ps_face_sites(...)` still builds the complete site list so element ids and classification metadata remain global
  */
 module place_on_faces(poly, inter_radius = 1, edge_len = undef, classify = undef, classify_opts = undef, indices = undef) {
@@ -1341,6 +1348,8 @@ module place_on_faces(poly, inter_radius = 1, edge_len = undef, classify = undef
             $ps_vertex_family_count = ps_face_site_vertex_family_count(site);
             $ps_face_neighbors_idx = ps_face_site_neighbors_idx(site);
             $ps_face_dihedrals     = ps_face_site_dihedrals(site);
+            $ps_target_local_poly_context = ps_face_site_target_local_poly_context(site);
+            $ps_face_local_context        = ps_face_site_face_local_context(site);
 
             multmatrix(ps_placement_frame_matrix(frame))
                 children();
@@ -1357,11 +1366,12 @@ module place_on_faces(poly, inter_radius = 1, edge_len = undef, classify = undef
 module place_on_face_foreign_face_replay_sites(mode="nonzero", eps=1e-8, filter_parent=true, coords="element") {
     assert(!is_undef($ps_face_pts2d), "place_on_face_foreign_face_replay_sites: requires place_on_faces context ($ps_face_pts2d)");
     assert(!is_undef($ps_face_idx), "place_on_face_foreign_face_replay_sites: requires place_on_faces context ($ps_face_idx)");
-    assert(!is_undef($ps_poly_faces_idx), "place_on_face_foreign_face_replay_sites: requires place_on_faces context ($ps_poly_faces_idx)");
-    assert(!is_undef($ps_poly_verts_local), "place_on_face_foreign_face_replay_sites: requires place_on_faces context ($ps_poly_verts_local)");
+    assert(!is_undef($ps_face_local_context), "place_on_face_foreign_face_replay_sites: requires place_on_faces context ($ps_face_local_context)");
+    assert(!is_undef($ps_target_local_poly_context), "place_on_face_foreign_face_replay_sites: requires place_on_faces context ($ps_target_local_poly_context)");
     assert(coords == "element" || coords == "parent", "place_on_face_foreign_face_replay_sites: coords must be \"element\" or \"parent\"");
 
-    target_ctx = ps_target_local_poly_context($ps_poly_faces_idx, $ps_poly_verts_local, $ps_poly_center_local);
+    target_ctx = $ps_target_local_poly_context;
+    face_ctx = $ps_face_local_context;
     sites = _ps_face_foreign_face_replay_sites_from_context($ps_face_pts2d, $ps_face_idx, target_ctx, eps, mode, filter_parent);
     for (site = sites) {
         face_site = ps_replay_site_face_site(site);
@@ -1405,6 +1415,8 @@ module place_on_face_foreign_face_replay_sites(mode="nonzero", eps=1e-8, filter_
             $ps_vertex_family_count = ps_face_site_vertex_family_count(face_site);
             $ps_face_neighbors_idx = ps_face_site_neighbors_idx(face_site);
             $ps_face_dihedrals     = ps_face_site_dihedrals(face_site);
+            $ps_target_local_poly_context = ps_face_site_target_local_poly_context(face_site);
+            $ps_face_local_context        = ps_face_site_face_local_context(face_site);
 
             multmatrix(ps_placement_frame_matrix(face_frame))
                 children();
@@ -1431,12 +1443,12 @@ module place_on_face_foreign_proxy_sites(
 ) {
     assert(!is_undef($ps_face_pts2d), "place_on_face_foreign_proxy_sites: requires place_on_faces context ($ps_face_pts2d)");
     assert(!is_undef($ps_face_idx), "place_on_face_foreign_proxy_sites: requires place_on_faces context ($ps_face_idx)");
-    assert(!is_undef($ps_poly_faces_idx), "place_on_face_foreign_proxy_sites: requires place_on_faces context ($ps_poly_faces_idx)");
-    assert(!is_undef($ps_poly_verts_local), "place_on_face_foreign_proxy_sites: requires place_on_faces context ($ps_poly_verts_local)");
+    assert(!is_undef($ps_face_local_context), "place_on_face_foreign_proxy_sites: requires place_on_faces context ($ps_face_local_context)");
+    assert(!is_undef($ps_target_local_poly_context), "place_on_face_foreign_proxy_sites: requires place_on_faces context ($ps_target_local_poly_context)");
     assert(coords == "element" || coords == "parent", "place_on_face_foreign_proxy_sites: coords must be \"element\" or \"parent\"");
     assert(face_child >= 0 && edge_child >= 0 && vertex_child >= 0, "place_on_face_foreign_proxy_sites: child slot indices must be non-negative");
 
-    target_ctx = ps_target_local_poly_context($ps_poly_faces_idx, $ps_poly_verts_local, $ps_poly_center_local);
+    target_ctx = $ps_target_local_poly_context;
     sites = _ps_face_foreign_proxy_replay_sites_from_context($ps_face_pts2d, $ps_face_idx, target_ctx, eps, mode, filter_parent);
     for (site = sites) {
         source_kind = ps_replay_site_foreign_kind(site);
@@ -1523,6 +1535,8 @@ module place_on_face_foreign_proxy_sites(
                     $ps_vertex_family_count = ps_face_site_vertex_family_count(face_site);
                     $ps_face_neighbors_idx = ps_face_site_neighbors_idx(face_site);
                     $ps_face_dihedrals     = ps_face_site_dihedrals(face_site);
+                    $ps_target_local_poly_context = ps_face_site_target_local_poly_context(face_site);
+                    $ps_face_local_context        = ps_face_site_face_local_context(face_site);
 
                     multmatrix(ps_placement_frame_matrix(face_frame))
                         children(child_idx);
@@ -1577,10 +1591,10 @@ module place_on_face_foreign_proxy_sites(
 module place_on_face_foreign_proxy_volume_groups(mode="nonzero", eps=1e-8, filter_parent=true) {
     assert(!is_undef($ps_face_pts2d), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_face_pts2d)");
     assert(!is_undef($ps_face_idx), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_face_idx)");
-    assert(!is_undef($ps_poly_faces_idx), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_poly_faces_idx)");
-    assert(!is_undef($ps_poly_verts_local), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_poly_verts_local)");
+    assert(!is_undef($ps_face_local_context), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_face_local_context)");
+    assert(!is_undef($ps_target_local_poly_context), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_target_local_poly_context)");
 
-    target_ctx = ps_target_local_poly_context($ps_poly_faces_idx, $ps_poly_verts_local, $ps_poly_center_local);
+    target_ctx = $ps_target_local_poly_context;
     groups = _ps_face_foreign_proxy_volume_groups_from_context($ps_face_pts2d, $ps_face_idx, target_ctx, eps, mode, filter_parent);
     for (group = groups) {
         $ps_proxy_volume_group_record = group;
@@ -1618,11 +1632,10 @@ module place_on_face_foreign_proxy_volume_group_faces(
 ) {
     assert(!is_undef($ps_face_pts2d), "place_on_face_foreign_proxy_volume_group_faces: requires place_on_faces context ($ps_face_pts2d)");
     assert(!is_undef($ps_face_idx), "place_on_face_foreign_proxy_volume_group_faces: requires place_on_faces context ($ps_face_idx)");
-    assert(!is_undef($ps_poly_faces_idx), "place_on_face_foreign_proxy_volume_group_faces: requires place_on_faces context ($ps_poly_faces_idx)");
-    assert(!is_undef($ps_poly_verts_local), "place_on_face_foreign_proxy_volume_group_faces: requires place_on_faces context ($ps_poly_verts_local)");
+    assert(!is_undef($ps_target_local_poly_context), "place_on_face_foreign_proxy_volume_group_faces: requires place_on_faces context ($ps_target_local_poly_context)");
     assert(coords == "element" || coords == "parent", "place_on_face_foreign_proxy_volume_group_faces: coords must be \"element\" or \"parent\"");
 
-    target_ctx = ps_target_local_poly_context($ps_poly_faces_idx, $ps_poly_verts_local, $ps_poly_center_local);
+    target_ctx = $ps_target_local_poly_context;
     groups = _ps_face_foreign_proxy_volume_groups_from_context($ps_face_pts2d, $ps_face_idx, target_ctx, eps, mode, filter_parent);
     for (group = groups) {
         sites = _ps_proxy_volume_group_face_replay_sites_from_context(group, target_ctx, eps);
@@ -1690,11 +1703,13 @@ module place_on_face_foreign_proxy_volume_group_faces(
                 $ps_face_planarity_err = ps_face_site_planarity_err(face_site);
                 $ps_face_is_planar     = ps_face_site_is_planar(face_site);
                 $ps_face_family_id     = ps_face_site_family_id(face_site);
-                $ps_face_family_count  = ps_face_site_face_family_count(face_site);
-                $ps_edge_family_count  = ps_face_site_edge_family_count(face_site);
+                $ps_face_family_count   = ps_face_site_face_family_count(face_site);
+                $ps_edge_family_count   = ps_face_site_edge_family_count(face_site);
                 $ps_vertex_family_count = ps_face_site_vertex_family_count(face_site);
-                $ps_face_neighbors_idx = ps_face_site_neighbors_idx(face_site);
-                $ps_face_dihedrals     = ps_face_site_dihedrals(face_site);
+                $ps_face_neighbors_idx  = ps_face_site_neighbors_idx(face_site);
+                $ps_face_dihedrals      = ps_face_site_dihedrals(face_site);
+                $ps_target_local_poly_context = ps_face_site_target_local_poly_context(face_site);
+                $ps_face_local_context        = ps_face_site_face_local_context(face_site);
 
                 multmatrix(ps_placement_frame_matrix(face_frame))
                     children(0);
