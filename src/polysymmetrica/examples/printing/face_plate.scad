@@ -170,8 +170,15 @@ module face_plate(face_thk,
     color(len(pts) == 3 ? "white" : "red") {
         union() {
             for (shell = shells) {
-                if (shell[3] > 0)
-                    echo(str("face_plate: capped ", shell[3], " projection(s) on face ", idx, " loop ", shell[2]));
+                if (ps_face_anti_interference_shell_capped_count(shell) > 0)
+                    echo(str(
+                        "face_plate: capped ",
+                        ps_face_anti_interference_shell_capped_count(shell),
+                        " projection(s) on face ",
+                        idx,
+                        " loop ",
+                        ps_face_anti_interference_shell_loop_idx(shell)
+                    ));
 
                 polyhedron(
                     points = ps_face_anti_interference_shell_points(shell),
@@ -183,8 +190,8 @@ module face_plate(face_thk,
 
         for (shell = shells)
             _face_plate_pillow_loop(
-                    ps_face_anti_interference_shell_top_loop2d(shell),
-                    top_z, pillow_min_rad, pillow_inset, pillow_ramp, pillow_thk, eps);
+                ps_face_anti_interference_shell_top_loop2d(shell),
+                top_z, pillow_min_rad, pillow_inset, pillow_ramp, pillow_thk, eps);
     }
 
     if (clear_space)
