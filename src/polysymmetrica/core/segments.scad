@@ -1921,6 +1921,30 @@ function ps_face_seam_segment_sites(
     );
 
 /**
+ * Function: Build edge-like placement sites for current-face seam segments from a face-local context.
+ * Params: face_ctx (face-local context), mode/eps (segmentation controls), boundary_kind (boundary span kind filter), include_boundary/include_foreign/filter_parent (source controls)
+ * Returns: seam site records for `place_on_face_seam_segments(...)`
+ */
+function ps_face_seam_segment_sites_ctx(
+    face_ctx,
+    mode="nonzero",
+    eps=1e-8,
+    boundary_kind="generated_cut",
+    include_boundary=true,
+    include_foreign=true,
+    filter_parent=true
+) =
+    _ps_face_seam_segment_sites_from_context(
+        face_ctx,
+        mode,
+        eps,
+        boundary_kind,
+        include_boundary,
+        include_foreign,
+        filter_parent
+    );
+
+/**
  * Function: Get seam site index.
  * Params: site (seam segment site record)
  * Returns: zero-based seam site index
@@ -2104,7 +2128,7 @@ module place_on_face_seam_segments(
     assert(coords == "element" || coords == "parent", "place_on_face_seam_segments: coords must be \"element\" or \"parent\"");
 
     face_ctx = $ps_face_local_context;
-    all_sites = _ps_face_seam_segment_sites_from_context(
+    all_sites = ps_face_seam_segment_sites_ctx(
         face_ctx,
         mode,
         eps,

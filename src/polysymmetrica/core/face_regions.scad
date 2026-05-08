@@ -533,6 +533,33 @@ function ps_face_anti_interference_shells(
     );
 
 /**
+ * Function: Build positive anti-interference shell meshes from a face-local context.
+ * Params: face_ctx (face-local context), z0/z1 (target local Z planes), mode (`"nonzero"`, `"evenodd"`, or `"all"`), max_project (optional projection-distance cap), eps (geometric tolerance), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`)
+ * Returns: list of shell records `[points, faces, loop_idx, capped_count, bottom_loop2d, top_loop2d]`
+ * Limitations/Gotchas: public context-first adapter around the shell builder
+ */
+function ps_face_anti_interference_shells_ctx(
+    face_ctx,
+    z0,
+    z1,
+    mode="nonzero",
+    max_project=undef,
+    eps=1e-8,
+    boundary_inset=0,
+    boundary_inset_mode="side"
+) =
+    _ps_face_anti_interference_shells_from_context(
+        face_ctx,
+        z0,
+        z1,
+        mode,
+        max_project,
+        eps,
+        boundary_inset,
+        boundary_inset_mode
+    );
+
+/**
  * Module: Emit the current face's positive anti-interference volume.
  * Params: z0/z1 (target local Z planes), mode (`"nonzero"`, `"evenodd"`, or `"all"`), max_project (optional projection-distance cap), eps (geometric tolerance), convexity (OpenSCAD polyhedron convexity hint), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`)
  * Returns: none; intended for use inside `place_on_faces(...)`, usually inside `intersection()`
@@ -544,7 +571,7 @@ module ps_face_anti_interference_volume(z0, z1, mode="nonzero", max_project=unde
     assert(!is_undef($ps_face_local_context), "ps_face_anti_interference_volume: requires place_on_faces context ($ps_face_local_context)");
 
     face_ctx = $ps_face_local_context;
-    shells = _ps_face_anti_interference_shells_from_context(
+    shells = ps_face_anti_interference_shells_ctx(
         face_ctx,
         z0,
         z1,
