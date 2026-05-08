@@ -115,19 +115,19 @@ module test_ps_face_sites__cube_records_match_face_structure() {
         fi = site[0];
         face = faces[fi];
 
-        assert(len(site) >= 23, str("face site should store a frame tail fi=", fi));
-        assert_int_eq(site[6], len(face), "site vertex count should match face arity");
-        assert_int_eq(len(site[10]), len(face), "site 2d point count should match face arity");
-        assert_int_eq(len(site[11]), len(face), "site 3d local point count should match face arity");
-        assert_int_eq(len(site[20]), len(face), "site neighbor count should match face arity");
-        assert_int_eq(len(site[21]), len(face), "site dihedral count should match face arity");
-        assert(site[22] == ps_face_site_frame(site), str("face site stored frame mismatch fi=", fi));
-        assert(site[15], str("cube face site should be planar fi=", fi));
-        assert(abs(site[14]) < 1e-9, str("cube face planarity err should be ~0 fi=", fi, " err=", site[14]));
-        assert_int_eq(site[16], ids[fi], "site face family id");
-        assert_int_eq(site[17], counts[0], "site face family count");
-        assert_int_eq(site[18], counts[1], "site edge family count");
-        assert_int_eq(site[19], counts[2], "site vertex family count");
+        assert_int_eq(len(site), 19, str("face site should store only the compact frame tail fi=", fi));
+        assert_int_eq(site[2], len(face), "site vertex count should match face arity");
+        assert_int_eq(len(site[6]), len(face), "site 2d point count should match face arity");
+        assert_int_eq(len(site[7]), len(face), "site 3d local point count should match face arity");
+        assert_int_eq(len(site[16]), len(face), "site neighbor count should match face arity");
+        assert_int_eq(len(site[17]), len(face), "site dihedral count should match face arity");
+        assert(site[18] == ps_face_site_frame(site), str("face site stored frame mismatch fi=", fi));
+        assert(site[11], str("cube face site should be planar fi=", fi));
+        assert(abs(site[10]) < 1e-9, str("cube face planarity err should be ~0 fi=", fi, " err=", site[10]));
+        assert_int_eq(site[12], ids[fi], "site face family id");
+        assert_int_eq(site[13], counts[0], "site face family count");
+        assert_int_eq(site[14], counts[1], "site edge family count");
+        assert_int_eq(site[15], counts[2], "site vertex family count");
     }
 }
 
@@ -139,28 +139,24 @@ module test_ps_face_site_accessors__match_record_layout() {
     for (site = sites) {
         fields = [
             ["idx", ps_face_site_idx(site), site[0]],
-            ["center", ps_face_site_center(site), site[1]],
-            ["ex", ps_face_site_ex(site), site[2]],
-            ["ey", ps_face_site_ey(site), site[3]],
-            ["ez", ps_face_site_ez(site), site[4]],
-            ["edge_len", ps_face_site_edge_len(site), site[5]],
-            ["vertex_count", ps_face_site_vertex_count(site), site[6]],
-            ["midradius", ps_face_site_midradius(site), site[7]],
-            ["radius", ps_face_site_radius(site), site[8]],
-            ["poly_center_local", ps_face_site_poly_center_local(site), site[9]],
-            ["pts2d", ps_face_site_pts2d(site), site[10]],
-            ["pts3d_local", ps_face_site_pts3d_local(site), site[11]],
-            ["poly_verts_local", ps_face_site_poly_verts_local(site), site[12]],
-            ["poly_faces_idx", ps_face_site_poly_faces_idx(site), site[13]],
-            ["planarity_err", ps_face_site_planarity_err(site), site[14]],
-            ["is_planar", ps_face_site_is_planar(site), site[15]],
-            ["family_id", ps_face_site_family_id(site), site[16]],
-            ["face_family_count", ps_face_site_face_family_count(site), site[17]],
-            ["edge_family_count", ps_face_site_edge_family_count(site), site[18]],
-            ["vertex_family_count", ps_face_site_vertex_family_count(site), site[19]],
-            ["neighbors_idx", ps_face_site_neighbors_idx(site), site[20]],
-            ["dihedrals", ps_face_site_dihedrals(site), site[21]],
-            ["frame", ps_face_site_frame(site), site[22]]
+            ["edge_len", ps_face_site_edge_len(site), site[1]],
+            ["vertex_count", ps_face_site_vertex_count(site), site[2]],
+            ["midradius", ps_face_site_midradius(site), site[3]],
+            ["radius", ps_face_site_radius(site), site[4]],
+            ["poly_center_local", ps_face_site_poly_center_local(site), site[5]],
+            ["pts2d", ps_face_site_pts2d(site), site[6]],
+            ["pts3d_local", ps_face_site_pts3d_local(site), site[7]],
+            ["poly_verts_local", ps_face_site_poly_verts_local(site), site[8]],
+            ["poly_faces_idx", ps_face_site_poly_faces_idx(site), site[9]],
+            ["planarity_err", ps_face_site_planarity_err(site), site[10]],
+            ["is_planar", ps_face_site_is_planar(site), site[11]],
+            ["family_id", ps_face_site_family_id(site), site[12]],
+            ["face_family_count", ps_face_site_face_family_count(site), site[13]],
+            ["edge_family_count", ps_face_site_edge_family_count(site), site[14]],
+            ["vertex_family_count", ps_face_site_vertex_family_count(site), site[15]],
+            ["neighbors_idx", ps_face_site_neighbors_idx(site), site[16]],
+            ["dihedrals", ps_face_site_dihedrals(site), site[17]],
+            ["frame", ps_face_site_frame(site), site[18]]
         ];
 
         for (field = fields)
@@ -175,12 +171,12 @@ module test_ps_face_site_frame_and_context__match_site_accessors() {
     ctx = ps_face_site_target_local_poly_context(site);
     face_ctx = ps_face_site_face_local_context(site);
 
-    assert(frame == site[22], "face site should store its frame object");
+    assert(frame == site[18], "face site should store its frame object");
     assert(ps_placement_frame_center(frame) == ps_face_site_center(site), "face site frame center");
     assert(ps_placement_frame_ex(frame) == ps_face_site_ex(site), "face site frame ex");
     assert(ps_placement_frame_ey(frame) == ps_face_site_ey(site), "face site frame ey");
     assert(ps_placement_frame_ez(frame) == ps_face_site_ez(site), "face site frame ez");
-    assert(ps_placement_frame_matrix(frame) == ps_placement_frame_matrix(site[22]), "face site frame matrix");
+    assert(ps_placement_frame_matrix(frame) == ps_placement_frame_matrix(site[18]), "face site frame matrix");
     assert(ps_target_local_poly_context_faces_idx(ctx) == ps_face_site_poly_faces_idx(site), "face site context faces");
     assert(ps_target_local_poly_context_verts_local(ctx) == ps_face_site_poly_verts_local(site), "face site context vertices");
     assert(ps_target_local_poly_context_center_local(ctx) == ps_face_site_poly_center_local(site), "face site context center");
@@ -208,17 +204,17 @@ module test_ps_edge_sites__cube_records_match_edge_structure() {
     for (site = sites) {
         ei = site[0];
 
-        assert(len(site) >= 16, str("edge site should store a frame tail ei=", ei));
-        assert_vec3_near(site[8][0], [-site[5] / 2, 0, 0], 1e-9, "edge local start point");
-        assert_vec3_near(site[8][1], [site[5] / 2, 0, 0], 1e-9, "edge local end point");
-        assert_int_eq(len(site[9]), 2, "edge vertex pair should have arity 2");
-        assert_int_eq(len(site[10]), 2, "cube edges should have two adjacent faces");
-        assert(abs(norm(site[1]) - site[6]) < 1e-9, str("edge center/midradius mismatch ei=", ei));
-        assert_int_eq(site[11], ids[ei], "site edge family id");
-        assert_int_eq(site[12], counts[0], "site face family count");
-        assert_int_eq(site[13], counts[1], "site edge family count");
-        assert_int_eq(site[14], counts[2], "site vertex family count");
-        assert(site[15] == ps_edge_site_frame(site), str("edge site stored frame mismatch ei=", ei));
+        assert_int_eq(len(site), 12, str("edge site should store only the compact frame tail ei=", ei));
+        assert_vec3_near(site[4][0], [-site[1] / 2, 0, 0], 1e-9, "edge local start point");
+        assert_vec3_near(site[4][1], [site[1] / 2, 0, 0], 1e-9, "edge local end point");
+        assert_int_eq(len(site[5]), 2, "edge vertex pair should have arity 2");
+        assert_int_eq(len(site[6]), 2, "cube edges should have two adjacent faces");
+        assert(abs(norm(ps_edge_site_center(site)) - site[2]) < 1e-9, str("edge center/midradius mismatch ei=", ei));
+        assert_int_eq(site[7], ids[ei], "site edge family id");
+        assert_int_eq(site[8], counts[0], "site face family count");
+        assert_int_eq(site[9], counts[1], "site edge family count");
+        assert_int_eq(site[10], counts[2], "site vertex family count");
+        assert(site[11] == ps_edge_site_frame(site), str("edge site stored frame mismatch ei=", ei));
     }
 }
 
@@ -230,21 +226,17 @@ module test_ps_edge_site_accessors__match_record_layout() {
     for (site = sites) {
         fields = [
             ["idx", ps_edge_site_idx(site), site[0]],
-            ["center", ps_edge_site_center(site), site[1]],
-            ["ex", ps_edge_site_ex(site), site[2]],
-            ["ey", ps_edge_site_ey(site), site[3]],
-            ["ez", ps_edge_site_ez(site), site[4]],
-            ["edge_len", ps_edge_site_edge_len(site), site[5]],
-            ["midradius", ps_edge_site_midradius(site), site[6]],
-            ["poly_center_local", ps_edge_site_poly_center_local(site), site[7]],
-            ["pts_local", ps_edge_site_pts_local(site), site[8]],
-            ["verts_idx", ps_edge_site_verts_idx(site), site[9]],
-            ["adj_faces_idx", ps_edge_site_adj_faces_idx(site), site[10]],
-            ["family_id", ps_edge_site_family_id(site), site[11]],
-            ["face_family_count", ps_edge_site_face_family_count(site), site[12]],
-            ["edge_family_count", ps_edge_site_edge_family_count(site), site[13]],
-            ["vertex_family_count", ps_edge_site_vertex_family_count(site), site[14]],
-            ["frame", ps_edge_site_frame(site), site[15]]
+            ["edge_len", ps_edge_site_edge_len(site), site[1]],
+            ["midradius", ps_edge_site_midradius(site), site[2]],
+            ["poly_center_local", ps_edge_site_poly_center_local(site), site[3]],
+            ["pts_local", ps_edge_site_pts_local(site), site[4]],
+            ["verts_idx", ps_edge_site_verts_idx(site), site[5]],
+            ["adj_faces_idx", ps_edge_site_adj_faces_idx(site), site[6]],
+            ["family_id", ps_edge_site_family_id(site), site[7]],
+            ["face_family_count", ps_edge_site_face_family_count(site), site[8]],
+            ["edge_family_count", ps_edge_site_edge_family_count(site), site[9]],
+            ["vertex_family_count", ps_edge_site_vertex_family_count(site), site[10]],
+            ["frame", ps_edge_site_frame(site), site[11]]
         ];
 
         for (field = fields)
@@ -257,12 +249,12 @@ module test_ps_edge_site_frame__matches_site_accessors() {
     site = ps_edge_sites(p)[0];
     frame = ps_edge_site_frame(site);
 
-    assert(frame == site[15], "edge site should store its frame object");
+    assert(frame == site[11], "edge site should store its frame object");
     assert(ps_placement_frame_center(frame) == ps_edge_site_center(site), "edge site frame center");
     assert(ps_placement_frame_ex(frame) == ps_edge_site_ex(site), "edge site frame ex");
     assert(ps_placement_frame_ey(frame) == ps_edge_site_ey(site), "edge site frame ey");
     assert(ps_placement_frame_ez(frame) == ps_edge_site_ez(site), "edge site frame ez");
-    assert(ps_placement_frame_matrix(frame) == ps_placement_frame_matrix(site[15]), "edge site frame matrix");
+    assert(ps_placement_frame_matrix(frame) == ps_placement_frame_matrix(site[11]), "edge site frame matrix");
 }
 
 module test_ps_edge_sites__cube_uses_adjacent_face_normal_bisector() {
@@ -281,8 +273,8 @@ module test_ps_edge_sites__cube_uses_adjacent_face_normal_bisector() {
         nsum = face_n[adj[0]] + face_n[adj[1]];
         expected = v_norm(nsum);
         assert(
-            v_dot(site[4], expected) > 1 - 1e-9,
-            str("edge site ez should follow adjacent-face bisector ei=", ei, " got=", site[4], " expected=", expected)
+            v_dot(ps_edge_site_ez(site), expected) > 1 - 1e-9,
+            str("edge site ez should follow adjacent-face bisector ei=", ei, " got=", ps_edge_site_ez(site), " expected=", expected)
         );
     }
 }
@@ -303,8 +295,8 @@ module test_ps_edge_sites__preserves_raw_edge_order_for_classify_ids() {
 
     for (site = sites) {
         ei = site[0];
-        assert(site[9] == raw_edges[ei], str("edge site should preserve raw edge order ei=", ei, " got=", site[9], " expected=", raw_edges[ei]));
-        assert_int_eq(site[11], ids[ei], "edge family id should match raw-order classify ids");
+        assert(site[5] == raw_edges[ei], str("edge site should preserve raw edge order ei=", ei, " got=", site[5], " expected=", raw_edges[ei]));
+        assert_int_eq(site[7], ids[ei], "edge family id should match raw-order classify ids");
     }
 }
 
@@ -321,19 +313,19 @@ module test_ps_vertex_sites__cube_records_match_vertex_structure() {
     for (site = sites) {
         vi = site[0];
 
-        assert(len(site) >= 16, str("vertex site should store a frame tail vi=", vi));
-        assert_int_eq(site[8], 3, "cube vertex valence should be 3");
-        assert_int_eq(len(site[9]), site[8], "neighbor index count should match valence");
-        assert_int_eq(len(site[10]), site[8], "neighbor point count should match valence");
-        assert(abs(norm(site[1]) - site[6]) < 1e-9, str("vertex center/radius mismatch vi=", vi));
-        assert_vec3_near(site[7], [0, 0, -site[6]], 1e-9, "vertex poly-center local");
-        for (p_local = site[10])
-            assert(abs(norm(p_local) - site[5]) < 1e-9, str("vertex neighbor edge length mismatch vi=", vi, " p=", p_local));
-        assert_int_eq(site[11], ids[vi], "site vertex family id");
-        assert_int_eq(site[12], counts[0], "site face family count");
-        assert_int_eq(site[13], counts[1], "site edge family count");
-        assert_int_eq(site[14], counts[2], "site vertex family count");
-        assert(site[15] == ps_vertex_site_frame(site), str("vertex site stored frame mismatch vi=", vi));
+        assert_int_eq(len(site), 12, str("vertex site should store only the compact frame tail vi=", vi));
+        assert_int_eq(site[4], 3, "cube vertex valence should be 3");
+        assert_int_eq(len(site[5]), site[4], "neighbor index count should match valence");
+        assert_int_eq(len(site[6]), site[4], "neighbor point count should match valence");
+        assert(abs(norm(ps_vertex_site_center(site)) - site[2]) < 1e-9, str("vertex center/radius mismatch vi=", vi));
+        assert_vec3_near(site[3], [0, 0, -site[2]], 1e-9, "vertex poly-center local");
+        for (p_local = site[6])
+            assert(abs(norm(p_local) - site[1]) < 1e-9, str("vertex neighbor edge length mismatch vi=", vi, " p=", p_local));
+        assert_int_eq(site[7], ids[vi], "site vertex family id");
+        assert_int_eq(site[8], counts[0], "site face family count");
+        assert_int_eq(site[9], counts[1], "site edge family count");
+        assert_int_eq(site[10], counts[2], "site vertex family count");
+        assert(site[11] == ps_vertex_site_frame(site), str("vertex site stored frame mismatch vi=", vi));
     }
 }
 
@@ -345,21 +337,17 @@ module test_ps_vertex_site_accessors__match_record_layout() {
     for (site = sites) {
         fields = [
             ["idx", ps_vertex_site_idx(site), site[0]],
-            ["center", ps_vertex_site_center(site), site[1]],
-            ["ex", ps_vertex_site_ex(site), site[2]],
-            ["ey", ps_vertex_site_ey(site), site[3]],
-            ["ez", ps_vertex_site_ez(site), site[4]],
-            ["edge_len", ps_vertex_site_edge_len(site), site[5]],
-            ["radius", ps_vertex_site_radius(site), site[6]],
-            ["poly_center_local", ps_vertex_site_poly_center_local(site), site[7]],
-            ["valence", ps_vertex_site_valence(site), site[8]],
-            ["neighbors_idx", ps_vertex_site_neighbors_idx(site), site[9]],
-            ["neighbor_pts_local", ps_vertex_site_neighbor_pts_local(site), site[10]],
-            ["family_id", ps_vertex_site_family_id(site), site[11]],
-            ["face_family_count", ps_vertex_site_face_family_count(site), site[12]],
-            ["edge_family_count", ps_vertex_site_edge_family_count(site), site[13]],
-            ["vertex_family_count", ps_vertex_site_vertex_family_count(site), site[14]],
-            ["frame", ps_vertex_site_frame(site), site[15]]
+            ["edge_len", ps_vertex_site_edge_len(site), site[1]],
+            ["radius", ps_vertex_site_radius(site), site[2]],
+            ["poly_center_local", ps_vertex_site_poly_center_local(site), site[3]],
+            ["valence", ps_vertex_site_valence(site), site[4]],
+            ["neighbors_idx", ps_vertex_site_neighbors_idx(site), site[5]],
+            ["neighbor_pts_local", ps_vertex_site_neighbor_pts_local(site), site[6]],
+            ["family_id", ps_vertex_site_family_id(site), site[7]],
+            ["face_family_count", ps_vertex_site_face_family_count(site), site[8]],
+            ["edge_family_count", ps_vertex_site_edge_family_count(site), site[9]],
+            ["vertex_family_count", ps_vertex_site_vertex_family_count(site), site[10]],
+            ["frame", ps_vertex_site_frame(site), site[11]]
         ];
 
         for (field = fields)
@@ -372,12 +360,12 @@ module test_ps_vertex_site_frame__matches_site_accessors() {
     site = ps_vertex_sites(p)[0];
     frame = ps_vertex_site_frame(site);
 
-    assert(frame == site[15], "vertex site should store its frame object");
+    assert(frame == site[11], "vertex site should store its frame object");
     assert(ps_placement_frame_center(frame) == ps_vertex_site_center(site), "vertex site frame center");
     assert(ps_placement_frame_ex(frame) == ps_vertex_site_ex(site), "vertex site frame ex");
     assert(ps_placement_frame_ey(frame) == ps_vertex_site_ey(site), "vertex site frame ey");
     assert(ps_placement_frame_ez(frame) == ps_vertex_site_ez(site), "vertex site frame ez");
-    assert(ps_placement_frame_matrix(frame) == ps_placement_frame_matrix(site[15]), "vertex site frame matrix");
+    assert(ps_placement_frame_matrix(frame) == ps_placement_frame_matrix(site[11]), "vertex site frame matrix");
 }
 
 module test_place_on_all__cube_single_family() {

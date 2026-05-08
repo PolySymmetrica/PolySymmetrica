@@ -21,9 +21,10 @@ metadata exposed by placement modules.
 - `site`
   A canonical placement target record for one face, edge, or vertex. Site
   records are built by `ps_face_sites(...)`, `ps_edge_sites(...)`, and
-  `ps_vertex_sites(...)`. These records commonly carry a stored
-  `ps_placement_frame(...)` subrecord directly, so the frame accessors can
-  return the semantic object instead of rebuilding it from scalar peers.
+  `ps_vertex_sites(...)`. Each site record stores a compact semantic payload
+  plus a trailing `ps_placement_frame(...)` subrecord. The `center`/`ex`/`ey`/
+  `ez` accessors are derived from that frame and are not separate stored site
+  fields.
 
 - `target-local poly context`
   A compact record for "the whole source poly, but expressed in the current
@@ -188,8 +189,9 @@ Face site accessors:
 `place_on_faces(...)` exposes the same semantic data as `$ps_face_*`,
 `$ps_face_frame`, `$ps_poly_*`, and family-count variables. The accessor layer
 is the function form of that public metadata contract. `ps_face_sites(...)`
-appends a `ps_placement_frame(...)` tail element to each site record; the frame
-accessor returns that stored object.
+appends a `ps_placement_frame(...)` tail element to each site record; the
+stored frame is the primary placement contract, and the center/axis accessors
+derive from it.
 
 ## Edge Site Records
 
@@ -224,7 +226,8 @@ For closed manifold edges, the edge frame uses the adjacent-face normal bisector
 when it can. Boundary or degenerate edges fall back to a radial frame.
 `place_on_edges(...)` exposes the same semantic data as `$ps_edge_*` and
 `$ps_edge_frame`. `ps_edge_sites(...)` appends a stored
-`ps_placement_frame(...)` tail element to each site record.
+`ps_placement_frame(...)` tail element to each site record; the frame is the
+stored source of truth for edge center/axis accessors.
 
 ## Vertex Site Records
 
@@ -257,7 +260,8 @@ Vertex site accessors:
 
 `ps_vertex_sites(...)` appends a stored `ps_placement_frame(...)` tail element
 to each site record. `place_on_vertices(...)` exposes the same semantic data as
-`$ps_vertex_*` and `$ps_vertex_frame`.
+`$ps_vertex_*` and `$ps_vertex_frame`; center/axis accessors derive from the
+stored frame.
 
 ## Replay Site Records
 
