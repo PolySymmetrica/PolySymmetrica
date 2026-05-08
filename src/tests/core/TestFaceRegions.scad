@@ -99,7 +99,7 @@ module test_ps_face_anti_interference_shells__context_wrapper_matches_raw_args()
         -0.4,
         0.6
     );
-    shells_ctx = _ps_face_anti_interference_shells_from_context(face_ctx, -0.4, 0.6);
+    shells_ctx = ps_face_anti_interference_shells_ctx(face_ctx, -0.4, 0.6);
 
     assert_int_eq(len(shells_ctx), len(shells_raw), "context shell count should match raw-arg shell count");
     for (i = [0:1:len(shells_raw)-1]) {

@@ -151,13 +151,17 @@ module face_plate(face_thk,
     base_z_eff = is_undef(base_z) ? -face_thk : base_z;
     top_z = base_z_eff + face_thk;
     pts = ps_xy(face_pts3d_local);
-    shells = ps_face_anti_interference_shells(
+    face_ctx = ps_face_local_context(
         face_pts3d_local,
+        pts,
         idx,
         poly_faces_idx,
         poly_verts_local,
         face_neighbors_idx,
-        face_dihedrals,
+        face_dihedrals
+    );
+    shells = ps_face_anti_interference_shells_ctx(
+        face_ctx,
         base_z_eff,
         top_z,
         mode,
@@ -221,11 +225,11 @@ module _face_plate_foreign_proxy_volume_group_hulls(
     point_r,
     point_fn
 ) {
-    groups = ps_face_foreign_proxy_volume_groups(
+    target_ctx = ps_target_local_poly_context(poly_faces_idx, poly_verts_local);
+    groups = ps_face_foreign_proxy_volume_groups_ctx(
         face_pts2d,
         idx,
-        poly_faces_idx,
-        poly_verts_local,
+        target_ctx,
         eps,
         mode,
         filter_parent

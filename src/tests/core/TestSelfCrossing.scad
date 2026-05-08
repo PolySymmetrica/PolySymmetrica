@@ -331,7 +331,7 @@ module test_ps_face_foreign_replay_context_helpers__match_public_wrappers() {
         mode = MODE,
         filter_parent = true
     );
-    face_ctx = _ps_face_foreign_face_replay_sites_from_context(face_pts2d, site[0], target_ctx, EPS, MODE, true);
+    face_ctx = ps_face_foreign_face_replay_sites_ctx(face_pts2d, site[0], target_ctx, EPS, MODE, true);
     proxy_public = ps_face_foreign_proxy_replay_sites(
         face_pts2d,
         site[0],
@@ -341,7 +341,7 @@ module test_ps_face_foreign_replay_context_helpers__match_public_wrappers() {
         mode = MODE,
         filter_parent = true
     );
-    proxy_ctx = _ps_face_foreign_proxy_replay_sites_from_context(face_pts2d, site[0], target_ctx, EPS, MODE, true);
+    proxy_ctx = ps_face_foreign_proxy_replay_sites_ctx(face_pts2d, site[0], target_ctx, EPS, MODE, true);
 
     assert(face_ctx == face_public, "context face replay helper should match public wrapper output");
     assert(proxy_ctx == proxy_public, "context proxy replay helper should match public wrapper output");
@@ -525,19 +525,14 @@ module test_ps_proxy_volume_group_context_helpers__match_public_wrappers() {
         mode = MODE,
         filter_parent = true
     );
-    groups_ctx = _ps_face_foreign_proxy_volume_groups_from_context(face_pts2d, site[0], target_ctx, EPS, MODE, true);
+    groups_ctx = ps_face_foreign_proxy_volume_groups_ctx(face_pts2d, site[0], target_ctx, EPS, MODE, true);
     group_sites_public = [
         for (g = groups_public)
-            ps_proxy_volume_group_face_replay_sites(
-                g,
-                ps_face_site_poly_faces_idx(site),
-                ps_face_site_poly_verts_local(site),
-                ps_face_site_poly_center_local(site)
-            )
+            ps_proxy_volume_group_face_replay_sites_ctx(g, target_ctx)
     ];
     group_sites_ctx = [
         for (g = groups_ctx)
-            _ps_proxy_volume_group_face_replay_sites_from_context(g, target_ctx)
+            ps_proxy_volume_group_face_replay_sites_ctx(g, target_ctx)
     ];
 
     assert(groups_ctx == groups_public, "context volume group helper should match public wrapper output");
@@ -801,7 +796,7 @@ module test_ps_face_seam_segment_sites__triangle_builds_boundary_edge_records() 
                 $ps_face_dihedrals,
                 $ps_poly_center_local
             );
-            ctx_sites = _ps_face_seam_segment_sites_from_context(face_ctx, MODE, EPS, "source_edge", true, false);
+            ctx_sites = ps_face_seam_segment_sites_ctx(face_ctx, MODE, EPS, "source_edge", true, false);
 
             assert_int_eq(len(sites), 3, "triangle source-edge seam site count");
             assert(ctx_sites == sites, "context seam-site builder should match public wrapper");
