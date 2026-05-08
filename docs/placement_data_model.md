@@ -21,7 +21,9 @@ metadata exposed by placement modules.
 - `site`
   A canonical placement target record for one face, edge, or vertex. Site
   records are built by `ps_face_sites(...)`, `ps_edge_sites(...)`, and
-  `ps_vertex_sites(...)`.
+  `ps_vertex_sites(...)`. These records commonly carry a stored
+  `ps_placement_frame(...)` subrecord directly, so the frame accessors can
+  return the semantic object instead of rebuilding it from scalar peers.
 
 - `target-local poly context`
   A compact record for "the whole source poly, but expressed in the current
@@ -162,7 +164,7 @@ Face site accessors:
 | `ps_face_site_ex(site)` | Face-local X axis in parent coordinates. |
 | `ps_face_site_ey(site)` | Face-local Y axis in parent coordinates. |
 | `ps_face_site_ez(site)` | Face-local Z axis in parent coordinates. |
-| `ps_face_site_frame(site)` | Placement frame for the face. |
+| `ps_face_site_frame(site)` | Stored placement frame for the face. |
 | `ps_face_site_edge_len(site)` | Scale edge length used to build the site. |
 | `ps_face_site_vertex_count(site)` | Number of vertices in the source face loop. |
 | `ps_face_site_midradius(site)` | Distance from parent origin to face center. |
@@ -184,8 +186,10 @@ Face site accessors:
 | `ps_face_site_dihedrals(site)` | Dihedral metadata per source face edge. |
 
 `place_on_faces(...)` exposes the same semantic data as `$ps_face_*`,
-`$ps_poly_*`, and family-count variables. The accessor layer is the function
-form of that public metadata contract.
+`$ps_face_frame`, `$ps_poly_*`, and family-count variables. The accessor layer
+is the function form of that public metadata contract. `ps_face_sites(...)`
+appends a `ps_placement_frame(...)` tail element to each site record; the frame
+accessor returns that stored object.
 
 ## Edge Site Records
 
@@ -204,7 +208,7 @@ Edge site accessors:
 | `ps_edge_site_ex(site)` | Edge-local X axis in parent coordinates. |
 | `ps_edge_site_ey(site)` | Edge-local Y axis in parent coordinates. |
 | `ps_edge_site_ez(site)` | Edge-local Z axis in parent coordinates. |
-| `ps_edge_site_frame(site)` | Placement frame for the edge. |
+| `ps_edge_site_frame(site)` | Stored placement frame for the edge. |
 | `ps_edge_site_edge_len(site)` | Actual placed edge length. |
 | `ps_edge_site_midradius(site)` | Distance from parent origin to edge midpoint. |
 | `ps_edge_site_poly_center_local(site)` | Poly center in edge-local coordinates. |
@@ -218,6 +222,9 @@ Edge site accessors:
 
 For closed manifold edges, the edge frame uses the adjacent-face normal bisector
 when it can. Boundary or degenerate edges fall back to a radial frame.
+`place_on_edges(...)` exposes the same semantic data as `$ps_edge_*` and
+`$ps_edge_frame`. `ps_edge_sites(...)` appends a stored
+`ps_placement_frame(...)` tail element to each site record.
 
 ## Vertex Site Records
 
@@ -236,7 +243,7 @@ Vertex site accessors:
 | `ps_vertex_site_ex(site)` | Vertex-local X axis in parent coordinates. |
 | `ps_vertex_site_ey(site)` | Vertex-local Y axis in parent coordinates. |
 | `ps_vertex_site_ez(site)` | Vertex-local Z axis in parent coordinates. |
-| `ps_vertex_site_frame(site)` | Placement frame for the vertex. |
+| `ps_vertex_site_frame(site)` | Stored placement frame for the vertex. |
 | `ps_vertex_site_edge_len(site)` | Scale edge length used to build the site. |
 | `ps_vertex_site_radius(site)` | Distance from parent origin to vertex. |
 | `ps_vertex_site_poly_center_local(site)` | Poly center in vertex-local coordinates. |
@@ -247,6 +254,10 @@ Vertex site accessors:
 | `ps_vertex_site_face_family_count(site)` | Number of face families, or `undef`. |
 | `ps_vertex_site_edge_family_count(site)` | Number of edge families, or `undef`. |
 | `ps_vertex_site_vertex_family_count(site)` | Number of vertex families, or `undef`. |
+
+`ps_vertex_sites(...)` appends a stored `ps_placement_frame(...)` tail element
+to each site record. `place_on_vertices(...)` exposes the same semantic data as
+`$ps_vertex_*` and `$ps_vertex_frame`.
 
 ## Replay Site Records
 
