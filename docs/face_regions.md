@@ -52,8 +52,14 @@ Accessor helpers:
 
 - `ps_face_anti_interference_shell_points(shell)`
 - `ps_face_anti_interference_shell_faces(shell)`
+- `ps_face_anti_interference_shell_loop_idx(shell)`
+- `ps_face_anti_interference_shell_capped_count(shell)`
 - `ps_face_anti_interference_shell_bottom_loop2d(shell)`
 - `ps_face_anti_interference_shell_top_loop2d(shell)`
+
+The implementation also has an internal face-context entry point that accepts a
+`ps_face_local_context(...)` record directly; the public raw-argument wrapper is
+kept for compatibility.
 
 ### `ps_face_anti_interference_volume(...)`
 

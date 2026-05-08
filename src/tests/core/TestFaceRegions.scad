@@ -77,9 +77,34 @@ module test_ps_face_anti_interference_shells__boundary_inset_shrinks_shell() {
     );
 
     assert_int_eq(len(shells1), len(shells0), "boundary inset should preserve shell count");
-    assert(abs(_ps_seg_poly_area2(shells1[0][4])) < abs(_ps_seg_poly_area2(shells0[0][4])), "boundary inset should shrink z0 cap");
-    assert(abs(_ps_seg_poly_area2(shells1[0][5])) < abs(_ps_seg_poly_area2(shells0[0][5])), "boundary inset should shrink z1 cap");
+    assert(abs(_ps_seg_poly_area2(ps_face_anti_interference_shell_bottom_loop2d(shells1[0]))) < abs(_ps_seg_poly_area2(ps_face_anti_interference_shell_bottom_loop2d(shells0[0]))), "boundary inset should shrink z0 cap");
+    assert(abs(_ps_seg_poly_area2(ps_face_anti_interference_shell_top_loop2d(shells1[0]))) < abs(_ps_seg_poly_area2(ps_face_anti_interference_shell_top_loop2d(shells0[0]))), "boundary inset should shrink z1 cap");
     assert_int_eq(len(ps_face_anti_interference_shell_top_loop2d(shells1[0])), 4, "top loop accessor should expose inset cap loop");
+}
+
+module test_ps_face_anti_interference_shells__context_wrapper_matches_raw_args() {
+    p = hexahedron();
+    site = _test_face_site(p, 0);
+    face_ctx = ps_face_site_face_local_context(site);
+    shells_raw = ps_face_anti_interference_shells(
+        site[11],
+        site[0],
+        site[13],
+        site[12],
+        site[20],
+        site[21],
+        -0.4,
+        0.6
+    );
+    shells_ctx = _ps_face_anti_interference_shells_from_context(face_ctx, -0.4, 0.6);
+
+    assert_int_eq(len(shells_ctx), len(shells_raw), "context shell count should match raw-arg shell count");
+    for (i = [0:1:len(shells_raw)-1]) {
+        assert(ps_face_anti_interference_shell_points(shells_ctx[i]) == ps_face_anti_interference_shell_points(shells_raw[i]), str("context shell points should match i=", i));
+        assert(ps_face_anti_interference_shell_faces(shells_ctx[i]) == ps_face_anti_interference_shell_faces(shells_raw[i]), str("context shell faces should match i=", i));
+        assert_int_eq(ps_face_anti_interference_shell_loop_idx(shells_ctx[i]), ps_face_anti_interference_shell_loop_idx(shells_raw[i]), str("context shell loop idx should match i=", i));
+        assert_int_eq(ps_face_anti_interference_shell_capped_count(shells_ctx[i]), ps_face_anti_interference_shell_capped_count(shells_raw[i]), str("context shell capped count should match i=", i));
+    }
 }
 
 module test_ps_face_anti_interference_shells__side_inset_compensates_face_offset() {
@@ -197,7 +222,7 @@ module test_ps_face_anti_interference_shells__anti_tet_winding_splits_z_directio
 
     area_deltas = [
         for (shell = shells)
-            abs(_ps_seg_poly_area2(shell[5])) - abs(_ps_seg_poly_area2(shell[4]))
+            abs(_ps_seg_poly_area2(ps_face_anti_interference_shell_top_loop2d(shell))) - abs(_ps_seg_poly_area2(ps_face_anti_interference_shell_bottom_loop2d(shell)))
     ];
     expanded_count = sum([for (d = area_deltas) d > EPS ? 1 : 0]);
     shrunk_count = sum([for (d = area_deltas) d < -EPS ? 1 : 0]);
@@ -216,6 +241,7 @@ module test_ps_face_anti_interference_projection_cap__limits_offset() {
 module run_TestFaceRegions() {
     test_ps_face_anti_interference_shells__cube_face_single_quad_shell();
     test_ps_face_anti_interference_shells__boundary_inset_shrinks_shell();
+    test_ps_face_anti_interference_shells__context_wrapper_matches_raw_args();
     test_ps_face_anti_interference_shells__side_inset_compensates_face_offset();
     test_ps_face_anti_interference_shells__matches_boundary_loop_count();
     test_ps_face_anti_interference_shells__pentagram_zmax_expands_outward();
