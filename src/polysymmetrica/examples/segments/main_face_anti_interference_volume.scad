@@ -83,7 +83,7 @@ module draw_volume_panel(poly, face_idx, label_s) {
                 place_on_face_boundary_spans(mode = "nonzero")
                     cube([$ps_boundary_span_len, LINE_R, LINE_R], center = true);
 
-            shells = ps_face_anti_interference_shells_ctx(
+            shells = ps_face_anti_interference_shells(
                 $ps_face_local_context,
                 VOL_Z_MIN,
                 VOL_Z_MAX,

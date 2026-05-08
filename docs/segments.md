@@ -622,13 +622,13 @@ This API intentionally does not answer clearance questions such as “does a
 placement-envelope candidates and belong in a later geometry/proxy layer.
 
 For exact foreign face intrusions, `placement.scad` can convert these records
-into replay sites with `ps_face_foreign_face_replay_sites_ctx(...)` and
+into replay sites with `ps_face_foreign_face_replay_sites(...)` and
 `place_on_face_foreign_face_replay_sites(...)`. Those APIs rebuild each foreign
 face frame in the current target face-local coordinate system so later proxy
 geometry can be replayed deliberately.
 
 For caller-supplied proxy geometry, use
-`ps_face_foreign_proxy_replay_sites_ctx(...)` or
+`ps_face_foreign_proxy_replay_sites(...)` or
 `place_on_face_foreign_proxy_sites(...)`. These add provenance-driven edge and
 vertex proxy candidates derived from exact face intrusions. Candidate edges and
 vertices are all boundary elements of the exact intruding faces, deduplicated by
@@ -663,7 +663,7 @@ Provides:
 - `$ps_intrusion_dihedral`
 - `$ps_intrusion_confidence`
 
-### `ps_face_seam_segment_sites_ctx(...)`
+### `ps_face_seam_segment_sites(...)`
 
 Builds edge-like placement records for seam segments on the current face. This
 combines two sources:
@@ -725,13 +725,9 @@ Support classification is conservative:
   intentionally classified as `"none"` so ordinary star arms do not receive
   duplicate support bars.
 
-The raw-argument `ps_face_seam_segment_sites(...)` wrapper remains for
-compatibility. Prefer the context-first form whenever you already have a
-`ps_face_local_context(...)` record in hand.
-
 ### `place_on_face_seam_segments(...)`
 
-Iterator wrapper over `ps_face_seam_segment_sites_ctx(...)` for use inside
+Iterator wrapper over `ps_face_seam_segment_sites(...)` for use inside
 `place_on_faces(...)`.
 
 Important parameters:

@@ -271,12 +271,15 @@ module test_ps_face_foreign_intrusion_records__preserves_coincident_foreign_face
 module test_ps_face_foreign_face_replay_sites__7_3_15_triangle_builds_target_local_frames() {
     site = _test_face_site(_test_punch_poly(), TRI_FACE_IDX);
     face_pts2d = ps_face_site_pts2d(site);
+    target_ctx = ps_target_local_poly_context(
+        ps_face_site_poly_faces_idx(site),
+        ps_face_site_poly_verts_local(site),
+        ps_face_site_poly_center_local(site)
+    );
     replay = ps_face_foreign_face_replay_sites(
         face_pts2d,
         site[0],
-        ps_face_site_poly_faces_idx(site),
-        ps_face_site_poly_verts_local(site),
-        ps_face_site_poly_center_local(site),
+        target_ctx,
         mode = MODE,
         filter_parent = true
     );
@@ -325,23 +328,19 @@ module test_ps_face_foreign_replay_context_helpers__match_public_wrappers() {
     face_public = ps_face_foreign_face_replay_sites(
         face_pts2d,
         site[0],
-        ps_face_site_poly_faces_idx(site),
-        ps_face_site_poly_verts_local(site),
-        ps_face_site_poly_center_local(site),
+        target_ctx,
         mode = MODE,
         filter_parent = true
     );
-    face_ctx = ps_face_foreign_face_replay_sites_ctx(face_pts2d, site[0], target_ctx, EPS, MODE, true);
+    face_ctx = ps_face_foreign_face_replay_sites(face_pts2d, site[0], target_ctx, EPS, MODE, true);
     proxy_public = ps_face_foreign_proxy_replay_sites(
         face_pts2d,
         site[0],
-        ps_face_site_poly_faces_idx(site),
-        ps_face_site_poly_verts_local(site),
-        ps_face_site_poly_center_local(site),
+        target_ctx,
         mode = MODE,
         filter_parent = true
     );
-    proxy_ctx = ps_face_foreign_proxy_replay_sites_ctx(face_pts2d, site[0], target_ctx, EPS, MODE, true);
+    proxy_ctx = ps_face_foreign_proxy_replay_sites(face_pts2d, site[0], target_ctx, EPS, MODE, true);
 
     assert(face_ctx == face_public, "context face replay helper should match public wrapper output");
     assert(proxy_ctx == proxy_public, "context proxy replay helper should match public wrapper output");
@@ -353,12 +352,15 @@ module test_ps_face_foreign_replay_context_helpers__match_public_wrappers() {
 module test_ps_face_foreign_proxy_replay_sites__7_3_15_triangle_includes_edge_and_vertex_candidates() {
     site = _test_face_site(_test_punch_poly(), TRI_FACE_IDX);
     face_pts2d = ps_face_site_pts2d(site);
+    target_ctx = ps_target_local_poly_context(
+        ps_face_site_poly_faces_idx(site),
+        ps_face_site_poly_verts_local(site),
+        ps_face_site_poly_center_local(site)
+    );
     replay = ps_face_foreign_proxy_replay_sites(
         face_pts2d,
         site[0],
-        ps_face_site_poly_faces_idx(site),
-        ps_face_site_poly_verts_local(site),
-        ps_face_site_poly_center_local(site),
+        target_ctx,
         mode = MODE,
         filter_parent = true
     );
@@ -381,12 +383,15 @@ module test_ps_face_foreign_proxy_replay_sites__7_3_15_triangle_includes_edge_an
 module test_ps_face_foreign_proxy_replay_sites__5_2_15_triangle_includes_all_intruding_face_boundary_edges() {
     site = _test_face_site(_test_penta_punch_poly(), 2);
     face_pts2d = ps_face_site_pts2d(site);
+    target_ctx = ps_target_local_poly_context(
+        ps_face_site_poly_faces_idx(site),
+        ps_face_site_poly_verts_local(site),
+        ps_face_site_poly_center_local(site)
+    );
     replay = ps_face_foreign_proxy_replay_sites(
         face_pts2d,
         site[0],
-        ps_face_site_poly_faces_idx(site),
-        ps_face_site_poly_verts_local(site),
-        ps_face_site_poly_center_local(site),
+        target_ctx,
         mode = MODE,
         filter_parent = true
     );
@@ -423,11 +428,15 @@ module test_ps_face_foreign_proxy_replay_sites__preserves_duplicate_exact_face_c
 module test_ps_face_foreign_proxy_volume_groups__7_3_15_triangle_groups_exact_face_cuts() {
     site = _test_face_site(_test_punch_poly(), TRI_FACE_IDX);
     face_pts2d = ps_face_site_pts2d(site);
+    target_ctx = ps_target_local_poly_context(
+        ps_face_site_poly_faces_idx(site),
+        ps_face_site_poly_verts_local(site),
+        ps_face_site_poly_center_local(site)
+    );
     groups = ps_face_foreign_proxy_volume_groups(
         face_pts2d,
         site[0],
-        ps_face_site_poly_faces_idx(site),
-        ps_face_site_poly_verts_local(site),
+        target_ctx,
         mode = MODE,
         filter_parent = true
     );
@@ -476,11 +485,15 @@ module test_ps_face_foreign_proxy_volume_groups__preserves_duplicate_exact_face_
 module test_ps_proxy_volume_group_face_replay_sites__7_3_15_triangle_builds_renderable_units() {
     site = _test_face_site(_test_punch_poly(), TRI_FACE_IDX);
     face_pts2d = ps_face_site_pts2d(site);
+    target_ctx = ps_target_local_poly_context(
+        ps_face_site_poly_faces_idx(site),
+        ps_face_site_poly_verts_local(site),
+        ps_face_site_poly_center_local(site)
+    );
     groups = ps_face_foreign_proxy_volume_groups(
         face_pts2d,
         site[0],
-        ps_face_site_poly_faces_idx(site),
-        ps_face_site_poly_verts_local(site),
+        target_ctx,
         mode = MODE,
         filter_parent = true
     );
@@ -488,9 +501,7 @@ module test_ps_proxy_volume_group_face_replay_sites__7_3_15_triangle_builds_rend
         for (g = groups)
             ps_proxy_volume_group_face_replay_sites(
                 g,
-                ps_face_site_poly_faces_idx(site),
-                ps_face_site_poly_verts_local(site),
-                ps_face_site_poly_center_local(site)
+                target_ctx
             )
     ];
 
@@ -520,19 +531,18 @@ module test_ps_proxy_volume_group_context_helpers__match_public_wrappers() {
     groups_public = ps_face_foreign_proxy_volume_groups(
         face_pts2d,
         site[0],
-        ps_face_site_poly_faces_idx(site),
-        ps_face_site_poly_verts_local(site),
+        target_ctx,
         mode = MODE,
         filter_parent = true
     );
-    groups_ctx = ps_face_foreign_proxy_volume_groups_ctx(face_pts2d, site[0], target_ctx, EPS, MODE, true);
+    groups_ctx = ps_face_foreign_proxy_volume_groups(face_pts2d, site[0], target_ctx, EPS, MODE, true);
     group_sites_public = [
         for (g = groups_public)
-            ps_proxy_volume_group_face_replay_sites_ctx(g, target_ctx)
+            ps_proxy_volume_group_face_replay_sites(g, target_ctx)
     ];
     group_sites_ctx = [
         for (g = groups_ctx)
-            ps_proxy_volume_group_face_replay_sites_ctx(g, target_ctx)
+            ps_proxy_volume_group_face_replay_sites(g, target_ctx)
     ];
 
     assert(groups_ctx == groups_public, "context volume group helper should match public wrapper output");
@@ -771,22 +781,8 @@ module test_place_on_face_foreign_intrusions__7_3_15_triangle_exposes_context() 
 module test_ps_face_seam_segment_sites__triangle_builds_boundary_edge_records() {
     place_on_faces(_test_punch_poly_angle0()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
-            sites = ps_face_seam_segment_sites(
-                $ps_face_pts3d_local,
-                $ps_face_pts2d,
-                $ps_face_idx,
-                $ps_poly_faces_idx,
-                $ps_poly_verts_local,
-                $ps_face_neighbors_idx,
-                $ps_face_dihedrals,
-                $ps_poly_center_local,
-                MODE,
-                EPS,
-                "source_edge",
-                true,
-                false
-            );
-            face_ctx = ps_face_local_context(
+            face_ctx_site = $ps_face_local_context;
+            face_ctx_raw = ps_face_local_context(
                 $ps_face_pts3d_local,
                 $ps_face_pts2d,
                 $ps_face_idx,
@@ -796,7 +792,8 @@ module test_ps_face_seam_segment_sites__triangle_builds_boundary_edge_records() 
                 $ps_face_dihedrals,
                 $ps_poly_center_local
             );
-            ctx_sites = ps_face_seam_segment_sites_ctx(face_ctx, MODE, EPS, "source_edge", true, false);
+            sites = ps_face_seam_segment_sites(face_ctx_site, MODE, EPS, "source_edge", true, false);
+            ctx_sites = ps_face_seam_segment_sites(face_ctx_raw, MODE, EPS, "source_edge", true, false);
 
             assert_int_eq(len(sites), 3, "triangle source-edge seam site count");
             assert(ctx_sites == sites, "context seam-site builder should match public wrapper");
@@ -884,7 +881,7 @@ module test_place_on_face_seam_segments__element_coords_exposes_frame_backed_edg
 module test_ps_face_seam_segment_sites__source_partial_spans_are_not_support_candidates() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == STAR_FACE_IDX) {
-            sites = ps_face_seam_segment_sites(
+            face_ctx = ps_face_local_context(
                 $ps_face_pts3d_local,
                 $ps_face_pts2d,
                 $ps_face_idx,
@@ -892,13 +889,9 @@ module test_ps_face_seam_segment_sites__source_partial_spans_are_not_support_can
                 $ps_poly_verts_local,
                 $ps_face_neighbors_idx,
                 $ps_face_dihedrals,
-                $ps_poly_center_local,
-                MODE,
-                EPS,
-                "generated",
-                true,
-                false
+                $ps_poly_center_local
             );
+            sites = ps_face_seam_segment_sites(face_ctx, MODE, EPS, "generated", true, false);
             support_sites = [for (site = sites) if (ps_seam_site_is_support_candidate(site)) site];
 
             assert_int_eq(len(sites), 14, "star generated seam site count includes source_partial spans");
@@ -910,7 +903,7 @@ module test_ps_face_seam_segment_sites__source_partial_spans_are_not_support_can
 module test_ps_face_seam_segment_sites__5_2_triangle_cuts_are_support_candidates() {
     place_on_faces(poly_antiprism(5, 2, angle = 0)) {
         if ($ps_face_idx == 7) {
-            sites = ps_face_seam_segment_sites(
+            face_ctx = ps_face_local_context(
                 $ps_face_pts3d_local,
                 $ps_face_pts2d,
                 $ps_face_idx,
@@ -918,13 +911,9 @@ module test_ps_face_seam_segment_sites__5_2_triangle_cuts_are_support_candidates
                 $ps_poly_verts_local,
                 $ps_face_neighbors_idx,
                 $ps_face_dihedrals,
-                $ps_poly_center_local,
-                MODE,
-                EPS,
-                "generated_cut",
-                false,
-                true
+                $ps_poly_center_local
             );
+            sites = ps_face_seam_segment_sites(face_ctx, MODE, EPS, "generated_cut", false, true);
             support_sites = [for (site = sites) if (ps_seam_site_is_support_candidate(site)) site];
 
             assert_int_eq(len(sites), 3, "5/2 triangle exact foreign seam count");

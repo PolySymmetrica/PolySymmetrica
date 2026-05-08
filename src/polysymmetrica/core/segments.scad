@@ -1881,51 +1881,12 @@ function _ps_face_seam_segment_sites_from_context(
     concat(boundary_out, foreign_out);
 
 /**
- * Function: Build edge-like placement sites for current-face seam segments.
- * Params: face_pts3d_local/face_pts2d/face_idx/poly_faces_idx/poly_verts_local/face_neighbors_idx/face_dihedrals/poly_center_local (face placement context), mode/eps (segmentation controls), boundary_kind (boundary span kind filter), include_boundary/include_foreign/filter_parent (source controls)
- * Returns: seam site records for `place_on_face_seam_segments(...)`
- */
-function ps_face_seam_segment_sites(
-    face_pts3d_local,
-    face_pts2d,
-    face_idx,
-    poly_faces_idx,
-    poly_verts_local,
-    face_neighbors_idx,
-    face_dihedrals,
-    poly_center_local=undef,
-    mode="nonzero",
-    eps=1e-8,
-    boundary_kind="generated_cut",
-    include_boundary=true,
-    include_foreign=true,
-    filter_parent=true
-) =
-    _ps_face_seam_segment_sites_from_context(
-        ps_face_local_context(
-            face_pts3d_local,
-            face_pts2d,
-            face_idx,
-            poly_faces_idx,
-            poly_verts_local,
-            face_neighbors_idx,
-            face_dihedrals,
-            poly_center_local
-        ),
-        mode,
-        eps,
-        boundary_kind,
-        include_boundary,
-        include_foreign,
-        filter_parent
-    );
-
-/**
  * Function: Build edge-like placement sites for current-face seam segments from a face-local context.
  * Params: face_ctx (face-local context), mode/eps (segmentation controls), boundary_kind (boundary span kind filter), include_boundary/include_foreign/filter_parent (source controls)
  * Returns: seam site records for `place_on_face_seam_segments(...)`
+ * Limitations/Gotchas: context-first public entry point
  */
-function ps_face_seam_segment_sites_ctx(
+function ps_face_seam_segment_sites(
     face_ctx,
     mode="nonzero",
     eps=1e-8,
@@ -2128,7 +2089,7 @@ module place_on_face_seam_segments(
     assert(coords == "element" || coords == "parent", "place_on_face_seam_segments: coords must be \"element\" or \"parent\"");
 
     face_ctx = $ps_face_local_context;
-    all_sites = ps_face_seam_segment_sites_ctx(
+    all_sites = ps_face_seam_segment_sites(
         face_ctx,
         mode,
         eps,

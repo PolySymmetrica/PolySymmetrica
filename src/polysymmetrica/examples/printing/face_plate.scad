@@ -160,7 +160,7 @@ module face_plate(face_thk,
         face_neighbors_idx,
         face_dihedrals
     );
-    shells = ps_face_anti_interference_shells_ctx(
+    shells = ps_face_anti_interference_shells(
         face_ctx,
         base_z_eff,
         top_z,
@@ -226,7 +226,7 @@ module _face_plate_foreign_proxy_volume_group_hulls(
     point_fn
 ) {
     target_ctx = ps_target_local_poly_context(poly_faces_idx, poly_verts_local);
-    groups = ps_face_foreign_proxy_volume_groups_ctx(
+    groups = ps_face_foreign_proxy_volume_groups(
         face_pts2d,
         idx,
         target_ctx,
