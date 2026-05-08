@@ -270,16 +270,16 @@ stored frame.
 Replay sites are built by:
 
 ```scad
-ps_face_foreign_face_replay_sites(...)
-ps_face_foreign_proxy_replay_sites(...)
-ps_proxy_volume_group_face_replay_sites(...)
+ps_face_foreign_face_replay_sites_ctx(...)
+ps_face_foreign_proxy_replay_sites_ctx(...)
+ps_proxy_volume_group_face_replay_sites_ctx(...)
 ```
 
 Internally, replay builders should pass a `ps_target_local_poly_context(...)`
 through the call graph once the current target face frame is established. The
-public builders still accept the raw `$ps_poly_faces_idx`,
-`$ps_poly_verts_local`, and `$ps_poly_center_local` pieces for compatibility,
-but nested helpers should avoid unpacking and repacking those three fields.
+raw-argument wrappers still exist for compatibility, but the context-first
+forms are preferred and nested helpers should avoid unpacking and repacking the
+target poly fields.
 
 They are used by:
 
@@ -328,7 +328,7 @@ metadata directly.
 Built by:
 
 ```scad
-groups = ps_face_foreign_proxy_volume_groups(...);
+groups = ps_face_foreign_proxy_volume_groups_ctx(...);
 ```
 
 Accessors:
@@ -352,7 +352,8 @@ As with replay sites, internal volume-group builders should receive the
 target-local poly context directly and use its accessors when they need source
 topology or target-local vertex positions. When a face site is already in
 hand, prefer the stored face-local context and its nested target-local context
-rather than rebuilding them from sibling fields.
+rather than rebuilding them from sibling fields. The raw-argument wrapper is
+kept for compatibility only.
 
 ## Boundary Span Site Records
 
@@ -366,7 +367,7 @@ They are consumed by:
 
 ```scad
 place_on_face_boundary_spans(...);
-ps_face_seam_segment_sites(...);
+ps_face_seam_segment_sites_ctx(...);
 ```
 
 Boundary span sites describe one oriented span of the current face's filled
@@ -415,7 +416,7 @@ children manually.
 Seam segment sites are built by:
 
 ```scad
-sites = ps_face_seam_segment_sites(...);
+sites = ps_face_seam_segment_sites_ctx(...);
 ```
 
 They are consumed by:

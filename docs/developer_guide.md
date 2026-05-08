@@ -321,8 +321,8 @@ not arbitrary 3D clipping.
 For punch-through/proxy work, `placement.scad` also provides the first replay
 iterator built from those records:
 
-- `ps_face_foreign_face_replay_sites(...)`
-- `ps_face_foreign_proxy_replay_sites(...)`
+- `ps_face_foreign_face_replay_sites_ctx(...)`
+- `ps_face_foreign_proxy_replay_sites_ctx(...)`
 - `place_on_face_foreign_face_replay_sites(...)`
 - `place_on_face_foreign_proxy_sites(...)`
 
@@ -354,7 +354,7 @@ deliberately.
 See [face_regions.md](face_regions.md) for positive face-local volumes built
 from those boundary spans:
 
-- `ps_face_anti_interference_shells(...)`
+- `ps_face_anti_interference_shells_ctx(...)`
 - `ps_face_anti_interference_volume(...)`
 
 See [face_arrangement.md](face_arrangement.md) for the planned next layer:

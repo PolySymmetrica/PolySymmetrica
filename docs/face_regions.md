@@ -33,7 +33,7 @@ that is allowed to exist and intersect user geometry with it.
 use <polysymmetrica/core/face_regions.scad>
 ```
 
-### `ps_face_anti_interference_shells(...)`
+### `ps_face_anti_interference_shells_ctx(...)`
 
 Function: Build mesh data for the face's positive anti-interference volume.
 
@@ -48,6 +48,9 @@ Returns: one shell per filled boundary loop, as
 `points` and `faces` are directly usable with `polyhedron(...)`. `capped_count`
 counts span projections limited by `max_project`.
 
+The raw-argument `ps_face_anti_interference_shells(...)` wrapper remains for
+compatibility, but the context-first form is preferred.
+
 Accessor helpers:
 
 - `ps_face_anti_interference_shell_points(shell)`
@@ -58,8 +61,8 @@ Accessor helpers:
 - `ps_face_anti_interference_shell_top_loop2d(shell)`
 
 The implementation also has an internal face-context entry point that accepts a
-`ps_face_local_context(...)` record directly; the public raw-argument wrapper is
-kept for compatibility.
+`ps_face_local_context(...)` record directly; use that context-first form when
+the current face context is already available.
 
 ### `ps_face_anti_interference_volume(...)`
 

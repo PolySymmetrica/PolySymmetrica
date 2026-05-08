@@ -6,7 +6,11 @@ arbitrary geometry after a child module has emitted it.
 
 ## Contract
 
-Use `place_on_face_foreign_proxy_sites(...)` inside `place_on_faces(...)`:
+Use `place_on_face_foreign_proxy_sites(...)` inside `place_on_faces(...)`.
+When you already have a `ps_target_local_poly_context(...)`, the
+context-first helpers `ps_face_foreign_proxy_replay_sites_ctx(...)` and
+`ps_face_foreign_proxy_volume_groups_ctx(...)` are the preferred data-layer
+entry points:
 
 ```scad
 place_on_faces(poly) {
@@ -84,7 +88,7 @@ body from filtered face-plane cut segments.
 
 ## Volume Group Records
 
-`ps_face_foreign_proxy_volume_groups(...)` and
+`ps_face_foreign_proxy_volume_groups_ctx(...)` and
 `place_on_face_foreign_proxy_volume_groups(...)` provide a first-pass,
 data-only view of possible solid punch-through groups. They group exact
 foreign face intrusions by source-topology connectivity: if two exact intruding
@@ -155,6 +159,11 @@ as inspection/tooling, not as the exact punch-through cell model.
 over-subtraction caveat as the hull iterator. When explicit face/poly overrides
 are passed, both the positive plate body and the subtractive hulls are computed
 from those same overrides.
+
+The raw-argument `ps_face_foreign_proxy_replay_sites(...)` and
+`ps_face_foreign_proxy_volume_groups(...)` helpers remain as compatibility
+wrappers, but the `*_ctx(...)` forms are the preferred call surface once a
+target-local context is already available.
 
 ## Printable Face Plates
 
