@@ -116,17 +116,12 @@ module face_seam_supports(
 
 /**
  * Module: Emit a face plate clipped by the current face's anti-interference volume.
- * Params: face_thk (plate thickness), idx/face_pts3d_local/poly_faces_idx/poly_verts_local/face_neighbors_idx/face_dihedrals (optional overrides; default from `place_on_faces` context), clear_space (emit clearance cutter), pillow_* (raised pillow sizing), base_z (bottom Z; defaults to `-face_thk` so the top sits on the source face plane), clear_height (clearance height), mode/max_project/boundary_inset/boundary_inset_mode/eps/convexity (anti-interference controls)
+ * Params: face_thk (plate thickness), face_ctx (face-local context; defaults from `place_on_faces`), clear_space (emit clearance cutter), pillow_* (raised pillow sizing), base_z (bottom Z; defaults to `-face_thk` so the top sits on the source face plane), clear_height (clearance height), mode/max_project/boundary_inset/boundary_inset_mode/eps/convexity (anti-interference controls)
  * Returns: none
- * Limitations/Gotchas: requires `place_on_faces` context or explicit context overrides; pillow and clear-space cutter follow the generated shell top loops
+ * Limitations/Gotchas: pillow and clear-space cutter follow the generated shell top loops
  */
 module face_plate(face_thk,
-    idx = $ps_face_idx,
-    face_pts3d_local = $ps_face_pts3d_local,
-    poly_faces_idx = $ps_poly_faces_idx,
-    poly_verts_local = $ps_poly_verts_local,
-    face_neighbors_idx = $ps_face_neighbors_idx,
-    face_dihedrals = $ps_face_dihedrals,
+    face_ctx = $ps_face_local_context,
     clear_space=false,
     pillow_min_rad = FACE_PLATE_PILLOW_MIN_RAD,
     pillow_inset = FACE_PLATE_PILLOW_INSET,
@@ -141,25 +136,10 @@ module face_plate(face_thk,
     eps = 1e-4,
     convexity = 6
 ) {
-    assert(!is_undef(idx), "face_plate: idx requires place_on_faces context or an explicit override");
-    assert(!is_undef(face_pts3d_local), "face_plate: face_pts3d_local requires place_on_faces context or an explicit override");
-    assert(!is_undef(poly_faces_idx), "face_plate: poly_faces_idx requires place_on_faces context or an explicit override");
-    assert(!is_undef(poly_verts_local), "face_plate: poly_verts_local requires place_on_faces context or an explicit override");
-    assert(!is_undef(face_neighbors_idx), "face_plate: face_neighbors_idx requires place_on_faces context or an explicit override");
-    assert(!is_undef(face_dihedrals), "face_plate: face_dihedrals requires place_on_faces context or an explicit override");
+    assert(!is_undef(face_ctx), "face_plate: face_ctx requires place_on_faces context or an explicit override");
 
     base_z_eff = is_undef(base_z) ? -face_thk : base_z;
     top_z = base_z_eff + face_thk;
-    pts = ps_xy(face_pts3d_local);
-    face_ctx = ps_face_local_context(
-        face_pts3d_local,
-        pts,
-        idx,
-        poly_faces_idx,
-        poly_verts_local,
-        face_neighbors_idx,
-        face_dihedrals
-    );
     shells = ps_face_anti_interference_shells(
         face_ctx,
         base_z_eff,
@@ -171,7 +151,7 @@ module face_plate(face_thk,
         boundary_inset_mode
     );
 
-    color(len(pts) == 3 ? "white" : "red") {
+    color(len(ps_face_local_context_pts2d(face_ctx)) == 3 ? "white" : "red") {
         union() {
             for (shell = shells) {
                 if (ps_face_anti_interference_shell_capped_count(shell) > 0)
@@ -179,7 +159,7 @@ module face_plate(face_thk,
                         "face_plate: capped ",
                         ps_face_anti_interference_shell_capped_count(shell),
                         " projection(s) on face ",
-                        idx,
+                        ps_face_local_context_idx(face_ctx),
                         " loop ",
                         ps_face_anti_interference_shell_loop_idx(shell)
                     ));
@@ -210,25 +190,22 @@ module face_plate(face_thk,
 
 /**
  * Module: Emit conservative foreign proxy volume-group hull cutters from explicit face context.
- * Params: face_pts2d/idx/poly_faces_idx/poly_verts_local (face-local proxy context), mode/eps/filter_parent (intrusion grouping controls), point_r/point_fn (hull point primitive)
+ * Params: face_ctx (face-local context), target_ctx (target-local poly context; defaults from `face_ctx`), mode/eps/filter_parent (intrusion grouping controls), point_r/point_fn (hull point primitive)
  * Returns: none
  * Limitations/Gotchas: internal helper; convexifies each grouped source vertex set
  */
 module _face_plate_foreign_proxy_volume_group_hulls(
-    face_pts2d,
-    idx,
-    poly_faces_idx,
-    poly_verts_local,
+    face_ctx,
+    target_ctx = ps_face_local_context_target_local_poly_context(face_ctx),
     mode,
     eps,
     filter_parent,
     point_r,
     point_fn
 ) {
-    target_ctx = ps_target_local_poly_context(poly_faces_idx, poly_verts_local);
     groups = ps_face_foreign_proxy_volume_groups(
-        face_pts2d,
-        idx,
+        ps_face_local_context_pts2d(face_ctx),
+        ps_face_local_context_idx(face_ctx),
         target_ctx,
         eps,
         mode,
@@ -240,7 +217,7 @@ module _face_plate_foreign_proxy_volume_group_hulls(
         if (len(vertex_idxs) > 0) {
             hull() {
                 for (vi = vertex_idxs)
-                    translate(poly_verts_local[vi])
+                        translate(ps_target_local_poly_context_verts_local(target_ctx)[vi])
                         sphere(r = point_r, $fn = point_fn);
             }
         }
@@ -249,17 +226,13 @@ module _face_plate_foreign_proxy_volume_group_hulls(
 
 /**
  * Module: Emit a face plate after subtracting conservative foreign proxy volume-group hulls.
- * Params: face_thk (plate thickness), idx/face_pts3d_local/poly_faces_idx/poly_verts_local/face_neighbors_idx/face_dihedrals (optional overrides; default from `place_on_faces` context), clear_space/pillow params/base_z/clear_height/mode/max_project/boundary_inset/boundary_inset_mode/eps/convexity (forwarded to `face_plate`), filter_parent (foreign intrusion filtering), hull_point_r/hull_point_fn (hull point primitive)
+ * Params: face_thk (plate thickness), face_ctx (face-local context; defaults from `place_on_faces`), target_ctx (target-local poly context; defaults from `face_ctx`), clear_space/pillow params/base_z/clear_height/mode/max_project/boundary_inset/boundary_inset_mode/eps/convexity (forwarded to `face_plate`), filter_parent (foreign intrusion filtering), hull_point_r/hull_point_fn (hull point primitive)
  * Returns: none
  * Limitations/Gotchas: subtracts convex hulls of proxy volume groups computed from the same explicit face context as the plate; this is conservative and can over-subtract concave or detailed user geometry
  */
 module face_plate_minus_foreign_proxy_volume_group_hulls(face_thk,
-    idx = $ps_face_idx,
-    face_pts3d_local = $ps_face_pts3d_local,
-    poly_faces_idx = $ps_poly_faces_idx,
-    poly_verts_local = $ps_poly_verts_local,
-    face_neighbors_idx = $ps_face_neighbors_idx,
-    face_dihedrals = $ps_face_dihedrals,
+    face_ctx = $ps_face_local_context,
+    target_ctx = ps_face_local_context_target_local_poly_context(face_ctx),
     clear_space=false,
     pillow_min_rad = FACE_PLATE_PILLOW_MIN_RAD,
     pillow_inset = FACE_PLATE_PILLOW_INSET,
@@ -280,12 +253,7 @@ module face_plate_minus_foreign_proxy_volume_group_hulls(face_thk,
     difference() {
         face_plate(
             face_thk = face_thk,
-            idx = idx,
-            face_pts3d_local = face_pts3d_local,
-            poly_faces_idx = poly_faces_idx,
-            poly_verts_local = poly_verts_local,
-            face_neighbors_idx = face_neighbors_idx,
-            face_dihedrals = face_dihedrals,
+            face_ctx = face_ctx,
             clear_space = clear_space,
             pillow_min_rad = pillow_min_rad,
             pillow_inset = pillow_inset,
@@ -302,10 +270,8 @@ module face_plate_minus_foreign_proxy_volume_group_hulls(face_thk,
         );
 
         _face_plate_foreign_proxy_volume_group_hulls(
-            face_pts2d = ps_xy(face_pts3d_local),
-            idx = idx,
-            poly_faces_idx = poly_faces_idx,
-            poly_verts_local = poly_verts_local,
+            face_ctx = face_ctx,
+            target_ctx = target_ctx,
             mode = mode,
             eps = eps,
             filter_parent = filter_parent,
