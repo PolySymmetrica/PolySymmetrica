@@ -226,13 +226,12 @@ module _face_plate_foreign_proxy_volume_group_hulls(
 
 /**
  * Module: Emit a face plate after subtracting conservative foreign proxy volume-group hulls.
- * Params: face_thk (plate thickness), face_ctx (face-local context; defaults from `place_on_faces`), target_ctx (target-local poly context; defaults from `face_ctx`), clear_space/pillow params/base_z/clear_height/mode/max_project/boundary_inset/boundary_inset_mode/eps/convexity (forwarded to `face_plate`), filter_parent (foreign intrusion filtering), hull_point_r/hull_point_fn (hull point primitive)
+ * Params: face_thk (plate thickness), face_ctx (face-local context; defaults from `place_on_faces`), clear_space/pillow params/base_z/clear_height/mode/max_project/boundary_inset/boundary_inset_mode/eps/convexity (forwarded to `face_plate`), filter_parent (foreign intrusion filtering), hull_point_r/hull_point_fn (hull point primitive)
  * Returns: none
  * Limitations/Gotchas: subtracts convex hulls of proxy volume groups computed from the same explicit face context as the plate; this is conservative and can over-subtract concave or detailed user geometry
  */
 module face_plate_minus_foreign_proxy_volume_group_hulls(face_thk,
     face_ctx = $ps_face_local_context,
-    target_ctx = ps_face_local_context_target_local_poly_context(face_ctx),
     clear_space=false,
     pillow_min_rad = FACE_PLATE_PILLOW_MIN_RAD,
     pillow_inset = FACE_PLATE_PILLOW_INSET,
@@ -250,6 +249,8 @@ module face_plate_minus_foreign_proxy_volume_group_hulls(face_thk,
     hull_point_r = 0.04,
     hull_point_fn = 8
 ) {
+    target_ctx_eff = ps_face_local_context_target_local_poly_context(face_ctx);
+
     difference() {
         face_plate(
             face_thk = face_thk,
@@ -271,7 +272,7 @@ module face_plate_minus_foreign_proxy_volume_group_hulls(face_thk,
 
         _face_plate_foreign_proxy_volume_group_hulls(
             face_ctx = face_ctx,
-            target_ctx = target_ctx,
+            target_ctx = target_ctx_eff,
             mode = mode,
             eps = eps,
             filter_parent = filter_parent,
