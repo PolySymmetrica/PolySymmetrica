@@ -154,9 +154,9 @@ as inspection/tooling, not as the exact punch-through cell model.
 `examples/printing/face_plate.scad` exposes this as the opt-in printable wrapper
 `face_plate_minus_foreign_proxy_volume_group_hulls(...)`. It is just
 `face_plate(...)` minus the conservative group hulls, and has the same
-over-subtraction caveat as the hull iterator. When explicit face/poly overrides
-are passed, both the positive plate body and the subtractive hulls are computed
-from those same overrides.
+over-subtraction caveat as the hull iterator. When explicit `face_ctx` or
+`target_ctx` overrides are passed, both the positive plate body and the
+subtractive hulls are computed from those same contexts.
 
 ## Printable Face Plates
 
@@ -194,4 +194,4 @@ place_on_faces(poly) {
 
 `face_plate_minus_foreign_proxy_volume_group_hulls(...)` is the current opt-in
 wrapper for automatically subtracting conservative grouped hulls. Keep using the
-explicit pattern when the proxy body must preserve user-authored detail.
+explicit proxy pattern when the proxy body must preserve user-authored detail.
