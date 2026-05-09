@@ -21,7 +21,10 @@ metadata exposed by placement modules.
 - `site`
   A canonical placement target record for one face, edge, or vertex. Site
   records are built by `ps_face_sites(...)`, `ps_edge_sites(...)`, and
-  `ps_vertex_sites(...)`.
+  `ps_vertex_sites(...)`. Each site record stores a compact semantic payload
+  plus a trailing `ps_placement_frame(...)` subrecord. The `center`/`ex`/`ey`/
+  `ez` accessors are derived from that frame and are not separate stored site
+  fields.
 
 - `target-local poly context`
   A compact record for "the whole source poly, but expressed in the current
@@ -162,7 +165,7 @@ Face site accessors:
 | `ps_face_site_ex(site)` | Face-local X axis in parent coordinates. |
 | `ps_face_site_ey(site)` | Face-local Y axis in parent coordinates. |
 | `ps_face_site_ez(site)` | Face-local Z axis in parent coordinates. |
-| `ps_face_site_frame(site)` | Placement frame for the face. |
+| `ps_face_site_frame(site)` | Stored placement frame for the face. |
 | `ps_face_site_edge_len(site)` | Scale edge length used to build the site. |
 | `ps_face_site_vertex_count(site)` | Number of vertices in the source face loop. |
 | `ps_face_site_midradius(site)` | Distance from parent origin to face center. |
@@ -173,7 +176,7 @@ Face site accessors:
 | `ps_face_site_poly_verts_local(site)` | All poly vertices in face-local coordinates. |
 | `ps_face_site_poly_faces_idx(site)` | Source poly face index loops. |
 | `ps_face_site_target_local_poly_context(site)` | Target-local context derived from this face site. |
-| `ps_face_site_face_local_context(site)` | Face-local context derived from this face site. |
+| `ps_face_site_face_local_context(site)` | Stored face-local context for this face site. |
 | `ps_face_site_planarity_err(site)` | Maximum local-Z deviation from the face plane. |
 | `ps_face_site_is_planar(site)` | Planarity flag from the placement tolerance. |
 | `ps_face_site_family_id(site)` | Classification family id, or `undef`. |
@@ -184,8 +187,13 @@ Face site accessors:
 | `ps_face_site_dihedrals(site)` | Dihedral metadata per source face edge. |
 
 `place_on_faces(...)` exposes the same semantic data as `$ps_face_*`,
+`$ps_face_frame`, `$ps_face_local_context`, `$ps_target_local_poly_context`,
 `$ps_poly_*`, and family-count variables. The accessor layer is the function
-form of that public metadata contract.
+form of that public metadata contract. `ps_face_sites(...)` appends a
+`ps_placement_frame(...)` tail element to each site record; the stored frame
+is the primary placement contract, and the center/axis accessors derive from
+it. The stored face-local context is the next-level shared object for nested
+face helpers.
 
 ## Edge Site Records
 
@@ -204,7 +212,7 @@ Edge site accessors:
 | `ps_edge_site_ex(site)` | Edge-local X axis in parent coordinates. |
 | `ps_edge_site_ey(site)` | Edge-local Y axis in parent coordinates. |
 | `ps_edge_site_ez(site)` | Edge-local Z axis in parent coordinates. |
-| `ps_edge_site_frame(site)` | Placement frame for the edge. |
+| `ps_edge_site_frame(site)` | Stored placement frame for the edge. |
 | `ps_edge_site_edge_len(site)` | Actual placed edge length. |
 | `ps_edge_site_midradius(site)` | Distance from parent origin to edge midpoint. |
 | `ps_edge_site_poly_center_local(site)` | Poly center in edge-local coordinates. |
@@ -218,6 +226,10 @@ Edge site accessors:
 
 For closed manifold edges, the edge frame uses the adjacent-face normal bisector
 when it can. Boundary or degenerate edges fall back to a radial frame.
+`place_on_edges(...)` exposes the same semantic data as `$ps_edge_*` and
+`$ps_edge_frame`. `ps_edge_sites(...)` appends a stored
+`ps_placement_frame(...)` tail element to each site record; the frame is the
+stored source of truth for edge center/axis accessors.
 
 ## Vertex Site Records
 
@@ -236,7 +248,7 @@ Vertex site accessors:
 | `ps_vertex_site_ex(site)` | Vertex-local X axis in parent coordinates. |
 | `ps_vertex_site_ey(site)` | Vertex-local Y axis in parent coordinates. |
 | `ps_vertex_site_ez(site)` | Vertex-local Z axis in parent coordinates. |
-| `ps_vertex_site_frame(site)` | Placement frame for the vertex. |
+| `ps_vertex_site_frame(site)` | Stored placement frame for the vertex. |
 | `ps_vertex_site_edge_len(site)` | Scale edge length used to build the site. |
 | `ps_vertex_site_radius(site)` | Distance from parent origin to vertex. |
 | `ps_vertex_site_poly_center_local(site)` | Poly center in vertex-local coordinates. |
@@ -247,6 +259,11 @@ Vertex site accessors:
 | `ps_vertex_site_face_family_count(site)` | Number of face families, or `undef`. |
 | `ps_vertex_site_edge_family_count(site)` | Number of edge families, or `undef`. |
 | `ps_vertex_site_vertex_family_count(site)` | Number of vertex families, or `undef`. |
+
+`ps_vertex_sites(...)` appends a stored `ps_placement_frame(...)` tail element
+to each site record. `place_on_vertices(...)` exposes the same semantic data as
+`$ps_vertex_*` and `$ps_vertex_frame`; center/axis accessors derive from the
+stored frame.
 
 ## Replay Site Records
 
@@ -260,9 +277,9 @@ ps_proxy_volume_group_face_replay_sites(...)
 
 Internally, replay builders should pass a `ps_target_local_poly_context(...)`
 through the call graph once the current target face frame is established. The
-public builders still accept the raw `$ps_poly_faces_idx`,
-`$ps_poly_verts_local`, and `$ps_poly_center_local` pieces for compatibility,
-but nested helpers should avoid unpacking and repacking those three fields.
+pass a `ps_target_local_poly_context(...)` through the call graph once the
+current target face frame is established. Nested helpers should avoid
+unpacking and repacking the target poly fields.
 
 They are used by:
 
@@ -333,7 +350,9 @@ provenance and grouping layer that later render/replay code can use to decide
 which foreign faces, edges, vertices, or conservative hulls to emit.
 As with replay sites, internal volume-group builders should receive the
 target-local poly context directly and use its accessors when they need source
-topology or target-local vertex positions.
+topology or target-local vertex positions. When a face site is already in
+hand, prefer the stored face-local context and its nested target-local context
+rather than rebuilding them from sibling fields.
 
 ## Boundary Span Site Records
 

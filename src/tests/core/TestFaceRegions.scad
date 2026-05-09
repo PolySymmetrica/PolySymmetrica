@@ -30,16 +30,8 @@ function _test_shell_points_are_finite(points) =
 module test_ps_face_anti_interference_shells__cube_face_single_quad_shell() {
     p = hexahedron();
     site = _test_face_site(p, 0);
-    shells = ps_face_anti_interference_shells(
-        site[11],
-        site[0],
-        site[13],
-        site[12],
-        site[20],
-        site[21],
-        -0.4,
-        0.6
-    );
+    face_ctx = ps_face_site_face_local_context(site);
+    shells = ps_face_anti_interference_shells(face_ctx, -0.4, 0.6);
 
     assert_int_eq(len(shells), 1, "cube face should produce one filled boundary shell");
     assert_int_eq(len(shells[0][0]), 8, "cube quad shell should have bottom+top vertices");
@@ -54,27 +46,9 @@ module test_ps_face_anti_interference_shells__cube_face_single_quad_shell() {
 module test_ps_face_anti_interference_shells__boundary_inset_shrinks_shell() {
     p = hexahedron();
     site = _test_face_site(p, 0);
-    shells0 = ps_face_anti_interference_shells(
-        site[11],
-        site[0],
-        site[13],
-        site[12],
-        site[20],
-        site[21],
-        -0.4,
-        0.6
-    );
-    shells1 = ps_face_anti_interference_shells(
-        site[11],
-        site[0],
-        site[13],
-        site[12],
-        site[20],
-        site[21],
-        -0.4,
-        0.6,
-        boundary_inset = 0.1
-    );
+    face_ctx = ps_face_site_face_local_context(site);
+    shells0 = ps_face_anti_interference_shells(face_ctx, -0.4, 0.6);
+    shells1 = ps_face_anti_interference_shells(face_ctx, -0.4, 0.6, boundary_inset = 0.1);
 
     assert_int_eq(len(shells1), len(shells0), "boundary inset should preserve shell count");
     assert(abs(_ps_seg_poly_area2(ps_face_anti_interference_shell_bottom_loop2d(shells1[0]))) < abs(_ps_seg_poly_area2(ps_face_anti_interference_shell_bottom_loop2d(shells0[0]))), "boundary inset should shrink z0 cap");
@@ -82,45 +56,47 @@ module test_ps_face_anti_interference_shells__boundary_inset_shrinks_shell() {
     assert_int_eq(len(ps_face_anti_interference_shell_top_loop2d(shells1[0])), 4, "top loop accessor should expose inset cap loop");
 }
 
-module test_ps_face_anti_interference_shells__context_wrapper_matches_raw_args() {
+module test_ps_face_anti_interference_shells__site_context_matches_raw_context_builder() {
     p = hexahedron();
     site = _test_face_site(p, 0);
     face_ctx = ps_face_site_face_local_context(site);
-    shells_raw = ps_face_anti_interference_shells(
-        site[11],
+    face_ctx_raw = ps_face_local_context(
+        ps_face_site_pts3d_local(site),
+        ps_face_site_pts2d(site),
         site[0],
-        site[13],
-        site[12],
-        site[20],
-        site[21],
-        -0.4,
-        0.6
+        ps_face_site_poly_faces_idx(site),
+        ps_face_site_poly_verts_local(site),
+        ps_face_site_neighbors_idx(site),
+        ps_face_site_dihedrals(site),
+        ps_face_site_poly_center_local(site)
     );
-    shells_ctx = _ps_face_anti_interference_shells_from_context(face_ctx, -0.4, 0.6);
+    shells_ctx = ps_face_anti_interference_shells(face_ctx, -0.4, 0.6);
+    shells_raw_ctx = ps_face_anti_interference_shells(face_ctx_raw, -0.4, 0.6);
 
-    assert_int_eq(len(shells_ctx), len(shells_raw), "context shell count should match raw-arg shell count");
-    for (i = [0:1:len(shells_raw)-1]) {
-        assert(ps_face_anti_interference_shell_points(shells_ctx[i]) == ps_face_anti_interference_shell_points(shells_raw[i]), str("context shell points should match i=", i));
-        assert(ps_face_anti_interference_shell_faces(shells_ctx[i]) == ps_face_anti_interference_shell_faces(shells_raw[i]), str("context shell faces should match i=", i));
-        assert_int_eq(ps_face_anti_interference_shell_loop_idx(shells_ctx[i]), ps_face_anti_interference_shell_loop_idx(shells_raw[i]), str("context shell loop idx should match i=", i));
-        assert_int_eq(ps_face_anti_interference_shell_capped_count(shells_ctx[i]), ps_face_anti_interference_shell_capped_count(shells_raw[i]), str("context shell capped count should match i=", i));
+    assert_int_eq(len(shells_ctx), len(shells_raw_ctx), "context shell count should match raw context shell count");
+    for (i = [0:1:len(shells_raw_ctx)-1]) {
+        assert(ps_face_anti_interference_shell_points(shells_ctx[i]) == ps_face_anti_interference_shell_points(shells_raw_ctx[i]), str("context shell points should match i=", i));
+        assert(ps_face_anti_interference_shell_faces(shells_ctx[i]) == ps_face_anti_interference_shell_faces(shells_raw_ctx[i]), str("context shell faces should match i=", i));
+        assert_int_eq(ps_face_anti_interference_shell_loop_idx(shells_ctx[i]), ps_face_anti_interference_shell_loop_idx(shells_raw_ctx[i]), str("context shell loop idx should match i=", i));
+        assert_int_eq(ps_face_anti_interference_shell_capped_count(shells_ctx[i]), ps_face_anti_interference_shell_capped_count(shells_raw_ctx[i]), str("context shell capped count should match i=", i));
     }
 }
 
 module test_ps_face_anti_interference_shells__side_inset_compensates_face_offset() {
     p = hexahedron();
     site = _test_face_site(p, 0);
-    arr = ps_face_arrangement(site[11], EPS);
-    input_area = _ps_seg_poly_area2(ps_xy(site[11]));
+    face_pts3d_local = ps_face_site_pts3d_local(site);
+    arr = ps_face_arrangement(face_pts3d_local, EPS);
+    input_area = _ps_seg_poly_area2(ps_xy(face_pts3d_local));
     input_sign = (input_area >= 0) ? 1 : -1;
-    cell_winding_signs = _ps_fr_cell_winding_signs(site[11], arr[4], EPS);
+    cell_winding_signs = _ps_fr_cell_winding_signs(face_pts3d_local, arr[4], EPS);
     span_sites = _ps_face_boundary_span_sites(
-        site[11],
+        face_pts3d_local,
         site[0],
-        site[13],
-        site[12],
-        site[20],
-        site[21],
+        ps_face_site_poly_faces_idx(site),
+        ps_face_site_poly_verts_local(site),
+        ps_face_site_neighbors_idx(site),
+        ps_face_site_dihedrals(site),
         "nonzero",
         EPS
     );
@@ -136,18 +112,10 @@ module test_ps_face_anti_interference_shells__side_inset_compensates_face_offset
 module test_ps_face_anti_interference_shells__matches_boundary_loop_count() {
     p = poly_antiprism(5, 2);
     site = _test_face_site(p, 1);
-    bm = ps_face_boundary_model(site[11], "nonzero");
-    shells = ps_face_anti_interference_shells(
-        site[11],
-        site[0],
-        site[13],
-        site[12],
-        site[20],
-        site[21],
-        -0.3,
-        0.3,
-        "nonzero"
-    );
+    face_pts3d_local = ps_face_site_pts3d_local(site);
+    face_ctx = ps_face_site_face_local_context(site);
+    bm = ps_face_boundary_model(face_pts3d_local, "nonzero");
+    shells = ps_face_anti_interference_shells(face_ctx, -0.3, 0.3, "nonzero");
 
     assert_int_eq(len(shells), len(bm[2]), "one shell per filled boundary loop");
     for (i = [0:1:len(shells)-1])
@@ -157,17 +125,8 @@ module test_ps_face_anti_interference_shells__matches_boundary_loop_count() {
 module test_ps_face_anti_interference_shells__pentagram_zmax_expands_outward() {
     p = poly_antiprism(5, 2);
     site = _test_face_site(p, 1);
-    shells = ps_face_anti_interference_shells(
-        site[11],
-        site[0],
-        site[13],
-        site[12],
-        site[20],
-        site[21],
-        -0.5,
-        0.5,
-        "nonzero"
-    );
+    face_ctx = ps_face_site_face_local_context(site);
+    shells = ps_face_anti_interference_shells(face_ctx, -0.5, 0.5, "nonzero");
 
     assert_int_eq(len(shells), 1, "pentagram cap should produce one shell");
     area_zmin = abs(_ps_seg_poly_area2(shells[0][4]));
@@ -181,18 +140,8 @@ module test_ps_face_anti_interference_shells__pentagram_zmax_expands_outward() {
 module test_ps_face_anti_interference_shells__anti_tet_hex_is_finite() {
     p = poly_truncate(tetrahedron(), t = -0.5);
     site = _test_face_site(p, 0);
-    shells = ps_face_anti_interference_shells(
-        site[11],
-        site[0],
-        site[13],
-        site[12],
-        site[20],
-        site[21],
-        -0.25,
-        0.25,
-        "nonzero",
-        20
-    );
+    face_ctx = ps_face_site_face_local_context(site);
+    shells = ps_face_anti_interference_shells(face_ctx, -0.25, 0.25, "nonzero", 20);
 
     assert(len(shells) >= 1, "anti-truncated tetrahedron hex should produce at least one shell");
     for (shell = shells) {
@@ -205,18 +154,8 @@ module test_ps_face_anti_interference_shells__anti_tet_hex_is_finite() {
 module test_ps_face_anti_interference_shells__anti_tet_winding_splits_z_direction() {
     p = poly_truncate(tetrahedron(), t = -0.5);
     site = _test_face_site(p, 0);
-    shells = ps_face_anti_interference_shells(
-        site[11],
-        site[0],
-        site[13],
-        site[12],
-        site[20],
-        site[21],
-        -0.5,
-        0.5,
-        "nonzero",
-        20
-    );
+    face_ctx = ps_face_site_face_local_context(site);
+    shells = ps_face_anti_interference_shells(face_ctx, -0.5, 0.5, "nonzero", 20);
 
     assert_int_eq(len(shells), 4, "anti-tet hex should split into one centre and three corner shells");
 
@@ -241,7 +180,7 @@ module test_ps_face_anti_interference_projection_cap__limits_offset() {
 module run_TestFaceRegions() {
     test_ps_face_anti_interference_shells__cube_face_single_quad_shell();
     test_ps_face_anti_interference_shells__boundary_inset_shrinks_shell();
-    test_ps_face_anti_interference_shells__context_wrapper_matches_raw_args();
+    test_ps_face_anti_interference_shells__site_context_matches_raw_context_builder();
     test_ps_face_anti_interference_shells__side_inset_compensates_face_offset();
     test_ps_face_anti_interference_shells__matches_boundary_loop_count();
     test_ps_face_anti_interference_shells__pentagram_zmax_expands_outward();

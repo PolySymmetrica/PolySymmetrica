@@ -496,18 +496,13 @@ function _ps_face_anti_interference_shells_from_fields(
     ];
 
 /**
- * Function: Build positive anti-interference shell meshes for one face.
- * Params: face_pts3d_local (current face loop in face-local 3D), face_idx (current face index), poly_faces_idx/poly_verts_local (full poly in current face-local coordinates), face_neighbors_idx/face_dihedrals (current face-edge metadata), z0/z1 (target local Z planes), mode (`"nonzero"`, `"evenodd"`, or `"all"`), max_project (optional projection-distance cap), eps (geometric tolerance), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`)
+ * Function: Build positive anti-interference shell meshes from a face-local context.
+ * Params: face_ctx (face-local context), z0/z1 (target local Z planes), mode (`"nonzero"`, `"evenodd"`, or `"all"`), max_project (optional projection-distance cap), eps (geometric tolerance), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`)
  * Returns: list of shell records `[points, faces, loop_idx, capped_count, bottom_loop2d, top_loop2d]`
- * Limitations/Gotchas: emits one shell per filled boundary loop; holes/proxy punch-through volumes are intentionally outside this first primitive
+ * Limitations/Gotchas: context-first public entry point
  */
 function ps_face_anti_interference_shells(
-    face_pts3d_local,
-    face_idx,
-    poly_faces_idx,
-    poly_verts_local,
-    face_neighbors_idx,
-    face_dihedrals,
+    face_ctx,
     z0,
     z1,
     mode="nonzero",
@@ -515,14 +510,9 @@ function ps_face_anti_interference_shells(
     eps=1e-8,
     boundary_inset=0,
     boundary_inset_mode="side"
-) =
-    _ps_face_anti_interference_shells_from_fields(
-        face_pts3d_local,
-        face_idx,
-        poly_faces_idx,
-        poly_verts_local,
-        face_neighbors_idx,
-        face_dihedrals,
+    ) =
+    _ps_face_anti_interference_shells_from_context(
+        face_ctx,
         z0,
         z1,
         mode,
@@ -541,22 +531,10 @@ function ps_face_anti_interference_shells(
 module ps_face_anti_interference_volume(z0, z1, mode="nonzero", max_project=undef, eps=1e-8, convexity=6, boundary_inset=0, boundary_inset_mode="side") {
     assert(!is_undef($ps_face_pts3d_local), "ps_face_anti_interference_volume: requires place_on_faces context ($ps_face_pts3d_local)");
     assert(!is_undef($ps_face_idx), "ps_face_anti_interference_volume: requires place_on_faces context ($ps_face_idx)");
-    assert(!is_undef($ps_poly_faces_idx), "ps_face_anti_interference_volume: requires place_on_faces context ($ps_poly_faces_idx)");
-    assert(!is_undef($ps_poly_verts_local), "ps_face_anti_interference_volume: requires place_on_faces context ($ps_poly_verts_local)");
-    assert(!is_undef($ps_face_neighbors_idx), "ps_face_anti_interference_volume: requires place_on_faces context ($ps_face_neighbors_idx)");
-    assert(!is_undef($ps_face_dihedrals), "ps_face_anti_interference_volume: requires place_on_faces context ($ps_face_dihedrals)");
+    assert(!is_undef($ps_face_local_context), "ps_face_anti_interference_volume: requires place_on_faces context ($ps_face_local_context)");
 
-    face_ctx = ps_face_local_context(
-        $ps_face_pts3d_local,
-        $ps_face_pts2d,
-        $ps_face_idx,
-        $ps_poly_faces_idx,
-        $ps_poly_verts_local,
-        $ps_face_neighbors_idx,
-        $ps_face_dihedrals,
-        $ps_poly_center_local
-    );
-    shells = _ps_face_anti_interference_shells_from_context(
+    face_ctx = $ps_face_local_context;
+    shells = ps_face_anti_interference_shells(
         face_ctx,
         z0,
         z1,

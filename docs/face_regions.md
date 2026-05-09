@@ -58,8 +58,8 @@ Accessor helpers:
 - `ps_face_anti_interference_shell_top_loop2d(shell)`
 
 The implementation also has an internal face-context entry point that accepts a
-`ps_face_local_context(...)` record directly; the public raw-argument wrapper is
-kept for compatibility.
+`ps_face_local_context(...)` record directly; use that record when the current
+face context is already available.
 
 ### `ps_face_anti_interference_volume(...)`
 

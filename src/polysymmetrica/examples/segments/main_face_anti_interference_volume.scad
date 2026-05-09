@@ -84,12 +84,7 @@ module draw_volume_panel(poly, face_idx, label_s) {
                     cube([$ps_boundary_span_len, LINE_R, LINE_R], center = true);
 
             shells = ps_face_anti_interference_shells(
-                $ps_face_pts3d_local,
-                $ps_face_idx,
-                $ps_poly_faces_idx,
-                $ps_poly_verts_local,
-                $ps_face_neighbors_idx,
-                $ps_face_dihedrals,
+                $ps_face_local_context,
                 VOL_Z_MIN,
                 VOL_Z_MAX,
                 "nonzero",

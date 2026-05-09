@@ -6,7 +6,9 @@ arbitrary geometry after a child module has emitted it.
 
 ## Contract
 
-Use `place_on_face_foreign_proxy_sites(...)` inside `place_on_faces(...)`:
+Use `place_on_face_foreign_proxy_sites(...)` inside `place_on_faces(...)`.
+When you already have a `ps_target_local_poly_context(...)`, pass it directly
+to the replay/proxy helpers:
 
 ```scad
 place_on_faces(poly) {
