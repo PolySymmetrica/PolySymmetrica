@@ -55,7 +55,7 @@ INSET = 1.1 * SC;
 FACET_BASE_T = 1;
 FACET_BASE_W = 2.2;
 BASE_Z = -FACE_T / 4;
-SEAM_SUPPORT_T = EDGE_T * SC;
+SEAM_SUPPORT_T = EDGE_T;
 
 //// Or, experimental:
 //IR = 12 * SC;
