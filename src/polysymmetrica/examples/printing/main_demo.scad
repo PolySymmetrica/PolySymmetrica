@@ -17,7 +17,6 @@ use <face_plate.scad>
 
 SC = 1;
 IR = 20 * SC;
-DEMO_FACES = undef; // [7, 10];
 
 //p = (tetrahedron());
 //p = poly_truncate(dodecahedron());
@@ -40,8 +39,8 @@ DEMO_FACES = undef; // [7, 10];
 //p = poly_prism(5);
 //p = poly_antiprism(5);
 //p = poly_prism(n=5, p=2);
-p = poly_antiprism(n=5, p=2, angle = 0);
-//p = poly_antiprism(n=5, p=2, angle = 15);
+//p = poly_antiprism(n=5, p=2, angle = 0);
+p = poly_antiprism(n=5, p=2, angle = 15);
 //p = poly_antiprism(n=7, p=3, angle = 0);
 //p = poly_antiprism(n=7, p=3, angle = 15);
 //p = poly_antiprism(n=7, p=3, angle = 180);
@@ -55,13 +54,16 @@ FACE_T = 1.6 * SC; // 1.6 * SC;
 INSET = 1.1 * SC;
 FACET_BASE_T = 1;
 FACET_BASE_W = 2.2;
-BASE_Z = -FACE_T / 2;
-SEAM_SUPPORT_T = 3.8 * SC;
+BASE_Z = -FACE_T / 4;
+SEAM_SUPPORT_T = EDGE_T;
 
 //// Or, experimental:
 //IR = 12 * SC;
 //EDGE_T = 3.0 * SC; // 3.5
 //FACE_T = 1.2 * SC; // 1.6 * SC;
+
+
+
 
 /**
 * Generate skeletal frame:
@@ -75,7 +77,7 @@ SEAM_SUPPORT_T = 3.8 * SC;
     show_faces = [0, 9, 23];
     and place '!'
 */
-module model(show_faces = undef, clear_airspace = true) {
+module model_1(show_faces = undef, clear_airspace = true) {
     difference() {
         union() {
             // Constructs the edge-based frame
@@ -97,11 +99,7 @@ module model(show_faces = undef, clear_airspace = true) {
             // Supports for classified printable seam candidates.
             color("darkorange")
             place_on_faces(p, IR) {
-                face_seam_supports(
-                    support_t = SEAM_SUPPORT_T,
-                    top_z = BASE_Z,
-                    extend = SEAM_SUPPORT_T * 0.25
-                );
+                face_seam_supports(support_t = SEAM_SUPPORT_T, top_z = BASE_Z, extend = SEAM_SUPPORT_T * 0.25);
             }
         }
         // Constructs faces, removes them from frame to create face-fitting sockets.
@@ -115,34 +113,88 @@ module model(show_faces = undef, clear_airspace = true) {
     }
 }
 
-//model();
+//model_1();
 //poly_render(p, 20);
 
-module demo_face() {
-    face_plate(base_z = BASE_Z, face_thk = FACE_T, clear_space = false, clear_height = 0.1,
-            max_project = 10, boundary_inset = INSET/2);
+module demo_face(clear_height = 0) {
+    face_plate(base_z = BASE_Z, face_thk = FACE_T, clear_space = (clear_height > 0), clear_height = clear_height,
+            max_project = 10, boundary_inset = INSET);
+}
+
+module demo_face_with_() {} // ???
+
+module demo_edge() {
+    edge_seg($ps_edge_pts_local, $ps_poly_center_local, edge_t = EDGE_T, fin_t = 0);
 }
 
 module demo_vert() {
     // cylinder(r=3, $fn = $ps_vertex_valence);
 }
 
+module demo_seam() {
+    off = _face_plate_seam_support_offset($ps_seam_current_normal_seam_local, top_z, support_t, eps);
 
-place_on_faces(p, IR, indices = DEMO_FACES) {
-    union() {
-        color("darkorange")
-            face_seam_supports(
-                support_t = SEAM_SUPPORT_T,
-                top_z = BASE_Z
-            );
+    hull() {
+        translate($ps_edge_pts_local[0] + off) sphere(d = support_t, $fn = 20);
+        translate($ps_edge_pts_local[1] + off) sphere(d = support_t, $fn = 20);
+    }
+}
 
+module model_2_f(faces_to_print = undef, clear_height = 0, remove_proxies = false) {
+    place_on_faces(p, IR, indices = faces_to_print) {
         difference() {
-            demo_face();
+            // The actual face
+            demo_face(clear_height);
+
+            // Minus the face-intersecting proxies
             place_on_face_foreign_proxy_sites() {
                 demo_face();
-                edge_seg($ps_edge_pts_local, $ps_poly_center_local, edge_t = EDGE_T, fin_t = 0);
+                demo_edge();
                 demo_vert();
+            }
+            // Minus the volume hulls of the face-intersecting planes (to remove face material from those cells)
+            if (remove_proxies) {
+                place_on_face_foreign_proxy_volume_group_hulls(filter_parent = true);
             }
         }
     }
+}
+
+module model_2(faces_to_print = undef) {
+    if (is_undef(F)) {
+        // Frame mode selected
+        difference() {
+            // edge framework
+            union() {
+                // normal full polyhedral edges
+                color("gray") place_on_edges(p, IR) {
+                        demo_edge();
+                    }
+                // seam supports
+                place_on_faces(p, IR) {
+                    color("darkorange") face_seam_supports(support_t = SEAM_SUPPORT_T, extend = 0, top_z = 0);
+                    
+                    // mounting plate - the edge frame isn't quite substantial enough (disabled - wrong polygon!)
+                    color("skyblue") translate([0,0, BASE_Z - FACET_BASE_T]) linear_extrude(FACET_BASE_T)
+                            difference() {
+                                ps_polygon(points = $ps_face_pts2d);
+                                offset(-FACET_BASE_W) ps_polygon(points = $ps_face_pts2d);
+                            }
+                }
+            }
+            // faces to be subtracted from frame, with clearance space
+            model_2_f(clear_height = EDGE_T/2);
+        }
+    } else {
+        // Face mode selected
+        model_2_f(faces_to_print, remove_proxies = true);
+    }
+}
+
+
+//F = [1];
+if (is_undef(F)) {
+    model_2();
+} else {
+    model_2(F);
 }

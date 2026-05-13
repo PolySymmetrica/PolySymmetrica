@@ -27,9 +27,9 @@ and move feature-specific design notes to `docs/`.
   `openscad -o /tmp/ps-tests.stl src/tests/run_all.scad`
 - Run negative tests:
   `src/tests/run_negative_all.sh`
-- Prefer `openscad-nightly` when available. On this machine, use the watcher
+- Prefer `openscad-nightly` when available, though it's snap-sandboxed, so on this machine, use the watcher
   bridge in `.tmp/openscad_nightly_render.spec` and inspect it with:
-  `.tmp/openscad_nightly_status.sh`
+  `.tmp/openscad_nightly_status.sh` - don't vary the commands unnecessarily, to avoid repeated permission requests.
 
 Do not broadly kill `openscad-nightly`; the user may have an interactive session
 open. Only target exact non-interactive commands started for the current task.
@@ -48,6 +48,12 @@ the repo root. Do not commit `.tmp/` artifacts.
   `Function`, `Params`, `Returns`, and optional `Limitations/Gotchas` lines.
 - Prefer shared helpers in `core/funcs.scad` over duplicated private utilities.
 - Remove thin pass-through wrappers when they add no semantic value.
+- Avoid going out of the way to maintain backwards compatibility - the only user code is in this project
+  at this time, so better to check and fix usages than add clutter.
+- Openscad is very weakly typed so high functional test coverage must be maintained.
+- Avoid "fallback" defensive coding and unwarranted defaults, which can lead to inexplicable behaviour. In cases of invalid use,
+  try to (in decrease order of preference) a) fix the usage site, b) assert, c) ok, maybe a default action. This is a higher priority 
+  for the lower level internals; high-level user-facing code can be more generous.
 
 ## Data Model
 

@@ -414,11 +414,10 @@ module echo_row_summary(label_s, face_idx) {
                 mode = MODE,
                 filter_parent = FILTER_PARENT_CUTS
             );
-            target_ctx = $ps_target_local_poly_context;
             volume_groups = ps_face_foreign_proxy_volume_groups(
                 $ps_face_pts2d,
                 $ps_face_idx,
-                target_ctx,
+                $ps_target_local_poly_context,
                 mode = MODE,
                 filter_parent = FILTER_PARENT_CUTS
             );
