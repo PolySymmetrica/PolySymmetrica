@@ -417,8 +417,7 @@ module echo_row_summary(label_s, face_idx) {
             volume_groups = ps_face_foreign_proxy_volume_groups(
                 $ps_face_pts2d,
                 $ps_face_idx,
-                $ps_poly_faces_idx,
-                $ps_poly_verts_local,
+                $ps_target_local_poly_context,
                 mode = MODE,
                 filter_parent = FILTER_PARENT_CUTS
             );
