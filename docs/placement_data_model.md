@@ -78,8 +78,8 @@ The placement layer uses three recurring spaces:
   all replay frames are rebuilt inside the current target face's local frame.
 
 Variables and accessors ending in `_local` should be read with their immediate
-context in mind. For example, `ps_replay_site_center_local(site)` is the replay
-origin in the current target face-local frame, while
+context in mind. For example, `ps_replay_site_frame(site)` is the replay
+placement frame in the current target face-local frame, while
 `ps_face_site_poly_center_local(site)` is the poly center in that face site's
 own element-local frame.
 
@@ -303,10 +303,11 @@ Replay site accessors:
 | --- | --- |
 | `ps_replay_site_idx(site)` | Zero-based replay site index. |
 | `ps_replay_site_intrusion_record(site)` | Source foreign intrusion record. |
-| `ps_replay_site_center_local(site)` | Replay origin in target face-local coordinates. |
-| `ps_replay_site_ex_local(site)` | Replay X axis in target face-local coordinates. |
-| `ps_replay_site_ey_local(site)` | Replay Y axis in target face-local coordinates. |
-| `ps_replay_site_ez_local(site)` | Replay Z axis in target face-local coordinates. |
+| `ps_replay_site_frame(site)` | Replay placement frame in target face-local coordinates. |
+| `ps_replay_site_center_local(site)` | Replay origin derived from `ps_replay_site_frame(site)`. |
+| `ps_replay_site_ex_local(site)` | Replay X axis derived from `ps_replay_site_frame(site)`. |
+| `ps_replay_site_ey_local(site)` | Replay Y axis derived from `ps_replay_site_frame(site)`. |
+| `ps_replay_site_ez_local(site)` | Replay Z axis derived from `ps_replay_site_frame(site)`. |
 | `ps_replay_site_foreign_idx(site)` | Foreign element index. |
 | `ps_replay_site_foreign_kind(site)` | `"face"`, `"edge"`, or `"vertex"`. |
 | `ps_replay_site_face_pts2d(site)` | Foreign face loop in replay-local XY, or `undef`. |

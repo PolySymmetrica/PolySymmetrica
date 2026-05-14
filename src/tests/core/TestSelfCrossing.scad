@@ -285,6 +285,8 @@ module test_ps_face_foreign_face_replay_sites__7_3_15_triangle_builds_target_loc
     );
 
     assert_int_eq(len(replay), 6, "triangle foreign face replay site count");
+    for (s = replay)
+        assert_int_eq(len(s), 16, "triangle replay site compact record length");
     assert_list_eq(
         [for (s = replay) ps_replay_site_foreign_idx(s)],
         [3, 8, 9, 10, 14, 15],
@@ -307,6 +309,7 @@ module test_ps_face_foreign_face_replay_sites__7_3_15_triangle_builds_target_loc
     );
 
     for (s = replay) {
+        assert(ps_replay_site_frame(s) == s[2], "replay frame should be stored in slot 2");
         assert_near(norm(ps_replay_site_ex_local(s)), 1, EPS, "replay ex is unit");
         assert_near(norm(ps_replay_site_ey_local(s)), 1, EPS, "replay ey is unit");
         assert_near(norm(ps_replay_site_ez_local(s)), 1, EPS, "replay ez is unit");
@@ -370,6 +373,8 @@ module test_ps_face_foreign_proxy_replay_sites__7_3_15_triangle_includes_edge_an
     assert(_test_replay_kind_count(replay, "vertex") > 0, "triangle proxy replay should include vertex candidates");
 
     for (s = replay) {
+        assert_int_eq(len(s), 16, "proxy replay site compact record length");
+        assert(ps_replay_site_frame(s) == s[2], "proxy replay frame should be stored in slot 2");
         assert_near(norm(ps_replay_site_ex_local(s)), 1, EPS, "proxy replay ex is unit");
         assert_near(norm(ps_replay_site_ey_local(s)), 1, EPS, "proxy replay ey is unit");
         assert_near(norm(ps_replay_site_ez_local(s)), 1, EPS, "proxy replay ez is unit");
@@ -514,6 +519,8 @@ module test_ps_proxy_volume_group_face_replay_sites__7_3_15_triangle_builds_rend
 
     for (sites = group_sites)
         for (s = sites) {
+            assert_int_eq(len(s), 16, "volume group replay unit compact record length");
+            assert(ps_replay_site_frame(s) == s[2], "volume group replay unit frame should be stored in slot 2");
             assert(ps_replay_site_foreign_kind(s) == "face", "volume group replay unit kind");
             assert(ps_replay_site_intrusion_confidence(s) == "exact", "volume group replay unit confidence");
             assert_int_eq(len(ps_replay_site_face_pts2d(s)), 3, "volume group replay unit face arity");
