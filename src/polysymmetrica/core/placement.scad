@@ -1710,7 +1710,8 @@ module place_on_face_foreign_proxy_volume_group_hulls(
     point_fn=8
 ) {
     place_on_face_foreign_proxy_volume_groups(mode = mode, eps = eps, filter_parent = filter_parent) {
-        vertex_idxs = $ps_proxy_volume_group_vertex_idxs;
+        group = $ps_proxy_volume_group_record;
+        vertex_idxs = ps_proxy_volume_group_vertex_idxs(group);
 
         if (len(vertex_idxs) > 0) {
             $ps_proxy_kind = "foreign_volume_group_hull";

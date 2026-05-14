@@ -800,6 +800,7 @@ module test_ps_face_seam_segment_sites__triangle_builds_boundary_edge_records() 
             for (site = sites) {
                 frame = ps_seam_site_frame(site);
 
+                assert_int_eq(len(site), 16, "boundary seam site compact record length");
                 assert(ps_seam_site_source(site) == "boundary", "boundary seam site source");
                 assert(ps_seam_site_source_kind(site) == "source_edge", "boundary seam site kind");
                 assert_int_eq(len(ps_seam_site_edge_pts_local(site)), 2, "boundary seam edge point arity");
@@ -810,6 +811,7 @@ module test_ps_face_seam_segment_sites__triangle_builds_boundary_edge_records() 
                 assert_near(norm(ps_seam_site_current_normal_seam_local(site)), 1, EPS, "boundary seam current normal unit");
                 assert_near(v_dot(ps_seam_site_ex_local(site), ps_seam_site_ey_local(site)), 0, EPS, "boundary seam ex/ey orthogonal");
                 assert_near(v_dot(ps_seam_site_ex_local(site), ps_seam_site_ez_local(site)), 0, EPS, "boundary seam ex/ez orthogonal");
+                assert(frame == site[1], "boundary seam frame should be stored in slot 1");
                 assert(ps_placement_frame_center(frame) == ps_seam_site_center_local(site), "boundary seam frame center accessor");
                 assert(ps_placement_frame_ex(frame) == ps_seam_site_ex_local(site), "boundary seam frame ex accessor");
                 assert(ps_placement_frame_ey(frame) == ps_seam_site_ey_local(site), "boundary seam frame ey accessor");

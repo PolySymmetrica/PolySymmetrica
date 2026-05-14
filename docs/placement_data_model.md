@@ -522,6 +522,10 @@ Seam sites are edge-like records expressed in the current target face-local
 coordinate system. They can come from filled-boundary spans or from exact
 foreign face-plane cuts.
 
+The seam record stores a `ps_placement_frame(...)` in slot 1. The
+`center_local`/`ex_local`/`ey_local`/`ez_local` accessors derive from that
+stored frame rather than from separate scalar frame fields.
+
 Accessors:
 
 | Accessor | Meaning |
@@ -593,9 +597,10 @@ later cleanup rather than silently papered over:
   it is a candidate for future deduplication once callers have fully moved to
   the accessors.
 - Boundary span and seam segment sites expose frame-derived center/axis fields
-  alongside their stored frame record. That is acceptable while the accessor
-  contract is being verified, but it should be revisited if another canonical
-  subrecord becomes the real source of truth.
+  alongside their stored frame record. Boundary spans already store the frame
+  directly; seam segments now do too, so these records are in the preferred
+  shape. If any future helper reintroduces separate scalar frame fields, it
+  should be folded back to the frame subrecord pattern.
 - Face site records still store both the target-local context record and the
   face-local context record. This is useful for nested helpers today, but the
   duplication should be reassessed if the call graph settles on a single

@@ -1661,7 +1661,7 @@ module place_on_face_foreign_intrusions(mode="nonzero", eps=1e-8, filter_parent=
 /**
  * Function: Build one edge-like seam-segment placement site.
  * Params: site_idx (site index), seg2d (face-local seam segment), seam_source/source_kind (source labels), foreign_kind/foreign_idx (foreign element metadata), foreign_n (foreign face normal in target-local coords), dihedral/confidence/record (source metadata), poly_center_local (target-local poly center), eps (tolerance)
- * Returns: seam site record `[idx, center, ex, ey, ez, len, edge_pts_local, seg2d, seam_source, source_kind, foreign_kind, foreign_idx, dihedral, confidence, record, foreign_n, support_kind, support_reason, current_normal_seam_local]`
+ * Returns: seam site record `[idx, frame, len, edge_pts_local, seg2d, seam_source, source_kind, foreign_kind, foreign_idx, dihedral, confidence, record, foreign_n, support_kind, support_reason, current_normal_seam_local]`
  */
 function _ps_face_seam_segment_site(
     site_idx,
@@ -1699,10 +1699,11 @@ function _ps_face_seam_segment_site(
         ez_dir = (norm(ez_proj) <= eps) ? radial_proj : ez_proj,
         ez = (norm(ez_dir) <= eps) ? _ps_any_perp(ex) : v_norm(ez_dir),
         ey = v_norm(v_cross(ez, ex)),
+        frame = ps_placement_frame(center, ex, ey, ez),
         edge_pts_local = [[-len_d / 2, 0, 0], [len_d / 2, 0, 0]],
         current_normal_seam_local = [v_dot(n0, ex), v_dot(n0, ey), v_dot(n0, ez)]
     )
-    [site_idx, center, ex, ey, ez, len_d, edge_pts_local, seg2d, seam_source, source_kind, foreign_kind, foreign_idx, dihedral, confidence, record, n1, support_kind, support_reason, current_normal_seam_local];
+    [site_idx, frame, len_d, edge_pts_local, seg2d, seam_source, source_kind, foreign_kind, foreign_idx, dihedral, confidence, record, n1, support_kind, support_reason, current_normal_seam_local];
 
 /**
  * Function: Project one indexed face into its own best-fit local frame.
@@ -1917,126 +1918,126 @@ function ps_seam_site_idx(site) = site[0];
  * Params: site (seam segment site record)
  * Returns: seam midpoint in target face-local coordinates
  */
-function ps_seam_site_center_local(site) = site[1];
+function ps_seam_site_center_local(site) = ps_placement_frame_center(ps_seam_site_frame(site));
 
 /**
  * Function: Get seam-local X axis in target face-local coordinates.
  * Params: site (seam segment site record)
  * Returns: unit X axis along the seam segment
  */
-function ps_seam_site_ex_local(site) = site[2];
+function ps_seam_site_ex_local(site) = ps_placement_frame_ex(ps_seam_site_frame(site));
 
 /**
  * Function: Get seam-local Y axis in target face-local coordinates.
  * Params: site (seam segment site record)
  * Returns: unit Y axis completing the seam frame
  */
-function ps_seam_site_ey_local(site) = site[3];
+function ps_seam_site_ey_local(site) = ps_placement_frame_ey(ps_seam_site_frame(site));
 
 /**
  * Function: Get seam-local Z axis in target face-local coordinates.
  * Params: site (seam segment site record)
  * Returns: unit Z axis following the face-normal bisector/radial fallback
  */
-function ps_seam_site_ez_local(site) = site[4];
+function ps_seam_site_ez_local(site) = ps_placement_frame_ez(ps_seam_site_frame(site));
 
 /**
  * Function: Get seam segment length.
  * Params: site (seam segment site record)
  * Returns: seam length in target face-local units
  */
-function ps_seam_site_len(site) = site[5];
+function ps_seam_site_len(site) = site[2];
 
 /**
  * Function: Get seam endpoints in seam-local coordinates.
  * Params: site (seam segment site record)
  * Returns: edge-like endpoint pair `[[ -len/2, 0, 0 ], [ len/2, 0, 0 ]]`
  */
-function ps_seam_site_edge_pts_local(site) = site[6];
+function ps_seam_site_edge_pts_local(site) = site[3];
 
 /**
  * Function: Get source seam segment in target face-local 2D.
  * Params: site (seam segment site record)
  * Returns: `seg2d` endpoints in target face-local XY
  */
-function ps_seam_site_segment2d_local(site) = site[7];
+function ps_seam_site_segment2d_local(site) = site[4];
 
 /**
  * Function: Get seam source family.
  * Params: site (seam segment site record)
  * Returns: `"boundary"` or `"foreign"`
  */
-function ps_seam_site_source(site) = site[8];
+function ps_seam_site_source(site) = site[5];
 
 /**
  * Function: Get source kind within the seam source family.
  * Params: site (seam segment site record)
  * Returns: boundary span kind or intrusion kind string
  */
-function ps_seam_site_source_kind(site) = site[9];
+function ps_seam_site_source_kind(site) = site[6];
 
 /**
  * Function: Get foreign source kind for foreign-linked seams.
  * Params: site (seam segment site record)
  * Returns: `"face"` for current exact cuts, or `undef`
  */
-function ps_seam_site_foreign_kind(site) = site[10];
+function ps_seam_site_foreign_kind(site) = site[7];
 
 /**
  * Function: Get foreign source index for foreign-linked seams.
  * Params: site (seam segment site record)
  * Returns: foreign face index, or `undef`
  */
-function ps_seam_site_foreign_idx(site) = site[11];
+function ps_seam_site_foreign_idx(site) = site[8];
 
 /**
  * Function: Get seam dihedral metadata.
  * Params: site (seam segment site record)
  * Returns: dihedral angle when known, otherwise `undef`
  */
-function ps_seam_site_dihedral(site) = site[12];
+function ps_seam_site_dihedral(site) = site[9];
 
 /**
  * Function: Get seam confidence metadata.
  * Params: site (seam segment site record)
  * Returns: confidence string such as `"exact"`
  */
-function ps_seam_site_confidence(site) = site[13];
+function ps_seam_site_confidence(site) = site[10];
 
 /**
  * Function: Get source record used to build the seam site.
  * Params: site (seam segment site record)
  * Returns: boundary span site or intrusion record
  */
-function ps_seam_site_record(site) = site[14];
+function ps_seam_site_record(site) = site[11];
 
 /**
  * Function: Get foreign normal in target face-local coordinates.
  * Params: site (seam segment site record)
  * Returns: unit foreign normal, or `undef`
  */
-function ps_seam_site_foreign_normal_local(site) = site[15];
+function ps_seam_site_foreign_normal_local(site) = site[12];
 
 /**
  * Function: Get printable support classification.
  * Params: site (seam segment site record)
  * Returns: support kind string, or `"none"`
  */
-function ps_seam_site_support_kind(site) = site[16];
+function ps_seam_site_support_kind(site) = site[13];
 
 /**
  * Function: Get printable support classification reason.
  * Params: site (seam segment site record)
  * Returns: reason string explaining support classification
  */
-function ps_seam_site_support_reason(site) = site[17];
+function ps_seam_site_support_reason(site) = site[14];
 
 /**
  * Function: Get current face normal in seam-local coordinates.
  * Params: site (seam segment site record)
  * Returns: current target face normal expressed in the seam frame
  */
-function ps_seam_site_current_normal_seam_local(site) = site[18];
+function ps_seam_site_current_normal_seam_local(site) = site[15];
 
 /**
  * Function: Get placement frame from a seam segment site.
@@ -2044,12 +2045,7 @@ function ps_seam_site_current_normal_seam_local(site) = site[18];
  * Returns: placement frame `[center, ex, ey, ez]` in target face-local coordinates
  */
 function ps_seam_site_frame(site) =
-    ps_placement_frame(
-        ps_seam_site_center_local(site),
-        ps_seam_site_ex_local(site),
-        ps_seam_site_ey_local(site),
-        ps_seam_site_ez_local(site)
-    );
+    site[1];
 
 /**
  * Function: Test whether a seam site is a printable support candidate.
