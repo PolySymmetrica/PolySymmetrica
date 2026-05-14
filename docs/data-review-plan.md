@@ -137,22 +137,18 @@ fourth argument is numeric `eps`. Do not pass `poly_faces_idx` and
 
 For each record, check whether stored fields duplicate nested record fields.
 
-Current likely remediation candidates:
+Records normalized during this audit:
 
-- Replay sites store `center/ex/ey/ez` fields and also embed canonical
-  face/edge/vertex sites. Decide whether the replay frame should become a
-  `ps_placement_frame(...)` subrecord, and whether duplicated geometry from the
-  embedded canonical site can be derived.
-- Boundary span sites store a `ps_placement_frame(...)` plus individual
-  center/ex/ey/ez accessor derivations. Verify the raw record does not also
-  store independent center/axis fields.
-- Seam segment sites expose frame-like fields but currently appear to store
-  center/ex/ey/ez separately and build `ps_seam_site_frame(site)` from them.
-  Consider converting to an owned `ps_placement_frame(...)` subrecord.
-- Face site records still store `poly_center_local`, `poly_verts_local`, and
-  `poly_faces_idx` alongside a face-local context containing the nested target
-  context. Verify whether those slots are kept for compatibility or should be
-  derived from `ps_face_site_face_local_context(site)`.
+- Replay sites now store a `ps_placement_frame(...)` subrecord directly.
+- Boundary span sites are frame-backed and derive their scalar accessors from
+  that frame.
+- Seam segment sites now store a `ps_placement_frame(...)` subrecord directly.
+- Face site geometry/topology accessors now derive from
+  `ps_face_site_face_local_context(site)` rather than being duplicated in the
+  outer site record.
+
+Remaining work is the final raw-index scan and any new remediation candidates
+found during that pass.
 
 Do not perform broad structural record rewrites in the same PR unless the
 change is small, mechanical, and fully covered by tests. Prefer adding a

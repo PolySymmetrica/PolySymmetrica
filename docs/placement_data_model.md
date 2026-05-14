@@ -180,11 +180,11 @@ Face site accessors:
 | `ps_face_site_vertex_count(site)` | Number of vertices in the source face loop. |
 | `ps_face_site_midradius(site)` | Distance from parent origin to face center. |
 | `ps_face_site_radius(site)` | Mean distance from face center to face vertices. |
-| `ps_face_site_poly_center_local(site)` | Poly center in face-local coordinates. |
-| `ps_face_site_pts2d(site)` | Face loop in face-local XY coordinates. |
-| `ps_face_site_pts3d_local(site)` | Face loop in face-local XYZ coordinates. |
-| `ps_face_site_poly_verts_local(site)` | All poly vertices in face-local coordinates. |
-| `ps_face_site_poly_faces_idx(site)` | Source poly face index loops. |
+| `ps_face_site_poly_center_local(site)` | Poly center in face-local coordinates, derived from the nested face-local context. |
+| `ps_face_site_pts2d(site)` | Face loop in face-local XY coordinates, derived from the nested face-local context. |
+| `ps_face_site_pts3d_local(site)` | Face loop in face-local XYZ coordinates, derived from the nested face-local context. |
+| `ps_face_site_poly_verts_local(site)` | All poly vertices in face-local coordinates, derived from the nested face-local context. |
+| `ps_face_site_poly_faces_idx(site)` | Source poly face index loops, derived from the nested face-local context. |
 | `ps_face_site_target_local_poly_context(site)` | Target-local context derived from this face site. |
 | `ps_face_site_face_local_context(site)` | Stored face-local context for this face site. |
 | `ps_face_site_planarity_err(site)` | Maximum local-Z deviation from the face plane. |
@@ -193,8 +193,8 @@ Face site accessors:
 | `ps_face_site_face_family_count(site)` | Number of face families, or `undef`. |
 | `ps_face_site_edge_family_count(site)` | Number of edge families, or `undef`. |
 | `ps_face_site_vertex_family_count(site)` | Number of vertex families, or `undef`. |
-| `ps_face_site_neighbors_idx(site)` | Adjacent face index per source face edge. |
-| `ps_face_site_dihedrals(site)` | Dihedral metadata per source face edge. |
+| `ps_face_site_neighbors_idx(site)` | Adjacent face index per source face edge, derived from the nested face-local context. |
+| `ps_face_site_dihedrals(site)` | Dihedral metadata per source face edge, derived from the nested face-local context. |
 
 `place_on_faces(...)` exposes the same semantic data as `$ps_face_*`,
 `$ps_face_frame`, `$ps_face_local_context`, `$ps_target_local_poly_context`,
@@ -203,7 +203,8 @@ form of that public metadata contract. `ps_face_sites(...)` appends a
 `ps_placement_frame(...)` tail element to each site record; the stored frame
 is the primary placement contract, and the center/axis accessors derive from
 it. The stored face-local context is the next-level shared object for nested
-face helpers.
+face helpers; the face-local geometry/topology accessors are derived from that
+context rather than duplicated in the outer site record.
 
 ## Edge Site Records
 
