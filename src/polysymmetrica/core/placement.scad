@@ -1710,28 +1710,36 @@ module place_on_face_foreign_proxy_volume_group_hulls(
     point_fn=8
 ) {
     place_on_face_foreign_proxy_volume_groups(mode = mode, eps = eps, filter_parent = filter_parent) {
-        group = $ps_proxy_volume_group_record;
-        vertex_idxs = ps_proxy_volume_group_vertex_idxs(group);
+        vertex_idxs = ps_proxy_volume_group_vertex_idxs($ps_proxy_volume_group_record);
 
         if (len(vertex_idxs) > 0) {
-            $ps_proxy_kind = "foreign_volume_group_hull";
-            $ps_proxy_source_kind = "volume_group";
-            $ps_proxy_source_idx = $ps_proxy_volume_group_idx;
-            $ps_proxy_volume_hull_vertex_idxs = vertex_idxs;
-            $ps_proxy_volume_hull_vertex_count = len(vertex_idxs);
+            _ps_place_on_face_foreign_proxy_volume_group_hull(
+                ps_proxy_volume_group_idx($ps_proxy_volume_group_record),
+                vertex_idxs,
+                point_r,
+                point_fn
+            );
+        }
+    }
+}
 
-            hull() {
-                for (vi = vertex_idxs) {
-                    $ps_proxy_volume_hull_vertex_idx = vi;
-                    $ps_proxy_volume_hull_vertex_pos_local = $ps_poly_verts_local[vi];
+module _ps_place_on_face_foreign_proxy_volume_group_hull(group_idx, vertex_idxs, point_r, point_fn) {
+    $ps_proxy_kind = "foreign_volume_group_hull";
+    $ps_proxy_source_kind = "volume_group";
+    $ps_proxy_source_idx = group_idx;
+    $ps_proxy_volume_hull_vertex_idxs = vertex_idxs;
+    $ps_proxy_volume_hull_vertex_count = len(vertex_idxs);
 
-                    translate($ps_poly_verts_local[vi]) {
-                        if ($children > 0)
-                            children();
-                        else
-                            sphere(r = point_r, $fn = point_fn);
-                    }
-                }
+    hull() {
+        for (vi = vertex_idxs) {
+            $ps_proxy_volume_hull_vertex_idx = vi;
+            $ps_proxy_volume_hull_vertex_pos_local = $ps_poly_verts_local[vi];
+
+            translate($ps_poly_verts_local[vi]) {
+                if ($children > 0)
+                    children();
+                else
+                    sphere(r = point_r, $fn = point_fn);
             }
         }
     }
