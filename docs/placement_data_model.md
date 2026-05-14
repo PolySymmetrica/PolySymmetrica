@@ -1,9 +1,9 @@
 # Placement Data Model
 
-`src/polysymmetrica/core/placement.scad` uses small list-backed records for
-placement and proxy replay data. The public contract is the accessor functions,
-not the numeric list positions. Treat raw indexing into these records as an
-implementation detail.
+`src/polysymmetrica/core/placement.scad` and its sibling core modules use small
+list-backed records for placement and proxy replay data. The public contract is
+the accessor functions, not the numeric list positions. Treat raw indexing into
+these records as an implementation detail.
 
 This document describes the semantic model: what the records mean, which
 coordinate space each field belongs to, and how they relate to the `$ps_*`
@@ -47,6 +47,16 @@ metadata exposed by placement modules.
   A provenance record grouping exact foreign face intrusions by source topology
   connectivity. It describes implicated source faces/edges/vertices; it is not
   itself a closed solid.
+
+- `intrusion record`
+  A provenance record for one exact foreign face-plane crossing. It carries the
+  target face, foreign source kind/index, 2D cut segment, dihedral metadata,
+  and a confidence label.
+
+- `anti-interference shell`
+  A mesh record for one filled boundary loop projected between the requested
+  `z0`/`z1` planes. It stores the generated polyhedron points/faces plus the
+  top/bottom loop projections used to build it.
 
 ## Coordinate Spaces
 
@@ -276,10 +286,8 @@ ps_proxy_volume_group_face_replay_sites(...)
 ```
 
 Internally, replay builders should pass a `ps_target_local_poly_context(...)`
-through the call graph once the current target face frame is established. The
-pass a `ps_target_local_poly_context(...)` through the call graph once the
-current target face frame is established. Nested helpers should avoid
-unpacking and repacking the target poly fields.
+through the call graph once the current target face frame is established.
+Nested helpers should avoid unpacking and repacking the target poly fields.
 
 They are used by:
 
@@ -323,6 +331,12 @@ foreign source kind. With `coords="parent"`, children remain in the current
 target face-local frame and should use the `$ps_replay_*` or `$ps_proxy_*`
 metadata directly.
 
+The internal proxy replay builder also seeds private candidate records with the
+kind string `"face_plane_cut_candidate"` when it derives edge/vertex provenance
+from an exact face intrusion. Those candidates are helper records, not a public
+record family, and they intentionally reuse the same intrusion accessors once
+they are converted into replay sites.
+
 ## Proxy Volume Group Records
 
 Built by:
@@ -353,6 +367,86 @@ target-local poly context directly and use its accessors when they need source
 topology or target-local vertex positions. When a face site is already in
 hand, prefer the stored face-local context and its nested target-local context
 rather than rebuilding them from sibling fields.
+
+## Intrusion Records
+
+Intrusion records are built by:
+
+```scad
+records = ps_face_foreign_intrusion_records(...);
+```
+
+They are consumed by:
+
+```scad
+place_on_face_foreign_intrusions(...);
+ps_face_foreign_proxy_replay_sites(...);
+ps_face_foreign_proxy_volume_groups(...);
+```
+
+Accessors:
+
+| Accessor | Meaning |
+| --- | --- |
+| `ps_intrusion_kind(record)` | Record kind string, currently `"face_plane_cut"`. |
+| `ps_intrusion_target_face_idx(record)` | Target face index receiving the intrusion. |
+| `ps_intrusion_foreign_kind(record)` | Foreign source kind, currently `"face"`. |
+| `ps_intrusion_foreign_idx(record)` | Foreign source index. |
+| `ps_intrusion_segment2d_local(record)` | Target-local 2D cut segment. |
+| `ps_intrusion_dihedral(record)` | Face-plane cut dihedral metadata. |
+| `ps_intrusion_confidence(record)` | Confidence string, currently `"exact"`. |
+
+Intrusion records are exact provenance records. They are intentionally not
+expanded into a solid here; replay and proxy volume grouping are later stages
+that decide how much geometry to emit from the same source record.
+
+## Anti-Interference Shell Records
+
+Anti-interference shell records are built by:
+
+```scad
+shells = ps_face_anti_interference_shells(...);
+```
+
+They are consumed by:
+
+```scad
+ps_face_anti_interference_volume(...);
+```
+
+Accessors:
+
+| Accessor | Meaning |
+| --- | --- |
+| `ps_face_anti_interference_shell_points(shell)` | Generated shell points. |
+| `ps_face_anti_interference_shell_faces(shell)` | Generated shell faces. |
+| `ps_face_anti_interference_shell_loop_idx(shell)` | Source boundary-loop index. |
+| `ps_face_anti_interference_shell_capped_count(shell)` | Number of projected spans capped during shell construction. |
+| `ps_face_anti_interference_shell_bottom_loop2d(shell)` | Bottom cap loop projected to `z0`. |
+| `ps_face_anti_interference_shell_top_loop2d(shell)` | Top cap loop projected to `z1`. |
+
+Shell records are mesh outputs, not canonical source records. They should be
+treated as derived geometry that can be regenerated from the face-local
+context.
+
+## Arrangement And Boundary-Model Composites
+
+The following helper outputs are structurally important but are not yet treated
+as stable semantic records with dedicated accessors:
+
+- `ps_face_arrangement(face_pts3d_local, eps)` returns
+  `[face_pts2d, crossings, nodes, spans, cells]`.
+- `ps_face_boundary_model(face_pts3d_local, mode, eps)` returns
+  `[mode, filled_cell_ids, boundary_loops, boundary_spans]`.
+- `ps_face_filled_boundary_source_edges(face_pts3d_local, mode, eps)` returns
+  `[[source_edge_idx, source_seg2d, source_boundary_spans], ...]`.
+
+These are best understood as composite helper outputs: the structure is stable
+enough for the current algorithms, but the project does not yet treat them as a
+first-class record family in the same way as placement frames, contexts, sites,
+replay records, or proxy volume groups. If they later become reusable records,
+they should get dedicated constructor/accessor functions and their own doc
+section.
 
 ## Boundary Span Site Records
 
@@ -473,6 +567,36 @@ When adding code that consumes any of these records:
   points, face id, neighboring faces, dihedrals, and the target-local poly;
 - do not compare or persist family ids across independently computed
   classifications.
+- raw indexing is only acceptable inside the constructor or accessor that owns
+  the record layout.
 
 Raw list positions may change as the data model evolves. Accessors are the
 stable compatibility surface.
+
+## Record Boundaries
+
+Not every list-shaped value in the codebase is a semantic record. Plain vertex
+lists, edge loops, face loops, arrangement cells, and other local geometry
+tuples remain free to use positional indexing when that is the natural
+representation. The audit target is the list-backed values that cross helper or
+module boundaries with stable meaning: placement frames, contexts, sites,
+replay/proxy records, boundary spans, seam segments, intrusion records, and
+anti-interference shells.
+
+## Known Remediation Candidates
+
+The audit has identified a few record-shape issues that should be tracked for
+later cleanup rather than silently papered over:
+
+- Replay sites still carry both their own frame fields and embedded canonical
+  face/edge/vertex site records. This is a deliberate compatibility bridge, but
+  it is a candidate for future deduplication once callers have fully moved to
+  the accessors.
+- Boundary span and seam segment sites expose frame-derived center/axis fields
+  alongside their stored frame record. That is acceptable while the accessor
+  contract is being verified, but it should be revisited if another canonical
+  subrecord becomes the real source of truth.
+- Face site records still store both the target-local context record and the
+  face-local context record. This is useful for nested helpers today, but the
+  duplication should be reassessed if the call graph settles on a single
+  context object.
