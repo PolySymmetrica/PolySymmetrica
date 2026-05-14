@@ -115,20 +115,16 @@ module test_ps_face_sites__cube_records_match_face_structure() {
         fi = site[0];
         face = faces[fi];
 
-        assert_int_eq(len(site), 20, str("face site should store the compact frame/context tail fi=", fi));
+        assert_int_eq(len(site), 13, str("face site should store the compact frame/context tail fi=", fi));
         assert_int_eq(site[2], len(face), "site vertex count should match face arity");
-        assert_int_eq(len(site[6]), len(face), "site 2d point count should match face arity");
-        assert_int_eq(len(site[7]), len(face), "site 3d local point count should match face arity");
-        assert_int_eq(len(site[16]), len(face), "site neighbor count should match face arity");
-        assert_int_eq(len(site[17]), len(face), "site dihedral count should match face arity");
-        assert(site[18] == ps_face_site_frame(site), str("face site stored frame mismatch fi=", fi));
-        assert(site[11], str("cube face site should be planar fi=", fi));
-        assert(abs(site[10]) < 1e-9, str("cube face planarity err should be ~0 fi=", fi, " err=", site[10]));
-        assert_int_eq(site[12], ids[fi], "site face family id");
-        assert_int_eq(site[13], counts[0], "site face family count");
-        assert_int_eq(site[14], counts[1], "site edge family count");
-        assert_int_eq(site[15], counts[2], "site vertex family count");
-        assert(site[19] == ps_face_site_face_local_context(site), str("face site stored face-local context mismatch fi=", fi));
+        assert(site[11] == ps_face_site_frame(site), str("face site stored frame mismatch fi=", fi));
+        assert(site[12] == ps_face_site_face_local_context(site), str("face site stored face-local context mismatch fi=", fi));
+        assert(site[6], str("cube face site should be planar fi=", fi));
+        assert(abs(site[5]) < 1e-9, str("cube face planarity err should be ~0 fi=", fi, " err=", site[5]));
+        assert_int_eq(site[7], ids[fi], "site face family id");
+        assert_int_eq(site[8], counts[0], "site face family count");
+        assert_int_eq(site[9], counts[1], "site edge family count");
+        assert_int_eq(site[10], counts[2], "site vertex family count");
     }
 }
 
@@ -138,27 +134,28 @@ module test_ps_face_site_accessors__match_record_layout() {
     sites = ps_face_sites(p, classify = cls);
 
     for (site = sites) {
+        face_ctx = ps_face_site_face_local_context(site);
         fields = [
             ["idx", ps_face_site_idx(site), site[0]],
             ["edge_len", ps_face_site_edge_len(site), site[1]],
             ["vertex_count", ps_face_site_vertex_count(site), site[2]],
             ["midradius", ps_face_site_midradius(site), site[3]],
             ["radius", ps_face_site_radius(site), site[4]],
-            ["poly_center_local", ps_face_site_poly_center_local(site), site[5]],
-            ["pts2d", ps_face_site_pts2d(site), site[6]],
-            ["pts3d_local", ps_face_site_pts3d_local(site), site[7]],
-            ["poly_verts_local", ps_face_site_poly_verts_local(site), site[8]],
-            ["poly_faces_idx", ps_face_site_poly_faces_idx(site), site[9]],
-            ["planarity_err", ps_face_site_planarity_err(site), site[10]],
-            ["is_planar", ps_face_site_is_planar(site), site[11]],
-            ["family_id", ps_face_site_family_id(site), site[12]],
-            ["face_family_count", ps_face_site_face_family_count(site), site[13]],
-            ["edge_family_count", ps_face_site_edge_family_count(site), site[14]],
-            ["vertex_family_count", ps_face_site_vertex_family_count(site), site[15]],
-            ["neighbors_idx", ps_face_site_neighbors_idx(site), site[16]],
-            ["dihedrals", ps_face_site_dihedrals(site), site[17]],
-            ["frame", ps_face_site_frame(site), site[18]],
-            ["face_local_context", ps_face_site_face_local_context(site), site[19]]
+            ["planarity_err", ps_face_site_planarity_err(site), site[5]],
+            ["is_planar", ps_face_site_is_planar(site), site[6]],
+            ["family_id", ps_face_site_family_id(site), site[7]],
+            ["face_family_count", ps_face_site_face_family_count(site), site[8]],
+            ["edge_family_count", ps_face_site_edge_family_count(site), site[9]],
+            ["vertex_family_count", ps_face_site_vertex_family_count(site), site[10]],
+            ["frame", ps_face_site_frame(site), site[11]],
+            ["face_local_context", ps_face_site_face_local_context(site), site[12]],
+            ["poly_center_local", ps_face_site_poly_center_local(site), ps_face_local_context_poly_center_local(face_ctx)],
+            ["pts2d", ps_face_site_pts2d(site), ps_face_local_context_pts2d(face_ctx)],
+            ["pts3d_local", ps_face_site_pts3d_local(site), ps_face_local_context_pts3d_local(face_ctx)],
+            ["poly_verts_local", ps_face_site_poly_verts_local(site), ps_face_local_context_poly_verts_local(face_ctx)],
+            ["poly_faces_idx", ps_face_site_poly_faces_idx(site), ps_face_local_context_poly_faces_idx(face_ctx)],
+            ["neighbors_idx", ps_face_site_neighbors_idx(site), ps_face_local_context_neighbors_idx(face_ctx)],
+            ["dihedrals", ps_face_site_dihedrals(site), ps_face_local_context_dihedrals(face_ctx)]
         ];
 
         for (field = fields)
@@ -173,16 +170,16 @@ module test_ps_face_site_frame_and_context__match_site_accessors() {
     ctx = ps_face_site_target_local_poly_context(site);
     face_ctx = ps_face_site_face_local_context(site);
 
-    assert(frame == site[18], "face site should store its frame object");
+    assert(frame == site[11], "face site should store its frame object");
     assert(ps_placement_frame_center(frame) == ps_face_site_center(site), "face site frame center");
     assert(ps_placement_frame_ex(frame) == ps_face_site_ex(site), "face site frame ex");
     assert(ps_placement_frame_ey(frame) == ps_face_site_ey(site), "face site frame ey");
     assert(ps_placement_frame_ez(frame) == ps_face_site_ez(site), "face site frame ez");
-    assert(ps_placement_frame_matrix(frame) == ps_placement_frame_matrix(site[18]), "face site frame matrix");
+    assert(ps_placement_frame_matrix(frame) == ps_placement_frame_matrix(site[11]), "face site frame matrix");
     assert(ps_target_local_poly_context_faces_idx(ctx) == ps_face_site_poly_faces_idx(site), "face site context faces");
     assert(ps_target_local_poly_context_verts_local(ctx) == ps_face_site_poly_verts_local(site), "face site context vertices");
     assert(ps_target_local_poly_context_center_local(ctx) == ps_face_site_poly_center_local(site), "face site context center");
-    assert(face_ctx == site[19], "face site should store the face-local context object");
+    assert(face_ctx == site[12], "face site should store the face-local context object");
     assert(ps_face_local_context_pts3d_local(face_ctx) == ps_face_site_pts3d_local(site), "face site face-local context pts3d");
     assert(ps_face_local_context_pts2d(face_ctx) == ps_face_site_pts2d(site), "face site face-local context pts2d");
     assert(ps_face_local_context_idx(face_ctx) == ps_face_site_idx(site), "face site face-local context idx");

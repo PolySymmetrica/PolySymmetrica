@@ -145,9 +145,9 @@ module test_ps_face_anti_interference_shells__anti_tet_hex_is_finite() {
 
     assert(len(shells) >= 1, "anti-truncated tetrahedron hex should produce at least one shell");
     for (shell = shells) {
-        assert(len(shell[0]) >= 6, "anti-tet shell should have points");
-        assert(len(shell[1]) >= 4, "anti-tet shell should have faces");
-        assert(_test_shell_points_are_finite(shell[0]), "anti-tet shell points should be finite");
+        assert(len(ps_face_anti_interference_shell_points(shell)) >= 6, "anti-tet shell should have points");
+        assert(len(ps_face_anti_interference_shell_faces(shell)) >= 4, "anti-tet shell should have faces");
+        assert(_test_shell_points_are_finite(ps_face_anti_interference_shell_points(shell)), "anti-tet shell points should be finite");
     }
 }
 

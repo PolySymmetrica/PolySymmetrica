@@ -285,6 +285,8 @@ module test_ps_face_foreign_face_replay_sites__7_3_15_triangle_builds_target_loc
     );
 
     assert_int_eq(len(replay), 6, "triangle foreign face replay site count");
+    for (s = replay)
+        assert_int_eq(len(s), 16, "triangle replay site compact record length");
     assert_list_eq(
         [for (s = replay) ps_replay_site_foreign_idx(s)],
         [3, 8, 9, 10, 14, 15],
@@ -307,6 +309,7 @@ module test_ps_face_foreign_face_replay_sites__7_3_15_triangle_builds_target_loc
     );
 
     for (s = replay) {
+        assert(ps_replay_site_frame(s) == s[2], "replay frame should be stored in slot 2");
         assert_near(norm(ps_replay_site_ex_local(s)), 1, EPS, "replay ex is unit");
         assert_near(norm(ps_replay_site_ey_local(s)), 1, EPS, "replay ey is unit");
         assert_near(norm(ps_replay_site_ez_local(s)), 1, EPS, "replay ez is unit");
@@ -370,6 +373,8 @@ module test_ps_face_foreign_proxy_replay_sites__7_3_15_triangle_includes_edge_an
     assert(_test_replay_kind_count(replay, "vertex") > 0, "triangle proxy replay should include vertex candidates");
 
     for (s = replay) {
+        assert_int_eq(len(s), 16, "proxy replay site compact record length");
+        assert(ps_replay_site_frame(s) == s[2], "proxy replay frame should be stored in slot 2");
         assert_near(norm(ps_replay_site_ex_local(s)), 1, EPS, "proxy replay ex is unit");
         assert_near(norm(ps_replay_site_ey_local(s)), 1, EPS, "proxy replay ey is unit");
         assert_near(norm(ps_replay_site_ez_local(s)), 1, EPS, "proxy replay ez is unit");
@@ -514,6 +519,8 @@ module test_ps_proxy_volume_group_face_replay_sites__7_3_15_triangle_builds_rend
 
     for (sites = group_sites)
         for (s = sites) {
+            assert_int_eq(len(s), 16, "volume group replay unit compact record length");
+            assert(ps_replay_site_frame(s) == s[2], "volume group replay unit frame should be stored in slot 2");
             assert(ps_replay_site_foreign_kind(s) == "face", "volume group replay unit kind");
             assert(ps_replay_site_intrusion_confidence(s) == "exact", "volume group replay unit confidence");
             assert_int_eq(len(ps_replay_site_face_pts2d(s)), 3, "volume group replay unit face arity");
@@ -800,6 +807,7 @@ module test_ps_face_seam_segment_sites__triangle_builds_boundary_edge_records() 
             for (site = sites) {
                 frame = ps_seam_site_frame(site);
 
+                assert_int_eq(len(site), 16, "boundary seam site compact record length");
                 assert(ps_seam_site_source(site) == "boundary", "boundary seam site source");
                 assert(ps_seam_site_source_kind(site) == "source_edge", "boundary seam site kind");
                 assert_int_eq(len(ps_seam_site_edge_pts_local(site)), 2, "boundary seam edge point arity");
@@ -810,6 +818,7 @@ module test_ps_face_seam_segment_sites__triangle_builds_boundary_edge_records() 
                 assert_near(norm(ps_seam_site_current_normal_seam_local(site)), 1, EPS, "boundary seam current normal unit");
                 assert_near(v_dot(ps_seam_site_ex_local(site), ps_seam_site_ey_local(site)), 0, EPS, "boundary seam ex/ey orthogonal");
                 assert_near(v_dot(ps_seam_site_ex_local(site), ps_seam_site_ez_local(site)), 0, EPS, "boundary seam ex/ez orthogonal");
+                assert(frame == site[1], "boundary seam frame should be stored in slot 1");
                 assert(ps_placement_frame_center(frame) == ps_seam_site_center_local(site), "boundary seam frame center accessor");
                 assert(ps_placement_frame_ex(frame) == ps_seam_site_ex_local(site), "boundary seam frame ex accessor");
                 assert(ps_placement_frame_ey(frame) == ps_seam_site_ey_local(site), "boundary seam frame ey accessor");
