@@ -491,7 +491,7 @@ function _ps_face_anti_interference_shells_from_fields(
                 loop_sites = _ps_fr_sites_for_loop(sites, loop_idx),
                 shell = _ps_fr_loop_shell(face_pts3d_local, loop_sites, loop_idx, z0, z1, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps)
             )
-            if (len(shell[0]) >= 6 && len(shell[1]) >= 4)
+            if (len(ps_face_anti_interference_shell_points(shell)) >= 6 && len(ps_face_anti_interference_shell_faces(shell)) >= 4)
                 shell
     ];
 

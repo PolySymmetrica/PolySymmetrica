@@ -93,7 +93,7 @@ module draw_volume_panel(poly, face_idx, label_s) {
 
             color("navy")
                 for (shell = shells)
-                    for (pt = shell[0])
+                    for (pt = ps_face_anti_interference_shell_points(shell))
                         translate(pt)
                             sphere(0.75, $fn = 10);
         }
