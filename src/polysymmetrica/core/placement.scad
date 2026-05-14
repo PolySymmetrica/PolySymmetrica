@@ -1701,6 +1701,7 @@ module place_on_face_foreign_proxy_volume_group_hulls(
         group_idx = $ps_proxy_volume_group_idx;
         group_count = $ps_proxy_volume_group_count;
         vertex_idxs = ps_proxy_volume_group_vertex_idxs(group);
+        use_children = $children > 0;
 
         if (len(vertex_idxs) > 0) {
             _ps_place_on_face_foreign_proxy_volume_group_hull(
@@ -1709,13 +1710,16 @@ module place_on_face_foreign_proxy_volume_group_hulls(
                 group_count,
                 vertex_idxs,
                 point_r,
-                point_fn
-            );
+                point_fn,
+                use_children = use_children
+            ) {
+                children();
+            }
         }
     }
 }
 
-module _ps_place_on_face_foreign_proxy_volume_group_hull(group, group_idx, group_count, vertex_idxs, point_r, point_fn) {
+module _ps_place_on_face_foreign_proxy_volume_group_hull(group, group_idx, group_count, vertex_idxs, point_r, point_fn, use_children=false) {
     $ps_proxy_kind = "foreign_volume_group_hull";
     $ps_proxy_source_kind = "volume_group";
     $ps_proxy_volume_group_record = group;
@@ -1731,7 +1735,7 @@ module _ps_place_on_face_foreign_proxy_volume_group_hull(group, group_idx, group
             $ps_proxy_volume_hull_vertex_pos_local = $ps_poly_verts_local[vi];
 
             translate($ps_poly_verts_local[vi]) {
-                if ($children > 0)
+                if (use_children)
                     children();
                 else
                     sphere(r = point_r, $fn = point_fn);
