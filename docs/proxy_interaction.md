@@ -151,13 +151,6 @@ provided. It deliberately convexifies each group, so it can over-subtract
 concave groups, disconnected user geometry, or detailed proxy features. Treat it
 as inspection/tooling, not as the exact punch-through cell model.
 
-`examples/printing/face_plate.scad` exposes this as the opt-in printable wrapper
-`face_plate_minus_foreign_proxy_volume_group_hulls(...)`. It is just
-`face_plate(...)` minus the conservative group hulls, and has the same
-over-subtraction caveat as the hull iterator. When an explicit `face_ctx`
-override is passed, both the positive plate body and the subtractive hulls are
-computed from that same context.
-
 ## Printable Face Plates
 
 For exact caller-supplied proxy subtraction, keep the proxy bodies explicit:
@@ -178,20 +171,21 @@ place_on_faces(poly) {
 }
 ```
 
-For automatic best-effort volume removal, use the conservative grouped-hull
-wrapper:
+For automatic best-effort volume removal, keep the conservative grouped-hull
+subtraction visible:
 
 ```scad
 place_on_faces(poly) {
     if ($ps_face_idx == target_face_idx) {
-        face_plate_minus_foreign_proxy_volume_group_hulls(
-            face_thk = 1.2,
-            mode = "nonzero"
-        );
+        difference() {
+            face_plate(face_thk = 1.2);
+
+            place_on_face_foreign_proxy_volume_group_hulls();
+        }
     }
 }
 ```
 
-`face_plate_minus_foreign_proxy_volume_group_hulls(...)` is the current opt-in
-wrapper for automatically subtracting conservative grouped hulls. Keep using the
-explicit proxy pattern when the proxy body must preserve user-authored detail.
+This remains deliberately explicit because the hull cutters are only a
+best-effort approximation. Keep using the exact proxy pattern when the proxy
+body must preserve user-authored detail.

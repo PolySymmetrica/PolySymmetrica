@@ -121,23 +121,12 @@ module demo_face(clear_height = 0) {
             max_project = 10, boundary_inset = INSET);
 }
 
-module demo_face_with_() {} // ???
-
 module demo_edge() {
     edge_seg($ps_edge_pts_local, $ps_poly_center_local, edge_t = EDGE_T, fin_t = 0);
 }
 
 module demo_vert() {
     // cylinder(r=3, $fn = $ps_vertex_valence);
-}
-
-module demo_seam() {
-    off = _face_plate_seam_support_offset($ps_seam_current_normal_seam_local, top_z, support_t, eps);
-
-    hull() {
-        translate($ps_edge_pts_local[0] + off) sphere(d = support_t, $fn = 20);
-        translate($ps_edge_pts_local[1] + off) sphere(d = support_t, $fn = 20);
-    }
 }
 
 module model_2_f(faces_to_print = undef, clear_height = 0, remove_proxies = false) {

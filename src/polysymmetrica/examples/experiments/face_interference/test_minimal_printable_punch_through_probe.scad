@@ -23,7 +23,6 @@ use <../../printing/face_plate.scad>
 // supply the proxy body deliberately.
 
 IR = 32;
-MODE = "nonzero";
 FILTER_PARENT_CUTS = true;
 
 STAR_FACE_IDX = 1;
@@ -143,7 +142,7 @@ module draw_source_edge_labels(pts2d, highlight_source_edge_idx = undef) {
 module face_material_slab() {
     translate([0, 0, -FACE_THK / 2])
         linear_extrude(height = FACE_THK)
-            ps_polygon($ps_face_pts2d, MODE);
+            ps_polygon($ps_face_pts2d);
 }
 
 /**
@@ -155,7 +154,6 @@ module anti_interference_volume() {
     ps_face_anti_interference_volume(
         VOL_Z_MIN,
         VOL_Z_MAX,
-        mode = MODE,
         max_project = MAX_PROJECT
     );
 }
@@ -168,7 +166,7 @@ module anti_interference_volume() {
 module printable_keep_body() {
     intersection() {
         face_material_slab();
-        face_visible_mask(FACE_THK, z_pad = 0.04, mode = MODE, filter_parent = FILTER_PARENT_CUTS);
+        face_visible_mask(FACE_THK, z_pad = 0.04, filter_parent = FILTER_PARENT_CUTS);
         anti_interference_volume();
     }
 }
@@ -180,24 +178,28 @@ module printable_keep_body() {
  */
 module foreign_face_proxy_body() {
     linear_extrude(height = PROXY_FACE_THK, center = true)
-        ps_polygon($ps_proxy_face_pts2d, MODE);
+        ps_polygon($ps_proxy_face_pts2d);
 }
 
 /**
- * Module: Emit the face plate after subtracting replayed foreign proxy bodies.
+ * Module: Emit the face plate after subtracting conservative volume-group hull cutters.
  * Params: none
  * Returns: none
  */
 module face_plate_with_proxy_cutouts() {
-    face_plate_minus_foreign_proxy_volume_group_hulls(
-        face_thk = FACE_THK,
-        clear_space = false,
-        pillow_min_rad = 1000000,
-        base_z = -FACE_THK / 2,
-        max_project = 10,
-        mode = MODE,
-        filter_parent = FILTER_PARENT_CUTS
-    );
+    difference() {
+        face_plate(
+            face_thk = FACE_THK,
+            clear_space = false,
+            pillow_min_rad = 1000000,
+            base_z = -FACE_THK / 2,
+            max_project = 10
+        );
+
+        place_on_face_foreign_proxy_volume_group_hulls(
+            filter_parent = FILTER_PARENT_CUTS
+        );
+    }
 }
 
 /**
@@ -211,7 +213,6 @@ module draw_cut_strips() {
         $ps_face_idx,
         $ps_poly_faces_idx,
         $ps_poly_verts_local,
-        mode = MODE,
         filter_parent = FILTER_PARENT_CUTS
     );
 
@@ -235,7 +236,7 @@ module draw_cut_strips() {
  * Returns: none
  */
 module draw_proxy_volume_group_strips() {
-    place_on_face_foreign_proxy_volume_groups(mode = MODE, filter_parent = FILTER_PARENT_CUTS) {
+    place_on_face_foreign_proxy_volume_groups(filter_parent = FILTER_PARENT_CUTS) {
         records = $ps_proxy_volume_group_records;
         mids = [for (r = records) ps_segment_midpoint2d(ps_intrusion_segment2d_local(r))];
         label_pos = ps_centroid2d(mids);
@@ -296,7 +297,7 @@ module draw_visible_data_panel(face_idx, source_edge_idx, label_s) {
             color("gainsboro", 0.18)
                 face_material_slab();
 
-            place_on_face_visible_segments(mode = MODE, filter_parent = FILTER_PARENT_CUTS) {
+            place_on_face_visible_segments(filter_parent = FILTER_PARENT_CUTS) {
                 color(example_color($ps_vis_seg_idx), 0.40)
                     draw_polygon_fill($ps_vis_seg_pts2d, z = -FACE_THK * 0.35);
 
@@ -329,7 +330,7 @@ module draw_volume_data_panel(face_idx, source_edge_idx, label_s) {
             color("deepskyblue", 0.35)
                 anti_interference_volume();
 
-            place_on_face_boundary_spans(mode = MODE) {
+            place_on_face_boundary_spans() {
                 highlighted = !is_undef(source_edge_idx) && $ps_boundary_span_source_edge_idx == source_edge_idx;
                 color(highlighted ? "red" : "black")
                     cube([$ps_boundary_span_len, highlighted ? 0.9 : 0.55, 0.55], center = true);
@@ -373,13 +374,13 @@ module draw_proxy_face_plate_panel(face_idx, source_edge_idx, label_s) {
             color("white")
                 face_plate_with_proxy_cutouts();
 
-            place_on_face_foreign_proxy_volume_group_faces(mode = MODE, filter_parent = FILTER_PARENT_CUTS) {
+            place_on_face_foreign_proxy_volume_group_faces(filter_parent = FILTER_PARENT_CUTS) {
                 color(example_color($ps_proxy_volume_group_idx), 0.24)
                     foreign_face_proxy_body();
             }
 
             color("mediumseagreen", 0.16)
-                place_on_face_foreign_proxy_volume_group_hulls(mode = MODE, filter_parent = FILTER_PARENT_CUTS);
+                place_on_face_foreign_proxy_volume_group_hulls(filter_parent = FILTER_PARENT_CUTS);
 
             draw_cut_strips();
             draw_source_edge_labels($ps_face_pts2d, source_edge_idx);
@@ -397,13 +398,12 @@ module draw_proxy_face_plate_panel(face_idx, source_edge_idx, label_s) {
 module echo_row_summary(label_s, face_idx) {
     place_on_faces(P, IR) {
         if ($ps_face_idx == face_idx) {
-            bm = ps_face_boundary_model($ps_face_pts3d_local, MODE);
+            bm = ps_face_boundary_model($ps_face_pts3d_local);
             intrusions = ps_face_foreign_intrusion_records(
                 $ps_face_pts2d,
                 $ps_face_idx,
                 $ps_poly_faces_idx,
                 $ps_poly_verts_local,
-                mode = MODE,
                 filter_parent = FILTER_PARENT_CUTS
             );
             visible = ps_face_visible_segments(
@@ -411,14 +411,12 @@ module echo_row_summary(label_s, face_idx) {
                 $ps_face_idx,
                 $ps_poly_faces_idx,
                 $ps_poly_verts_local,
-                mode = MODE,
                 filter_parent = FILTER_PARENT_CUTS
             );
             volume_groups = ps_face_foreign_proxy_volume_groups(
                 $ps_face_pts2d,
                 $ps_face_idx,
                 $ps_target_local_poly_context,
-                mode = MODE,
                 filter_parent = FILTER_PARENT_CUTS
             );
 
