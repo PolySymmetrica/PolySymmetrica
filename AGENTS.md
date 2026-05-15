@@ -113,3 +113,5 @@ the repo root. Do not commit `.tmp/` artifacts.
   or renders. Include screenshots/renders for geometry-visible changes.
 - Never revert user changes unless explicitly asked. Work with dirty trees and
   keep edits scoped to the current task.
+- If GitHub access fails due to auth problems, just pause to let the user remediate - don't
+  waste tokens trying to work around it. Advise that client restart may work.
