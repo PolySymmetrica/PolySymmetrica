@@ -116,10 +116,24 @@ module model_1(show_faces = undef, clear_airspace = true) {
 //model_1();
 //poly_render(p, 20);
 
-module demo_face(clear_height = 0) {
-    face_plate(base_z = BASE_Z, face_thk = FACE_T, clear_space = (clear_height > 0), clear_height = clear_height,
-            max_project = 10, boundary_inset = INSET);
+SEAM_Z = 0;
+SEAM_INSET = 1.6;
+
+
+module demo_face_plate(clear_height = 0) {
+    difference() {
+        // raw face plate geometry
+        face_plate(base_z = BASE_Z, face_thk = FACE_T, clear_space = (clear_height > 0), clear_height = clear_height,
+                max_project = 10, boundary_inset = INSET);
+
+        // local seam clearance strips
+        place_on_face_seam_segments(include_boundary = false) {
+            slope_factor = 1 / cos($ps_seam_dihedral / 2); 
+            cube([$ps_seam_len, SEAM_INSET / 2, FACE_T * slope_factor + 1], center = true);
+        }
+    }
 }
+
 
 module demo_edge() {
     edge_seg($ps_edge_pts_local, $ps_poly_center_local, edge_t = EDGE_T, fin_t = 0);
@@ -129,23 +143,39 @@ module demo_vert() {
     // cylinder(r=3, $fn = $ps_vertex_valence);
 }
 
-module model_2_f(faces_to_print = undef, clear_height = 0, remove_proxies = false) {
-    place_on_faces(p, IR, indices = faces_to_print) {
-        difference() {
-            // The actual face
-            demo_face(clear_height);
+// In a place_on_faces() context, this places the seam support shape onto the face.
+module demo_full_seam_supports(include_foreign = true) {
+    face_seam_supports(support_t = SEAM_SUPPORT_T, top_z = SEAM_Z, extend = -1.2,
+            include_boundary = false, include_foreign = include_foreign);
+}
 
-            // Minus the face-intersecting proxies
-            place_on_face_foreign_proxy_sites() {
-                demo_face();
-                demo_edge();
-                demo_vert();
+module demo_face_print_or_socket_cutter(clear_height = 0, remove_proxy_hulls = false) {
+    difference() {
+        demo_face_plate(clear_height);
+
+        place_on_face_foreign_proxy_sites() {
+            union() {
+                // foreign face proxy plate
+                demo_face_plate();
+                
+                // foreign proxy seam supports
+                demo_full_seam_supports();
             }
-            // Minus the volume hulls of the face-intersecting planes (to remove face material from those cells)
-            if (remove_proxies) {
-                place_on_face_foreign_proxy_volume_group_hulls(filter_parent = true);
-            }
+            demo_edge();
+            demo_vert();
         }
+
+        // Minus the volume hulls of the face-intersecting planes (to remove face material from those cells)
+        if (remove_proxy_hulls) {
+            place_on_face_foreign_proxy_volume_group_hulls(filter_parent = true);
+        }
+    }
+}
+
+
+module model_2_f(faces_to_print = undef, clear_height = 0, remove_proxy_hulls = false) {
+    place_on_faces(p, IR, indices = faces_to_print) {
+        demo_face_print_or_socket_cutter(clear_height, remove_proxy_hulls);
     }
 }
 
@@ -157,33 +187,45 @@ module model_2(faces_to_print = undef) {
             union() {
                 // normal full polyhedral edges
                 color("gray") place_on_edges(p, IR) {
-                        demo_edge();
-                    }
+                    demo_edge();
+                }
                 // seam supports
                 place_on_faces(p, IR) {
-                    color("darkorange") face_seam_supports(support_t = SEAM_SUPPORT_T, extend = 0, top_z = 0);
+                    color("darkorange")
+                        demo_full_seam_supports();
                     
-                    // mounting plate - the edge frame isn't quite substantial enough (disabled - wrong polygon!)
+                    // mounting plate - the edge frame isn't quite substantial enough
                     color("skyblue") translate([0,0, BASE_Z - FACET_BASE_T]) linear_extrude(FACET_BASE_T)
-                            difference() {
-                                ps_polygon(points = $ps_face_pts2d);
-                                offset(-FACET_BASE_W) ps_polygon(points = $ps_face_pts2d);
-                            }
+                        difference() {
+                            ps_polygon(points = $ps_face_pts2d);
+                            offset(-FACET_BASE_W) ps_polygon(points = $ps_face_pts2d);
+                        }
                 }
             }
             // faces to be subtracted from frame, with clearance space
-            model_2_f(clear_height = EDGE_T/2);
+            model_2_f(clear_height = EDGE_T/2, remove_proxy_hulls = false);
         }
     } else {
         // Face mode selected
-        model_2_f(faces_to_print, remove_proxies = true);
+        model_2_f(faces_to_print, remove_proxy_hulls = true);
     }
 }
 
 
-//F = [1];
+F = [2];
 if (is_undef(F)) {
     model_2();
+//    model_2_f(undef, remove_proxies = true); // Shows body with faces too
 } else {
     model_2(F);
 }
+
+//*place_on_faces(p, IR, indices = [2]) {
+//    demo_face(cut_foreign_seams = false);
+//
+//    color("lime") place_on_face_seam_segments(include_boundary = true) {
+//        slope_factor = 1 / cos($ps_seam_dihedral / 2); 
+//        translate([0, 0, -BASE_Z * slope_factor])
+//            cube([$ps_seam_len, SEAM_INSET / 2, FACE_T * slope_factor + 0.055], center = true);
+//    }
+//}

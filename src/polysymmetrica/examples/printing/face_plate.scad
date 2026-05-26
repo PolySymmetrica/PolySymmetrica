@@ -75,14 +75,13 @@ module _face_plate_seam_support_bar(support_t, top_z, extend, eps) {
 
 /**
  * Module: Emit printable support bars on classified face seam candidates.
- * Params: support_t (bar diameter), top_z/base_z (current face underside plane), extend (extra length at each seam end), mode/eps (seam analysis controls), boundary_kind/include_boundary/include_foreign/filter_parent/foreign_indices/support_only (seam candidate controls)
+ * Params: support_t (bar diameter), top_z (current face underside plane), extend (extra length at each seam end), mode/eps (seam analysis controls), boundary_kind/include_boundary/include_foreign/filter_parent/foreign_indices/support_only (seam candidate controls)
  * Returns: none
  * Limitations/Gotchas: example helper for `place_on_faces(...)`; real candidate semantics come from `place_on_face_seam_segments(...)`
  */
 module face_seam_supports(
     support_t = FACE_PLATE_SEAM_SUPPORT_T,
     top_z = undef,
-    base_z = undef,
     extend = 0,
     mode = "nonzero",
     eps = 1e-4,
@@ -94,9 +93,9 @@ module face_seam_supports(
     support_only = true
 ) {
     assert(support_t > 0, "face_seam_supports: support_t must be > 0");
-    assert(extend >= 0, "face_seam_supports: extend must be >= 0");
+//    assert(extend >= 0, "face_seam_supports: extend must be >= 0");
 
-    top_z_eff = is_undef(top_z) ? (is_undef(base_z) ? 0 : base_z) : top_z;
+    top_z_eff = is_undef(top_z) ? 0 : top_z;
 
     place_on_face_seam_segments(
         mode = mode,
