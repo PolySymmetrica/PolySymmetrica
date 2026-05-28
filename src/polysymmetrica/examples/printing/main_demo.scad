@@ -116,8 +116,8 @@ module model_1(show_faces = undef, clear_airspace = true) {
 //model_1();
 //poly_render(p, 20);
 
-SEAM_Z = 0;
-SEAM_INSET = 1.6;
+SEAM_Z = 1;
+SEAM_INSET = 1.0;
 
 
 module demo_face_plate(clear_height = 0) {
@@ -126,10 +126,13 @@ module demo_face_plate(clear_height = 0) {
         face_plate(base_z = BASE_Z, face_thk = FACE_T, clear_space = (clear_height > 0), clear_height = clear_height,
                 max_project = 10, boundary_inset = INSET);
 
-        // local seam clearance strips
+        // minus local seam clearance strips
         place_on_face_seam_segments(include_boundary = false) {
             slope_factor = 1 / cos($ps_seam_dihedral / 2); 
-            cube([$ps_seam_len, SEAM_INSET / 2, FACE_T * slope_factor + 1], center = true);
+            len = $ps_seam_len; wid = SEAM_INSET / 2; thk = FACE_T * slope_factor + 2; clear = 2;
+            
+            translate([-len / 2, -wid / 2, -thk / 2])
+                cube([len, wid + clear, thk], center = false);
         }
     }
 }
@@ -144,12 +147,25 @@ module demo_vert() {
 }
 
 // In a place_on_faces() context, this places the seam support shape onto the face.
-module demo_full_seam_supports(include_foreign = true) {
+module demo_full_seam_supports() {
     face_seam_supports(support_t = SEAM_SUPPORT_T, top_z = SEAM_Z, extend = -1.2,
-            include_boundary = false, include_foreign = include_foreign);
+            include_boundary = false, include_foreign = true);
 }
 
-module demo_face_print_or_socket_cutter(clear_height = 0, remove_proxy_hulls = false) {
+// In a place_on_face_foreign_proxy_sites() face-child context, this places the
+// replayed face's seam supports except the support shared with the face being cut.
+module demo_proxy_seam_supports() {
+    proxy_support_faces = [
+        for (i = [0:1:len($ps_poly_faces_idx)-1])
+            if (i != $ps_proxy_target_face_idx)
+                i
+    ];
+
+    face_seam_supports(support_t = SEAM_SUPPORT_T, top_z = SEAM_Z, extend = -1.2,
+            include_boundary = false, include_foreign = true, foreign_indices = proxy_support_faces);
+}
+
+module demo_face_print_or_socket_cutter(clear_height = 0, remove_proxy_hulls = true) {
     difference() {
         demo_face_plate(clear_height);
 
@@ -159,7 +175,7 @@ module demo_face_print_or_socket_cutter(clear_height = 0, remove_proxy_hulls = f
                 demo_face_plate();
                 
                 // foreign proxy seam supports
-                demo_full_seam_supports();
+                demo_proxy_seam_supports();
             }
             demo_edge();
             demo_vert();
@@ -173,7 +189,7 @@ module demo_face_print_or_socket_cutter(clear_height = 0, remove_proxy_hulls = f
 }
 
 
-module model_2_f(faces_to_print = undef, clear_height = 0, remove_proxy_hulls = false) {
+module model_2_f(faces_to_print = undef, clear_height = 0, remove_proxy_hulls = true) {
     place_on_faces(p, IR, indices = faces_to_print) {
         demo_face_print_or_socket_cutter(clear_height, remove_proxy_hulls);
     }
@@ -203,19 +219,19 @@ module model_2(faces_to_print = undef) {
                 }
             }
             // faces to be subtracted from frame, with clearance space
-            model_2_f(clear_height = EDGE_T/2, remove_proxy_hulls = false);
+            model_2_f(clear_height = EDGE_T/2);
         }
     } else {
         // Face mode selected
-        model_2_f(faces_to_print, remove_proxy_hulls = true);
+        model_2_f(faces_to_print);
     }
 }
 
 
-F = [2];
+//F = [2];
 if (is_undef(F)) {
     model_2();
-//    model_2_f(undef, remove_proxies = true); // Shows body with faces too
+//    model_2_f(undef); // Shows body with faces too
 } else {
     model_2(F);
 }
