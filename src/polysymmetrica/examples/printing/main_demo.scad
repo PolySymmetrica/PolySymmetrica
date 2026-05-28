@@ -103,7 +103,7 @@ module model_1(show_faces = undef, clear_airspace = true) {
             }
         }
         // Constructs faces, removes them from frame to create face-fitting sockets.
-        *place_on_faces(p, IR) {
+        place_on_faces(p, IR) {
             // add '!' here to force faces-only:
             if (is_undef(show_faces) || len(search($ps_face_idx, [for (i=show_faces) i])) > 0) {
                 face_plate(face_thk = FACE_T, base_z = BASE_Z, max_project = 10,
@@ -165,7 +165,7 @@ module demo_proxy_seam_supports() {
             include_boundary = false, include_foreign = true, foreign_indices = proxy_support_faces);
 }
 
-module demo_face_print_or_socket_cutter(clear_height = 0, remove_proxy_hulls = false) {
+module demo_face_print_or_socket_cutter(clear_height = 0, remove_proxy_hulls = true) {
     difference() {
         demo_face_plate(clear_height);
 
@@ -189,7 +189,7 @@ module demo_face_print_or_socket_cutter(clear_height = 0, remove_proxy_hulls = f
 }
 
 
-module model_2_f(faces_to_print = undef, clear_height = 0, remove_proxy_hulls = false) {
+module model_2_f(faces_to_print = undef, clear_height = 0, remove_proxy_hulls = true) {
     place_on_faces(p, IR, indices = faces_to_print) {
         demo_face_print_or_socket_cutter(clear_height, remove_proxy_hulls);
     }
@@ -219,11 +219,11 @@ module model_2(faces_to_print = undef) {
                 }
             }
             // faces to be subtracted from frame, with clearance space
-            model_2_f(clear_height = EDGE_T/2, remove_proxy_hulls = true);
+            model_2_f(clear_height = EDGE_T/2);
         }
     } else {
         // Face mode selected
-        model_2_f(faces_to_print, remove_proxy_hulls = true);
+        model_2_f(faces_to_print);
     }
 }
 
@@ -231,7 +231,7 @@ module model_2(faces_to_print = undef) {
 //F = [2];
 if (is_undef(F)) {
     model_2();
-//    model_2_f(undef, remove_proxies = true); // Shows body with faces too
+//    model_2_f(undef); // Shows body with faces too
 } else {
     model_2(F);
 }
