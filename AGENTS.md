@@ -63,6 +63,9 @@ the repo root. Do not commit `.tmp/` artifacts.
   outside. `ps_face_normal(...)` and `poly_face_ez(...)` follow this convention.
 - Placement metadata uses `$ps_*` variables. Keep names stable and document new
   public metadata in `docs/placement_data_model.md`.
+- In proxy replay, child modules run in the replayed foreign element context;
+  use `$ps_proxy_target_face_idx` when filtering geometry that must not include
+  the original face being cut.
 - Treat list-backed records as private layouts. Use accessor functions and pass
   semantic records such as `ps_placement_frame(...)`,
   `ps_target_local_poly_context(...)`, and `ps_face_local_context(...)` rather
