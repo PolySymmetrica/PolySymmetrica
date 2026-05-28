@@ -119,7 +119,6 @@ module model_1(show_faces = undef, clear_airspace = true) {
 SEAM_Z = 1;
 SEAM_INSET = 1.0;
 
-
 module demo_face_plate(clear_height = 0) {
     difference() {
         // raw face plate geometry
@@ -228,7 +227,7 @@ module model_2(faces_to_print = undef) {
 }
 
 
-//F = [2];
+F = [2];
 if (is_undef(F)) {
     model_2();
 //    model_2_f(undef); // Shows body with faces too
