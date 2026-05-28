@@ -74,6 +74,13 @@ for its source kind:
 - edge callbacks expose the usual `$ps_edge_*` variables;
 - vertex callbacks expose the usual `$ps_vertex_*` variables.
 
+When a face proxy child emits extra geometry such as seam supports, `$ps_face_*`
+describes the replayed foreign face, while `$ps_proxy_target_face_idx` is the
+face currently being cut. Proxy support geometry should usually exclude seams
+whose `$ps_seam_foreign_idx` is the proxy target face; otherwise the cutter can
+remove or protect the current face's own seat relationship instead of clearing
+only third-party crossing supports.
+
 ## Responsibilities
 
 The proxy child must emit the boolean body that represents possible collision
