@@ -39,7 +39,7 @@ module _face_plate_pillow_loop(pts, top_z, pillow_min_rad, pillow_inset, pillow_
         scale_xy = s0 <= eps ? 0 : (s1 / s0);
         translate([0, 0, top_z])
             linear_extrude(height = pillow_thk, scale = scale_xy)
-                ps_polygon(points = p0, mode = "nonzero");
+                ps_polygon(points = p0);
     }
 }
 
@@ -75,14 +75,13 @@ module _face_plate_seam_support_bar(support_t, top_z, extend, eps) {
 
 /**
  * Module: Emit printable support bars on classified face seam candidates.
- * Params: support_t (bar diameter), top_z/base_z (current face underside plane), extend (extra length at each seam end), mode/eps (seam analysis controls), boundary_kind/include_boundary/include_foreign/filter_parent/foreign_indices/support_only (seam candidate controls)
+ * Params: support_t (bar diameter), top_z (current face underside plane), extend (extra length at each seam end), mode/eps (seam analysis controls), boundary_kind/include_boundary/include_foreign/filter_parent/foreign_indices/support_only (seam candidate controls)
  * Returns: none
  * Limitations/Gotchas: example helper for `place_on_faces(...)`; real candidate semantics come from `place_on_face_seam_segments(...)`
  */
 module face_seam_supports(
     support_t = FACE_PLATE_SEAM_SUPPORT_T,
     top_z = undef,
-    base_z = undef,
     extend = 0,
     mode = "nonzero",
     eps = 1e-4,
@@ -94,9 +93,9 @@ module face_seam_supports(
     support_only = true
 ) {
     assert(support_t > 0, "face_seam_supports: support_t must be > 0");
-    assert(extend >= 0, "face_seam_supports: extend must be >= 0");
+//    assert(extend >= 0, "face_seam_supports: extend must be >= 0");
 
-    top_z_eff = is_undef(top_z) ? (is_undef(base_z) ? 0 : base_z) : top_z;
+    top_z_eff = is_undef(top_z) ? 0 : top_z;
 
     place_on_face_seam_segments(
         mode = mode,
@@ -184,102 +183,8 @@ module face_plate(face_thk,
                 linear_extrude(height = clear_height)
                     union() {
                         for (shell = shells)
-                            ps_polygon(points = ps_face_anti_interference_shell_top_loop2d(shell), mode = "nonzero");
+                            ps_polygon(points = ps_face_anti_interference_shell_top_loop2d(shell));
                     }
-}
-
-/**
- * Module: Emit conservative foreign proxy volume-group hull cutters from explicit face context.
- * Params: face_ctx (face-local context), target_ctx (target-local poly context; defaults from `face_ctx`), mode/eps/filter_parent (intrusion grouping controls), point_r/point_fn (hull point primitive)
- * Returns: none
- * Limitations/Gotchas: internal helper; convexifies each grouped source vertex set
- */
-module _face_plate_foreign_proxy_volume_group_hulls(
-    face_ctx,
-    target_ctx = ps_face_local_context_target_local_poly_context(face_ctx),
-    mode,
-    eps,
-    filter_parent,
-    point_r,
-    point_fn
-) {
-    groups = ps_face_foreign_proxy_volume_groups(
-        ps_face_local_context_pts2d(face_ctx),
-        ps_face_local_context_idx(face_ctx),
-        target_ctx,
-        eps,
-        mode,
-        filter_parent
-    );
-
-    for (group = groups) {
-        vertex_idxs = ps_proxy_volume_group_vertex_idxs(group);
-        if (len(vertex_idxs) > 0) {
-            hull() {
-                for (vi = vertex_idxs)
-                        translate(ps_target_local_poly_context_verts_local(target_ctx)[vi])
-                        sphere(r = point_r, $fn = point_fn);
-            }
-        }
-    }
-}
-
-/**
- * Module: Emit a face plate after subtracting conservative foreign proxy volume-group hulls.
- * Params: face_thk (plate thickness), face_ctx (face-local context; defaults from `place_on_faces`), clear_space/pillow params/base_z/clear_height/mode/max_project/boundary_inset/boundary_inset_mode/eps/convexity (forwarded to `face_plate`), filter_parent (foreign intrusion filtering), hull_point_r/hull_point_fn (hull point primitive)
- * Returns: none
- * Limitations/Gotchas: subtracts convex hulls of proxy volume groups computed from the same explicit face context as the plate; this is conservative and can over-subtract concave or detailed user geometry
- */
-module face_plate_minus_foreign_proxy_volume_group_hulls(face_thk,
-    face_ctx = $ps_face_local_context,
-    clear_space=false,
-    pillow_min_rad = FACE_PLATE_PILLOW_MIN_RAD,
-    pillow_inset = FACE_PLATE_PILLOW_INSET,
-    pillow_ramp = FACE_PLATE_PILLOW_RAMP,
-    pillow_thk = FACE_PLATE_PILLOW_THK,
-    base_z = undef,
-    clear_height = FACE_PLATE_CLEAR_HEIGHT,
-    mode = "nonzero",
-    max_project = undef,
-    boundary_inset = 0,
-    boundary_inset_mode = "side",
-    eps = 1e-4,
-    convexity = 6,
-    filter_parent = true,
-    hull_point_r = 0.04,
-    hull_point_fn = 8
-) {
-    target_ctx_eff = ps_face_local_context_target_local_poly_context(face_ctx);
-
-    difference() {
-        face_plate(
-            face_thk = face_thk,
-            face_ctx = face_ctx,
-            clear_space = clear_space,
-            pillow_min_rad = pillow_min_rad,
-            pillow_inset = pillow_inset,
-            pillow_ramp = pillow_ramp,
-            pillow_thk = pillow_thk,
-            base_z = base_z,
-            clear_height = clear_height,
-            mode = mode,
-            max_project = max_project,
-            boundary_inset = boundary_inset,
-            boundary_inset_mode = boundary_inset_mode,
-            eps = eps,
-            convexity = convexity
-        );
-
-        _face_plate_foreign_proxy_volume_group_hulls(
-            face_ctx = face_ctx,
-            target_ctx = target_ctx_eff,
-            mode = mode,
-            eps = eps,
-            filter_parent = filter_parent,
-            point_r = hull_point_r,
-            point_fn = hull_point_fn
-        );
-    }
 }
 
 // Direct smoke demo: subtract one placed star face cutter from a cube.
