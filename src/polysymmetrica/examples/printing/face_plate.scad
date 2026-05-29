@@ -7,11 +7,13 @@ use <../../core/segments.scad>
 // Minimum face radius before adding the pillow (mm).
 FACE_PLATE_PILLOW_MIN_RAD = 5;
 // Pillow inset at the face surface (mm).
-FACE_PLATE_PILLOW_INSET = 2;
+FACE_PLATE_PILLOW_INSET = 3;
 // Additional pillow inset at the raised height (mm).
 FACE_PLATE_PILLOW_RAMP = 1;
 // Pillow thickness above the face (mm).
 FACE_PLATE_PILLOW_THK = 0.4;
+// Stable full-footprint thickness at the structural face top (mm).
+FACE_PLATE_TOP_THK = 0.3;
 
 // Clearance height for face sockets (mm) - make larger if face is far inset into a face.
 FACE_PLATE_CLEAR_HEIGHT = 10;
@@ -115,13 +117,14 @@ module face_seam_supports(
 
 /**
  * Module: Emit a face plate clipped by the current face's anti-interference volume.
- * Params: face_thk (plate thickness), face_ctx (face-local context; defaults from `place_on_faces`), clear_space (emit clearance cutter), pillow_* (raised pillow sizing), base_z (bottom Z; defaults to `-face_thk` so the top sits on the source face plane), clear_height (clearance height), mode/max_project/boundary_inset/boundary_inset_mode/eps/convexity (anti-interference controls)
+ * Params: face_thk (structural plate thickness, excluding pillow), face_ctx (face-local context; defaults from `place_on_faces`), clear_space (emit clearance cutter), top_thk (full-footprint structural top skin), pillow_* (raised optional pillow sizing), base_z (bottom Z; defaults to `-face_thk` so the structural top sits on the source face plane), clear_height (clearance height), mode/max_project/boundary_inset/boundary_inset_mode/eps/convexity (anti-interference controls)
  * Returns: none
  * Limitations/Gotchas: pillow and clear-space cutter follow the generated shell top loops
  */
 module face_plate(face_thk,
     face_ctx = $ps_face_local_context,
     clear_space=false,
+    top_thk = FACE_PLATE_TOP_THK,
     pillow_min_rad = FACE_PLATE_PILLOW_MIN_RAD,
     pillow_inset = FACE_PLATE_PILLOW_INSET,
     pillow_ramp = FACE_PLATE_PILLOW_RAMP,
@@ -136,13 +139,18 @@ module face_plate(face_thk,
     convexity = 6
 ) {
     assert(!is_undef(face_ctx), "face_plate: face_ctx requires place_on_faces context or an explicit override");
+    assert(face_thk > 0, "face_plate: face_thk must be > 0");
+    assert(top_thk >= 0, "face_plate: top_thk must be >= 0");
+    assert(top_thk < face_thk, "face_plate: top_thk must be less than face_thk");
+    assert(pillow_thk >= 0, "face_plate: pillow_thk must be >= 0");
 
     base_z_eff = is_undef(base_z) ? -face_thk : base_z;
     top_z = base_z_eff + face_thk;
+    top_skin_base_z = top_z - top_thk;
     shells = ps_face_anti_interference_shells(
         face_ctx,
         base_z_eff,
-        top_z,
+        top_skin_base_z,
         mode,
         max_project,
         eps,
@@ -168,6 +176,16 @@ module face_plate(face_thk,
                     faces = ps_face_anti_interference_shell_faces(shell),
                     convexity = convexity
                 );
+            }
+
+            if (top_thk > eps) {
+                for (shell = shells) {
+                    // Keep several structural top layers at the supported
+                    // ramp-top footprint before the optional inset pillow begins.
+                    translate([0, 0, top_skin_base_z])
+                        linear_extrude(height = top_thk)
+                            ps_polygon(points = ps_face_anti_interference_shell_top_loop2d(shell));
+                }
             }
         }
 
