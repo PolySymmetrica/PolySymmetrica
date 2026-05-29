@@ -139,6 +139,16 @@ module test_ps_face_anti_interference_shells__pentagram_zmax_expands_outward() {
     );
 }
 
+module test_ps_face_anti_interference_shells__zero_winding_exposure_uses_same_winding_fallback() {
+    zero_cell_site = [0, undef, 0, undef, 0, undef, 0, 1, "source_edge", 0];
+
+    assert_int_eq(
+        _ps_fr_span_exposure_sign(zero_cell_site, 1, [0]),
+        1,
+        "zero-winding cells should use same-winding exposure fallback"
+    );
+}
+
 module test_ps_face_anti_interference_shells__anti_tet_hex_is_finite() {
     p = poly_truncate(tetrahedron(), t = -0.5);
     site = _test_face_site(p, 0);
@@ -187,6 +197,7 @@ module run_TestFaceRegions() {
     test_ps_face_anti_interference_shells__side_inset_compensates_face_offset();
     test_ps_face_anti_interference_shells__matches_boundary_loop_count();
     test_ps_face_anti_interference_shells__pentagram_zmax_expands_outward();
+    test_ps_face_anti_interference_shells__zero_winding_exposure_uses_same_winding_fallback();
     test_ps_face_anti_interference_shells__anti_tet_hex_is_finite();
     test_ps_face_anti_interference_shells__anti_tet_winding_splits_exposure();
     test_ps_face_anti_interference_projection_cap__limits_offset();

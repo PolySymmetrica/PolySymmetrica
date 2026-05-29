@@ -48,8 +48,8 @@ exposure_sign]`.
 
 `points` and `faces` are directly usable with `polyhedron(...)`. `capped_count`
 counts span projections limited by `max_project`. `exposure_sign` is `+1` for
-same-winding/top-exposed regions and `-1` for opposite-winding/bottom-exposed
-regions.
+same- or zero-winding/top-exposed regions and `-1` for opposite-winding/bottom-
+exposed regions.
 
 Accessor helpers:
 
@@ -119,10 +119,12 @@ for anti-truncation-style faces where the central atom and corner atoms are
 valid filled regions but represent opposite local orientations.
 
 The shell `exposure_sign` records that same relative winding decision: `+1`
-for same-winding regions and `-1` for opposite-winding regions. Callers that
-build printable face details should use this field, not loop area or whether a
-projection grows toward `+Z`, to decide whether a region receives top-side or
-bottom-side geometry.
+for same-winding regions and `-1` for opposite-winding regions. Zero-winding
+cells, such as inspection cells included by `mode="all"`, use the same `+1`
+fallback as the projection ray selection. Callers that build printable face
+details should use this field, not loop area or whether a projection grows
+toward `+Z`, to decide whether a region receives top-side or bottom-side
+geometry.
 
 For non-planar faces this is deliberately best-effort: each boundary span uses
 its own local source-edge midpoint Z. This keeps the generated volume tied to

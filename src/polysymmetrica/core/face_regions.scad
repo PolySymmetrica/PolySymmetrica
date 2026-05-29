@@ -152,7 +152,7 @@ function _ps_fr_span_face_plane_ray(site, input_sign, cell_winding_signs) =
 /**
  * Function: Classify one boundary span's filled cell relative to the source face winding.
  * Params: site (boundary-span site), input_sign (source face signed-area sign), cell_winding_signs (per-arrangement-cell winding signs)
- * Returns: `+1` for same-winding/top-exposed cells, `-1` for opposite-winding/bottom-exposed cells
+ * Returns: `+1` for same- or zero-winding/top-exposed cells, `-1` for opposite-winding/bottom-exposed cells
  */
 function _ps_fr_span_exposure_sign(site, input_sign, cell_winding_signs) =
     let(
@@ -160,15 +160,14 @@ function _ps_fr_span_exposure_sign(site, input_sign, cell_winding_signs) =
         cell_sign =
             (is_undef(cell_idx) || cell_idx < 0 || cell_idx >= len(cell_winding_signs))
                 ? 0
-                : cell_winding_signs[cell_idx],
-        _known = assert(cell_sign != 0, "ps_face_anti_interference_shells: filled cell has ambiguous winding")
+                : cell_winding_signs[cell_idx]
     )
-    (cell_sign == input_sign) ? 1 : -1;
+    (cell_sign == 0 || cell_sign == input_sign) ? 1 : -1;
 
 /**
  * Function: Classify a boundary loop's filled region exposure relative to the source face winding.
  * Params: loop_sites (sites for one boundary loop), input_sign (source face signed-area sign), cell_winding_signs (per-arrangement-cell winding signs)
- * Returns: `+1` for same-winding/top-exposed loops, `-1` for opposite-winding/bottom-exposed loops
+ * Returns: `+1` for same- or zero-winding/top-exposed loops, `-1` for opposite-winding/bottom-exposed loops
  */
 function _ps_fr_loop_exposure_sign(loop_sites, input_sign, cell_winding_signs) =
     let(
@@ -439,7 +438,7 @@ function ps_face_anti_interference_shell_top_loop2d(shell) = shell[5];
 /**
  * Function: Get shell exposure sign relative to the source face winding.
  * Params: shell (from `ps_face_anti_interference_shells(...)`)
- * Returns: `+1` for same-winding/top-exposed regions, `-1` for opposite-winding/bottom-exposed regions
+ * Returns: `+1` for same- or zero-winding/top-exposed regions, `-1` for opposite-winding/bottom-exposed regions
  */
 function ps_face_anti_interference_shell_exposure_sign(shell) = shell[6];
 

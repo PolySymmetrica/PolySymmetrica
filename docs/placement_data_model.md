@@ -426,7 +426,7 @@ Accessors:
 | `ps_face_anti_interference_shell_capped_count(shell)` | Number of projected spans capped during shell construction. |
 | `ps_face_anti_interference_shell_bottom_loop2d(shell)` | Bottom cap loop projected to `z0`. |
 | `ps_face_anti_interference_shell_top_loop2d(shell)` | Top cap loop projected to `z1`. |
-| `ps_face_anti_interference_shell_exposure_sign(shell)` | `+1` for same-winding/top-exposed regions, `-1` for opposite-winding/bottom-exposed regions. |
+| `ps_face_anti_interference_shell_exposure_sign(shell)` | `+1` for same- or zero-winding/top-exposed regions, `-1` for opposite-winding/bottom-exposed regions. |
 
 Shell records are mesh outputs, not canonical source records. They should be
 treated as derived geometry that can be regenerated from the face-local
