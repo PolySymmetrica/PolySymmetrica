@@ -150,6 +150,36 @@ function _ps_fr_span_face_plane_ray(site, input_sign, cell_winding_signs) =
     same_winding ? _ps_fr_span_exterior_ray(site) : _ps_fr_span_filled_ray(site);
 
 /**
+ * Function: Classify one boundary span's filled cell relative to the source face winding.
+ * Params: site (boundary-span site), input_sign (source face signed-area sign), cell_winding_signs (per-arrangement-cell winding signs)
+ * Returns: `+1` for same- or zero-winding/top-exposed cells, `-1` for opposite-winding/bottom-exposed cells
+ */
+function _ps_fr_span_exposure_sign(site, input_sign, cell_winding_signs) =
+    let(
+        cell_idx = ps_boundary_span_site_filled_cell_idx(site),
+        cell_sign =
+            (is_undef(cell_idx) || cell_idx < 0 || cell_idx >= len(cell_winding_signs))
+                ? 0
+                : cell_winding_signs[cell_idx]
+    )
+    (cell_sign == 0 || cell_sign == input_sign) ? 1 : -1;
+
+/**
+ * Function: Classify a boundary loop's filled region exposure relative to the source face winding.
+ * Params: loop_sites (sites for one boundary loop), input_sign (source face signed-area sign), cell_winding_signs (per-arrangement-cell winding signs)
+ * Returns: `+1` for same- or zero-winding/top-exposed loops, `-1` for opposite-winding/bottom-exposed loops
+ */
+function _ps_fr_loop_exposure_sign(loop_sites, input_sign, cell_winding_signs) =
+    let(
+        signs = [for (site = loop_sites) _ps_fr_span_exposure_sign(site, input_sign, cell_winding_signs)],
+        first = len(signs) == 0 ? 0 : signs[0],
+        mixed_count = sum([for (sign = signs) sign == first ? 0 : 1]),
+        _has_sites = assert(len(signs) > 0, "ps_face_anti_interference_shells: boundary loop has no sites"),
+        _consistent = assert(mixed_count == 0, "ps_face_anti_interference_shells: boundary loop mixes exposure signs")
+    )
+    first;
+
+/**
  * Function: Build the anti-interference bisector direction in span-local coords.
  * Params: site (boundary-span site), input_sign (source face signed-area sign), cell_winding_signs (per-arrangement-cell winding signs), eps (zero-length tolerance)
  * Returns: span-local unit direction between the selected face-plane ray and adjacent-face +Z branch
@@ -333,7 +363,7 @@ function _ps_fr_side_faces(n, loop_area_sign) =
 /**
  * Function: Build one anti-interference shell record for one boundary loop.
  * Params: face_pts3d_local (source face loop), loop_sites (sites for one boundary loop), loop_idx (loop id), z0/z1 (target Z planes), input_sign (source loop winding sign), cell_winding_signs (per-cell winding signs), max_project (optional cap), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`), eps (tolerance)
- * Returns: shell record `[points, faces, loop_idx, capped_count, bottom_loop2d, top_loop2d]`
+ * Returns: shell record `[points, faces, loop_idx, capped_count, bottom_loop2d, top_loop2d, exposure_sign]`
  */
 function _ps_fr_loop_shell(face_pts3d_local, loop_sites, loop_idx, z0, z1, input_sign, cell_winding_signs, max_project=undef, boundary_inset=0, boundary_inset_mode="side", eps=1e-8) =
     let(
@@ -358,9 +388,10 @@ function _ps_fr_loop_shell(face_pts3d_local, loop_sites, loop_idx, z0, z1, input
         capped_count = sum(concat(
             [for (line = lines0) line[2] ? 1 : 0],
             [for (line = lines1) line[2] ? 1 : 0]
-        ))
+        )),
+        exposure_sign = _ps_fr_loop_exposure_sign(loop_sites, input_sign, cell_winding_signs)
     )
-    [verts, faces, loop_idx, capped_count, loop0n, loop1n];
+    [verts, faces, loop_idx, capped_count, loop0n, loop1n, exposure_sign];
 
 /**
  * Function: Get shell polyhedron points.
@@ -405,9 +436,16 @@ function ps_face_anti_interference_shell_bottom_loop2d(shell) = shell[4];
 function ps_face_anti_interference_shell_top_loop2d(shell) = shell[5];
 
 /**
+ * Function: Get shell exposure sign relative to the source face winding.
+ * Params: shell (from `ps_face_anti_interference_shells(...)`)
+ * Returns: `+1` for same- or zero-winding/top-exposed regions, `-1` for opposite-winding/bottom-exposed regions
+ */
+function ps_face_anti_interference_shell_exposure_sign(shell) = shell[6];
+
+/**
  * Function: Build positive anti-interference shell meshes from a face-local context.
  * Params: face_ctx (face-local context), z0/z1 (target local Z planes), mode (`"nonzero"`, `"evenodd"`, or `"all"`), max_project (optional projection-distance cap), eps (geometric tolerance), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`)
- * Returns: list of shell records `[points, faces, loop_idx, capped_count, bottom_loop2d, top_loop2d]`
+ * Returns: list of shell records `[points, faces, loop_idx, capped_count, bottom_loop2d, top_loop2d, exposure_sign]`
  * Limitations/Gotchas: emits one shell per filled boundary loop; holes/proxy punch-through volumes are intentionally outside this first primitive
  */
 function _ps_face_anti_interference_shells_from_context(
@@ -447,7 +485,7 @@ function _ps_face_anti_interference_shells_from_context(
 /**
  * Function: Build positive anti-interference shell meshes for one face.
  * Params: face_pts3d_local (current face loop in face-local 3D), face_idx (current face index), poly_faces_idx/poly_verts_local (full poly in current face-local coordinates), face_neighbors_idx/face_dihedrals (current face-edge metadata), z0/z1 (target local Z planes), mode (`"nonzero"`, `"evenodd"`, or `"all"`), max_project (optional projection-distance cap), eps (geometric tolerance), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`)
- * Returns: list of shell records `[points, faces, loop_idx, capped_count, bottom_loop2d, top_loop2d]`
+ * Returns: list of shell records `[points, faces, loop_idx, capped_count, bottom_loop2d, top_loop2d, exposure_sign]`
  * Limitations/Gotchas: emits one shell per filled boundary loop; holes/proxy punch-through volumes are intentionally outside this first primitive
  */
 function _ps_face_anti_interference_shells_from_fields(
@@ -498,7 +536,7 @@ function _ps_face_anti_interference_shells_from_fields(
 /**
  * Function: Build positive anti-interference shell meshes from a face-local context.
  * Params: face_ctx (face-local context), z0/z1 (target local Z planes), mode (`"nonzero"`, `"evenodd"`, or `"all"`), max_project (optional projection-distance cap), eps (geometric tolerance), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`)
- * Returns: list of shell records `[points, faces, loop_idx, capped_count, bottom_loop2d, top_loop2d]`
+ * Returns: list of shell records `[points, faces, loop_idx, capped_count, bottom_loop2d, top_loop2d, exposure_sign]`
  * Limitations/Gotchas: context-first public entry point
  */
 function ps_face_anti_interference_shells(

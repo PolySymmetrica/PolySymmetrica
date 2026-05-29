@@ -36,6 +36,7 @@ module test_ps_face_anti_interference_shells__cube_face_single_quad_shell() {
     assert_int_eq(len(shells), 1, "cube face should produce one filled boundary shell");
     assert_int_eq(len(shells[0][0]), 8, "cube quad shell should have bottom+top vertices");
     assert_int_eq(len(shells[0][1]), 8, "quad shell should have two triangulated caps plus four sides");
+    assert_int_eq(ps_face_anti_interference_shell_exposure_sign(shells[0]), 1, "cube shell should be top-exposed");
     assert(_test_shell_points_are_finite(shells[0][0]), "cube shell points should be finite");
 
     zs = [for (p = shells[0][0]) p[2]];
@@ -79,6 +80,7 @@ module test_ps_face_anti_interference_shells__site_context_matches_raw_context_b
         assert(ps_face_anti_interference_shell_faces(shells_ctx[i]) == ps_face_anti_interference_shell_faces(shells_raw_ctx[i]), str("context shell faces should match i=", i));
         assert_int_eq(ps_face_anti_interference_shell_loop_idx(shells_ctx[i]), ps_face_anti_interference_shell_loop_idx(shells_raw_ctx[i]), str("context shell loop idx should match i=", i));
         assert_int_eq(ps_face_anti_interference_shell_capped_count(shells_ctx[i]), ps_face_anti_interference_shell_capped_count(shells_raw_ctx[i]), str("context shell capped count should match i=", i));
+        assert_int_eq(ps_face_anti_interference_shell_exposure_sign(shells_ctx[i]), ps_face_anti_interference_shell_exposure_sign(shells_raw_ctx[i]), str("context shell exposure sign should match i=", i));
     }
 }
 
@@ -137,6 +139,16 @@ module test_ps_face_anti_interference_shells__pentagram_zmax_expands_outward() {
     );
 }
 
+module test_ps_face_anti_interference_shells__zero_winding_exposure_uses_same_winding_fallback() {
+    zero_cell_site = [0, undef, 0, undef, 0, undef, 0, 1, "source_edge", 0];
+
+    assert_int_eq(
+        _ps_fr_span_exposure_sign(zero_cell_site, 1, [0]),
+        1,
+        "zero-winding cells should use same-winding exposure fallback"
+    );
+}
+
 module test_ps_face_anti_interference_shells__anti_tet_hex_is_finite() {
     p = poly_truncate(tetrahedron(), t = -0.5);
     site = _test_face_site(p, 0);
@@ -147,11 +159,12 @@ module test_ps_face_anti_interference_shells__anti_tet_hex_is_finite() {
     for (shell = shells) {
         assert(len(ps_face_anti_interference_shell_points(shell)) >= 6, "anti-tet shell should have points");
         assert(len(ps_face_anti_interference_shell_faces(shell)) >= 4, "anti-tet shell should have faces");
+        assert(abs(ps_face_anti_interference_shell_exposure_sign(shell)) == 1, "anti-tet shell should have a signed exposure");
         assert(_test_shell_points_are_finite(ps_face_anti_interference_shell_points(shell)), "anti-tet shell points should be finite");
     }
 }
 
-module test_ps_face_anti_interference_shells__anti_tet_winding_splits_z_direction() {
+module test_ps_face_anti_interference_shells__anti_tet_winding_splits_exposure() {
     p = poly_truncate(tetrahedron(), t = -0.5);
     site = _test_face_site(p, 0);
     face_ctx = ps_face_site_face_local_context(site);
@@ -159,15 +172,15 @@ module test_ps_face_anti_interference_shells__anti_tet_winding_splits_z_directio
 
     assert_int_eq(len(shells), 4, "anti-tet hex should split into one centre and three corner shells");
 
-    area_deltas = [
+    exposure_signs = [
         for (shell = shells)
-            abs(_ps_seg_poly_area2(ps_face_anti_interference_shell_top_loop2d(shell))) - abs(_ps_seg_poly_area2(ps_face_anti_interference_shell_bottom_loop2d(shell)))
+            ps_face_anti_interference_shell_exposure_sign(shell)
     ];
-    expanded_count = sum([for (d = area_deltas) d > EPS ? 1 : 0]);
-    shrunk_count = sum([for (d = area_deltas) d < -EPS ? 1 : 0]);
+    top_count = sum([for (sign = exposure_signs) sign > 0 ? 1 : 0]);
+    bottom_count = sum([for (sign = exposure_signs) sign < 0 ? 1 : 0]);
 
-    assert_int_eq(expanded_count, 1, "anti-tet same-winding centre shell should expand toward +Z");
-    assert_int_eq(shrunk_count, 3, "anti-tet opposite-winding corner shells should shrink toward +Z");
+    assert_int_eq(top_count, 1, "anti-tet same-winding centre shell should be top-exposed");
+    assert_int_eq(bottom_count, 3, "anti-tet opposite-winding corner shells should be bottom-exposed");
 }
 
 module test_ps_face_anti_interference_projection_cap__limits_offset() {
@@ -184,8 +197,9 @@ module run_TestFaceRegions() {
     test_ps_face_anti_interference_shells__side_inset_compensates_face_offset();
     test_ps_face_anti_interference_shells__matches_boundary_loop_count();
     test_ps_face_anti_interference_shells__pentagram_zmax_expands_outward();
+    test_ps_face_anti_interference_shells__zero_winding_exposure_uses_same_winding_fallback();
     test_ps_face_anti_interference_shells__anti_tet_hex_is_finite();
-    test_ps_face_anti_interference_shells__anti_tet_winding_splits_z_direction();
+    test_ps_face_anti_interference_shells__anti_tet_winding_splits_exposure();
     test_ps_face_anti_interference_projection_cap__limits_offset();
 }
 
