@@ -54,7 +54,7 @@ FACE_T = 1.6 * SC; // 1.6 * SC;
 INSET = 1.1 * SC;
 FACET_BASE_T = 1;
 FACET_BASE_W = 2.2;
-BASE_Z = -FACE_T / 4;
+BASE_Z = -FACE_T / 2;
 SEAM_SUPPORT_T = EDGE_T;
 
 //// Or, experimental:
@@ -147,7 +147,7 @@ module demo_vert() {
 
 // In a place_on_faces() context, this places the seam support shape onto the face.
 module demo_full_seam_supports() {
-    face_seam_supports(support_t = SEAM_SUPPORT_T, top_z = SEAM_Z, extend = -1.2,
+    face_seam_supports(support_t = SEAM_SUPPORT_T, top_z = SEAM_Z, extend = -2.2,
             include_boundary = false, include_foreign = true);
 }
 
@@ -160,7 +160,7 @@ module demo_proxy_seam_supports() {
                 i
     ];
 
-    face_seam_supports(support_t = SEAM_SUPPORT_T, top_z = SEAM_Z, extend = -1.2,
+    face_seam_supports(support_t = SEAM_SUPPORT_T, top_z = SEAM_Z, extend = -2.2,
             include_boundary = false, include_foreign = true, foreign_indices = proxy_support_faces);
 }
 
@@ -227,7 +227,7 @@ module model_2(faces_to_print = undef) {
 }
 
 
-F = [2];
+//F = [2];
 if (is_undef(F)) {
     model_2();
 //    model_2_f(undef); // Shows body with faces too

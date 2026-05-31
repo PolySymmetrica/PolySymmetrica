@@ -936,6 +936,23 @@ module test_ps_face_seam_segment_sites__5_2_triangle_cuts_are_support_candidates
     }
 }
 
+module test_ps_face_seam_segment_sites__5_2_15_canonicalizes_current_face_side() {
+    place_on_faces(_test_penta_punch_poly(), indices = [2, 9]) {
+        sites = ps_face_seam_segment_sites($ps_face_local_context, MODE, EPS, "generated_cut", false, true);
+
+        assert_int_eq(len(sites), 3, str("5/2+15 face ", $ps_face_idx, " exact foreign seam count"));
+        for (site = sites) {
+            current_n = ps_seam_site_current_normal_seam_local(site);
+            ex = ps_seam_site_ex_local(site);
+            ey = ps_seam_site_ey_local(site);
+            ez = ps_seam_site_ez_local(site);
+
+            assert(current_n[1] >= -EPS, str("5/2+15 face ", $ps_face_idx, " current normal should be on seam +Y side"));
+            assert_near(v_dot(v_cross(ex, ey), ez), 1, EPS, "canonical seam frame should remain right-handed");
+        }
+    }
+}
+
 module test_place_on_face_foreign_face_replay_sites__7_3_15_triangle_exposes_context() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
@@ -1125,6 +1142,7 @@ module run_TestSelfCrossing() {
     test_place_on_face_seam_segments__element_coords_exposes_frame_backed_edge_aliases();
     test_ps_face_seam_segment_sites__source_partial_spans_are_not_support_candidates();
     test_ps_face_seam_segment_sites__5_2_triangle_cuts_are_support_candidates();
+    test_ps_face_seam_segment_sites__5_2_15_canonicalizes_current_face_side();
     test_place_on_face_foreign_face_replay_sites__7_3_15_triangle_exposes_context();
     test_place_on_face_foreign_proxy_sites__7_3_15_triangle_dispatches_face_child();
     test_place_on_face_foreign_proxy_sites__7_3_15_triangle_element_child_uses_source_face_context();
