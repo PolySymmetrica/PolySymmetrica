@@ -696,12 +696,14 @@ The returned records use the same accessor style as the other segment APIs:
 - `ps_seam_site_current_normal_seam_local(site)`
 - `ps_seam_site_is_support_candidate(site)`
 
-The seam frame is deliberately edge-like:
+The seam frame is deliberately edge-like, but its side is canonicalized:
 
-- `+X` follows the seam segment
+- `+X` follows the seam segment, with direction chosen to make `+Y`
+  semantic rather than preserving raw source endpoint order
 - `+Z` is the signed current/foreign face-normal bisector when a foreign face
   normal is known, with a radial fallback for boundary-only generated seams
-- `+Y` completes the local frame
+- `+Y` completes the local frame and is chosen so the current face normal has
+  non-negative seam-local `Y`
 - `ps_seam_site_current_normal_seam_local(site)` / `$ps_seam_current_normal_seam_local`
   gives the current face normal expressed in that seam element frame, so child
   geometry can place itself relative to the current face plane without

@@ -523,7 +523,10 @@ place_on_face_seam_segments(...);
 
 Seam sites are edge-like records expressed in the current target face-local
 coordinate system. They can come from filled-boundary spans or from exact
-foreign face-plane cuts.
+foreign face-plane cuts. The seam frame canonicalizes segment direction so
+`+Y` is the current target face side: the current target face normal has
+non-negative seam-local `Y`. `+X` therefore follows the seam segment but does
+not promise to preserve the raw source endpoint order.
 
 The seam record stores a `ps_placement_frame(...)` in slot 1. The
 `center_local`/`ex_local`/`ey_local`/`ez_local` accessors derive from that

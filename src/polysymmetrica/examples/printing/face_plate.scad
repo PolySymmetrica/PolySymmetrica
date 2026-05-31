@@ -1,7 +1,6 @@
 use <../../core/funcs.scad>
 use <../../core/face_regions.scad>
 use <../../core/placement.scad>
-use <../../core/prisms.scad>
 use <../../core/segments.scad>
 
 // Minimum face radius before adding the pillow (mm).
@@ -171,6 +170,7 @@ module face_plate(face_thk,
                         ps_face_anti_interference_shell_loop_idx(shell)
                     ));
 
+                color(ps_face_anti_interference_shell_exposure_sign(shell) > 0? "green" : "blue")
                 polyhedron(
                     points = ps_face_anti_interference_shell_points(shell),
                     faces = ps_face_anti_interference_shell_faces(shell),
@@ -205,12 +205,27 @@ module face_plate(face_thk,
                     }
 }
 
-// Direct smoke demo: subtract one placed star face cutter from a cube.
-_demo_poly = poly_antiprism(n=5, p=2, angle=15);
-difference() {
-    translate([0, -15, -15]) cube(30);
 
-    place_on_faces(_demo_poly, 17)
-        if ($ps_face_idx == 1)
-            #face_plate(face_thk=1.2, clear_space=false, max_project=10);
-}
+/////////////////////////////
+// On-the-spot sanity tests
+
+//// Direct smoke demo: subtract one placed star face cutter from a cube.
+//use <../../core/prisms.scad>
+//_demo_fstap = poly_antiprism(n=5, p=2, angle=15);
+//translate([100,0,0]) difference() {
+//    translate([0, -15, 15]) cube(30);
+//
+//    place_on_faces(_demo_fstap, 17.5, indices = [1])
+//        #face_plate(face_thk=1.2, clear_space=false, max_project=10);
+//}
+//
+//// Direct smoke demo: subtract one placed star face cutter from a cube.
+//use <../../core/truncation.scad>
+//use <../../models/tetrahedron.scad>
+//_demo_atut = poly_truncate(tetrahedron(), t = -0.5);
+//difference() {
+//    translate([-18, -15, 7]) rotate([36, 44, 0]) cube(30);
+//
+//    place_on_faces(_demo_atut, 17.5, indices = [1])
+//        face_plate(face_thk=1.2, clear_space=false, max_project=10);
+//}
