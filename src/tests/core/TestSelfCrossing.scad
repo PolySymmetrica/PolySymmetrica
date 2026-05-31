@@ -937,18 +937,30 @@ module test_ps_face_seam_segment_sites__5_2_triangle_cuts_are_support_candidates
 }
 
 module test_ps_face_seam_segment_sites__5_2_15_canonicalizes_current_face_side() {
-    place_on_faces(_test_penta_punch_poly(), indices = [2, 9]) {
-        sites = ps_face_seam_segment_sites($ps_face_local_context, MODE, EPS, "generated_cut", false, true);
+    place_on_faces(_test_penta_punch_poly()) {
+        if ($ps_face_idx == 2 || $ps_face_idx == 9) {
+            face_ctx = ps_face_local_context(
+                $ps_face_pts3d_local,
+                $ps_face_pts2d,
+                $ps_face_idx,
+                $ps_poly_faces_idx,
+                $ps_poly_verts_local,
+                $ps_face_neighbors_idx,
+                $ps_face_dihedrals,
+                $ps_poly_center_local
+            );
+            sites = ps_face_seam_segment_sites(face_ctx, MODE, EPS, "generated_cut", false, true);
 
-        assert_int_eq(len(sites), 3, str("5/2+15 face ", $ps_face_idx, " exact foreign seam count"));
-        for (site = sites) {
-            current_n = ps_seam_site_current_normal_seam_local(site);
-            ex = ps_seam_site_ex_local(site);
-            ey = ps_seam_site_ey_local(site);
-            ez = ps_seam_site_ez_local(site);
+            assert_int_eq(len(sites), 3, str("5/2+15 face ", $ps_face_idx, " exact foreign seam count"));
+            for (site = sites) {
+                current_n = ps_seam_site_current_normal_seam_local(site);
+                ex = ps_seam_site_ex_local(site);
+                ey = ps_seam_site_ey_local(site);
+                ez = ps_seam_site_ez_local(site);
 
-            assert(current_n[1] >= -EPS, str("5/2+15 face ", $ps_face_idx, " current normal should be on seam +Y side"));
-            assert_near(v_dot(v_cross(ex, ey), ez), 1, EPS, "canonical seam frame should remain right-handed");
+                assert(current_n[1] >= -EPS, str("5/2+15 face ", $ps_face_idx, " current normal should be on seam +Y side"));
+                assert_near(v_dot(v_cross(ex, ey), ez), 1, EPS, "canonical seam frame should remain right-handed");
+            }
         }
     }
 }
