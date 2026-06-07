@@ -11,7 +11,7 @@ DIFF_ROOT="${DIFF_ROOT:-${TMP_ROOT}/diff}"
 LOG_ROOT="${TMP_ROOT}/logs"
 OPENSCAD_BIN="${OPENSCAD_BIN:-openscad-nightly}"
 IMG_SIZE="${IMG_SIZE:-1280,960}"
-CAMERA_ARGS=(--imgsize="${IMG_SIZE}" --projection=o --autocenter --viewall)
+CAMERA_ARGS=(--imgsize="${IMG_SIZE}" --projection=o --autocenter --viewall --render)
 MODE="${1:-}"
 TOLERANCE="normal"
 
@@ -58,14 +58,18 @@ case "${TOLERANCE}" in
     strict)
         FUZZ="0%"
         MAX_CHANGED_PIXELS=0
+        MAX_CHANGED_PPM=0
+        MAX_CHANGED_FLOOR=0
         ;;
     normal)
         FUZZ="1%"
-        MAX_CHANGED_PIXELS=50
+        MAX_CHANGED_PPM=100
+        MAX_CHANGED_FLOOR=100
         ;;
     loose)
         FUZZ="2.5%"
-        MAX_CHANGED_PIXELS=500
+        MAX_CHANGED_PPM=500
+        MAX_CHANGED_FLOOR=500
         ;;
     *)
         echo "Unknown tolerance: ${TOLERANCE}" >&2
@@ -73,6 +77,20 @@ case "${TOLERANCE}" in
         exit 2
         ;;
 esac
+
+IFS=, read -r IMG_WIDTH IMG_HEIGHT IMG_EXTRA <<<"${IMG_SIZE}"
+if [[ -n "${IMG_EXTRA:-}" || ! "${IMG_WIDTH}" =~ ^[1-9][0-9]*$ || ! "${IMG_HEIGHT}" =~ ^[1-9][0-9]*$ ]]; then
+    echo "Invalid IMG_SIZE: ${IMG_SIZE}. Expected WIDTH,HEIGHT." >&2
+    exit 2
+fi
+
+if [[ "${TOLERANCE}" != "strict" ]]; then
+    IMG_PIXELS=$((IMG_WIDTH * IMG_HEIGHT))
+    MAX_CHANGED_PIXELS=$(((IMG_PIXELS * MAX_CHANGED_PPM + 999999) / 1000000))
+    if [[ "${MAX_CHANGED_PIXELS}" -lt "${MAX_CHANGED_FLOOR}" ]]; then
+        MAX_CHANGED_PIXELS="${MAX_CHANGED_FLOOR}"
+    fi
+fi
 
 if ! command -v "${OPENSCAD_BIN}" >/dev/null 2>&1; then
     echo "OpenSCAD command not found: ${OPENSCAD_BIN}" >&2
@@ -151,7 +169,14 @@ compare_images() {
     mkdir -p "$(dirname "${diff}")" "$(dirname "${metric_log}")"
 
     set +e
-    "${COMPARE_CMD[@]}" -metric AE -fuzz "${FUZZ}" "${expected}" "${actual}" "${diff}" >"${metric_log}" 2>&1
+    "${COMPARE_CMD[@]}" \
+        -metric AE \
+        -fuzz "${FUZZ}" \
+        -highlight-color red \
+        -lowlight-color white \
+        "${expected}" \
+        "${actual}" \
+        "${diff}" >"${metric_log}" 2>&1
     rc=$?
     set -e
 
