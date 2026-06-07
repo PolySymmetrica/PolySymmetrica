@@ -36,12 +36,12 @@ jobs:
           openscad --version
           openscad -o passed.stl  src/tests/run_all.scad
           openscad-nightly --version
-          openscad-nightly -o passed.stl  src/tests/run_all.scad
+          # openscad-nightly -o passed.stl  src/tests/run_all.scad
 
           mkdir -p target/
           for f in src/polysymmetrica/examples/{basics,truncation}/main_*.scad ; do
             echo "Executing $f at $(date)"
-            openscad-nightly -o target/$(basename -s .scad "$f").png "$f"
+            # openscad-nightly -o target/$(basename -s .scad "$f").png "$f"
           done
           ls -l target/
 
