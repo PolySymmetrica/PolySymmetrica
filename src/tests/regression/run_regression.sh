@@ -127,11 +127,15 @@ list_case_tests() {
     out="${TMP_ROOT}/list/${base}.stl"
     mkdir -p "$(dirname "${log}")" "$(dirname "${out}")"
 
-    "${OPENSCAD_BIN}" \
+    if ! "${OPENSCAD_BIN}" \
         -o "${out}" \
         -D REG_LIST=true \
         -D T=0 \
-        "${case_file}" >"${log}" 2>&1
+        "${case_file}" >"${log}" 2>&1; then
+        echo "FAIL: could not list regression tests for ${rel}" >&2
+        sed 's/^/      /' "${log}" >&2
+        return 1
+    fi
 
     sed -n 's/.*REGRESSION_TEST=\([0-9][0-9]*\) \([^"]*\).*/\1 \2/p' "${log}"
 }
@@ -209,6 +213,22 @@ fi
 failures=0
 
 for case_file in "${case_files[@]}"; do
+    rel="$(case_rel_path "${case_file}")"
+    base="${rel%.scad}"
+    tests_file="${TMP_ROOT}/list/${base}.tests"
+    mkdir -p "$(dirname "${tests_file}")"
+
+    if ! list_case_tests "${case_file}" >"${tests_file}"; then
+        failures=$((failures + 1))
+        continue
+    fi
+
+    if [[ ! -s "${tests_file}" ]]; then
+        echo "FAIL: no regression tests discovered for ${rel}"
+        failures=$((failures + 1))
+        continue
+    fi
+
     while read -r idx name; do
         [[ -n "${idx}" ]] || continue
 
@@ -219,8 +239,6 @@ for case_file in "${case_files[@]}"; do
 
         render_case_test "${case_file}" "${idx}" "${name}" "${ACTUAL_ROOT}"
 
-        rel="$(case_rel_path "${case_file}")"
-        base="${rel%.scad}"
         dir="$(dirname "${base}")"
         stem="$(basename "${base}")"
         file="${dir}/${stem}_$(printf '%02d' "${idx}")_${name}.png"
@@ -238,7 +256,7 @@ for case_file in "${case_files[@]}"; do
         if ! compare_images "${expected}" "${actual}" "${diff}" "${metric_log}"; then
             failures=$((failures + 1))
         fi
-    done < <(list_case_tests "${case_file}")
+    done <"${tests_file}"
 done
 
 if [[ "${failures}" -ne 0 ]]; then
