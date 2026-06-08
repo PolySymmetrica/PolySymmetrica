@@ -30,7 +30,8 @@ The default OpenSCAD command is `openscad-nightly`. Override it with
 In CI, visual regressions run through `xvfb-run` with
 `LIBGL_ALWAYS_SOFTWARE=1` to reduce renderer drift.
 
-Render/compare jobs run with GNU `parallel` when it is available. The default
+Render/compare jobs run with GNU `parallel` when it is available. Other
+commands named `parallel`, such as moreutils parallel, are ignored. The default
 fan-out is `REGRESSION_JOBS=4`; set `REGRESSION_JOBS=1` for serial output or a
 higher value when the renderer is stable under more load. Parallel output is
 line-buffered and tagged with `<T>:<name>` so failures remain attributable. If

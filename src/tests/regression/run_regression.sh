@@ -130,6 +130,13 @@ case_rel_path() {
     realpath --relative-to="${CASE_ROOT}" "${case_file}"
 }
 
+has_gnu_parallel() {
+    local parallel_bin="$1"
+
+    command -v "${parallel_bin}" >/dev/null 2>&1 &&
+        "${parallel_bin}" --version 2>/dev/null | head -n 1 | rg -q '^GNU parallel '
+}
+
 list_case_tests() {
     local case_file="$1"
     local rel base log out
@@ -307,7 +314,12 @@ if [[ "${failures}" -eq 0 ]]; then
         exit 1
     fi
 
-    if [[ "${REGRESSION_JOBS}" -gt 1 && -x "$(command -v "${PARALLEL_BIN}" 2>/dev/null || true)" ]]; then
+    use_parallel=false
+    if [[ "${REGRESSION_JOBS}" -gt 1 ]] && has_gnu_parallel "${PARALLEL_BIN}"; then
+        use_parallel=true
+    fi
+
+    if [[ "${use_parallel}" == true ]]; then
         parallel_log="${LOG_ROOT}/parallel-${MODE}.joblog"
         rm -f "${parallel_log}"
         export CASE_ROOT BASELINE_ROOT ACTUAL_ROOT DIFF_ROOT LOG_ROOT OPENSCAD_BIN IMG_SIZE
@@ -332,7 +344,7 @@ if [[ "${failures}" -eq 0 ]]; then
         fi
     else
         if [[ "${REGRESSION_JOBS}" -gt 1 ]]; then
-            echo "GNU parallel not found; running regression ${MODE} jobs serially."
+            echo "GNU parallel not available; running regression ${MODE} jobs serially."
         fi
 
         while IFS=$'\t' read -r case_file idx name; do
