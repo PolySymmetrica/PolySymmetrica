@@ -39,6 +39,10 @@ jobs:
           openscad-nightly -o passed.stl src/tests/run_all.scad
 
           mkdir -p target/
+          printf 'cube(1);\n' > target/openscad-nightly-warmup.scad
+          openscad-nightly -o target/openscad-nightly-warmup.png target/openscad-nightly-warmup.scad
+          rm -f target/openscad-nightly-warmup.scad target/openscad-nightly-warmup.png
+
           examples=(src/polysymmetrica/examples/{basics,truncation}/main_*.scad)
           printf '%s\n' "${examples[@]}" | parallel \
             --will-cite \
