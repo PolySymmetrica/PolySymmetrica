@@ -27,7 +27,7 @@ jobs:
       - name: Install OpenSCAD
         run: |
           sudo apt-get update
-          sudo apt-get install openscad imagemagick xvfb
+          sudo apt-get install openscad imagemagick xvfb parallel
           sudo snap install openscad-nightly
 
       # Runs a set of commands using the runners shell
@@ -47,7 +47,7 @@ jobs:
 
       - name: Run visual regressions
         run: |
-          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a --server-args="-screen 0 1280x960x24" \
+          LIBGL_ALWAYS_SOFTWARE=1 REGRESSION_JOBS=4 xvfb-run -a --server-args="-screen 0 1280x960x24" \
             src/tests/regression/run_regression.sh diff --tolerance normal
 
       - name: Upload visual regression artifacts
