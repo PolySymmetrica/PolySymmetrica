@@ -275,6 +275,7 @@ fi
 
 failures=0
 jobs_file="${TMP_ROOT}/list/jobs.tsv"
+mkdir -p "$(dirname "${jobs_file}")"
 : >"${jobs_file}"
 
 for case_file in "${case_files[@]}"; do
