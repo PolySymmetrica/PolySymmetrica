@@ -11,7 +11,8 @@ DIFF_ROOT="${DIFF_ROOT:-${TMP_ROOT}/diff}"
 LOG_ROOT="${TMP_ROOT}/logs"
 OPENSCAD_BIN="${OPENSCAD_BIN:-openscad-nightly}"
 IMG_SIZE="${IMG_SIZE:-1280,960}"
-CAMERA_ARGS=(--imgsize="${IMG_SIZE}" --projection=o --autocenter --viewall --render)
+REGRESSION_JOBS="${REGRESSION_JOBS:-4}"
+PARALLEL_BIN="${PARALLEL_BIN:-parallel}"
 MODE="${1:-}"
 TOLERANCE="normal"
 
@@ -22,6 +23,9 @@ Usage: $0 generate|diff [--tolerance strict|normal|loose]
 Environment:
   OPENSCAD_BIN  OpenSCAD command to use (default: openscad-nightly)
   IMG_SIZE      Output image size, WIDTH,HEIGHT (default: 1280,960)
+  REGRESSION_JOBS
+                Parallel render/compare jobs to run when GNU parallel is
+                available (default: 4)
 EOF
 }
 
@@ -84,6 +88,11 @@ if [[ -n "${IMG_EXTRA:-}" || ! "${IMG_WIDTH}" =~ ^[1-9][0-9]*$ || ! "${IMG_HEIGH
     exit 2
 fi
 
+if [[ ! "${REGRESSION_JOBS}" =~ ^[1-9][0-9]*$ ]]; then
+    echo "Invalid REGRESSION_JOBS: ${REGRESSION_JOBS}. Expected a positive integer." >&2
+    exit 2
+fi
+
 if [[ "${TOLERANCE}" != "strict" ]]; then
     IMG_PIXELS=$((IMG_WIDTH * IMG_HEIGHT))
     MAX_CHANGED_PIXELS=$(((IMG_PIXELS * MAX_CHANGED_PPM + 999999) / 1000000))
@@ -97,15 +106,19 @@ if ! command -v "${OPENSCAD_BIN}" >/dev/null 2>&1; then
     exit 1
 fi
 
+COMPARE_BIN=""
+COMPARE_STYLE=""
 if command -v magick >/dev/null 2>&1; then
-    COMPARE_CMD=(magick compare)
+    COMPARE_BIN="$(command -v magick)"
+    COMPARE_STYLE="magick"
 elif command -v compare >/dev/null 2>&1; then
-    COMPARE_CMD=(compare)
+    COMPARE_BIN="$(command -v compare)"
+    COMPARE_STYLE="compare"
 else
-    COMPARE_CMD=()
+    COMPARE_BIN=""
 fi
 
-if [[ "${MODE}" == "diff" && ${#COMPARE_CMD[@]} -eq 0 ]]; then
+if [[ "${MODE}" == "diff" && -z "${COMPARE_BIN}" ]]; then
     echo "ImageMagick compare command not found. Install imagemagick." >&2
     exit 1
 fi
@@ -156,11 +169,19 @@ render_case_test() {
     mkdir -p "$(dirname "${out}")" "$(dirname "${log}")"
 
     echo "Rendering ${rel} T=${idx} (${name}) -> ${out}"
-    "${OPENSCAD_BIN}" \
+    if ! "${OPENSCAD_BIN}" \
         -o "${out}" \
-        "${CAMERA_ARGS[@]}" \
+        --imgsize="${IMG_SIZE}" \
+        --projection=o \
+        --autocenter \
+        --viewall \
+        --render \
         -D "T=${idx}" \
-        "${case_file}" >"${log}" 2>&1
+        "${case_file}" >"${log}" 2>&1; then
+        echo "FAIL: render failed for ${rel} T=${idx} (${name})"
+        sed 's/^/      /' "${log}"
+        return 1
+    fi
 }
 
 compare_images() {
@@ -168,19 +189,30 @@ compare_images() {
     local actual="$2"
     local diff="$3"
     local metric_log="$4"
-    local changed
+    local changed rc
 
     mkdir -p "$(dirname "${diff}")" "$(dirname "${metric_log}")"
 
     set +e
-    "${COMPARE_CMD[@]}" \
-        -metric AE \
-        -fuzz "${FUZZ}" \
-        -highlight-color red \
-        -lowlight-color white \
-        "${expected}" \
-        "${actual}" \
-        "${diff}" >"${metric_log}" 2>&1
+    if [[ "${COMPARE_STYLE}" == "magick" ]]; then
+        "${COMPARE_BIN}" compare \
+            -metric AE \
+            -fuzz "${FUZZ}" \
+            -highlight-color red \
+            -lowlight-color white \
+            "${expected}" \
+            "${actual}" \
+            "${diff}" >"${metric_log}" 2>&1
+    else
+        "${COMPARE_BIN}" \
+            -metric AE \
+            -fuzz "${FUZZ}" \
+            -highlight-color red \
+            -lowlight-color white \
+            "${expected}" \
+            "${actual}" \
+            "${diff}" >"${metric_log}" 2>&1
+    fi
     rc=$?
     set -e
 
@@ -202,6 +234,37 @@ compare_images() {
     echo "PASS: ${actual} changed_pixels=${changed}"
 }
 
+run_regression_test() {
+    local case_file="$1"
+    local idx="$2"
+    local name="$3"
+    local rel base dir stem file expected actual diff metric_log
+
+    if [[ "${MODE}" == "generate" ]]; then
+        render_case_test "${case_file}" "${idx}" "${name}" "${BASELINE_ROOT}"
+        return
+    fi
+
+    render_case_test "${case_file}" "${idx}" "${name}" "${ACTUAL_ROOT}" || return 1
+
+    rel="$(case_rel_path "${case_file}")"
+    base="${rel%.scad}"
+    dir="$(dirname "${base}")"
+    stem="$(basename "${base}")"
+    file="${dir}/${stem}_$(printf '%02d' "${idx}")_${name}.png"
+    expected="${BASELINE_ROOT}/${file}"
+    actual="${ACTUAL_ROOT}/${file}"
+    diff="${DIFF_ROOT}/${file}"
+    metric_log="${LOG_ROOT}/${file}.compare.log"
+
+    if [[ ! -f "${expected}" ]]; then
+        echo "FAIL: missing baseline ${expected}"
+        return 1
+    fi
+
+    compare_images "${expected}" "${actual}" "${diff}" "${metric_log}"
+}
+
 shopt -s nullglob globstar
 case_files=("${CASE_ROOT}"/**/*.scad)
 
@@ -211,6 +274,8 @@ if [[ "${#case_files[@]}" -eq 0 ]]; then
 fi
 
 failures=0
+jobs_file="${TMP_ROOT}/list/jobs.tsv"
+: >"${jobs_file}"
 
 for case_file in "${case_files[@]}"; do
     rel="$(case_rel_path "${case_file}")"
@@ -231,33 +296,51 @@ for case_file in "${case_files[@]}"; do
 
     while read -r idx name; do
         [[ -n "${idx}" ]] || continue
-
-        if [[ "${MODE}" == "generate" ]]; then
-            render_case_test "${case_file}" "${idx}" "${name}" "${BASELINE_ROOT}"
-            continue
-        fi
-
-        render_case_test "${case_file}" "${idx}" "${name}" "${ACTUAL_ROOT}"
-
-        dir="$(dirname "${base}")"
-        stem="$(basename "${base}")"
-        file="${dir}/${stem}_$(printf '%02d' "${idx}")_${name}.png"
-        expected="${BASELINE_ROOT}/${file}"
-        actual="${ACTUAL_ROOT}/${file}"
-        diff="${DIFF_ROOT}/${file}"
-        metric_log="${LOG_ROOT}/${file}.compare.log"
-
-        if [[ ! -f "${expected}" ]]; then
-            echo "FAIL: missing baseline ${expected}"
-            failures=$((failures + 1))
-            continue
-        fi
-
-        if ! compare_images "${expected}" "${actual}" "${diff}" "${metric_log}"; then
-            failures=$((failures + 1))
-        fi
+        printf '%s\t%s\t%s\n' "${case_file}" "${idx}" "${name}" >>"${jobs_file}"
     done <"${tests_file}"
 done
+
+if [[ "${failures}" -eq 0 ]]; then
+    if [[ ! -s "${jobs_file}" ]]; then
+        echo "No regression tests discovered." >&2
+        exit 1
+    fi
+
+    if [[ "${REGRESSION_JOBS}" -gt 1 && -x "$(command -v "${PARALLEL_BIN}" 2>/dev/null || true)" ]]; then
+        parallel_log="${LOG_ROOT}/parallel-${MODE}.joblog"
+        rm -f "${parallel_log}"
+        export CASE_ROOT BASELINE_ROOT ACTUAL_ROOT DIFF_ROOT LOG_ROOT OPENSCAD_BIN IMG_SIZE
+        export MODE FUZZ MAX_CHANGED_PIXELS COMPARE_BIN COMPARE_STYLE
+        export -f case_rel_path render_case_test compare_images run_regression_test
+
+        echo "Running regression ${MODE} jobs with ${PARALLEL_BIN} -j ${REGRESSION_JOBS}"
+        set +e
+        "${PARALLEL_BIN}" \
+            --will-cite \
+            --jobs "${REGRESSION_JOBS}" \
+            --colsep '\t' \
+            --line-buffer \
+            --tagstring '{2}:{3}' \
+            --joblog "${parallel_log}" \
+            run_regression_test {1} {2} {3} :::: "${jobs_file}"
+        parallel_rc=$?
+        set -e
+
+        if [[ "${parallel_rc}" -ne 0 ]]; then
+            failures="$(awk 'NR > 1 && $7 != 0 { n++ } END { print n + 0 }' "${parallel_log}")"
+        fi
+    else
+        if [[ "${REGRESSION_JOBS}" -gt 1 ]]; then
+            echo "GNU parallel not found; running regression ${MODE} jobs serially."
+        fi
+
+        while IFS=$'\t' read -r case_file idx name; do
+            if ! run_regression_test "${case_file}" "${idx}" "${name}"; then
+                failures=$((failures + 1))
+            fi
+        done <"${jobs_file}"
+    fi
+fi
 
 if [[ "${failures}" -ne 0 ]]; then
     echo "Regression image failures: ${failures}"
