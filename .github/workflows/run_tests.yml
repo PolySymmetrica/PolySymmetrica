@@ -21,26 +21,46 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # Installs Openscad using apt
       - name: Install OpenSCAD
         run: |
           sudo apt-get update
-          sudo apt-get install openscad
+          sudo apt-get install openscad imagemagick xvfb parallel
           sudo snap install openscad-nightly
 
       # Runs a set of commands using the runners shell
       - name: Run tests
         run: |
           openscad --version
-          openscad -o passed.stl  src/tests/run_all.scad
+          openscad -o passed.stl src/tests/run_all.scad
           openscad-nightly --version
-          openscad-nightly -o passed.stl  src/tests/run_all.scad
+          openscad-nightly -o passed.stl src/tests/run_all.scad
 
           mkdir -p target/
-          for f in src/polysymmetrica/examples/{basics,truncation}/main_*.scad ; do
-            echo "Executing $f at $(date)"
-            openscad-nightly -o target/$(basename -s .scad "$f").png "$f"
-          done
+          printf 'cube(1);\n' > target/openscad-nightly-warmup.scad
+          openscad-nightly -o target/openscad-nightly-warmup.png target/openscad-nightly-warmup.scad
+          rm -f target/openscad-nightly-warmup.scad target/openscad-nightly-warmup.png
+
+          examples=(src/polysymmetrica/examples/{basics,truncation}/main_*.scad)
+          printf '%s\n' "${examples[@]}" | parallel \
+            --will-cite \
+            --jobs "${EXAMPLE_JOBS:-4}" \
+            --line-buffer \
+            --tagstring '{/.}' \
+            --joblog target/examples.joblog \
+            'echo "Executing {} at $(date)"; openscad-nightly -o target/{/.}.png {}'
           ls -l target/
+
+      - name: Run visual regressions
+        run: |
+          LIBGL_ALWAYS_SOFTWARE=1 REGRESSION_JOBS=4 xvfb-run -a --server-args="-screen 0 1280x960x24" \
+            src/tests/regression/run_regression.sh diff --tolerance normal
+
+      - name: Upload visual regression artifacts
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: visual-regression-artifacts
+          path: .tmp/regression/
