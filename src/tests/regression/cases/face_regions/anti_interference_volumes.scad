@@ -8,11 +8,16 @@ use <../../../../polysymmetrica/core/truncation.scad>
 use <../../../../polysymmetrica/models/dodecahedron.scad>
 use <../../../../polysymmetrica/models/tetrahedron.scad>
 
+IR = 30;
+Z0 = -2.0;
+Z1 = 2.0;
+MAX_PROJECT = 40;
+
 TESTS = [
-    ["dodeca_volume_control"],
-    ["star_ap_volume"],
-    ["atut_hex_volume"],
-    ["atut_hex_volume_inset"]
+    ["dodeca_volume_control", function() dodecahedron(), 0, 0],
+    ["star_ap_volume", function() poly_antiprism(5, 2), 0, 0],
+    ["atut_hex_volume", function() poly_truncate(tetrahedron(), t = -0.5), 0, 0],
+    ["atut_hex_volume_inset", function() poly_truncate(tetrahedron(), t = -0.5), 0, 1.2]
 ];
 
 T_MAX = len(TESTS);
@@ -20,18 +25,6 @@ T = is_undef(T) ? 0 : T;
 REG_LIST = is_undef(REG_LIST) ? false : REG_LIST;
 
 assert(T >= 0 && T < T_MAX, str("T out of range: ", T));
-
-IR = 30;
-Z0 = -2.0;
-Z1 = 2.0;
-MAX_PROJECT = 40;
-DOD_POLY = dodecahedron();
-STAR_POLY = poly_antiprism(5, 2);
-ATUT_POLY = poly_truncate(tetrahedron(), t = -0.5);
-
-function _poly_for(i) = (i == 0) ? DOD_POLY : (i == 1) ? STAR_POLY : ATUT_POLY;
-function _face_for(i) = (i == 0) ? 0 : (i == 1) ? 0 : 0;
-function _inset_for(i) = (i == 3) ? 1.2 : 0;
 
 module _wire_context(poly, face_idx) {
     color("silver")
@@ -102,5 +95,6 @@ module _volume_panel(poly, face_idx, label_s, boundary_inset = 0) {
 if (REG_LIST) {
     reg_list_tests(TESTS);
 } else {
-    _volume_panel(_poly_for(T), _face_for(T), TESTS[T][0], boundary_inset = _inset_for(T));
+    spec = TESTS[T];
+    _volume_panel(spec[1](), spec[2], spec[0], boundary_inset = spec[3]);
 }

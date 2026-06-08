@@ -9,16 +9,19 @@ use <../../../../polysymmetrica/core/truncation.scad>
 use <../../../../polysymmetrica/models/dodecahedron.scad>
 use <../../../../polysymmetrica/models/tetrahedron.scad>
 
+IR = 30;
+FACE_THK = 0.26;
+
 TESTS = [
-    ["star_evenodd_cells"],
-    ["star_nonzero_cells"],
-    ["atut_nonzero_cells"],
-    ["atut_boundary_spans"],
-    ["atut_boundary_sources"],
-    ["atut_generated_spans"],
-    ["atut_seam_segments"],
-    ["atut_visible_cells"],
-    ["dodeca_boundary_control"]
+    ["star_evenodd_cells", "cells", function() poly_antiprism(5, 2), 1, "evenodd"],
+    ["star_nonzero_cells", "cells", function() poly_antiprism(5, 2), 1, "nonzero"],
+    ["atut_nonzero_cells", "cells", function() poly_truncate(tetrahedron(), t = -0.5), 0, "nonzero"],
+    ["atut_boundary_spans", "boundary_spans", function() poly_truncate(tetrahedron(), t = -0.5), 0, "all"],
+    ["atut_boundary_sources", "boundary_sources", function() poly_truncate(tetrahedron(), t = -0.5), 0],
+    ["atut_generated_spans", "boundary_spans", function() poly_truncate(tetrahedron(), t = -0.5), 0, "generated"],
+    ["atut_seam_segments", "seams", function() poly_truncate(tetrahedron(), t = -0.5), 0],
+    ["atut_visible_cells", "visible", function() poly_truncate(tetrahedron(), t = -0.5), 0],
+    ["dodeca_boundary_control", "boundary_spans", function() dodecahedron(), 0, "all"]
 ];
 
 T_MAX = len(TESTS);
@@ -26,15 +29,6 @@ T = is_undef(T) ? 0 : T;
 REG_LIST = is_undef(REG_LIST) ? false : REG_LIST;
 
 assert(T >= 0 && T < T_MAX, str("T out of range: ", T));
-
-IR = 30;
-FACE_THK = 0.26;
-STAR_POLY = poly_antiprism(5, 2);
-STAR_FACE_IDX = 1;
-ATUT_POLY = poly_truncate(tetrahedron(), t = -0.5);
-ATUT_FACE_IDX = 0;
-DOD_POLY = dodecahedron();
-DOD_FACE_IDX = 0;
 
 function _span_kind_color(kind) =
     (kind == "source_edge") ? "gainsboro" :
@@ -231,24 +225,29 @@ module _visible_panel(poly, face_idx, label_s) {
     reg_panel_label(label_s);
 }
 
+module _render_test(spec) {
+    name = spec[0];
+    kind = spec[1];
+    poly = spec[2]();
+    face_idx = spec[3];
+
+    if (kind == "cells") {
+        _cells_panel(poly, face_idx, spec[4], name);
+    } else if (kind == "boundary_spans") {
+        _boundary_spans_panel(poly, face_idx, name, kind = spec[4]);
+    } else if (kind == "boundary_sources") {
+        _boundary_sources_panel(poly, face_idx, name);
+    } else if (kind == "seams") {
+        _seam_panel(poly, face_idx, name);
+    } else if (kind == "visible") {
+        _visible_panel(poly, face_idx, name);
+    } else {
+        assert(false, str("Unknown segment regression kind: ", kind));
+    }
+}
+
 if (REG_LIST) {
     reg_list_tests(TESTS);
-} else if (T == 0) {
-    _cells_panel(STAR_POLY, STAR_FACE_IDX, "evenodd", TESTS[T][0]);
-} else if (T == 1) {
-    _cells_panel(STAR_POLY, STAR_FACE_IDX, "nonzero", TESTS[T][0]);
-} else if (T == 2) {
-    _cells_panel(ATUT_POLY, ATUT_FACE_IDX, "nonzero", TESTS[T][0]);
-} else if (T == 3) {
-    _boundary_spans_panel(ATUT_POLY, ATUT_FACE_IDX, TESTS[T][0]);
-} else if (T == 4) {
-    _boundary_sources_panel(ATUT_POLY, ATUT_FACE_IDX, TESTS[T][0]);
-} else if (T == 5) {
-    _boundary_spans_panel(ATUT_POLY, ATUT_FACE_IDX, TESTS[T][0], kind = "generated");
-} else if (T == 6) {
-    _seam_panel(ATUT_POLY, ATUT_FACE_IDX, TESTS[T][0]);
-} else if (T == 7) {
-    _visible_panel(ATUT_POLY, ATUT_FACE_IDX, TESTS[T][0]);
 } else {
-    _boundary_spans_panel(DOD_POLY, DOD_FACE_IDX, TESTS[T][0]);
+    _render_test(TESTS[T]);
 }
