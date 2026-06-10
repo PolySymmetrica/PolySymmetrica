@@ -696,10 +696,11 @@ stored cut dihedral convention: the face-plane slope uses
 `tan((180 - dihedral) / 2)`, because the stored angle is the interior-style
 face dihedral rather than the raw angle between planes.
 
-`angle_offset_limit` bounds that extra Z-derived offset. When omitted, it
-defaults to `clearance`, which keeps tight hidden-cell loops from inverting
-while still producing visibly angled shell edges. Parent closure edges do not
-receive the angle offset.
+`max_slope_offset` bounds that extra Z-derived offset as a linear face-plane
+distance. When omitted, the dihedral slope is uncapped. Tight hidden-cell loops
+can invert under large Z spans; pass an explicit cap, often near `clearance`, for
+callers that need conservative simple caps. Parent closure edges do not receive
+the slope offset.
 
 ### `place_on_face_seam_clearance_loops(...)`
 

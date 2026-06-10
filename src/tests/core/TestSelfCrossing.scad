@@ -760,7 +760,9 @@ module test_ps_face_seam_clearance_loops__7_3_15_triangle_emits_ordered_cut_loop
 module test_ps_face_seam_clearance_shells__stress_cases_emit_simple_caps() {
     place_on_faces(_test_penta_punch_poly()) {
         if ($ps_face_idx == 2 || $ps_face_idx == 9) {
-            shells = ps_face_seam_clearance_shells($ps_face_local_context, -1.2, 1.2, 0.05, MODE, EPS, true);
+            shells = ps_face_seam_clearance_shells(
+                    $ps_face_local_context, -1.2, 1.2, 0.05, MODE, EPS, true,
+                    max_slope_offset = 0.05);
 
             assert_int_eq(len(shells), 1, str("5/2+15 face ", $ps_face_idx, " clearance shell count"));
             for (shell = shells) {
@@ -772,7 +774,9 @@ module test_ps_face_seam_clearance_shells__stress_cases_emit_simple_caps() {
 
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
-            shells = ps_face_seam_clearance_shells($ps_face_local_context, -1.2, 1.2, 0.05, MODE, EPS, true);
+            shells = ps_face_seam_clearance_shells(
+                    $ps_face_local_context, -1.2, 1.2, 0.05, MODE, EPS, true,
+                    max_slope_offset = 0.05);
 
             assert_int_eq(len(shells), 5, "7/3+15 triangle clearance shell count");
             for (shell = shells) {

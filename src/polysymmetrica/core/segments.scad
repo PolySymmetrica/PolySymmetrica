@@ -1737,15 +1737,15 @@ function ps_seam_clearance_loop_area(loop) = loop[6];
  */
 function ps_seam_clearance_loop_edge_dihedrals(loop) = loop[7];
 
-function _ps_scl_edge_z_offset(z, z_ref, dihedral=undef, angle_offset_limit=undef, eps=1e-8) =
+function _ps_scl_edge_z_offset(z, z_ref, dihedral=undef, max_slope_offset=undef, eps=1e-8) =
     is_undef(dihedral) ? 0 :
     let(
         raw = (z - z_ref) * tan((180 - dihedral) / 2),
-        limit = is_undef(angle_offset_limit) ? undef : abs(angle_offset_limit)
+        limit = is_undef(max_slope_offset) ? undef : abs(max_slope_offset)
     )
     is_undef(limit) ? raw : ps_clamp(raw, -limit, limit);
 
-function _ps_scl_offset_lines(loop_pts2d, edge_dihedrals, z=0, z_ref=0, clearance=0, angle_offset_limit=undef, eps=1e-8) =
+function _ps_scl_offset_lines(loop_pts2d, edge_dihedrals, z=0, z_ref=0, clearance=0, max_slope_offset=undef, eps=1e-8) =
     let(
         n = len(loop_pts2d),
         area = _ps_seg_poly_area2(loop_pts2d),
@@ -1762,19 +1762,18 @@ function _ps_scl_offset_lines(loop_pts2d, edge_dihedrals, z=0, z_ref=0, clearanc
                 dir = d / len_d,
                 left = [-dir[1], dir[0]],
                 dihedral = is_undef(edge_dihedrals) ? undef : edge_dihedrals[i],
-                outward_offset = clearance + _ps_scl_edge_z_offset(z, z_ref, dihedral, angle_offset_limit, eps),
+                outward_offset = clearance + _ps_scl_edge_z_offset(z, z_ref, dihedral, max_slope_offset, eps),
                 p = a + left * (-area_sign * outward_offset)
             )
             [p, dir, false, i]
     ];
 
-function _ps_scl_shell(loop, z0, z1, clearance=0, angle_offset_limit=undef, eps=1e-8) =
+function _ps_scl_shell(loop, z0, z1, clearance=0, max_slope_offset=undef, eps=1e-8) =
     let(
         edge_dihedrals = ps_seam_clearance_loop_edge_dihedrals(loop),
         z_ref = min(z0, z1),
-        limit = is_undef(angle_offset_limit) ? clearance : angle_offset_limit,
-        lines0 = _ps_scl_offset_lines(ps_seam_clearance_loop_pts2d(loop), edge_dihedrals, z0, z_ref, clearance, limit, eps),
-        lines1 = _ps_scl_offset_lines(ps_seam_clearance_loop_pts2d(loop), edge_dihedrals, z1, z_ref, clearance, limit, eps),
+        lines0 = _ps_scl_offset_lines(ps_seam_clearance_loop_pts2d(loop), edge_dihedrals, z0, z_ref, clearance, max_slope_offset, eps),
+        lines1 = _ps_scl_offset_lines(ps_seam_clearance_loop_pts2d(loop), edge_dihedrals, z1, z_ref, clearance, max_slope_offset, eps),
         lineage = [
             for (i = [0:1:len(ps_seam_clearance_loop_edge_kinds(loop))-1])
                 [
@@ -1798,7 +1797,7 @@ function _ps_scl_shell(loop, z0, z1, clearance=0, angle_offset_limit=undef, eps=
 
 /**
  * Function: Build seam-clearance loop shells for a face.
- * Params: face_ctx (face-local context), z0/z1 (cap Z planes), clearance (outward loop offset), mode/eps/filter_parent (foreign cut controls), angle_offset_limit (optional max extra angle offset)
+ * Params: face_ctx (face-local context), z0/z1 (cap Z planes), clearance (outward loop offset), mode/eps/filter_parent (foreign cut controls), max_slope_offset (optional max extra slope offset)
  * Returns: list of `ps_loop_shell` records
  * Limitations/Gotchas: one shell per hidden ordered cut-cell loop; this is loop-region clearance, not per-segment corridor geometry
  */
@@ -1810,19 +1809,19 @@ function ps_face_seam_clearance_shells(
     mode="nonzero",
     eps=1e-8,
     filter_parent=true,
-    angle_offset_limit=undef
+    max_slope_offset=undef
 ) =
     let(
         _ctx = assert(!is_undef(face_ctx), "ps_face_seam_clearance_shells: face_ctx must be defined"),
         _z0 = assert(!is_undef(z0), "ps_face_seam_clearance_shells: z0 must be defined"),
         _z1 = assert(!is_undef(z1), "ps_face_seam_clearance_shells: z1 must be defined"),
         _clearance = assert(clearance >= 0, "ps_face_seam_clearance_shells: clearance must be >= 0"),
-        _angle_limit = assert(is_undef(angle_offset_limit) || angle_offset_limit >= 0, "ps_face_seam_clearance_shells: angle_offset_limit must be >= 0"),
+        _slope_limit = assert(is_undef(max_slope_offset) || max_slope_offset >= 0, "ps_face_seam_clearance_shells: max_slope_offset must be >= 0"),
         loops = ps_face_seam_clearance_loops(face_ctx, mode, eps, filter_parent)
     )
     [
         for (loop = loops)
-            let(shell = _ps_scl_shell(loop, z0, z1, clearance, angle_offset_limit, eps))
+            let(shell = _ps_scl_shell(loop, z0, z1, clearance, max_slope_offset, eps))
             if (len(ps_loop_shell_points(shell)) >= 6 && len(ps_loop_shell_faces(shell)) >= 4)
                 shell
     ];
@@ -1853,12 +1852,12 @@ module place_on_face_seam_clearance_loops(mode="nonzero", eps=1e-8, filter_paren
 
 /**
  * Module: Iterate seam-clearance shells for the current placed face.
- * Params: z0/z1/clearance/mode/eps/filter_parent/angle_offset_limit (see `ps_face_seam_clearance_shells`)
+ * Params: z0/z1/clearance/mode/eps/filter_parent/max_slope_offset (see `ps_face_seam_clearance_shells`)
  * Returns: none; exposes `$ps_loop_shell_record` and `$ps_seam_clearance_shell_*` metadata
  */
-module place_on_face_seam_clearance_shells(z0, z1, clearance=0, mode="nonzero", eps=1e-8, filter_parent=true, angle_offset_limit=undef) {
+module place_on_face_seam_clearance_shells(z0, z1, clearance=0, mode="nonzero", eps=1e-8, filter_parent=true, max_slope_offset=undef) {
     assert(!is_undef($ps_face_local_context), "place_on_face_seam_clearance_shells: requires place_on_faces context ($ps_face_local_context)");
-    shells = ps_face_seam_clearance_shells($ps_face_local_context, z0, z1, clearance, mode, eps, filter_parent, angle_offset_limit);
+    shells = ps_face_seam_clearance_shells($ps_face_local_context, z0, z1, clearance, mode, eps, filter_parent, max_slope_offset);
 
     for (si = [0:1:len(shells)-1]) {
         shell = shells[si];
@@ -1874,12 +1873,12 @@ module place_on_face_seam_clearance_shells(z0, z1, clearance=0, mode="nonzero", 
 
 /**
  * Module: Render seam-clearance shells for the current placed face.
- * Params: z0/z1/clearance/mode/eps/filter_parent/angle_offset_limit (see `ps_face_seam_clearance_shells`), convexity (OpenSCAD hint)
+ * Params: z0/z1/clearance/mode/eps/filter_parent/max_slope_offset (see `ps_face_seam_clearance_shells`), convexity (OpenSCAD hint)
  * Returns: none
  */
-module ps_face_seam_clearance_volume(z0, z1, clearance=0, mode="nonzero", eps=1e-8, filter_parent=true, angle_offset_limit=undef, convexity=6) {
+module ps_face_seam_clearance_volume(z0, z1, clearance=0, mode="nonzero", eps=1e-8, filter_parent=true, max_slope_offset=undef, convexity=6) {
     assert(!is_undef($ps_face_local_context), "ps_face_seam_clearance_volume: requires place_on_faces context ($ps_face_local_context)");
-    shells = ps_face_seam_clearance_shells($ps_face_local_context, z0, z1, clearance, mode, eps, filter_parent, angle_offset_limit);
+    shells = ps_face_seam_clearance_shells($ps_face_local_context, z0, z1, clearance, mode, eps, filter_parent, max_slope_offset);
 
     for (shell = shells)
         ps_loop_shell(shell, convexity);
