@@ -15,7 +15,10 @@ that is allowed to exist and intersect user geometry with it.
 - **Span frame:** A local frame for one boundary span: `+X` along the span,
   `+Y` to the span-left side in the face plane, and `+Z` along the current
   face frame normal.
-- **Anti-interference shell:** A closed polyhedron made by projecting each
+- **Loop shell:** A generic closed polyhedron record from
+  `core/loop_shells.scad`, with shared `ps_loop_shell_*` accessors and a
+  `ps_loop_shell(...)` renderer.
+- **Anti-interference shell:** A positive face-region loop shell made by projecting each
   boundary span to two face-local Z planes along its dihedral-bisector
   direction, then intersecting neighbouring projected boundary lines.
 - **Boundary inset:** A positive offset that shifts each projected boundary
@@ -31,41 +34,37 @@ that is allowed to exist and intersect user geometry with it.
 
 ```scad
 use <polysymmetrica/core/face_regions.scad>
+use <polysymmetrica/core/loop_shells.scad>
 ```
 
-### `ps_face_anti_interference_shells(...)`
+### `ps_face_region_loop_shells(...)`
 
 Function: Build mesh data for the face's positive anti-interference volume.
 
-Params: `face_pts3d_local`, `face_idx`, `poly_faces_idx`, `poly_verts_local`,
-`face_neighbors_idx`, `face_dihedrals`, `z0`, `z1`, `mode="nonzero"`,
-`max_project=undef`, `eps=1e-8`, `boundary_inset=0`,
-`boundary_inset_mode="side"`.
+Params: `face_ctx`, `z0`, `z1`, `mode="nonzero"`, `max_project=undef`,
+`eps=1e-8`, `boundary_inset=0`, `boundary_inset_mode="side"`.
 
-Returns: one shell per filled boundary loop, as
-`[points, faces, loop_idx, capped_count, bottom_loop2d, top_loop2d,
-exposure_sign]`.
+Returns: one generic `ps_loop_shell` record per filled boundary loop.
 
-`points` and `faces` are directly usable with `polyhedron(...)`. `capped_count`
-counts span projections limited by `max_project`. `exposure_sign` is `+1` for
-same- or zero-winding/top-exposed regions and `-1` for opposite-winding/bottom-
-exposed regions.
+`points` and `faces` are directly usable with `polyhedron(...)` or
+`ps_loop_shell(...)`. `capped_count` counts span projections limited by
+`max_project`. `exposure_sign` is `+1` for same- or zero-winding/top-exposed
+regions and `-1` for opposite-winding/bottom-exposed regions.
 
 Accessor helpers:
 
-- `ps_face_anti_interference_shell_points(shell)`
-- `ps_face_anti_interference_shell_faces(shell)`
-- `ps_face_anti_interference_shell_loop_idx(shell)`
-- `ps_face_anti_interference_shell_capped_count(shell)`
-- `ps_face_anti_interference_shell_bottom_loop2d(shell)`
-- `ps_face_anti_interference_shell_top_loop2d(shell)`
-- `ps_face_anti_interference_shell_exposure_sign(shell)`
+- `ps_loop_shell_points(shell)`
+- `ps_loop_shell_faces(shell)`
+- `ps_loop_shell_source_idx(shell)`
+- `ps_loop_shell_capped_count(shell)`
+- `ps_loop_shell_bottom_loop2d(shell)`
+- `ps_loop_shell_top_loop2d(shell)`
+- `ps_loop_shell_exposure_sign(shell)`
 
-The implementation also has an internal face-context entry point that accepts a
-`ps_face_local_context(...)` record directly; use that record when the current
-face context is already available.
+`face_ctx` is a `ps_face_local_context(...)` record. In `place_on_faces(...)`
+contexts, pass `$ps_face_local_context`.
 
-### `ps_face_anti_interference_volume(...)`
+### `ps_face_region_loop_volume(...)`
 
 Module: Emit the generated shell volume for the current `place_on_faces(...)`
 context.
@@ -78,7 +77,7 @@ Typical usage:
 ```scad
 place_on_faces(poly) {
     intersection() {
-        ps_face_anti_interference_volume(
+        ps_face_region_loop_volume(
             -0.8,
             1.2,
             max_project = 20,

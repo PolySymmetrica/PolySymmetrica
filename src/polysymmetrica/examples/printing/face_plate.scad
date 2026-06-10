@@ -1,5 +1,6 @@
 use <../../core/funcs.scad>
 use <../../core/face_regions.scad>
+use <../../core/loop_shells.scad>
 use <../../core/placement.scad>
 use <../../core/segments.scad>
 
@@ -146,7 +147,7 @@ module face_plate(face_thk,
     base_z_eff = is_undef(base_z) ? -face_thk : base_z;
     top_z = base_z_eff + face_thk;
     top_skin_base_z = top_z - top_thk;
-    shells = ps_face_anti_interference_shells(
+    shells = ps_face_region_loop_shells(
         face_ctx,
         base_z_eff,
         top_skin_base_z,
@@ -160,20 +161,20 @@ module face_plate(face_thk,
     color(len(ps_face_local_context_pts2d(face_ctx)) == 3 ? "white" : "red") {
         union() {
             for (shell = shells) {
-                if (ps_face_anti_interference_shell_capped_count(shell) > 0)
+                if (ps_loop_shell_capped_count(shell) > 0)
                     echo(str(
                         "face_plate: capped ",
-                        ps_face_anti_interference_shell_capped_count(shell),
+                        ps_loop_shell_capped_count(shell),
                         " projection(s) on face ",
                         ps_face_local_context_idx(face_ctx),
                         " loop ",
-                        ps_face_anti_interference_shell_loop_idx(shell)
+                        ps_loop_shell_source_idx(shell)
                     ));
 
-                color(ps_face_anti_interference_shell_exposure_sign(shell) > 0? "green" : "blue")
+                color(ps_loop_shell_exposure_sign(shell) > 0? "green" : "blue")
                 polyhedron(
-                    points = ps_face_anti_interference_shell_points(shell),
-                    faces = ps_face_anti_interference_shell_faces(shell),
+                    points = ps_loop_shell_points(shell),
+                    faces = ps_loop_shell_faces(shell),
                     convexity = convexity
                 );
             }
@@ -184,14 +185,14 @@ module face_plate(face_thk,
                     // ramp-top footprint before the optional inset pillow begins.
                     translate([0, 0, top_skin_base_z])
                         linear_extrude(height = top_thk)
-                            ps_polygon(points = ps_face_anti_interference_shell_top_loop2d(shell));
+                            ps_polygon(points = ps_loop_shell_top_loop2d(shell));
                 }
             }
         }
 
         for (shell = shells)
             _face_plate_pillow_loop(
-                ps_face_anti_interference_shell_top_loop2d(shell),
+                ps_loop_shell_top_loop2d(shell),
                 top_z, pillow_min_rad, pillow_inset, pillow_ramp, pillow_thk, eps);
     }
 
@@ -201,7 +202,7 @@ module face_plate(face_thk,
                 linear_extrude(height = clear_height)
                     union() {
                         for (shell = shells)
-                            ps_polygon(points = ps_face_anti_interference_shell_top_loop2d(shell));
+                            ps_polygon(points = ps_loop_shell_top_loop2d(shell));
                     }
 }
 

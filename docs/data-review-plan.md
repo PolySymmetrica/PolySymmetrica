@@ -93,8 +93,8 @@ Known documentation fixes to include:
 
 - Remove the duplicated sentence in the Replay Site section.
 - Add an `Intrusion Records` section for `ps_intrusion_*`.
-- Add an `Anti-Interference Shell Records` section for
-  `ps_face_anti_interference_shell_*`.
+- Add a loop-shell record section for `ps_loop_shell_*`, including
+  face-region/A.I. callers.
 - Add a section for face arrangement and boundary model composites, or explicitly
   state why they are not stable semantic records yet.
 - Add a `Known Remediation Candidates` section for defects discovered during

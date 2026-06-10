@@ -342,7 +342,7 @@ module draw_volume_panel() {
                         ps_polygon($ps_face_pts2d, MODE);
 
             color("deepskyblue", 0.34)
-                ps_face_anti_interference_volume(
+                ps_face_region_loop_volume(
                     VOL_Z_MIN,
                     VOL_Z_MAX,
                     mode = MODE,
