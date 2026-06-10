@@ -117,7 +117,9 @@ module model_1(show_faces = undef, clear_airspace = true) {
 //poly_render(p, 20);
 
 SEAM_Z = 1;
-SEAM_INSET = 1.0;
+SEAM_INSET = 0.01;
+
+SEAM_TEST = true;
 
 module demo_face_plate(clear_height = 0) {
     difference() {
@@ -125,13 +127,20 @@ module demo_face_plate(clear_height = 0) {
         face_plate(base_z = BASE_Z, face_thk = FACE_T, clear_space = (clear_height > 0), clear_height = clear_height,
                 max_project = 10, boundary_inset = INSET);
 
-        // minus local seam clearance strips
-        place_on_face_seam_segments(include_boundary = false) {
-            slope_factor = 1 / cos($ps_seam_dihedral / 2); 
-            len = $ps_seam_len; wid = SEAM_INSET / 2; thk = FACE_T * slope_factor + 2; clear = 2;
-            
-            translate([-len / 2, -wid / 2, -thk / 2])
-                cube([len, wid + clear, thk], center = false);
+        !if (!SEAM_TEST) {
+            place_on_face_seam_segments(include_boundary = false) {
+                slope_factor = 1 / cos($ps_seam_dihedral / 2); 
+                len = $ps_seam_len; wid = SEAM_INSET / 2; thk = FACE_T * slope_factor + 2; clear = 2;
+                
+                translate([-len / 2, -wid / 2, -thk / 2])
+                    cube([len, wid + clear, thk], center = false);
+            }
+        } else {
+            // minus local seam clearance regions for hidden foreign crossing loops
+            ps_face_seam_clearance_volume(
+                    BASE_Z - 0.5, BASE_Z + FACE_T + 0.5,
+                    clearance = SEAM_INSET / 2, angle_offset_limit = 100, mode = "nonzero", eps = 1e-4);
+
         }
     }
 }
@@ -227,7 +236,7 @@ module model_2(faces_to_print = undef) {
 }
 
 
-//F = [2];
+F = [2,9];
 if (is_undef(F)) {
     model_2();
 //    model_2_f(undef); // Shows body with faces too

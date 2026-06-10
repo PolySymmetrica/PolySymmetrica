@@ -663,6 +663,81 @@ Provides:
 - `$ps_intrusion_dihedral`
 - `$ps_intrusion_confidence`
 
+### `ps_face_seam_clearance_loops(...)`
+
+Builds ordered closed loops for seam-clearance subtraction on the current face.
+The loops are hidden split cells produced by cutting the current face with
+foreign face geometry, filtered to cells that contain at least one cut-derived
+edge. This is the loop/region API for clearing foreign crossing material; it is
+not a grouped wrapper around `place_on_face_seam_segments(...)`.
+
+The returned loop records use accessor functions:
+
+- `ps_seam_clearance_loop_kind(loop)`
+- `ps_seam_clearance_loop_idx(loop)`
+- `ps_seam_clearance_loop_pts2d(loop)`
+- `ps_seam_clearance_loop_edge_ids(loop)`
+- `ps_seam_clearance_loop_edge_kinds(loop)`
+- `ps_seam_clearance_loop_edge_dihedrals(loop)`
+- `ps_seam_clearance_loop_source_cell_idx(loop)`
+- `ps_seam_clearance_loop_area(loop)`
+
+Loop orientation is normalized to the current target face winding. The hidden
+cell selection itself rejects exterior split cells before that reorientation, so
+clockwise target faces can still produce clockwise clearance loops.
+
+### `ps_face_seam_clearance_shells(...)`
+
+Converts seam-clearance loops into `ps_loop_shell` records spanning `z0` to
+`z1` in the current face-local coordinate system. `clearance` is a face-plane
+outward offset applied around each loop before the bottom/top cap loops are
+generated. Cut-derived edges also get a Z-dependent outward offset using the
+stored cut dihedral convention: the face-plane slope uses
+`tan((180 - dihedral) / 2)`, because the stored angle is the interior-style
+face dihedral rather than the raw angle between planes.
+
+`angle_offset_limit` bounds that extra Z-derived offset. When omitted, it
+defaults to `clearance`, which keeps tight hidden-cell loops from inverting
+while still producing visibly angled shell edges. Parent closure edges do not
+receive the angle offset.
+
+### `place_on_face_seam_clearance_loops(...)`
+
+Iterator wrapper over `ps_face_seam_clearance_loops(...)` for use inside
+`place_on_faces(...)`.
+
+Provides:
+
+- `$ps_seam_clearance_loop`
+- `$ps_seam_clearance_loop_idx`
+- `$ps_seam_clearance_loop_count`
+- `$ps_seam_clearance_loop_pts2d`
+- `$ps_seam_clearance_loop_edge_ids`
+- `$ps_seam_clearance_loop_edge_kinds`
+- `$ps_seam_clearance_loop_edge_dihedrals`
+- `$ps_seam_clearance_loop_source_cell_idx`
+- `$ps_seam_clearance_loop_area`
+
+### `place_on_face_seam_clearance_shells(...)`
+
+Iterator wrapper over `ps_face_seam_clearance_shells(...)` for use inside
+`place_on_faces(...)`.
+
+Provides:
+
+- `$ps_loop_shell_record`
+- `$ps_loop_shell_idx`
+- `$ps_loop_shell_count`
+- `$ps_seam_clearance_shell`
+- `$ps_seam_clearance_shell_idx`
+- `$ps_seam_clearance_shell_count`
+
+### `ps_face_seam_clearance_volume(...)`
+
+Renders seam-clearance shells as polyhedra for direct use in a `difference()`.
+In the printing demo this replaces the old per-segment cube strips used to cut
+local clearance from `face_plate(...)`.
+
 ### `ps_face_seam_segment_sites(...)`
 
 Builds edge-like placement records for seam segments on the current face. This

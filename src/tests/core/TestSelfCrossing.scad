@@ -1,4 +1,5 @@
 use <../../polysymmetrica/core/funcs.scad>
+use <../../polysymmetrica/core/loop_shells.scad>
 use <../../polysymmetrica/core/placement.scad>
 use <../../polysymmetrica/core/prisms.scad>
 use <../../polysymmetrica/core/segments.scad>
@@ -49,6 +50,45 @@ function _test_replay_kind_count(sites, kind) =
 
 function _test_span_kind_count(sites, kind) =
     len([for (s = sites) if (ps_boundary_span_site_kind(s) == kind) 1]);
+
+function _test_seg_intersects(a, b, c, d, eps=EPS) =
+    let(
+        r = b - a,
+        s = d - c,
+        den = r[0] * s[1] - r[1] * s[0],
+        q = c - a,
+        ta = (abs(den) <= eps) ? undef : ((q[0] * s[1] - q[1] * s[0]) / den),
+        tb = (abs(den) <= eps) ? undef : ((q[0] * r[1] - q[1] * r[0]) / den)
+    )
+    !is_undef(ta) && !is_undef(tb) && ta > eps && ta < 1 - eps && tb > eps && tb < 1 - eps;
+
+function _test_loop_self_hits(loop, eps=EPS) =
+    let(n = len(loop))
+    [
+        for (i = [0:1:n-1])
+            for (j = [i+1:1:n-1])
+                if (abs(i - j) > 1 && !(i == 0 && j == n - 1))
+                    if (_test_seg_intersects(loop[i], loop[(i + 1) % n], loop[j], loop[(j + 1) % n], eps))
+                        [i, j]
+    ];
+
+function _test_shell_caps_are_simple(shell, eps=EPS) =
+    len(_test_loop_self_hits(ps_loop_shell_bottom_loop2d(shell), eps)) == 0
+        && len(_test_loop_self_hits(ps_loop_shell_top_loop2d(shell), eps)) == 0;
+
+function _test_shell_caps_differ(shell, eps=EPS) =
+    let(
+        bottom = ps_loop_shell_bottom_loop2d(shell),
+        top = ps_loop_shell_top_loop2d(shell)
+    )
+    len([
+        for (i = [0:1:min(len(bottom), len(top))-1])
+            if (norm(top[i] - bottom[i]) > eps)
+                1
+    ]) > 0;
+
+function _test_loop_matches_face_winding(loop, eps=EPS) =
+    ps_seam_clearance_loop_area(loop) * _ps_seg_poly_area2($ps_face_pts2d) > eps;
 
 function _test_coincident_intrusion_verts_local() =
     [
@@ -687,6 +727,62 @@ module test_ps_face_visible_segments__7_3_0_triangle_catches_meeting_cut_edges()
     );
 }
 
+module test_ps_face_seam_clearance_loops__5_2_15_triangle_faces_emit_hidden_cut_loops() {
+    place_on_faces(_test_penta_punch_poly()) {
+        if ($ps_face_idx == 2 || $ps_face_idx == 9) {
+            loops = ps_face_seam_clearance_loops($ps_face_local_context, MODE, EPS, true);
+
+            assert_int_eq(len(loops), 1, str("5/2+15 face ", $ps_face_idx, " should emit one seam-clearance loop"));
+            assert(_test_loop_matches_face_winding(loops[0], EPS), "seam-clearance loop should match target-face winding");
+            assert(len([for (k = ps_seam_clearance_loop_edge_kinds(loops[0])) if (k == "cut") 1]) > 0, "seam-clearance loop should contain cut edges");
+            assert(len([for (d = ps_seam_clearance_loop_edge_dihedrals(loops[0])) if (!is_undef(d)) 1]) > 0, "seam-clearance loop should preserve cut dihedrals");
+            assert(len(_test_loop_self_hits(ps_seam_clearance_loop_pts2d(loops[0]), EPS)) == 0, "seam-clearance loop should be simple");
+        }
+    }
+}
+
+module test_ps_face_seam_clearance_loops__7_3_15_triangle_emits_ordered_cut_loops() {
+    place_on_faces(_test_punch_poly()) {
+        if ($ps_face_idx == TRI_FACE_IDX) {
+            loops = ps_face_seam_clearance_loops($ps_face_local_context, MODE, EPS, true);
+
+            assert_int_eq(len(loops), 5, "7/3+15 triangle should emit hidden seam-clearance loops");
+            for (loop = loops) {
+                assert(_test_loop_matches_face_winding(loop, EPS), "7/3+15 clearance loop should match target-face winding");
+                assert(len([for (k = ps_seam_clearance_loop_edge_kinds(loop)) if (k == "cut") 1]) > 0, "7/3+15 clearance loop should contain cut edges");
+                assert(len([for (d = ps_seam_clearance_loop_edge_dihedrals(loop)) if (!is_undef(d)) 1]) > 0, "7/3+15 clearance loop should preserve cut dihedrals");
+                assert(len(_test_loop_self_hits(ps_seam_clearance_loop_pts2d(loop), EPS)) == 0, "7/3+15 clearance loop should be simple");
+            }
+        }
+    }
+}
+
+module test_ps_face_seam_clearance_shells__stress_cases_emit_simple_caps() {
+    place_on_faces(_test_penta_punch_poly()) {
+        if ($ps_face_idx == 2 || $ps_face_idx == 9) {
+            shells = ps_face_seam_clearance_shells($ps_face_local_context, -1.2, 1.2, 0.05, MODE, EPS, true);
+
+            assert_int_eq(len(shells), 1, str("5/2+15 face ", $ps_face_idx, " clearance shell count"));
+            for (shell = shells) {
+                assert(_test_shell_caps_are_simple(shell, EPS), "5/2+15 clearance shell caps should be simple");
+                assert(_test_shell_caps_differ(shell, EPS), "5/2+15 clearance shell should angle between caps");
+            }
+        }
+    }
+
+    place_on_faces(_test_punch_poly()) {
+        if ($ps_face_idx == TRI_FACE_IDX) {
+            shells = ps_face_seam_clearance_shells($ps_face_local_context, -1.2, 1.2, 0.05, MODE, EPS, true);
+
+            assert_int_eq(len(shells), 5, "7/3+15 triangle clearance shell count");
+            for (shell = shells) {
+                assert(_test_shell_caps_are_simple(shell, EPS), "7/3+15 clearance shell caps should be simple");
+                assert(_test_shell_caps_differ(shell, EPS), "7/3+15 clearance shell should angle between caps");
+            }
+        }
+    }
+}
+
 module test_ps_face_filled_boundary_source_edges__7_3_0_triangle_is_simple_boundary() {
     site = _test_face_site(_test_punch_poly_angle0(), TRI_FACE_IDX);
     source_edges = ps_face_filled_boundary_source_edges(ps_face_site_pts3d_local(site), MODE);
@@ -1144,6 +1240,9 @@ module run_TestSelfCrossing() {
     test_ps_proxy_volume_group_context_helpers__match_public_wrappers();
     test_ps_face_visible_segments__7_3_15_triangle_splits_into_visible_cells();
     test_ps_face_visible_segments__7_3_0_triangle_catches_meeting_cut_edges();
+    test_ps_face_seam_clearance_loops__5_2_15_triangle_faces_emit_hidden_cut_loops();
+    test_ps_face_seam_clearance_loops__7_3_15_triangle_emits_ordered_cut_loops();
+    test_ps_face_seam_clearance_shells__stress_cases_emit_simple_caps();
     test_ps_face_filled_boundary_source_edges__7_3_0_triangle_is_simple_boundary();
     test_place_on_face_filled_boundary_source_edges__7_3_15_star_exposes_context();
     test_place_on_face_filled_boundary_source_edges__antitet_uses_span_direction();

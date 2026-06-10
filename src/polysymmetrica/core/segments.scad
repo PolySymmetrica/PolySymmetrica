@@ -11,6 +11,7 @@
 // this analysis live elsewhere.
 
 use <funcs.scad>
+use <loop_shells.scad>
 
 function _ps_seg_cross2(a, b) = a[0] * b[1] - a[1] * b[0];
 function _ps_seg_interp3(a, b, t) = a + (b - a) * t;
@@ -1608,6 +1609,281 @@ function ps_face_visible_segments(face_pts2d, face_idx, poly_faces_idx, poly_ver
                 )
                 if (!hidden) _ps_seg_orient_cell(cell, target_sign, eps)
     ];
+
+function _ps_face_cut_split_cells_from_cuts(face_pts2d, cut_segs, eps=1e-8, mode="nonzero") =
+    let(
+        base_segs = ps_face_segments([for (p = face_pts2d) [p[0], p[1], 0]], mode, eps)
+    )
+    [
+        for (base = base_segs)
+            for (cell = _ps_seg_split_simple_loop(base[0], cut_segs, eps))
+                cell
+    ];
+
+function _ps_face_cut_split_cells(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero", filter_parent=true) =
+    let(cut_segs = ps_face_geom_cut_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent))
+    _ps_face_cut_split_cells_from_cuts(face_pts2d, cut_segs, eps, mode);
+
+function _ps_scl_cut_edge_count(cell) =
+    len([for (kind = cell[3]) if (kind == "cut") 1]);
+
+function _ps_scl_record(idx, source_cell_idx, cell, cut_entries) =
+    [
+        "seam_clearance_loop",
+        idx,
+        cell[0],
+        cell[2],
+        cell[3],
+        source_cell_idx,
+        _ps_seg_poly_area2(cell[0]),
+        [
+            for (ei = [0:1:len(cell[3])-1])
+                cell[3][ei] == "cut" ? cut_entries[cell[2][ei]][2] : undef
+        ]
+    ];
+
+/**
+ * Function: Build ordered seam-clearance loop records for a face.
+ * Params: face_ctx (face-local context), mode/eps/filter_parent (foreign cut controls)
+ * Returns: seam-clearance loop records for hidden cut-cell loops
+ * Limitations/Gotchas: emits closed cell loops derived from geometry cuts; individual seam-segment placement records are not grouped here
+ */
+function ps_face_seam_clearance_loops(
+    face_ctx,
+    mode="nonzero",
+    eps=1e-8,
+    filter_parent=true
+) =
+    let(
+        _ctx = assert(!is_undef(face_ctx), "ps_face_seam_clearance_loops: face_ctx must be defined"),
+        face_pts2d = ps_face_local_context_pts2d(face_ctx),
+        face_idx = ps_face_local_context_idx(face_ctx),
+        poly_faces_idx = ps_face_local_context_poly_faces_idx(face_ctx),
+        poly_verts_local = ps_face_local_context_poly_verts_local(face_ctx),
+        target_sign = (_ps_seg_poly_area2(face_pts2d) >= 0) ? 1 : -1,
+        cut_entries = ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent),
+        cut_segs = [for (e = cut_entries) e[0]],
+        cells = _ps_face_cut_split_cells_from_cuts(face_pts2d, cut_segs, eps, mode),
+        selected = [
+            for (ci = [0:1:len(cells)-1])
+                let(
+                    cell = cells[ci],
+                    area = _ps_seg_poly_area2(cell[0]),
+                    probe = _ps_seg_cycle_probe_point(cell[0], eps),
+                    hidden = _ps_seg_pt_occluded(probe, face_idx, poly_faces_idx, poly_verts_local, eps, mode)
+                )
+                if (hidden && area > eps && _ps_scl_cut_edge_count(cell) > 0)
+                    [ci, _ps_seg_orient_cell(cell, target_sign, eps)]
+        ]
+    )
+    [
+        for (li = [0:1:len(selected)-1])
+            _ps_scl_record(li, selected[li][0], selected[li][1], cut_entries)
+    ];
+
+/**
+ * Function: Get seam-clearance loop kind.
+ * Params: loop (from `ps_face_seam_clearance_loops(...)`)
+ * Returns: record kind string
+ */
+function ps_seam_clearance_loop_kind(loop) = loop[0];
+
+/**
+ * Function: Get seam-clearance loop index.
+ * Params: loop (from `ps_face_seam_clearance_loops(...)`)
+ * Returns: zero-based loop index
+ */
+function ps_seam_clearance_loop_idx(loop) = loop[1];
+
+/**
+ * Function: Get seam-clearance loop points.
+ * Params: loop (from `ps_face_seam_clearance_loops(...)`)
+ * Returns: ordered 2D loop points in current face-local coordinates
+ */
+function ps_seam_clearance_loop_pts2d(loop) = loop[2];
+
+/**
+ * Function: Get source edge ids for seam-clearance loop edges.
+ * Params: loop (from `ps_face_seam_clearance_loops(...)`)
+ * Returns: edge/source ids from the split-cell loop
+ */
+function ps_seam_clearance_loop_edge_ids(loop) = loop[3];
+
+/**
+ * Function: Get edge kind labels for seam-clearance loop edges.
+ * Params: loop (from `ps_face_seam_clearance_loops(...)`)
+ * Returns: edge kind labels such as `"parent"` and `"cut"`
+ */
+function ps_seam_clearance_loop_edge_kinds(loop) = loop[4];
+
+/**
+ * Function: Get source split-cell index for a seam-clearance loop.
+ * Params: loop (from `ps_face_seam_clearance_loops(...)`)
+ * Returns: source cell index before seam-clearance filtering
+ */
+function ps_seam_clearance_loop_source_cell_idx(loop) = loop[5];
+
+/**
+ * Function: Get signed area for a seam-clearance loop.
+ * Params: loop (from `ps_face_seam_clearance_loops(...)`)
+ * Returns: signed 2D area
+ */
+function ps_seam_clearance_loop_area(loop) = loop[6];
+
+/**
+ * Function: Get cut dihedral metadata for seam-clearance loop edges.
+ * Params: loop (from `ps_face_seam_clearance_loops(...)`)
+ * Returns: per-edge dihedral angle for cut-derived edges, otherwise `undef`
+ */
+function ps_seam_clearance_loop_edge_dihedrals(loop) = loop[7];
+
+function _ps_scl_edge_z_offset(z, z_ref, dihedral=undef, angle_offset_limit=undef, eps=1e-8) =
+    is_undef(dihedral) ? 0 :
+    let(
+        raw = (z - z_ref) * tan((180 - dihedral) / 2),
+        limit = is_undef(angle_offset_limit) ? undef : abs(angle_offset_limit)
+    )
+    is_undef(limit) ? raw : ps_clamp(raw, -limit, limit);
+
+function _ps_scl_offset_lines(loop_pts2d, edge_dihedrals, z=0, z_ref=0, clearance=0, angle_offset_limit=undef, eps=1e-8) =
+    let(
+        n = len(loop_pts2d),
+        area = _ps_seg_poly_area2(loop_pts2d),
+        area_sign = area >= 0 ? 1 : -1
+    )
+    [
+        for (i = [0:1:n-1])
+            let(
+                a = loop_pts2d[i],
+                b = loop_pts2d[(i + 1) % n],
+                d = b - a,
+                len_d = norm(d),
+                _len = assert(len_d > eps, "ps_face_seam_clearance_shells: loop edge length must be positive"),
+                dir = d / len_d,
+                left = [-dir[1], dir[0]],
+                dihedral = is_undef(edge_dihedrals) ? undef : edge_dihedrals[i],
+                outward_offset = clearance + _ps_scl_edge_z_offset(z, z_ref, dihedral, angle_offset_limit, eps),
+                p = a + left * (-area_sign * outward_offset)
+            )
+            [p, dir, false, i]
+    ];
+
+function _ps_scl_shell(loop, z0, z1, clearance=0, angle_offset_limit=undef, eps=1e-8) =
+    let(
+        edge_dihedrals = ps_seam_clearance_loop_edge_dihedrals(loop),
+        z_ref = min(z0, z1),
+        limit = is_undef(angle_offset_limit) ? clearance : angle_offset_limit,
+        lines0 = _ps_scl_offset_lines(ps_seam_clearance_loop_pts2d(loop), edge_dihedrals, z0, z_ref, clearance, limit, eps),
+        lines1 = _ps_scl_offset_lines(ps_seam_clearance_loop_pts2d(loop), edge_dihedrals, z1, z_ref, clearance, limit, eps),
+        lineage = [
+            for (i = [0:1:len(ps_seam_clearance_loop_edge_kinds(loop))-1])
+                [
+                    ps_seam_clearance_loop_source_cell_idx(loop),
+                    ps_seam_clearance_loop_edge_ids(loop)[i],
+                    ps_seam_clearance_loop_edge_kinds(loop)[i]
+                ]
+        ]
+    )
+    ps_loop_shell_from_projected_lines(
+        lines0,
+        lines1,
+        z0,
+        z1,
+        "seam_clearance",
+        ps_seam_clearance_loop_idx(loop),
+        lineage,
+        undef,
+        eps
+    );
+
+/**
+ * Function: Build seam-clearance loop shells for a face.
+ * Params: face_ctx (face-local context), z0/z1 (cap Z planes), clearance (outward loop offset), mode/eps/filter_parent (foreign cut controls), angle_offset_limit (optional max extra angle offset)
+ * Returns: list of `ps_loop_shell` records
+ * Limitations/Gotchas: one shell per hidden ordered cut-cell loop; this is loop-region clearance, not per-segment corridor geometry
+ */
+function ps_face_seam_clearance_shells(
+    face_ctx,
+    z0,
+    z1,
+    clearance=0,
+    mode="nonzero",
+    eps=1e-8,
+    filter_parent=true,
+    angle_offset_limit=undef
+) =
+    let(
+        _ctx = assert(!is_undef(face_ctx), "ps_face_seam_clearance_shells: face_ctx must be defined"),
+        _z0 = assert(!is_undef(z0), "ps_face_seam_clearance_shells: z0 must be defined"),
+        _z1 = assert(!is_undef(z1), "ps_face_seam_clearance_shells: z1 must be defined"),
+        _clearance = assert(clearance >= 0, "ps_face_seam_clearance_shells: clearance must be >= 0"),
+        _angle_limit = assert(is_undef(angle_offset_limit) || angle_offset_limit >= 0, "ps_face_seam_clearance_shells: angle_offset_limit must be >= 0"),
+        loops = ps_face_seam_clearance_loops(face_ctx, mode, eps, filter_parent)
+    )
+    [
+        for (loop = loops)
+            let(shell = _ps_scl_shell(loop, z0, z1, clearance, angle_offset_limit, eps))
+            if (len(ps_loop_shell_points(shell)) >= 6 && len(ps_loop_shell_faces(shell)) >= 4)
+                shell
+    ];
+
+/**
+ * Module: Iterate seam-clearance loops for the current placed face.
+ * Params: mode/eps/filter_parent (foreign cut controls)
+ * Returns: none; exposes `$ps_seam_clearance_loop_*` metadata
+ */
+module place_on_face_seam_clearance_loops(mode="nonzero", eps=1e-8, filter_parent=true) {
+    assert(!is_undef($ps_face_local_context), "place_on_face_seam_clearance_loops: requires place_on_faces context ($ps_face_local_context)");
+    loops = ps_face_seam_clearance_loops($ps_face_local_context, mode, eps, filter_parent);
+
+    for (li = [0:1:len(loops)-1]) {
+        loop = loops[li];
+        $ps_seam_clearance_loop = loop;
+        $ps_seam_clearance_loop_idx = li;
+        $ps_seam_clearance_loop_count = len(loops);
+        $ps_seam_clearance_loop_pts2d = ps_seam_clearance_loop_pts2d(loop);
+        $ps_seam_clearance_loop_edge_ids = ps_seam_clearance_loop_edge_ids(loop);
+        $ps_seam_clearance_loop_edge_kinds = ps_seam_clearance_loop_edge_kinds(loop);
+        $ps_seam_clearance_loop_edge_dihedrals = ps_seam_clearance_loop_edge_dihedrals(loop);
+        $ps_seam_clearance_loop_source_cell_idx = ps_seam_clearance_loop_source_cell_idx(loop);
+        $ps_seam_clearance_loop_area = ps_seam_clearance_loop_area(loop);
+        children();
+    }
+}
+
+/**
+ * Module: Iterate seam-clearance shells for the current placed face.
+ * Params: z0/z1/clearance/mode/eps/filter_parent/angle_offset_limit (see `ps_face_seam_clearance_shells`)
+ * Returns: none; exposes `$ps_loop_shell_record` and `$ps_seam_clearance_shell_*` metadata
+ */
+module place_on_face_seam_clearance_shells(z0, z1, clearance=0, mode="nonzero", eps=1e-8, filter_parent=true, angle_offset_limit=undef) {
+    assert(!is_undef($ps_face_local_context), "place_on_face_seam_clearance_shells: requires place_on_faces context ($ps_face_local_context)");
+    shells = ps_face_seam_clearance_shells($ps_face_local_context, z0, z1, clearance, mode, eps, filter_parent, angle_offset_limit);
+
+    for (si = [0:1:len(shells)-1]) {
+        shell = shells[si];
+        $ps_loop_shell_record = shell;
+        $ps_loop_shell_idx = si;
+        $ps_loop_shell_count = len(shells);
+        $ps_seam_clearance_shell = shell;
+        $ps_seam_clearance_shell_idx = si;
+        $ps_seam_clearance_shell_count = len(shells);
+        children();
+    }
+}
+
+/**
+ * Module: Render seam-clearance shells for the current placed face.
+ * Params: z0/z1/clearance/mode/eps/filter_parent/angle_offset_limit (see `ps_face_seam_clearance_shells`), convexity (OpenSCAD hint)
+ * Returns: none
+ */
+module ps_face_seam_clearance_volume(z0, z1, clearance=0, mode="nonzero", eps=1e-8, filter_parent=true, angle_offset_limit=undef, convexity=6) {
+    assert(!is_undef($ps_face_local_context), "ps_face_seam_clearance_volume: requires place_on_faces context ($ps_face_local_context)");
+    shells = ps_face_seam_clearance_shells($ps_face_local_context, z0, z1, clearance, mode, eps, filter_parent, angle_offset_limit);
+
+    for (shell = shells)
+        ps_loop_shell(shell, convexity);
+}
 
 /**
  * Module: Iterate geometry-derived cut segments for the current placed face.
