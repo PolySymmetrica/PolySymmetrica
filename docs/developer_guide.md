@@ -354,8 +354,8 @@ deliberately.
 See [face_regions.md](face_regions.md) for positive face-local volumes built
 from those boundary spans:
 
-- `ps_face_anti_interference_shells(...)`
-- `ps_face_anti_interference_volume(...)`
+- `ps_face_region_loop_shells(...)`
+- `ps_face_region_loop_volume(...)`
 
 See [face_arrangement.md](face_arrangement.md) for the planned next layer:
 

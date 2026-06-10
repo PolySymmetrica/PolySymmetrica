@@ -402,35 +402,38 @@ Intrusion records are exact provenance records. They are intentionally not
 expanded into a solid here; replay and proxy volume grouping are later stages
 that decide how much geometry to emit from the same source record.
 
-## Anti-Interference Shell Records
+## Loop Shell Records
 
-Anti-interference shell records are built by:
+Generic loop shell records are built by adapters such as:
 
 ```scad
-shells = ps_face_anti_interference_shells(...);
+shells = ps_face_region_loop_shells(...);
 ```
 
 They are consumed by:
 
 ```scad
-ps_face_anti_interference_volume(...);
+ps_face_region_loop_volume(...);
+ps_loop_shell(shell);
 ```
 
 Accessors:
 
 | Accessor | Meaning |
 | --- | --- |
-| `ps_face_anti_interference_shell_points(shell)` | Generated shell points. |
-| `ps_face_anti_interference_shell_faces(shell)` | Generated shell faces. |
-| `ps_face_anti_interference_shell_loop_idx(shell)` | Source boundary-loop index. |
-| `ps_face_anti_interference_shell_capped_count(shell)` | Number of projected spans capped during shell construction. |
-| `ps_face_anti_interference_shell_bottom_loop2d(shell)` | Bottom cap loop projected to `z0`. |
-| `ps_face_anti_interference_shell_top_loop2d(shell)` | Top cap loop projected to `z1`. |
-| `ps_face_anti_interference_shell_exposure_sign(shell)` | `+1` for same- or zero-winding/top-exposed regions, `-1` for opposite-winding/bottom-exposed regions. |
+| `ps_loop_shell_points(shell)` | Generated shell points. |
+| `ps_loop_shell_faces(shell)` | Generated shell faces. |
+| `ps_loop_shell_source_kind(shell)` | Caller-owned source family, such as `"face_region"`. |
+| `ps_loop_shell_source_idx(shell)` | Caller-owned source index. |
+| `ps_loop_shell_lineage(shell)` | Caller-owned lineage rows. |
+| `ps_loop_shell_capped_count(shell)` | Number of projected spans capped during shell construction. |
+| `ps_loop_shell_bottom_loop2d(shell)` | Bottom cap loop projected to `z0`. |
+| `ps_loop_shell_top_loop2d(shell)` | Top cap loop projected to `z1`. |
+| `ps_loop_shell_exposure_sign(shell)` | `+1` for same- or zero-winding/top-exposed regions, `-1` for opposite-winding/bottom-exposed regions. |
 
 Shell records are mesh outputs, not canonical source records. They should be
 treated as derived geometry that can be regenerated from the face-local
-context.
+context. Face-region/A.I. shells are positive admissible geometry.
 
 ## Arrangement And Boundary-Model Composites
 

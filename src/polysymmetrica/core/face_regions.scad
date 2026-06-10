@@ -3,6 +3,7 @@
 // Builds positive face-local volumes from filled face boundary spans.
 
 use <funcs.scad>
+use <loop_shells.scad>
 use <segments.scad>
 
 /**
@@ -174,8 +175,8 @@ function _ps_fr_loop_exposure_sign(loop_sites, input_sign, cell_winding_signs) =
         signs = [for (site = loop_sites) _ps_fr_span_exposure_sign(site, input_sign, cell_winding_signs)],
         first = len(signs) == 0 ? 0 : signs[0],
         mixed_count = sum([for (sign = signs) sign == first ? 0 : 1]),
-        _has_sites = assert(len(signs) > 0, "ps_face_anti_interference_shells: boundary loop has no sites"),
-        _consistent = assert(mixed_count == 0, "ps_face_anti_interference_shells: boundary loop mixes exposure signs")
+        _has_sites = assert(len(signs) > 0, "ps_face_region_loop_shells: boundary loop has no sites"),
+        _consistent = assert(mixed_count == 0, "ps_face_region_loop_shells: boundary loop mixes exposure signs")
     )
     first;
 
@@ -220,7 +221,7 @@ function _ps_fr_project_offset(dz, dir_z, max_project=undef, eps=1e-8) =
     let(
         _ok = assert(
             abs(dz) <= eps || abs(dir_z) > eps || !is_undef(max_project),
-            "ps_face_anti_interference: projection direction is too close to parallel to target Z plane; set max_project"
+            "ps_face_region_loop_shells: projection direction is too close to parallel to target Z plane; set max_project"
         )
     )
     (abs(dz) <= eps) ? 0 :
@@ -252,7 +253,7 @@ function _ps_fr_boundary_inset_face_offset(site, dir, boundary_inset=0, boundary
     let(
         _mode = assert(
             boundary_inset_mode == "side" || boundary_inset_mode == "face",
-            "ps_face_anti_interference: boundary_inset_mode must be \"side\" or \"face\""
+            "ps_face_region_loop_shells: boundary_inset_mode must be \"side\" or \"face\""
         )
     )
     (boundary_inset <= eps) ? 0 :
@@ -361,94 +362,26 @@ function _ps_fr_side_faces(n, loop_area_sign) =
     ];
 
 /**
- * Function: Build one anti-interference shell record for one boundary loop.
+ * Function: Build one face-region loop shell record for one boundary loop.
  * Params: face_pts3d_local (source face loop), loop_sites (sites for one boundary loop), loop_idx (loop id), z0/z1 (target Z planes), input_sign (source loop winding sign), cell_winding_signs (per-cell winding signs), max_project (optional cap), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`), eps (tolerance)
- * Returns: shell record `[points, faces, loop_idx, capped_count, bottom_loop2d, top_loop2d, exposure_sign]`
+ * Returns: `ps_loop_shell` record
  */
 function _ps_fr_loop_shell(face_pts3d_local, loop_sites, loop_idx, z0, z1, input_sign, cell_winding_signs, max_project=undef, boundary_inset=0, boundary_inset_mode="side", eps=1e-8) =
     let(
         lines0 = [for (site = loop_sites) _ps_fr_project_span_line(face_pts3d_local, site, z0, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps)],
         lines1 = [for (site = loop_sites) _ps_fr_project_span_line(face_pts3d_local, site, z1, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps)],
-        loop0 = _ps_fr_projected_loop(lines0, eps),
-        loop1 = _ps_fr_projected_loop(lines1, eps),
-        n = min(len(loop0), len(loop1)),
-        loop0n = [for (i = [0:1:n-1]) loop0[i]],
-        loop1n = [for (i = [0:1:n-1]) loop1[i]],
-        verts = concat(
-            [for (p = loop0n) [p[0], p[1], z0]],
-            [for (p = loop1n) [p[0], p[1], z1]]
-        ),
-        area = _ps_seg_poly_area2(loop0n),
-        area_sign = (area >= 0) ? 1 : -1,
-        faces = concat(
-            _ps_fr_cap_faces(loop0n, 0, 1, eps),
-            _ps_fr_cap_faces(loop1n, n, -1, eps),
-            _ps_fr_side_faces(n, area_sign)
-        ),
-        capped_count = sum(concat(
-            [for (line = lines0) line[2] ? 1 : 0],
-            [for (line = lines1) line[2] ? 1 : 0]
-        )),
-        exposure_sign = _ps_fr_loop_exposure_sign(loop_sites, input_sign, cell_winding_signs)
+        exposure_sign = _ps_fr_loop_exposure_sign(loop_sites, input_sign, cell_winding_signs),
+        lineage = [for (site = loop_sites) ps_boundary_span_site_idx(site)]
     )
-    [verts, faces, loop_idx, capped_count, loop0n, loop1n, exposure_sign];
+    ps_loop_shell_from_projected_lines(lines0, lines1, z0, z1, "face_region", loop_idx, lineage, exposure_sign, eps);
 
 /**
- * Function: Get shell polyhedron points.
- * Params: shell (from `ps_face_anti_interference_shells(...)`)
- * Returns: point list
- */
-function ps_face_anti_interference_shell_points(shell) = shell[0];
-
-/**
- * Function: Get shell polyhedron faces.
- * Params: shell (from `ps_face_anti_interference_shells(...)`)
- * Returns: face index list
- */
-function ps_face_anti_interference_shell_faces(shell) = shell[1];
-
-/**
- * Function: Get shell boundary-loop index.
- * Params: shell (from `ps_face_anti_interference_shells(...)`)
- * Returns: source boundary-loop index
- */
-function ps_face_anti_interference_shell_loop_idx(shell) = shell[2];
-
-/**
- * Function: Get shell capped-projection count.
- * Params: shell (from `ps_face_anti_interference_shells(...)`)
- * Returns: number of projected spans that were capped
- */
-function ps_face_anti_interference_shell_capped_count(shell) = shell[3];
-
-/**
- * Function: Get shell bottom cap loop in face-local XY.
- * Params: shell (from `ps_face_anti_interference_shells(...)`)
- * Returns: 2D loop at `z0`
- */
-function ps_face_anti_interference_shell_bottom_loop2d(shell) = shell[4];
-
-/**
- * Function: Get shell top cap loop in face-local XY.
- * Params: shell (from `ps_face_anti_interference_shells(...)`)
- * Returns: 2D loop at `z1`
- */
-function ps_face_anti_interference_shell_top_loop2d(shell) = shell[5];
-
-/**
- * Function: Get shell exposure sign relative to the source face winding.
- * Params: shell (from `ps_face_anti_interference_shells(...)`)
- * Returns: `+1` for same- or zero-winding/top-exposed regions, `-1` for opposite-winding/bottom-exposed regions
- */
-function ps_face_anti_interference_shell_exposure_sign(shell) = shell[6];
-
-/**
- * Function: Build positive anti-interference shell meshes from a face-local context.
+ * Function: Build positive face-region loop shells from a face-local context.
  * Params: face_ctx (face-local context), z0/z1 (target local Z planes), mode (`"nonzero"`, `"evenodd"`, or `"all"`), max_project (optional projection-distance cap), eps (geometric tolerance), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`)
- * Returns: list of shell records `[points, faces, loop_idx, capped_count, bottom_loop2d, top_loop2d, exposure_sign]`
+ * Returns: list of `ps_loop_shell` records
  * Limitations/Gotchas: emits one shell per filled boundary loop; holes/proxy punch-through volumes are intentionally outside this first primitive
  */
-function _ps_face_anti_interference_shells_from_context(
+function _ps_face_region_loop_shells_from_context(
     face_ctx,
     z0,
     z1,
@@ -466,7 +399,7 @@ function _ps_face_anti_interference_shells_from_context(
         face_neighbors_idx = ps_face_local_context_neighbors_idx(face_ctx),
         face_dihedrals = ps_face_local_context_dihedrals(face_ctx)
     )
-    _ps_face_anti_interference_shells_from_fields(
+    _ps_face_region_loop_shells_from_fields(
         face_pts3d_local,
         face_idx,
         poly_faces_idx,
@@ -483,12 +416,12 @@ function _ps_face_anti_interference_shells_from_context(
     );
 
 /**
- * Function: Build positive anti-interference shell meshes for one face.
+ * Function: Build positive face-region loop shells for one face.
  * Params: face_pts3d_local (current face loop in face-local 3D), face_idx (current face index), poly_faces_idx/poly_verts_local (full poly in current face-local coordinates), face_neighbors_idx/face_dihedrals (current face-edge metadata), z0/z1 (target local Z planes), mode (`"nonzero"`, `"evenodd"`, or `"all"`), max_project (optional projection-distance cap), eps (geometric tolerance), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`)
- * Returns: list of shell records `[points, faces, loop_idx, capped_count, bottom_loop2d, top_loop2d, exposure_sign]`
+ * Returns: list of `ps_loop_shell` records
  * Limitations/Gotchas: emits one shell per filled boundary loop; holes/proxy punch-through volumes are intentionally outside this first primitive
  */
-function _ps_face_anti_interference_shells_from_fields(
+function _ps_face_region_loop_shells_from_fields(
     face_pts3d_local,
     face_idx,
     poly_faces_idx,
@@ -504,9 +437,9 @@ function _ps_face_anti_interference_shells_from_fields(
     boundary_inset_mode="side"
 ) =
     let(
-        _z0 = assert(!is_undef(z0), "ps_face_anti_interference_shells: z0 must be defined"),
-        _z1 = assert(!is_undef(z1), "ps_face_anti_interference_shells: z1 must be defined"),
-        _inset = assert(boundary_inset >= 0, "ps_face_anti_interference_shells: boundary_inset must be >= 0"),
+        _z0 = assert(!is_undef(z0), "ps_face_region_loop_shells: z0 must be defined"),
+        _z1 = assert(!is_undef(z1), "ps_face_region_loop_shells: z1 must be defined"),
+        _inset = assert(boundary_inset >= 0, "ps_face_region_loop_shells: boundary_inset must be >= 0"),
         arr = ps_face_arrangement(face_pts3d_local, eps),
         input_area = _ps_seg_poly_area2(ps_xy(face_pts3d_local)),
         input_sign = (input_area >= 0) ? 1 : -1,
@@ -529,17 +462,17 @@ function _ps_face_anti_interference_shells_from_fields(
                 loop_sites = _ps_fr_sites_for_loop(sites, loop_idx),
                 shell = _ps_fr_loop_shell(face_pts3d_local, loop_sites, loop_idx, z0, z1, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps)
             )
-            if (len(ps_face_anti_interference_shell_points(shell)) >= 6 && len(ps_face_anti_interference_shell_faces(shell)) >= 4)
+            if (len(ps_loop_shell_points(shell)) >= 6 && len(ps_loop_shell_faces(shell)) >= 4)
                 shell
     ];
 
 /**
- * Function: Build positive anti-interference shell meshes from a face-local context.
+ * Function: Build positive face-region loop shells from a face-local context.
  * Params: face_ctx (face-local context), z0/z1 (target local Z planes), mode (`"nonzero"`, `"evenodd"`, or `"all"`), max_project (optional projection-distance cap), eps (geometric tolerance), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`)
- * Returns: list of shell records `[points, faces, loop_idx, capped_count, bottom_loop2d, top_loop2d, exposure_sign]`
+ * Returns: list of `ps_loop_shell` records
  * Limitations/Gotchas: context-first public entry point
  */
-function ps_face_anti_interference_shells(
+function ps_face_region_loop_shells(
     face_ctx,
     z0,
     z1,
@@ -549,7 +482,7 @@ function ps_face_anti_interference_shells(
     boundary_inset=0,
     boundary_inset_mode="side"
     ) =
-    _ps_face_anti_interference_shells_from_context(
+    _ps_face_region_loop_shells_from_context(
         face_ctx,
         z0,
         z1,
@@ -561,18 +494,18 @@ function ps_face_anti_interference_shells(
     );
 
 /**
- * Module: Emit the current face's positive anti-interference volume.
+ * Module: Emit the current face's positive face-region loop volume.
  * Params: z0/z1 (target local Z planes), mode (`"nonzero"`, `"evenodd"`, or `"all"`), max_project (optional projection-distance cap), eps (geometric tolerance), convexity (OpenSCAD polyhedron convexity hint), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`)
  * Returns: none; intended for use inside `place_on_faces(...)`, usually inside `intersection()`
  * Limitations/Gotchas: this is only the boundary-span volume primitive; it does not yet subtract or union proxy punch-through voids
  */
-module ps_face_anti_interference_volume(z0, z1, mode="nonzero", max_project=undef, eps=1e-8, convexity=6, boundary_inset=0, boundary_inset_mode="side") {
-    assert(!is_undef($ps_face_pts3d_local), "ps_face_anti_interference_volume: requires place_on_faces context ($ps_face_pts3d_local)");
-    assert(!is_undef($ps_face_idx), "ps_face_anti_interference_volume: requires place_on_faces context ($ps_face_idx)");
-    assert(!is_undef($ps_face_local_context), "ps_face_anti_interference_volume: requires place_on_faces context ($ps_face_local_context)");
+module ps_face_region_loop_volume(z0, z1, mode="nonzero", max_project=undef, eps=1e-8, convexity=6, boundary_inset=0, boundary_inset_mode="side") {
+    assert(!is_undef($ps_face_pts3d_local), "ps_face_region_loop_volume: requires place_on_faces context ($ps_face_pts3d_local)");
+    assert(!is_undef($ps_face_idx), "ps_face_region_loop_volume: requires place_on_faces context ($ps_face_idx)");
+    assert(!is_undef($ps_face_local_context), "ps_face_region_loop_volume: requires place_on_faces context ($ps_face_local_context)");
 
     face_ctx = $ps_face_local_context;
-    shells = ps_face_anti_interference_shells(
+    shells = ps_face_region_loop_shells(
         face_ctx,
         z0,
         z1,
@@ -585,21 +518,17 @@ module ps_face_anti_interference_volume(z0, z1, mode="nonzero", max_project=unde
 
     union() {
         for (shell = shells) {
-            if (ps_face_anti_interference_shell_capped_count(shell) > 0)
+            if (ps_loop_shell_capped_count(shell) > 0)
                 echo(str(
-                    "ps_face_anti_interference_volume: capped ",
-                    ps_face_anti_interference_shell_capped_count(shell),
+                    "ps_face_region_loop_volume: capped ",
+                    ps_loop_shell_capped_count(shell),
                     " projection(s) on face ",
                     $ps_face_idx,
                     " loop ",
-                    ps_face_anti_interference_shell_loop_idx(shell)
+                    ps_loop_shell_source_idx(shell)
                 ));
 
-            polyhedron(
-                points = ps_face_anti_interference_shell_points(shell),
-                faces = ps_face_anti_interference_shell_faces(shell),
-                convexity = convexity
-            );
+            ps_loop_shell(shell, convexity);
         }
     }
 }

@@ -1,5 +1,6 @@
 use <../../core/face_regions.scad>
 use <../../core/funcs.scad>
+use <../../core/loop_shells.scad>
 use <../../core/placement.scad>
 use <../../core/prisms.scad>
 use <../../core/segments.scad>
@@ -72,7 +73,7 @@ module draw_volume_panel(poly, face_idx, label_s) {
                         ps_polygon($ps_face_pts2d, mode = "nonzero");
 
             color("deepskyblue", 0.38)
-                ps_face_anti_interference_volume(
+                ps_face_region_loop_volume(
                     VOL_Z_MIN,
                     VOL_Z_MAX,
                     mode = "nonzero",
@@ -83,7 +84,7 @@ module draw_volume_panel(poly, face_idx, label_s) {
                 place_on_face_boundary_spans(mode = "nonzero")
                     cube([$ps_boundary_span_len, LINE_R, LINE_R], center = true);
 
-            shells = ps_face_anti_interference_shells(
+            shells = ps_face_region_loop_shells(
                 $ps_face_local_context,
                 VOL_Z_MIN,
                 VOL_Z_MAX,
@@ -93,7 +94,7 @@ module draw_volume_panel(poly, face_idx, label_s) {
 
             color("navy")
                 for (shell = shells)
-                    for (pt = ps_face_anti_interference_shell_points(shell))
+                    for (pt = ps_loop_shell_points(shell))
                         translate(pt)
                             sphere(0.75, $fn = 10);
         }

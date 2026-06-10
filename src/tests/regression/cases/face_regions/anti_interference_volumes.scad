@@ -1,6 +1,7 @@
 include <../../common/regression_common.scad>
 
 use <../../../../polysymmetrica/core/face_regions.scad>
+use <../../../../polysymmetrica/core/loop_shells.scad>
 use <../../../../polysymmetrica/core/placement.scad>
 use <../../../../polysymmetrica/core/prisms.scad>
 use <../../../../polysymmetrica/core/segments.scad>
@@ -51,7 +52,7 @@ module _volume_panel(poly, face_idx, label_s, boundary_inset = 0) {
                     reg_face_fill(0.24);
 
             color("deepskyblue", 0.36)
-                ps_face_anti_interference_volume(
+                ps_face_region_loop_volume(
                     Z0,
                     Z1,
                     mode = "nonzero",
@@ -63,7 +64,7 @@ module _volume_panel(poly, face_idx, label_s, boundary_inset = 0) {
                 place_on_face_boundary_spans(mode = "nonzero")
                     cube([$ps_boundary_span_len, 0.54, 0.54], center = true);
 
-            shells = ps_face_anti_interference_shells(
+            shells = ps_face_region_loop_shells(
                 $ps_face_local_context,
                 Z0,
                 Z1,
@@ -73,16 +74,16 @@ module _volume_panel(poly, face_idx, label_s, boundary_inset = 0) {
             );
 
             for (shell = shells) {
-                color(ps_face_anti_interference_shell_exposure_sign(shell) > 0 ? "navy" : "crimson")
-                    for (pt = ps_face_anti_interference_shell_points(shell))
+                color(ps_loop_shell_exposure_sign(shell) > 0 ? "navy" : "crimson")
+                    for (pt = ps_loop_shell_points(shell))
                         translate(pt)
                             sphere(r = 0.62, $fn = 10);
 
-                top = ps_face_anti_interference_shell_top_loop2d(shell);
+                top = ps_loop_shell_top_loop2d(shell);
                 if (len(top) > 0)
                     translate([ps_centroid2d(top)[0], ps_centroid2d(top)[1], Z1 + 0.35])
                         reg_text_label(
-                            str("L", ps_face_anti_interference_shell_loop_idx(shell)),
+                            str("L", ps_loop_shell_source_idx(shell)),
                             size = 1.5,
                             h = 0.06
                         );
