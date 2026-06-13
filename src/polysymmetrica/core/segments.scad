@@ -1672,7 +1672,8 @@ function ps_face_seam_clearance_loops(
                     probe = _ps_seg_cycle_probe_point(cell[0], eps),
                     hidden = _ps_seg_pt_occluded(probe, face_idx, poly_faces_idx, poly_verts_local, eps, mode)
                 )
-                if (hidden && area > eps && _ps_scl_cut_edge_count(cell) > 0)
+                // Hidden clearance islands are opposite-wound before normalization.
+                if (hidden && area * target_sign < -eps && _ps_scl_cut_edge_count(cell) > 0)
                     [ci, _ps_seg_orient_cell(cell, target_sign, eps)]
         ]
     )

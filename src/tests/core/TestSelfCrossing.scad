@@ -90,6 +90,24 @@ function _test_shell_caps_differ(shell, eps=EPS) =
 function _test_loop_matches_face_winding(loop, eps=EPS) =
     ps_seam_clearance_loop_area(loop) * _ps_seg_poly_area2($ps_face_pts2d) > eps;
 
+function _test_maybe_reverse(list) =
+    is_undef(list) ? undef : _ps_reverse(list);
+
+function _test_reversed_face_context(face_ctx) =
+    ps_face_local_context(
+        _ps_reverse(ps_face_local_context_pts3d_local(face_ctx)),
+        _ps_reverse(ps_face_local_context_pts2d(face_ctx)),
+        ps_face_local_context_idx(face_ctx),
+        ps_face_local_context_poly_faces_idx(face_ctx),
+        ps_face_local_context_poly_verts_local(face_ctx),
+        _test_maybe_reverse(ps_face_local_context_neighbors_idx(face_ctx)),
+        _test_maybe_reverse(ps_face_local_context_dihedrals(face_ctx)),
+        ps_face_local_context_poly_center_local(face_ctx)
+    );
+
+function _test_loop_matches_context_winding(loop, face_ctx, eps=EPS) =
+    ps_seam_clearance_loop_area(loop) * _ps_seg_poly_area2(ps_face_local_context_pts2d(face_ctx)) > eps;
+
 function _test_coincident_intrusion_verts_local() =
     [
         [-2, -2, 0], [2, -2, 0], [2, 2, 0], [-2, 2, 0],
@@ -731,12 +749,16 @@ module test_ps_face_seam_clearance_loops__5_2_15_triangle_faces_emit_hidden_cut_
     place_on_faces(_test_penta_punch_poly()) {
         if ($ps_face_idx == 2 || $ps_face_idx == 9) {
             loops = ps_face_seam_clearance_loops($ps_face_local_context, MODE, EPS, true);
+            reversed_ctx = _test_reversed_face_context($ps_face_local_context);
+            reversed_loops = ps_face_seam_clearance_loops(reversed_ctx, MODE, EPS, true);
 
             assert_int_eq(len(loops), 1, str("5/2+15 face ", $ps_face_idx, " should emit one seam-clearance loop"));
             assert(_test_loop_matches_face_winding(loops[0], EPS), "seam-clearance loop should match target-face winding");
             assert(len([for (k = ps_seam_clearance_loop_edge_kinds(loops[0])) if (k == "cut") 1]) > 0, "seam-clearance loop should contain cut edges");
             assert(len([for (d = ps_seam_clearance_loop_edge_dihedrals(loops[0])) if (!is_undef(d)) 1]) > 0, "seam-clearance loop should preserve cut dihedrals");
             assert(len(_test_loop_self_hits(ps_seam_clearance_loop_pts2d(loops[0]), EPS)) == 0, "seam-clearance loop should be simple");
+            assert_int_eq(len(reversed_loops), len(loops), str("5/2+15 reversed face ", $ps_face_idx, " should preserve seam-clearance loops"));
+            assert(_test_loop_matches_context_winding(reversed_loops[0], reversed_ctx, EPS), "reversed seam-clearance loop should match reversed target winding");
         }
     }
 }
