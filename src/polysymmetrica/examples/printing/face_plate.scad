@@ -46,6 +46,21 @@ module _face_plate_pillow_loop(pts, top_z, pillow_min_rad, pillow_inset, pillow_
 }
 
 /**
+ * Module: Emit an inset ring from a 2D loop.
+ * Params: pts (2D loop), width (ring width), eps (tolerance)
+ * Returns: none
+ */
+module _face_plate_loop_ring(pts, width, eps) {
+    assert(width > 0, "_face_plate_loop_ring: width must be > 0");
+
+    difference() {
+        ps_polygon(points = pts);
+        offset(-width)
+            ps_polygon(points = pts);
+    }
+}
+
+/**
  * Function: Compute a seam-frame support centerline offset tangent to the current face underside.
  * Params: current_n_seam_local (current face normal in seam element coords), top_z (current underside plane), support_t (bar diameter), eps (degeneracy tolerance)
  * Returns: 3D offset in seam element coords
@@ -119,7 +134,7 @@ module face_seam_supports(
  * Module: Emit a face plate clipped by the current face's anti-interference volume.
  * Params: face_thk (structural plate thickness, excluding pillow), face_ctx (face-local context; defaults from `place_on_faces`), clear_space (emit clearance cutter), top_thk (full-footprint structural top skin), pillow_* (raised optional pillow sizing), base_z (bottom Z; defaults to `-face_thk` so the structural top sits on the source face plane), clear_height (clearance height), mode/max_project/boundary_inset/boundary_inset_mode/eps/convexity (anti-interference controls)
  * Returns: none
- * Limitations/Gotchas: pillow and clear-space cutter follow the generated shell top loops
+ * Limitations/Gotchas: pillow is emitted only on top-exposed shell regions; clear-space cutter follows each region's exposed side
  */
 module face_plate(face_thk,
     face_ctx = $ps_face_local_context,
@@ -191,19 +206,80 @@ module face_plate(face_thk,
         }
 
         for (shell = shells)
-            _face_plate_pillow_loop(
-                ps_loop_shell_top_loop2d(shell),
-                top_z, pillow_min_rad, pillow_inset, pillow_ramp, pillow_thk, eps);
+            if (ps_loop_shell_exposure_sign(shell) > 0)
+                _face_plate_pillow_loop(
+                    ps_loop_shell_top_loop2d(shell),
+                    top_z, pillow_min_rad, pillow_inset, pillow_ramp, pillow_thk, eps);
     }
 
     if (clear_space)
         color("magenta")
-            translate([0, 0, top_z - eps])
-                linear_extrude(height = clear_height)
-                    union() {
-                        for (shell = shells)
-                            ps_polygon(points = ps_loop_shell_top_loop2d(shell));
+            union() {
+                for (shell = shells) {
+                    if (ps_loop_shell_exposure_sign(shell) > 0) {
+                        translate([0, 0, top_z - eps])
+                            linear_extrude(height = clear_height)
+                                ps_polygon(points = ps_loop_shell_top_loop2d(shell));
+                    } else {
+                        translate([0, 0, base_z_eff - clear_height + eps])
+                            linear_extrude(height = clear_height)
+                                ps_polygon(points = ps_loop_shell_bottom_loop2d(shell));
                     }
+                }
+            }
+}
+
+/**
+ * Module: Emit frame mounting shelves behind each face-region shell.
+ * Params: face_thk (matching structural face thickness), mount_thk (shelf thickness), mount_width (inset ring width), face_ctx/base_z/top_thk/mode/max_project/boundary_inset/boundary_inset_mode/eps (matching `face_plate` controls)
+ * Returns: none
+ * Limitations/Gotchas: shelves are emitted on the side opposite each region's exposed side
+ */
+module face_mounting_plate(
+    face_thk,
+    mount_thk,
+    mount_width,
+    face_ctx = $ps_face_local_context,
+    base_z = undef,
+    top_thk = FACE_PLATE_TOP_THK,
+    mode = "nonzero",
+    max_project = undef,
+    boundary_inset = 0,
+    boundary_inset_mode = "side",
+    eps = 1e-4
+) {
+    assert(!is_undef(face_ctx), "face_mounting_plate: face_ctx requires place_on_faces context or an explicit override");
+    assert(face_thk > 0, "face_mounting_plate: face_thk must be > 0");
+    assert(mount_thk > 0, "face_mounting_plate: mount_thk must be > 0");
+    assert(mount_width > 0, "face_mounting_plate: mount_width must be > 0");
+    assert(top_thk >= 0, "face_mounting_plate: top_thk must be >= 0");
+    assert(top_thk < face_thk, "face_mounting_plate: top_thk must be less than face_thk");
+
+    base_z_eff = is_undef(base_z) ? -face_thk : base_z;
+    top_z = base_z_eff + face_thk;
+    top_skin_base_z = top_z - top_thk;
+    shells = ps_face_region_loop_shells(
+        face_ctx,
+        base_z_eff,
+        top_skin_base_z,
+        mode,
+        max_project,
+        eps,
+        boundary_inset,
+        boundary_inset_mode
+    );
+
+    for (shell = shells) {
+        if (ps_loop_shell_exposure_sign(shell) > 0) {
+            translate([0, 0, base_z_eff - mount_thk])
+                linear_extrude(height = mount_thk)
+                    _face_plate_loop_ring(ps_loop_shell_bottom_loop2d(shell), mount_width, eps);
+        } else {
+            translate([0, 0, top_z])
+                linear_extrude(height = mount_thk)
+                    _face_plate_loop_ring(ps_loop_shell_top_loop2d(shell), mount_width, eps);
+        }
+    }
 }
 
 

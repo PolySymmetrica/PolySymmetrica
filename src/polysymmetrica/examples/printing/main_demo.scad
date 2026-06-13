@@ -40,11 +40,11 @@ IR = 20 * SC;
 //p = poly_antiprism(5);
 //p = poly_prism(n=5, p=2);
 //p = poly_antiprism(n=5, p=2, angle = 0);
-p = poly_antiprism(n=5, p=2, angle = 15);
+//p = poly_antiprism(n=5, p=2, angle = 15);
 //p = poly_antiprism(n=7, p=3, angle = 0);
 //p = poly_antiprism(n=7, p=3, angle = 15);
 //p = poly_antiprism(n=7, p=3, angle = 180);
-//p = poly_truncate(tetrahedron(), t=-0.5);
+p = poly_truncate(tetrahedron(), t=-0.5);
 
 //p = j1_square_pyramid();
 //p = poly_dual(j2_pentagonal_pyramid());
@@ -89,11 +89,10 @@ module model_1(show_faces = undef, clear_airspace = true) {
             // mounting plate - the edge frame isn't quite substantial enough
             color("blue")
             place_on_faces(p, IR) {
-                translate([0,0, BASE_Z - FACET_BASE_T]) linear_extrude(FACET_BASE_T)
-                    difference() {
-                        ps_polygon(points = $ps_face_pts2d);
-                        offset(-FACET_BASE_W) ps_polygon(points = $ps_face_pts2d);
-                    }
+                face_mounting_plate(
+                        face_thk = FACE_T, base_z = BASE_Z,
+                        mount_thk = FACET_BASE_T, mount_width = FACET_BASE_W,
+                        max_project = 10);
             }
 
             // Supports for classified printable seam candidates.
@@ -206,11 +205,9 @@ module model_2(faces_to_print = undef) {
                         demo_full_seam_supports();
                     
                     // mounting plate - the edge frame isn't quite substantial enough
-                    color("skyblue") translate([0,0, BASE_Z - FACET_BASE_T]) linear_extrude(FACET_BASE_T)
-                        difference() {
-                            ps_polygon(points = $ps_face_pts2d);
-                            offset(-FACET_BASE_W) ps_polygon(points = $ps_face_pts2d);
-                        }
+                    color("skyblue")
+                        face_mounting_plate(face_thk = FACE_T, base_z = BASE_Z,
+                                mount_thk = FACET_BASE_T, mount_width = FACET_BASE_W, max_project = 10);
                 }
             }
             // faces to be subtracted from frame, with clearance space
