@@ -1737,15 +1737,15 @@ function ps_seam_clearance_loop_area(loop) = loop[6];
  */
 function ps_seam_clearance_loop_edge_dihedrals(loop) = loop[7];
 
-function _ps_scl_edge_z_offset(z, z_ref, dihedral=undef, max_slope_offset=undef, eps=1e-8) =
+function _ps_scl_edge_z_offset(z, dihedral=undef, max_slope_offset=undef, eps=1e-8) =
     is_undef(dihedral) ? 0 :
     let(
-        raw = (z - z_ref) * tan((180 - dihedral) / 2),
+        raw = z * tan((180 - dihedral) / 2),
         limit = is_undef(max_slope_offset) ? undef : abs(max_slope_offset)
     )
     is_undef(limit) ? raw : ps_clamp(raw, -limit, limit);
 
-function _ps_scl_offset_lines(loop_pts2d, edge_dihedrals, z=0, z_ref=0, clearance=0, max_slope_offset=undef, eps=1e-8) =
+function _ps_scl_offset_lines(loop_pts2d, edge_dihedrals, z=0, clearance=0, max_slope_offset=undef, eps=1e-8) =
     let(
         n = len(loop_pts2d),
         area = _ps_seg_poly_area2(loop_pts2d),
@@ -1762,7 +1762,7 @@ function _ps_scl_offset_lines(loop_pts2d, edge_dihedrals, z=0, z_ref=0, clearanc
                 dir = d / len_d,
                 left = [-dir[1], dir[0]],
                 dihedral = is_undef(edge_dihedrals) ? undef : edge_dihedrals[i],
-                outward_offset = clearance + _ps_scl_edge_z_offset(z, z_ref, dihedral, max_slope_offset, eps),
+                outward_offset = clearance + _ps_scl_edge_z_offset(z, dihedral, max_slope_offset, eps),
                 p = a + left * (-area_sign * outward_offset)
             )
             [p, dir, false, i]
@@ -1771,9 +1771,8 @@ function _ps_scl_offset_lines(loop_pts2d, edge_dihedrals, z=0, z_ref=0, clearanc
 function _ps_scl_shell(loop, z0, z1, clearance=0, max_slope_offset=undef, eps=1e-8) =
     let(
         edge_dihedrals = ps_seam_clearance_loop_edge_dihedrals(loop),
-        z_ref = min(z0, z1),
-        lines0 = _ps_scl_offset_lines(ps_seam_clearance_loop_pts2d(loop), edge_dihedrals, z0, z_ref, clearance, max_slope_offset, eps),
-        lines1 = _ps_scl_offset_lines(ps_seam_clearance_loop_pts2d(loop), edge_dihedrals, z1, z_ref, clearance, max_slope_offset, eps),
+        lines0 = _ps_scl_offset_lines(ps_seam_clearance_loop_pts2d(loop), edge_dihedrals, z0, clearance, max_slope_offset, eps),
+        lines1 = _ps_scl_offset_lines(ps_seam_clearance_loop_pts2d(loop), edge_dihedrals, z1, clearance, max_slope_offset, eps),
         lineage = [
             for (i = [0:1:len(ps_seam_clearance_loop_edge_kinds(loop))-1])
                 [

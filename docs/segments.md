@@ -700,7 +700,8 @@ face dihedral rather than the raw angle between planes.
 distance. When omitted, the dihedral slope is uncapped. Tight hidden-cell loops
 can invert under large Z spans; pass an explicit cap, often near `clearance`, for
 callers that need conservative simple caps. Parent closure edges do not receive
-the slope offset.
+the slope offset. The slope contribution is anchored at face-local `z = 0`, so
+the sloped cutter passes through the source seam on the current face plane.
 
 ### `place_on_face_seam_clearance_loops(...)`
 

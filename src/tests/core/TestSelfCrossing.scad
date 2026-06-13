@@ -787,6 +787,14 @@ module test_ps_face_seam_clearance_shells__stress_cases_emit_simple_caps() {
     }
 }
 
+module test_ps_face_seam_clearance_shells__default_slope_refs_face_plane() {
+    dihedral = 116.579;
+
+    assert_near(_ps_scl_edge_z_offset(0, dihedral, undef), 0, EPS, "seam slope should have zero offset at face plane");
+    assert(_ps_scl_edge_z_offset(1, dihedral, undef) > 0, "seam slope should grow above the face plane");
+    assert(_ps_scl_edge_z_offset(-1, dihedral, undef) < 0, "seam slope should retreat below the face plane");
+}
+
 module test_ps_face_filled_boundary_source_edges__7_3_0_triangle_is_simple_boundary() {
     site = _test_face_site(_test_punch_poly_angle0(), TRI_FACE_IDX);
     source_edges = ps_face_filled_boundary_source_edges(ps_face_site_pts3d_local(site), MODE);
@@ -1247,6 +1255,7 @@ module run_TestSelfCrossing() {
     test_ps_face_seam_clearance_loops__5_2_15_triangle_faces_emit_hidden_cut_loops();
     test_ps_face_seam_clearance_loops__7_3_15_triangle_emits_ordered_cut_loops();
     test_ps_face_seam_clearance_shells__stress_cases_emit_simple_caps();
+    test_ps_face_seam_clearance_shells__default_slope_refs_face_plane();
     test_ps_face_filled_boundary_source_edges__7_3_0_triangle_is_simple_boundary();
     test_place_on_face_filled_boundary_source_edges__7_3_15_star_exposes_context();
     test_place_on_face_filled_boundary_source_edges__antitet_uses_span_direction();
