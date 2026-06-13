@@ -27,34 +27,37 @@ jobs:
       - name: Install OpenSCAD
         run: |
           sudo apt-get update
-          sudo apt-get install openscad imagemagick xvfb parallel
+          sudo apt-get install openscad imagemagick xvfb parallel ripgrep
           sudo snap install openscad-nightly
 
-      # Runs a set of commands using the runners shell
-      - name: Run tests
+      # Runs 
+      - name: Check Openscad Versions
         run: |
           openscad --version
-          openscad -o passed.stl src/tests/run_all.scad
           openscad-nightly --version
-          openscad-nightly -o passed.stl src/tests/run_all.scad
 
-          mkdir -p target/
+          # ensure the SNAP version's PNG generation is "warmed up"
+          mkdir -p target/tmp
+          printf 'cube(1);\n' > target/tmp/openscad-nightly-warmup.scad
+          openscad-nightly -o target/tmp/openscad-nightly-warmup.png target/tmp/openscad-nightly-warmup.scad
+          rm -f target/tmp/openscad-nightly-warmup.scad target/tmp/openscad-nightly-warmup.png
+
+      - name: Run unit tests
+        run: |
+          mkdir -p target/unit-tests
           printf 'cube(1);\n' > target/openscad-nightly-warmup.scad
           openscad-nightly -o target/openscad-nightly-warmup.png target/openscad-nightly-warmup.scad
           rm -f target/openscad-nightly-warmup.scad target/openscad-nightly-warmup.png
-
-          examples=(src/polysymmetrica/examples/{basics,truncation}/main_*.scad)
-          printf '%s\n' "${examples[@]}" | parallel \
-            --will-cite \
-            --jobs "${EXAMPLE_JOBS:-4}" \
-            --line-buffer \
-            --tagstring '{/.}' \
-            --joblog target/examples.joblog \
-            'echo "Executing {} at $(date)"; openscad-nightly -o target/{/.}.png {}'
-          ls -l target/
+          
+          printf '%s\t%s\t%s\n' \
+            openscad-2021 openscad target/unit-tests/passed-openscad.stl \
+            openscad-2026 openscad-nightly target/unit-tests/passed-openscad-nightly.stl |
+          parallel --colsep '\t' --line-buffer --tagstring '{1}' \
+            '{2} -o {3} src/tests/run_all.scad'
 
       - name: Run visual regressions
         run: |
+          mkdir -p target/regression_tests
           LIBGL_ALWAYS_SOFTWARE=1 REGRESSION_JOBS=4 xvfb-run -a --server-args="-screen 0 1280x960x24" \
             src/tests/regression/run_regression.sh diff --tolerance normal
 
@@ -64,3 +67,16 @@ jobs:
         with:
           name: visual-regression-artifacts
           path: .tmp/regression/
+
+      - name: Ensure examples build correctly
+        run: |
+          mkdir -p target/examples
+          examples=(src/polysymmetrica/examples/{basics,truncation}/main_*.scad)
+          printf '%s\n' "${examples[@]}" | parallel \
+            --will-cite \
+            --jobs "${EXAMPLE_JOBS:-4}" \
+            --line-buffer \
+            --tagstring '{/.}' \
+            --joblog target/examples.joblog \
+            'echo "Executing {} at $(date)"; openscad-nightly -o target/examples/{/.}.png {}'
+          ls -l target/

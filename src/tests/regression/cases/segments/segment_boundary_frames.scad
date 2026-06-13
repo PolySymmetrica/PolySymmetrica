@@ -180,7 +180,7 @@ module _boundary_sources_panel(poly, face_idx, label_s) {
 }
 
 module _seam_panel(poly, face_idx, label_s) {
-    _wire_context(poly, face_idx);
+    _wire_context(poly, face_idx, show_fill = false);
 
     place_on_faces(poly, IR)
         if ($ps_face_idx == face_idx)

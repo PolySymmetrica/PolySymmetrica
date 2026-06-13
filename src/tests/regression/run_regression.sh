@@ -4,11 +4,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 CASE_ROOT="${SCRIPT_DIR}/cases"
-TMP_ROOT="${REPO_ROOT}/.tmp/regression"
+TARGET_REG_ROOT="${REPO_ROOT}/target/regression-tests"
 BASELINE_ROOT="${BASELINE_ROOT:-${SCRIPT_DIR}/baselines/openscad}"
-ACTUAL_ROOT="${ACTUAL_ROOT:-${TMP_ROOT}/actual}"
-DIFF_ROOT="${DIFF_ROOT:-${TMP_ROOT}/diff}"
-LOG_ROOT="${TMP_ROOT}/logs"
+ACTUAL_ROOT="${ACTUAL_ROOT:-${TARGET_REG_ROOT}/actual}"
+DIFF_ROOT="${DIFF_ROOT:-${TARGET_REG_ROOT}/diff}"
+LOG_ROOT="${TARGET_REG_ROOT}/logs"
 OPENSCAD_BIN="${OPENSCAD_BIN:-openscad-nightly}"
 IMG_SIZE="${IMG_SIZE:-1280,960}"
 REGRESSION_JOBS="${REGRESSION_JOBS:-4}"
@@ -144,7 +144,7 @@ list_case_tests() {
     rel="$(case_rel_path "${case_file}")"
     base="${rel%.scad}"
     log="${LOG_ROOT}/${base}.list.log"
-    out="${TMP_ROOT}/list/${base}.stl"
+    out="${TARGET_REG_ROOT}/list/${base}.stl"
     mkdir -p "$(dirname "${log}")" "$(dirname "${out}")"
 
     if ! "${OPENSCAD_BIN}" \
@@ -281,14 +281,14 @@ if [[ "${#case_files[@]}" -eq 0 ]]; then
 fi
 
 failures=0
-jobs_file="${TMP_ROOT}/list/jobs.tsv"
+jobs_file="${TARGET_REG_ROOT}/list/jobs.tsv"
 mkdir -p "$(dirname "${jobs_file}")"
 : >"${jobs_file}"
 
 for case_file in "${case_files[@]}"; do
     rel="$(case_rel_path "${case_file}")"
     base="${rel%.scad}"
-    tests_file="${TMP_ROOT}/list/${base}.tests"
+    tests_file="${TARGET_REG_ROOT}/list/${base}.tests"
     mkdir -p "$(dirname "${tests_file}")"
 
     if ! list_case_tests "${case_file}" >"${tests_file}"; then
