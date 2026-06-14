@@ -127,7 +127,9 @@ Builds a regular or star pyramid over a `{n,p}` base.
 Parameters:
 
 - `n`: number of base vertices
-- `p`: polygon step (`p=1` for an ordinary pyramid)
+- `p`: polygon step (`p=1` for an ordinary pyramid). Retrograde crossed
+  steps such as `{7,4}` are preserved; non-coprime compound bases are rejected
+  because the component pyramids would share one apex.
 - `edge`: base edge length
 - `height`: explicit apex-to-base-plane height
 - `height_scale`: multiplier on the chosen height
@@ -141,11 +143,16 @@ Examples:
 j1 = poly_pyramid(4);
 j2 = poly_pyramid(5);
 star = poly_pyramid(5, 2);
+retro = poly_pyramid(7, 4);
 ```
 
 Runnable demo:
 
 - `src/polysymmetrica/examples/basics/main_johnsons.scad`
+
+Negative coverage:
+
+- `src/tests/negative/pyramid_bad_compound.scad`
 
 ### `poly_cupola(...)`
 

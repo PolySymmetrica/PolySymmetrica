@@ -122,6 +122,54 @@ module test_poly_star_antiprism__counts_and_validity() {
     assert(_edge_rel_spread(p) < 1e-10, "star antiprism {5,2} uniform edges");
 }
 
+module test_poly_retro_prism__counts_and_validity() {
+    p = poly_prism(7, p=4);
+    assert_int_eq(_ps_polygram_signed_step(7, 4), -3, "retro prism signed step");
+    assert_int_eq(_ps_polygram_cycle(7, 4)[1], 4, "retro prism keeps requested winding");
+    assert_int_eq(len(poly_verts(p)), 14, "retro prism {7,4} verts");
+    assert_int_eq(len(poly_faces(p)), 9, "retro prism {7,4} faces");
+    assert_int_eq(len(poly_edges(p)), 21, "retro prism {7,4} edges");
+    assert_int_eq(_count_faces_of_size(p, 7), 2, "retro prism {7,4} two 7-gon caps");
+    assert_int_eq(_count_faces_of_size(p, 4), 7, "retro prism {7,4} seven side quads");
+    assert_true(poly_valid(p, "star_ok"), "retro prism {7,4} star_ok valid");
+    assert(_edge_rel_spread(p) < 1e-10, "retro prism {7,4} uniform edges");
+}
+
+module test_poly_retro_antiprism__counts_and_validity() {
+    p = poly_antiprism(7, p=4);
+    assert_int_eq(len(poly_verts(p)), 14, "retro antiprism {7,4} verts");
+    assert_int_eq(len(poly_faces(p)), 16, "retro antiprism {7,4} faces");
+    assert_int_eq(len(poly_edges(p)), 28, "retro antiprism {7,4} edges");
+    assert_int_eq(_count_faces_of_size(p, 7), 2, "retro antiprism {7,4} two 7-gon caps");
+    assert_int_eq(_count_faces_of_size(p, 3), 14, "retro antiprism {7,4} fourteen side triangles");
+    assert_true(poly_valid(p, "star_ok"), "retro antiprism {7,4} star_ok valid");
+    assert(_edge_rel_spread(p) < 1e-10, "retro antiprism {7,4} uniform edges");
+}
+
+module test_poly_compound_prism__non_coprime_step_splits_cap_cycles() {
+    p = poly_prism(6, p=2);
+    cycles = _ps_polygram_cycles(6, 2);
+    assert_int_eq(len(cycles), 2, "compound prism {6,2} cycle count");
+    assert_int_eq(len(cycles[0]), 3, "compound prism {6,2} cycle size");
+    assert_int_eq(len(poly_verts(p)), 12, "compound prism {6,2} verts");
+    assert_int_eq(len(poly_faces(p)), 10, "compound prism {6,2} faces");
+    assert_int_eq(len(poly_edges(p)), 18, "compound prism {6,2} edges");
+    assert_int_eq(_count_faces_of_size(p, 3), 4, "compound prism {6,2} four triangular caps");
+    assert_int_eq(_count_faces_of_size(p, 4), 6, "compound prism {6,2} six side quads");
+    assert_true(poly_valid(p, "closed"), "compound prism {6,2} closed valid");
+    assert(_edge_rel_spread(p) < 1e-10, "compound prism {6,2} uniform edges");
+}
+
+module test_poly_compound_antiprism__non_coprime_step_splits_cap_cycles() {
+    p = poly_antiprism(6, p=2);
+    assert_int_eq(len(poly_verts(p)), 12, "compound antiprism {6,2} verts");
+    assert_int_eq(len(poly_faces(p)), 16, "compound antiprism {6,2} faces");
+    assert_int_eq(len(poly_edges(p)), 24, "compound antiprism {6,2} edges");
+    assert_int_eq(_count_faces_of_size(p, 3), 16, "compound antiprism {6,2} triangular faces");
+    assert_true(poly_valid(p, "closed"), "compound antiprism {6,2} closed valid");
+    assert(_edge_rel_spread(p) < 1e-10, "compound antiprism {6,2} uniform edges");
+}
+
 module test_poly_star_prism__dual_and_rectify_validity() {
     p = poly_prism(5, p=2);
     qd = poly_dual(p);
@@ -141,6 +189,10 @@ module run_TestPrisms() {
     test_poly_antiprism__height_scale_keeps_nominal_edge_normalization();
     test_poly_star_prism__counts_and_validity();
     test_poly_star_antiprism__counts_and_validity();
+    test_poly_retro_prism__counts_and_validity();
+    test_poly_retro_antiprism__counts_and_validity();
+    test_poly_compound_prism__non_coprime_step_splits_cap_cycles();
+    test_poly_compound_antiprism__non_coprime_step_splits_cap_cycles();
     test_poly_star_prism__dual_and_rectify_validity();
 }
 
