@@ -139,13 +139,14 @@ has_gnu_parallel() {
 
 list_case_tests() {
     local case_file="$1"
-    local rel base log out
+    local rel base log out render_args render_args_file
 
     rel="$(case_rel_path "${case_file}")"
     base="${rel%.scad}"
     log="${LOG_ROOT}/${base}.list.log"
     out="${TARGET_REG_ROOT}/list/${base}.stl"
-    mkdir -p "$(dirname "${log}")" "$(dirname "${out}")"
+    render_args_file="${TARGET_REG_ROOT}/list/${base}.render_args"
+    mkdir -p "$(dirname "${log}")" "$(dirname "${out}")" "$(dirname "${render_args_file}")"
 
     if ! "${OPENSCAD_BIN}" \
         -o "${out}" \
@@ -157,6 +158,10 @@ list_case_tests() {
         return 1
     fi
 
+    render_args="$(sed -n 's/.*REGRESSION_RENDER_ARGS=\([^"]*\).*/\1/p' "${log}" | tail -n 1)"
+    render_args="${render_args:---projection=o --autocenter --viewall --render}"
+    printf '%s\n' "${render_args}" >"${render_args_file}"
+
     sed -n 's/.*REGRESSION_TEST=\([0-9][0-9]*\) \([^"]*\).*/\1 \2/p' "${log}"
 }
 
@@ -165,7 +170,8 @@ render_case_test() {
     local idx="$2"
     local name="$3"
     local root="$4"
-    local rel base dir stem out log
+    local rel base dir stem out log render_args_file render_args
+    local -a render_args_arr
 
     rel="$(case_rel_path "${case_file}")"
     base="${rel%.scad}"
@@ -173,16 +179,19 @@ render_case_test() {
     stem="$(basename "${base}")"
     out="${root}/${dir}/${stem}_$(printf '%02d' "${idx}")_${name}.png"
     log="${LOG_ROOT}/${dir}/${stem}_$(printf '%02d' "${idx}")_${name}.render.log"
+    render_args_file="${TARGET_REG_ROOT}/list/${base}.render_args"
+    render_args="--projection=o --autocenter --viewall --render"
+    if [[ -f "${render_args_file}" ]]; then
+        render_args="$(<"${render_args_file}")"
+    fi
+    read -r -a render_args_arr <<<"${render_args}"
     mkdir -p "$(dirname "${out}")" "$(dirname "${log}")"
 
     echo "Rendering ${rel} T=${idx} (${name}) -> ${out}"
     if ! "${OPENSCAD_BIN}" \
         -o "${out}" \
         --imgsize="${IMG_SIZE}" \
-        --projection=o \
-        --autocenter \
-        --viewall \
-        --render \
+        "${render_args_arr[@]}" \
         -D "T=${idx}" \
         "${case_file}" >"${log}" 2>&1; then
         echo "FAIL: render failed for ${rel} T=${idx} (${name})"
@@ -322,7 +331,7 @@ if [[ "${failures}" -eq 0 ]]; then
     if [[ "${use_parallel}" == true ]]; then
         parallel_log="${LOG_ROOT}/parallel-${MODE}.joblog"
         rm -f "${parallel_log}"
-        export CASE_ROOT BASELINE_ROOT ACTUAL_ROOT DIFF_ROOT LOG_ROOT OPENSCAD_BIN IMG_SIZE
+        export CASE_ROOT TARGET_REG_ROOT BASELINE_ROOT ACTUAL_ROOT DIFF_ROOT LOG_ROOT OPENSCAD_BIN IMG_SIZE
         export MODE FUZZ MAX_CHANGED_PIXELS COMPARE_BIN COMPARE_STYLE
         export -f case_rel_path render_case_test compare_images run_regression_test
 
