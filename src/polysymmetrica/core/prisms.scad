@@ -12,7 +12,7 @@ function _ps_prism_height(edge, height, height_scale) =
 function _ps_antiprism_height(n, p, edge, angle, eps=1e-12) =
     let(
         r = _ps_polygram_radius(n, p, edge),
-        theta = 180 * _ps_polygram_signed_step(n, p) / n + angle,
+        theta = 180 * p / n + angle,
         d2 = 2 * r * r * (1 - cos(theta)),
         h2 = edge * edge - d2,
         _ok = assert(h2 >= -eps, str("poly_antiprism: invalid angle/edge (no real height), n=", n, " p=", p, " edge=", edge, " angle=", angle))
@@ -85,7 +85,7 @@ function poly_antiprism(n=3, p=1, edge=1, angle=0, height=undef, height_scale=1)
         r = _ps_polygram_radius(n_eff, p_eff, edge),
         z0 = -h / 2,
         z1 = h / 2,
-        theta = 180 * _ps_polygram_signed_step(n_eff, p_eff) / n_eff + angle,
+        theta = 180 * p_eff / n_eff + angle,
         bottom = _ps_ngon_ring(n_eff, r, z0, 0),
         top = _ps_ngon_ring(n_eff, r, z1, theta),
         cycles = _ps_polygram_cycles(n_eff, p_eff),

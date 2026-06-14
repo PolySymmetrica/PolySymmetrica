@@ -30,6 +30,27 @@ function _edge_rel_spread(poly) =
     )
     (len(lens) == 0 || avg == 0) ? 0 : ((max(lens) - min(lens)) / avg);
 
+function _dedup_sorted(list, i=0, acc=[]) =
+    (i >= len(list)) ? acc :
+    _dedup_sorted(
+        list,
+        i + 1,
+        (i > 0 && list[i] == list[i - 1]) ? acc : concat(acc, [list[i]])
+    );
+
+function _sorted_unique(list) =
+    _dedup_sorted(_ps_sort(list));
+
+function _top_bottom_neighbors(poly, n, top_i) =
+    _sorted_unique([
+        for (f = poly_faces(poly))
+            if (len([for (v = f) if (v == n + top_i) 1]) > 0)
+                for (v = f)
+                    if (v < n) v
+    ]);
+
+function _xy2(p) = [p[0], p[1]];
+
 module test_poly_prism__counts_and_validity() {
     for (n = [3:1:6]) {
         p = poly_prism(n);
@@ -146,6 +167,21 @@ module test_poly_retro_antiprism__counts_and_validity() {
     assert(_edge_rel_spread(p) < 1e-10, "retro antiprism {7,4} uniform edges");
 }
 
+module test_poly_retro_antiprism__even_step_phase_keeps_crossed_adjacency() {
+    p2 = poly_antiprism(7, p=2);
+    v2 = poly_verts(p2);
+    p4 = poly_antiprism(7, p=4);
+    v4 = poly_verts(p4);
+
+    // For even p, the p/2 top-ring phase places one top vertex over bottom #0.
+    // Its side triangles then join the symmetric bottom vertices around #0.
+    assert(norm(_xy2(v2[7 + 6]) - _xy2(v2[0])) < 1e-9, "{7,2} top #6 should align over bottom #0");
+    assert(_top_bottom_neighbors(p2, 7, 6) == [1, 6], "{7,2} aligned top should join bottom #6 and #1");
+
+    assert(norm(_xy2(v4[7 + 5]) - _xy2(v4[0])) < 1e-9, "{7,4} top #5 should align over bottom #0");
+    assert(_top_bottom_neighbors(p4, 7, 5) == [2, 5], "{7,4} aligned top should join bottom #5 and #2");
+}
+
 module test_poly_compound_prism__non_coprime_step_splits_cap_cycles() {
     p = poly_prism(6, p=2);
     cycles = _ps_polygram_cycles(6, 2);
@@ -191,6 +227,7 @@ module run_TestPrisms() {
     test_poly_star_antiprism__counts_and_validity();
     test_poly_retro_prism__counts_and_validity();
     test_poly_retro_antiprism__counts_and_validity();
+    test_poly_retro_antiprism__even_step_phase_keeps_crossed_adjacency();
     test_poly_compound_prism__non_coprime_step_splits_cap_cycles();
     test_poly_compound_antiprism__non_coprime_step_splits_cap_cycles();
     test_poly_star_prism__dual_and_rectify_validity();
