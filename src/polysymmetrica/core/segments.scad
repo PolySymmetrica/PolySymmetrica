@@ -340,20 +340,30 @@ function _ps_seg_node_kind(node3d, face_pts3d_local, eps=1e-9) =
             (norm(node3d - p) <= eps) ? 1 : 0
     ]) == 1 ? "source_vertex" : "crossing";
 
-function _ps_seg_keep_arr_cell(cell, outer2d, mode="nonzero", eps=1e-8) =
+function _ps_seg_arr_input_sign(arr) =
+    (_ps_seg_poly_area2(arr[0]) >= 0) ? 1 : -1;
+
+function _ps_seg_keep_arr_cell_with_target(cell, outer2d, mode, target_sign, eps=1e-8) =
     let(
-        input_area = _ps_seg_poly_area2(outer2d),
-        input_sign = (input_area >= 0) ? 1 : -1,
         pts2d = cell[0],
         area_c = cell[4],
         probe = _ps_seg_cycle_probe_point(pts2d, eps),
-        cycle_sign_ok = (abs(input_area) <= eps) ? true : (area_c * input_sign > eps),
+        cycle_sign_ok = area_c * target_sign > eps,
         in_evenodd = _ps_seg_point_in_poly_evenodd(probe, outer2d, eps),
         in_nonzero = _ps_seg_point_in_poly_nonzero(probe, outer2d, eps)
     )
     (mode == "all") ? true :
     (mode == "nonzero") ? (in_nonzero && cycle_sign_ok) :
     in_evenodd;
+
+function _ps_seg_keep_arr_cell(cell, outer2d, mode="nonzero", eps=1e-8) =
+    _ps_seg_keep_arr_cell_with_target(
+        cell,
+        outer2d,
+        mode,
+        (_ps_seg_poly_area2(outer2d) >= 0) ? 1 : -1,
+        eps
+    );
 
 function _ps_seg_orient_arr_cell(cell, target_sign, eps=1e-9) =
     let(
@@ -368,16 +378,44 @@ function _ps_seg_orient_arr_cell(cell, target_sign, eps=1e-9) =
         -area
     ];
 
-function _ps_seg_fill_cell_ids_from_arr(arr, mode="nonzero", eps=1e-8) =
+function _ps_seg_fill_cell_ids_from_arr_with_target(arr, mode, target_sign, eps=1e-8) =
     let(
         outer2d = arr[0],
         cells = arr[4]
     )
     [
         for (ci = [0:1:len(cells)-1])
-            if (_ps_seg_keep_arr_cell(cells[ci], outer2d, mode, eps))
+            if (_ps_seg_keep_arr_cell_with_target(cells[ci], outer2d, mode, target_sign, eps))
                 ci
     ];
+
+function _ps_seg_boundary_loop_count_for_target(arr, filled_cell_ids, target_sign, eps=1e-8) =
+    let(
+        boundary_occs = _ps_seg_boundary_occurrences(arr, filled_cell_ids, eps, target_sign),
+        loops = _ps_seg_extract_boundary_loops(boundary_occs, arr[2])
+    )
+    len(loops);
+
+// Self-crossing source-loop area can cross zero while the intended atom
+// regions remain stable. Prefer the target sign that preserves atomized
+// boundary loops; keep the raw input sign on ties for ordinary faces.
+function _ps_seg_nonzero_fill_target_sign(arr, eps=1e-8) =
+    let(
+        default_sign = _ps_seg_arr_input_sign(arr),
+        alt_sign = -default_sign,
+        default_ids = _ps_seg_fill_cell_ids_from_arr_with_target(arr, "nonzero", default_sign, eps),
+        alt_ids = _ps_seg_fill_cell_ids_from_arr_with_target(arr, "nonzero", alt_sign, eps),
+        default_loop_count = _ps_seg_boundary_loop_count_for_target(arr, default_ids, default_sign, eps),
+        alt_loop_count = _ps_seg_boundary_loop_count_for_target(arr, alt_ids, alt_sign, eps)
+    )
+    alt_loop_count > default_loop_count ? alt_sign : default_sign;
+
+function _ps_seg_fill_target_sign(arr, mode="nonzero", eps=1e-8) =
+    (mode == "nonzero") ? _ps_seg_nonzero_fill_target_sign(arr, eps) : _ps_seg_arr_input_sign(arr);
+
+function _ps_seg_fill_cell_ids_from_arr(arr, mode="nonzero", eps=1e-8) =
+    let(target_sign = _ps_seg_fill_target_sign(arr, mode, eps))
+    _ps_seg_fill_cell_ids_from_arr_with_target(arr, mode, target_sign, eps);
 
 function _ps_seg_arr_occurrences(cells, cell_ids, target_sign, eps=1e-9) =
     [
@@ -401,12 +439,11 @@ function _ps_seg_other_cell_for_span(occs, span_id, cell_idx) =
     )
     (len(hits) == 0) ? undef : hits[0];
 
-function _ps_seg_boundary_occurrences(arr, filled_cell_ids, eps=1e-9) =
+function _ps_seg_boundary_occurrences(arr, filled_cell_ids, eps=1e-9, target_sign=undef) =
     let(
         outer2d = arr[0],
         cells = arr[4],
-        input_area = _ps_seg_poly_area2(outer2d),
-        input_sign = (input_area >= 0) ? 1 : -1,
+        input_sign = is_undef(target_sign) ? _ps_seg_arr_input_sign(arr) : target_sign,
         filled_occs = _ps_seg_arr_occurrences(cells, filled_cell_ids, input_sign, eps),
         all_occs = _ps_seg_arr_occurrences(cells, [for (i = [0:1:len(cells)-1]) i], input_sign, eps)
     )
@@ -846,8 +883,9 @@ function ps_face_boundary_model(face_pts3d_local, mode="nonzero", eps=1e-8) =
         arr = ps_face_arrangement(face_pts3d_local, eps),
         nodes = arr[2],
         spans = arr[3],
-        filled_cell_ids = _ps_seg_fill_cell_ids_from_arr(arr, mode, eps),
-        boundary_occs = _ps_seg_boundary_occurrences(arr, filled_cell_ids, eps),
+        target_sign = _ps_seg_fill_target_sign(arr, mode, eps),
+        filled_cell_ids = _ps_seg_fill_cell_ids_from_arr_with_target(arr, mode, target_sign, eps),
+        boundary_occs = _ps_seg_boundary_occurrences(arr, filled_cell_ids, eps, target_sign),
         occ_loops = _ps_seg_extract_boundary_loops(boundary_occs, nodes),
         loop_offsets = _ps_prefix_offsets([for (loop = occ_loops) len(loop)], [0]),
         boundary_loops = [
@@ -942,7 +980,8 @@ function ps_face_segments(face_pts3d_local, mode="nonzero", eps=1e-8) =
         arr = ps_face_arrangement(face_pts3d_local, eps),
         outer2d = arr[0],
         spans = arr[3],
-        cells = arr[4]
+        cells = arr[4],
+        target_sign = _ps_seg_fill_target_sign(arr, mode, eps)
     )
     (n < 3) ? [] :
     let(
@@ -955,7 +994,7 @@ function ps_face_segments(face_pts3d_local, mode="nonzero", eps=1e-8) =
                     edge_ids = [for (si = span_ids) spans[si][3]],
                     kinds = [for (si = span_ids) spans[si][6]]
                 )
-                if (_ps_seg_keep_arr_cell(c, outer2d, mode, eps))
+                if (_ps_seg_keep_arr_cell_with_target(c, outer2d, mode, target_sign, eps))
                     [pts2d, pts3d, edge_ids, kinds]
         ]
     )

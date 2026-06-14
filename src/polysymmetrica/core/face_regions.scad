@@ -441,8 +441,7 @@ function _ps_face_region_loop_shells_from_fields(
         _z1 = assert(!is_undef(z1), "ps_face_region_loop_shells: z1 must be defined"),
         _inset = assert(boundary_inset >= 0, "ps_face_region_loop_shells: boundary_inset must be >= 0"),
         arr = ps_face_arrangement(face_pts3d_local, eps),
-        input_area = _ps_seg_poly_area2(ps_xy(face_pts3d_local)),
-        input_sign = (input_area >= 0) ? 1 : -1,
+        input_sign = _ps_seg_fill_target_sign(arr, mode, eps),
         cell_winding_signs = _ps_fr_cell_winding_signs(face_pts3d_local, arr[4], eps),
         sites = _ps_face_boundary_span_sites(
             face_pts3d_local,
