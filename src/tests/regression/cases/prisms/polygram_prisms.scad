@@ -13,7 +13,9 @@ TESTS = [
     ["prism_7_3", function() poly_prism(7, p = 3), 7, undef],
     ["prism_7_4_retro", function() poly_prism(7, p = 4), 7, undef],
     ["antiprism_7_2_phase", function() poly_antiprism(7, p = 2), 7, 6],
-    ["antiprism_7_4_retro_phase", function() poly_antiprism(7, p = 4), 7, 5],
+    ["antiprism_7_3_forward", function() poly_antiprism(7, p = 3), 7, undef],
+    ["antiprism_7_4_retro_mirror", function() poly_antiprism(7, p = 4), 7, undef],
+    ["antiprism_5_4_retro_mirror", function() poly_antiprism(5, p = 4), 5, undef],
     ["prism_6_2_compound", function() poly_prism(6, p = 2), 6, undef],
     ["antiprism_6_2_compound", function() poly_antiprism(6, p = 2), 6, undef]
 ];

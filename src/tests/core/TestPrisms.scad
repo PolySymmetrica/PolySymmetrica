@@ -51,6 +51,11 @@ function _top_bottom_neighbors(poly, n, top_i) =
 
 function _xy2(p) = [p[0], p[1]];
 
+function _mirror_y3(p) = [p[0], -p[1], p[2]];
+
+function _mirror_idx(n, i) =
+    (n - i) % n;
+
 module test_poly_prism__counts_and_validity() {
     for (n = [3:1:6]) {
         p = poly_prism(n);
@@ -167,19 +172,44 @@ module test_poly_retro_antiprism__counts_and_validity() {
     assert(_edge_rel_spread(p) < 1e-10, "retro antiprism {7,4} uniform edges");
 }
 
-module test_poly_retro_antiprism__even_step_phase_keeps_crossed_adjacency() {
+module test_poly_antiprism__even_forward_step_phase_keeps_crossed_adjacency() {
     p2 = poly_antiprism(7, p=2);
     v2 = poly_verts(p2);
-    p4 = poly_antiprism(7, p=4);
-    v4 = poly_verts(p4);
 
-    // For even p, the p/2 top-ring phase places one top vertex over bottom #0.
+    // For even forward p, the p/2 top-ring phase places one top vertex over bottom #0.
     // Its side triangles then join the symmetric bottom vertices around #0.
     assert(norm(_xy2(v2[7 + 6]) - _xy2(v2[0])) < 1e-9, "{7,2} top #6 should align over bottom #0");
     assert(_top_bottom_neighbors(p2, 7, 6) == [1, 6], "{7,2} aligned top should join bottom #6 and #1");
+}
 
-    assert(norm(_xy2(v4[7 + 5]) - _xy2(v4[0])) < 1e-9, "{7,4} top #5 should align over bottom #0");
-    assert(_top_bottom_neighbors(p4, 7, 5) == [2, 5], "{7,4} aligned top should join bottom #5 and #2");
+module test_poly_retro_antiprism__signed_twist_mirrors_forward_counterpart() {
+    p1 = poly_antiprism(5, p=1);
+    p4_5 = poly_antiprism(5, p=4);
+    v1 = poly_verts(p1);
+    v4_5 = poly_verts(p4_5);
+
+    p3 = poly_antiprism(7, p=3);
+    p4_7 = poly_antiprism(7, p=4);
+    v3 = poly_verts(p3);
+    v4_7 = poly_verts(p4_7);
+
+    assert_int_eq(_ps_polygram_signed_step(5, 4), -1, "retro antiprism {5,4} signed step");
+    assert_true(poly_valid(p4_5, "closed"), "retro antiprism {5,4} should be closed valid");
+    assert(_edge_rel_spread(p4_5) < 1e-10, "retro antiprism {5,4} uniform edges");
+
+    assert_int_eq(_ps_polygram_signed_step(7, 4), -3, "retro antiprism {7,4} signed step");
+
+    for (i = [0:1:4]) {
+        j = _mirror_idx(5, i);
+        assert(norm(_mirror_y3(v1[i]) - v4_5[j]) < 1e-9, str("{5,4} bottom mirror vertex i=", i));
+        assert(norm(_mirror_y3(v1[5 + i]) - v4_5[5 + j]) < 1e-9, str("{5,4} top mirror vertex i=", i));
+    }
+
+    for (i = [0:1:6]) {
+        j = _mirror_idx(7, i);
+        assert(norm(_mirror_y3(v3[i]) - v4_7[j]) < 1e-9, str("{7,4} bottom mirror vertex i=", i));
+        assert(norm(_mirror_y3(v3[7 + i]) - v4_7[7 + j]) < 1e-9, str("{7,4} top mirror vertex i=", i));
+    }
 }
 
 module test_poly_compound_prism__non_coprime_step_splits_cap_cycles() {
@@ -227,7 +257,8 @@ module run_TestPrisms() {
     test_poly_star_antiprism__counts_and_validity();
     test_poly_retro_prism__counts_and_validity();
     test_poly_retro_antiprism__counts_and_validity();
-    test_poly_retro_antiprism__even_step_phase_keeps_crossed_adjacency();
+    test_poly_antiprism__even_forward_step_phase_keeps_crossed_adjacency();
+    test_poly_retro_antiprism__signed_twist_mirrors_forward_counterpart();
     test_poly_compound_prism__non_coprime_step_splits_cap_cycles();
     test_poly_compound_antiprism__non_coprime_step_splits_cap_cycles();
     test_poly_star_prism__dual_and_rectify_validity();

@@ -26,7 +26,8 @@ Both return a standard PolySymmetrica poly descriptor: `[verts, faces, e_over_ir
 ### Antiprism only
 
 - `angle`: additive top-ring twist offset in degrees relative to the regular antiprism twist
-  - actual twist = `180*p/n + angle`
+  - actual twist = `180*signed_step/n + angle`, where `signed_step = p`
+    for `p < n/2` and `p - n` for retrograde `p > n/2`
   - `angle=0` gives the exact regular/star antiprism for `{n,p}`
 
 ## Regular defaults
@@ -42,7 +43,7 @@ When `height=undef`, height is solved from:
 - base ring radius: `R = edge / (2*sin(180/n))`
 - base ring radius (regular/star/compound): `R = edge / (2*sin(180*p/n))`
 - twist: `theta = 180/n + angle`
-- twist (regular/star/compound): `theta = 180*p/n + angle`
+- twist (regular/star/compound): `theta = 180*signed_step/n + angle`
 - lateral edge condition: `edge^2 = 2*R^2*(1-cos(theta)) + h^2`
 
 So:
