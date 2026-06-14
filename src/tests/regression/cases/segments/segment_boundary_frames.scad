@@ -21,7 +21,8 @@ TESTS = [
     ["atut_generated_spans", "boundary_spans", function() poly_truncate(tetrahedron(), t = -0.5), 0, "generated"],
     ["atut_seam_segments", "seams", function() poly_truncate(tetrahedron(), t = -0.5), 0],
     ["atut_visible_cells", "visible", function() poly_truncate(tetrahedron(), t = -0.5), 0],
-    ["dodeca_boundary_control", "boundary_spans", function() dodecahedron(), 0, "all"]
+    ["dodeca_boundary_control", "boundary_spans", function() dodecahedron(), 0, "all"],
+    ["atut_tneg1_visible_winding", "visible_winding", function() poly_truncate(tetrahedron(), t = -1), 0]
 ];
 
 T_MAX = len(TESTS);
@@ -225,6 +226,80 @@ module _visible_panel(poly, face_idx, label_s) {
     reg_panel_label(label_s);
 }
 
+module _orientation_marker(pts2d, sign, marker_color, z, r = 0.42) {
+    a = pts2d[0];
+    b = pts2d[1];
+    mid = (a + b) / 2;
+    edge = b - a;
+    len = norm(edge);
+    side = (len <= 1e-8) ? [0, 1] : sign * [-edge[1], edge[0]] / len;
+    p = mid + side * 3.2;
+
+    color(marker_color)
+        translate([p[0], p[1], z])
+            sphere(r = r, $fn = 16);
+
+    color(marker_color)
+        translate([0, 0, z])
+            reg_local_segment([mid, p], r = r * 0.42, h = 0.18);
+}
+
+module _visible_winding_panel(poly, face_idx, label_s) {
+    // Green marks semantic target winding; crimson marks the current visible-cell winding.
+    site = ps_face_sites(poly, IR)[face_idx];
+    face_pts3d_local = ps_face_site_pts3d_local(site);
+    face_pts2d = ps_xy(face_pts3d_local);
+    arr = ps_face_arrangement(face_pts3d_local, 1e-4);
+    target_sign = _ps_seg_fill_target_sign(arr, "nonzero", 1e-4);
+    raw_sign = (_ps_seg_poly_area2(face_pts2d) >= 0) ? 1 : -1;
+    bm = ps_face_boundary_model(face_pts3d_local, "nonzero", 1e-4);
+    visible = ps_face_visible_segments(
+        face_pts3d_local,
+        site[0],
+        ps_face_site_poly_faces_idx(site),
+        ps_face_site_poly_verts_local(site),
+        1e-4,
+        "nonzero",
+        true
+    );
+
+    for (li = [0:1:len(bm[2]) - 1]) {
+        loop = bm[2][li][0];
+        color("gainsboro", 0.42)
+            translate([0, 0, -0.12])
+                linear_extrude(height = 0.18, center = true)
+                    polygon(points = loop);
+
+        color("dimgray")
+            for (seg2d = ps_cyclic_pairs(loop))
+                translate([0, 0, 0.05])
+                    reg_local_segment(seg2d, r = 0.16, h = 0.14);
+    }
+
+    for (vi = [0:1:len(visible) - 1]) {
+        pts = visible[vi][0];
+        actual_sign = (_ps_seg_poly_area2(pts) >= 0) ? 1 : -1;
+
+        color(reg_cycle_color(vi), 0.72)
+            translate([0, 0, 0.18])
+                linear_extrude(height = FACE_THK, center = true)
+                    polygon(points = pts);
+
+        color("black")
+            for (seg2d = ps_cyclic_pairs(pts))
+                translate([0, 0, 0.42])
+                    reg_local_segment(seg2d, r = 0.22, h = 0.24);
+
+        _orientation_marker(pts, target_sign, "limegreen", 1.4, r = 0.72);
+        _orientation_marker(pts, actual_sign, "crimson", 2.5, r = 0.72);
+
+        translate([ps_centroid2d(pts)[0], ps_centroid2d(pts)[1], 3.4])
+            reg_text_label(str("raw", raw_sign, " tgt", target_sign, " act", actual_sign), size = 1.55, h = 0.07);
+    }
+
+    reg_panel_label(label_s);
+}
+
 module _render_test(spec) {
     name = spec[0];
     kind = spec[1];
@@ -241,6 +316,8 @@ module _render_test(spec) {
         _seam_panel(poly, face_idx, name);
     } else if (kind == "visible") {
         _visible_panel(poly, face_idx, name);
+    } else if (kind == "visible_winding") {
+        _visible_winding_panel(poly, face_idx, name);
     } else {
         assert(false, str("Unknown segment regression kind: ", kind));
     }
