@@ -212,6 +212,32 @@ module test_ps_face_region_loop_shells__anti_tet_winding_splits_exposure() {
     assert_int_eq(bottom_count, 3, "anti-tet opposite-winding corner shells should be bottom-exposed");
 }
 
+module test_ps_face_region_loop_shells__anti_tet_past_zero_area_keeps_atom_regions() {
+    p = poly_truncate(tetrahedron(), t = -1);
+    site = _test_face_site(p, 0);
+    face_ctx = ps_face_site_face_local_context(site);
+    bm = ps_face_boundary_model(ps_face_site_pts3d_local(site), "nonzero", 1e-4);
+    shells = ps_face_region_loop_shells(face_ctx, -0.5, 0.5, "nonzero", 20, 1e-4);
+
+    assert_int_eq(len(bm[2]), 4, "anti-tet past zero-area threshold should keep four boundary loops");
+    assert_int_eq(len(shells), 4, "anti-tet past zero-area threshold should keep four face-region shells");
+
+    for (i = [0:1:len(shells)-1]) {
+        assert_int_eq(len(ps_loop_shell_bottom_loop2d(shells[i])), 3, str("anti-tet threshold shell should be triangular i=", i));
+        assert(_test_shell_caps_are_simple(shells[i], 1e-4), str("anti-tet threshold shell cap loops should be simple i=", i));
+    }
+
+    exposure_signs = [
+        for (shell = shells)
+            ps_loop_shell_exposure_sign(shell)
+    ];
+    top_count = sum([for (sign = exposure_signs) sign > 0 ? 1 : 0]);
+    bottom_count = sum([for (sign = exposure_signs) sign < 0 ? 1 : 0]);
+
+    assert_int_eq(top_count, 1, "anti-tet threshold centre shell should remain top-exposed");
+    assert_int_eq(bottom_count, 3, "anti-tet threshold corner shells should remain bottom-exposed");
+}
+
 module test_ps_face_region_projection_cap__limits_offset() {
     assert_near(_ps_fr_project_offset(10, 0.5, 3), 3, EPS, "positive projection cap");
     assert_near(_ps_fr_project_offset(-10, 0.5, 3), -3, EPS, "negative projection cap");
@@ -229,6 +255,7 @@ module run_TestFaceRegions() {
     test_ps_face_region_loop_shells__zero_winding_exposure_uses_same_winding_fallback();
     test_ps_face_region_loop_shells__anti_tet_hex_is_finite();
     test_ps_face_region_loop_shells__anti_tet_winding_splits_exposure();
+    test_ps_face_region_loop_shells__anti_tet_past_zero_area_keeps_atom_regions();
     test_ps_face_region_projection_cap__limits_offset();
 }
 
