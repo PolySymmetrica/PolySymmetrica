@@ -413,6 +413,13 @@ function _ps_seg_nonzero_fill_target_sign(arr, eps=1e-8) =
 function _ps_seg_fill_target_sign(arr, mode="nonzero", eps=1e-8) =
     (mode == "nonzero") ? _ps_seg_nonzero_fill_target_sign(arr, eps) : _ps_seg_arr_input_sign(arr);
 
+function _ps_seg_fill_target_sign_for_face_pts(face_pts, mode="nonzero", eps=1e-8) =
+    _ps_seg_fill_target_sign(
+        ps_face_arrangement([for (p = face_pts) [p[0], p[1], 0]], eps),
+        mode,
+        eps
+    );
+
 function _ps_seg_fill_cell_ids_from_arr(arr, mode="nonzero", eps=1e-8) =
     let(target_sign = _ps_seg_fill_target_sign(arr, mode, eps))
     _ps_seg_fill_cell_ids_from_arr_with_target(arr, mode, target_sign, eps);
@@ -1634,7 +1641,7 @@ function ps_face_visible_segments(face_pts2d, face_idx, poly_faces_idx, poly_ver
     let(
         base_segs = ps_face_segments([for (p = face_pts2d) [p[0], p[1], 0]], mode, eps),
         cut_segs = ps_face_geom_cut_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent),
-        target_sign = (_ps_seg_poly_area2(face_pts2d) >= 0) ? 1 : -1
+        target_sign = _ps_seg_fill_target_sign_for_face_pts(face_pts2d, mode, eps)
     )
     [
         for (base = base_segs)
@@ -1699,7 +1706,7 @@ function ps_face_seam_clearance_loops(
         face_idx = ps_face_local_context_idx(face_ctx),
         poly_faces_idx = ps_face_local_context_poly_faces_idx(face_ctx),
         poly_verts_local = ps_face_local_context_poly_verts_local(face_ctx),
-        target_sign = (_ps_seg_poly_area2(face_pts2d) >= 0) ? 1 : -1,
+        target_sign = _ps_seg_fill_target_sign_for_face_pts(face_pts2d, mode, eps),
         cut_entries = ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent),
         cut_segs = [for (e = cut_entries) e[0]],
         cells = _ps_face_cut_split_cells_from_cuts(face_pts2d, cut_segs, eps, mode),

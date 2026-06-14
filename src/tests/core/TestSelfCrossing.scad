@@ -745,6 +745,33 @@ module test_ps_face_visible_segments__7_3_0_triangle_catches_meeting_cut_edges()
     );
 }
 
+module test_ps_face_visible_segments__atut_past_zero_area_uses_semantic_target_winding() {
+    p = poly_truncate(tetrahedron(), t = -1);
+    site = _test_face_site(p, ANTI_FACE_IDX);
+    face_pts3d_local = ps_face_site_pts3d_local(site);
+    raw_sign = (_ps_seg_poly_area2(ps_xy(face_pts3d_local)) >= 0) ? 1 : -1;
+    target_sign = _ps_seg_fill_target_sign(ps_face_arrangement(face_pts3d_local, 1e-4), MODE, 1e-4);
+    bm = ps_face_boundary_model(face_pts3d_local, MODE, 1e-4);
+    visible = ps_face_visible_segments(
+        face_pts3d_local,
+        site[0],
+        ps_face_site_poly_faces_idx(site),
+        ps_face_site_poly_verts_local(site),
+        1e-4,
+        MODE,
+        true
+    );
+
+    assert(raw_sign != target_sign, "anti-tet regression should exercise raw area sign flip");
+    assert_int_eq(len(bm[2]), 4, "anti-tet boundary model should preserve four atom loops past zero-area threshold");
+    assert_int_eq(len(visible), 1, "anti-tet visible region should keep one visible atom");
+    assert_int_eq(len(visible[0][0]), 3, "anti-tet visible atom should remain triangular");
+    assert(
+        _ps_seg_poly_area2(visible[0][0]) * target_sign > 1e-8,
+        str("anti-tet visible atom should use semantic target winding area=", _ps_seg_poly_area2(visible[0][0]), " target_sign=", target_sign)
+    );
+}
+
 module test_ps_face_seam_clearance_loops__5_2_15_triangle_faces_emit_hidden_cut_loops() {
     place_on_faces(_test_penta_punch_poly()) {
         if ($ps_face_idx == 2 || $ps_face_idx == 9) {
@@ -1274,6 +1301,7 @@ module run_TestSelfCrossing() {
     test_ps_proxy_volume_group_context_helpers__match_public_wrappers();
     test_ps_face_visible_segments__7_3_15_triangle_splits_into_visible_cells();
     test_ps_face_visible_segments__7_3_0_triangle_catches_meeting_cut_edges();
+    test_ps_face_visible_segments__atut_past_zero_area_uses_semantic_target_winding();
     test_ps_face_seam_clearance_loops__5_2_15_triangle_faces_emit_hidden_cut_loops();
     test_ps_face_seam_clearance_loops__7_3_15_triangle_emits_ordered_cut_loops();
     test_ps_face_seam_clearance_shells__stress_cases_emit_simple_caps();
