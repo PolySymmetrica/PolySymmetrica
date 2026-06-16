@@ -4,7 +4,7 @@ use <../../models/platonics_all.scad>
 use <util_demo.scad>
 
 /**
-Showcase selective params_overrides on tetrahedron and cube.
+Showcase selective profile on tetrahedron and cube.
 
 Pattern used throughout:
 - set scalar controls to 0 (or near-0) so unaffected elements stay unchanged
@@ -61,7 +61,7 @@ module show_param_ops(poly, poly_name) {
     p0 = poly_truncate(
         poly,
         t=0.001,
-        params_overrides=[
+        profile=[
             ["vert", "id", some_vs, ["t", 0.25]]
         ],
         cleanup=use_cleanup,
@@ -72,7 +72,7 @@ module show_param_ops(poly, poly_name) {
     p1 = poly_cantellate(
         poly,
         df=0,
-        params_overrides=[
+        profile=[
             ["face", "id", [top_f], ["df", 0.14]]
         ],
         cleanup=use_cleanup,
@@ -83,7 +83,7 @@ module show_param_ops(poly, poly_name) {
     p2 = poly_chamfer(
         poly,
         t=0,
-        params_overrides=[
+        profile=[
             ["face", "id", [top_f], ["t", 0.30]]
         ],
         cleanup=use_cleanup,
@@ -97,7 +97,7 @@ module show_param_ops(poly, poly_name) {
         poly,
         t=0,
         c=0,
-        params_overrides=[
+        profile=[
             ["face", "all", ["c", 0.0]],
             ["face", "id", [top_f], ["c", 0.40]]
         ],
@@ -111,7 +111,7 @@ module show_param_ops(poly, poly_name) {
         angle=0,
         c=0,
         df=0,
-        params_overrides=[
+        profile=[
             ["face", "all", ["df", 0.2], ["angle", 0]],
             ["face", "id", [top_f], ["df", 0.02], ["angle", 25]],
             ["vert", "all", ["c", 0.01]]

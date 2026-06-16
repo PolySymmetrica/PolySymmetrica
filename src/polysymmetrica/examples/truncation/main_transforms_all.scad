@@ -31,10 +31,10 @@ transforms = [
 function _cantitruncate_demo(name, p) =
     (name == "cuboctahedron") ?
         let(rows = solve_cantitruncate_dominant_edges_params(p, 4))
-        poly_cantitruncate(p, t=0, c=0, params_overrides=rows) :
+        poly_cantitruncate(p, t=0, c=0, profile=rows) :
     (name == "icosidodecahedron") ?
         let(rows = solve_cantitruncate_dominant_edges_params(p, 5))
-        poly_cantitruncate(p, t=0, c=0, params_overrides=rows) :
+        poly_cantitruncate(p, t=0, c=0, profile=rows) :
         poly_cantitruncate(p);
 
 spacing_x = 140;

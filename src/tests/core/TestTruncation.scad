@@ -201,66 +201,66 @@ module test_poly_cantitruncate__cube_edge_face_adjacency() {
     assert(min(shared) >= 1, "cantitruncate cube: quad vertices shared with face cycles");
 }
 
-module test_poly_cantellate__params_overrides_face_df_and_c() {
+module test_poly_cantellate__profile_face_df_and_c() {
     p = hexahedron();
 
-    q_df = poly_cantellate(p, df=0.05, params_overrides=[["face", "family", 0, ["df", 0.1]]]);
+    q_df = poly_cantellate(p, df=0.05, profile=[["face", "family", 0, ["df", 0.1]]]);
     q_df_ref = poly_cantellate(p, df=0.1);
-    assert(_max_vertex_diff(q_df, q_df_ref) < 1e-7, "cantellate params_overrides face df should override scalar df");
+    assert(_max_vertex_diff(q_df, q_df_ref) < 1e-7, "cantellate profile face df should override scalar df");
 
-    q_c = poly_cantellate(p, df=0.05, params_overrides=[["face", "family", 0, ["c", 0.5]]]);
+    q_c = poly_cantellate(p, df=0.05, profile=[["face", "family", 0, ["c", 0.5]]]);
     q_c_ref = poly_cantellate(p, c=0.5);
-    assert(_max_vertex_diff(q_c, q_c_ref) < 1e-7, "cantellate params_overrides face c should override scalar df");
+    assert(_max_vertex_diff(q_c, q_c_ref) < 1e-7, "cantellate profile face c should override scalar df");
 }
 
-module test_poly_cantitruncate__unsupported_params_overrides_ignored() {
+module test_poly_cantitruncate__unsupported_profile_ignored() {
     p = hexahedron();
     q0 = poly_cantitruncate(p, 0.2, 0.2);
     q1 = poly_cantitruncate(
         p,
         0.2,
         0.2,
-        params_overrides=[
+        profile=[
             ["face", "all", ["df", 0.1]],
             ["edge", "all", ["t", 0.3]]
         ]
     );
-    assert(_max_vertex_diff(q0, q1) < 1e-7, "cantitruncate unsupported params_overrides should be ignored");
+    assert(_max_vertex_diff(q0, q1) < 1e-7, "cantitruncate unsupported profile should be ignored");
 }
 
-module test_poly_cantitruncate__params_overrides_face_c() {
+module test_poly_cantitruncate__profile_face_c() {
     p = hexahedron();
-    q1 = poly_cantitruncate(p, 0.2, 0.1, params_overrides=[["face", "family", 0, ["c", 0.2]]]);
+    q1 = poly_cantitruncate(p, 0.2, 0.1, profile=[["face", "family", 0, ["c", 0.2]]]);
     qx = poly_cantitruncate(p, 0.2, 0.2);
-    assert(_max_vertex_diff(q1, qx) < 1e-7, "cantitruncate params_overrides face c should override scalar c");
+    assert(_max_vertex_diff(q1, qx) < 1e-7, "cantitruncate profile face c should override scalar c");
 }
 
-module test_poly_cantitruncate__params_overrides_vert_t() {
+module test_poly_cantitruncate__profile_vert_t() {
     p = hexahedron();
-    q1 = poly_cantitruncate(p, 0.2, 0.2, params_overrides=[["vert", "family", 0, ["t", 0.1]]]);
+    q1 = poly_cantitruncate(p, 0.2, 0.2, profile=[["vert", "family", 0, ["t", 0.1]]]);
     qx = poly_cantitruncate(p, 0.1, 0.2);
-    assert(_max_vertex_diff(q1, qx) < 1e-7, "cantitruncate params_overrides vert t should override scalar t");
+    assert(_max_vertex_diff(q1, qx) < 1e-7, "cantitruncate profile vert t should override scalar t");
 }
 
-module test_poly_cantitruncate__params_overrides_edge_c() {
+module test_poly_cantitruncate__profile_edge_c() {
     p = hexahedron();
     q1 = poly_cantitruncate(
         p,
         0.2,
         0.1,
-        params_overrides=[
+        profile=[
             ["face", "all", ["c", 0.2]],
             ["edge", "all", ["c", 0.2]]
         ]
     );
     qx = poly_cantitruncate(p, 0.2, 0.2);
-    assert(_max_vertex_diff(q1, qx) < 1e-7, "cantitruncate params_overrides edge c should apply with face c");
+    assert(_max_vertex_diff(q1, qx) < 1e-7, "cantitruncate profile edge c should apply with face c");
 }
 
 module test_ps_cantitruncate_params_rows__direct_matches_scalar_cube() {
     p = hexahedron();
     rows = ps_cantitruncate_params_rows(p, [[4, 0.2]], 0.1);
-    q1 = poly_cantitruncate(p, t=0.2, c=0, params_overrides=rows);
+    q1 = poly_cantitruncate(p, t=0.2, c=0, profile=rows);
     qx = poly_cantitruncate(p, 0.2, 0.2);
     assert(_max_vertex_diff(q1, qx) < 1e-7, "cantitruncate rows path should match scalar cube path");
 }
@@ -272,8 +272,8 @@ module test_solve_cantitruncate_dominant_edges_params__matches_legacy_rows() {
     rows = ps_cantitruncate_params_rows(base, sol[1], 0, sol[2]);
     rowsp = solve_cantitruncate_dominant_edges_params(base, 4);
 
-    q0 = poly_cantitruncate(base, t=t, c=0, params_overrides=rows);
-    q1 = poly_cantitruncate(base, t=0, c=0, params_overrides=rowsp);
+    q0 = poly_cantitruncate(base, t=t, c=0, profile=rows);
+    q1 = poly_cantitruncate(base, t=0, c=0, profile=rowsp);
     assert(_max_vertex_diff(q0, q1) < 1e-7, "cantitruncate dominant edges params solver should match map-to-rows path");
 }
 
@@ -285,7 +285,7 @@ module test_ps_cantitruncate_params_rows__default_c_applies_missing_sizes() {
     size4_face_ids = [for (fi = [0:1:len(faces)-1]) if (len(faces[fi]) == 4) fi];
 
     // Params-only path: scalar c=0 should not matter if rows carry default_c for missing sizes.
-    q_rows = poly_cantitruncate(base, t=0.2, c=0, params_overrides=rows);
+    q_rows = poly_cantitruncate(base, t=0.2, c=0, profile=rows);
 
     // Independent reference path:
     // - all faces get default_c
@@ -294,7 +294,7 @@ module test_ps_cantitruncate_params_rows__default_c_applies_missing_sizes() {
         base,
         t=0.2,
         c=0,
-        params_overrides=[
+        profile=[
             ["face", "all", ["c", 0.05]],
             ["face", "id", size4_face_ids, ["c", 0.2]]
         ]
@@ -328,7 +328,7 @@ module test_poly_cantitruncate_dominant_edges__planarity() {
             base,
             t=sol[0],
             c=0,
-            params_overrides=ps_cantitruncate_params_rows(base, sol[1], 0, sol[2])
+            profile=ps_cantitruncate_params_rows(base, sol[1], 0, sol[2])
         );
         verts = poly_verts(p);
         faces = poly_faces(p);
@@ -628,34 +628,34 @@ module test_poly_snub__fixed_c_auto_beats_zero_angle() {
 
 module test_poly_snub__default_solver_returns_structured_overrides() {
     p = hexahedron();
-    rows = ps_snub_default_params_overrides(p);
+    rows = ps_snub_default_profile(p);
     q0 = poly_snub(p);
-    q1 = poly_snub(p, params_overrides=rows);
+    q1 = poly_snub(p, profile=rows);
     assert(len(rows) > 0, "snub structured defaults should return rows");
     assert(_max_vertex_diff(q0, q1) < 1e-7, "snub structured defaults should recreate auto result");
 }
 
-module test_poly_snub__params_overrides_face_angle_overrides_scalar() {
+module test_poly_snub__profile_face_angle_overrides_scalar() {
     p = hexahedron();
     q0 = poly_snub(p, angle=0, c=0.07, df=0.05);
-    q1 = poly_snub(p, angle=0, c=0.07, df=0.05, params_overrides=[["face", "family", 0, ["angle", 18]]]);
+    q1 = poly_snub(p, angle=0, c=0.07, df=0.05, profile=[["face", "family", 0, ["angle", 18]]]);
     qx = poly_snub(p, angle=18, c=0.07, df=0.05);
-    assert(_max_vertex_diff(q1, qx) < 1e-7, "snub params_overrides face angle should match explicit angle");
-    assert(_max_vertex_diff(q1, q0) > 1e-4, "snub params_overrides face angle should override scalar angle");
+    assert(_max_vertex_diff(q1, qx) < 1e-7, "snub profile face angle should match explicit angle");
+    assert(_max_vertex_diff(q1, q0) > 1e-4, "snub profile face angle should override scalar angle");
 }
 
-module test_poly_snub__params_overrides_face_df_overrides_scalar() {
+module test_poly_snub__profile_face_df_overrides_scalar() {
     p = hexahedron();
-    q1 = poly_snub(p, angle=15, c=0.07, df=0.02, params_overrides=[["face", "family", 0, ["df", 0.06]]]);
+    q1 = poly_snub(p, angle=15, c=0.07, df=0.02, profile=[["face", "family", 0, ["df", 0.06]]]);
     qx = poly_snub(p, angle=15, c=0.07, df=0.06);
-    assert(_max_vertex_diff(q1, qx) < 1e-7, "snub params_overrides face df should match explicit df");
+    assert(_max_vertex_diff(q1, qx) < 1e-7, "snub profile face df should match explicit df");
 }
 
-module test_poly_snub__params_overrides_vert_c_overrides_scalar() {
+module test_poly_snub__profile_vert_c_overrides_scalar() {
     p = hexahedron();
-    q1 = poly_snub(p, angle=15, c=0.02, df=0.05, params_overrides=[["vert", "family", 0, ["c", 0.08]]]);
+    q1 = poly_snub(p, angle=15, c=0.02, df=0.05, profile=[["vert", "family", 0, ["c", 0.08]]]);
     qx = poly_snub(p, angle=15, c=0.08, df=0.05);
-    assert(_max_vertex_diff(q1, qx) < 1e-7, "snub params_overrides vert c should match explicit c");
+    assert(_max_vertex_diff(q1, qx) < 1e-7, "snub profile vert c should match explicit c");
 }
 
 // Informational performance smoke test for default snub solving.
@@ -686,11 +686,11 @@ module run_TestTruncation() {
     test_poly_truncate_then_dual__counts_relations();
     test_poly_rectify__tetra_counts();
     test_poly_cantitruncate__tetra_counts();
-    test_poly_cantellate__params_overrides_face_df_and_c();
-    test_poly_cantitruncate__unsupported_params_overrides_ignored();
-    test_poly_cantitruncate__params_overrides_face_c();
-    test_poly_cantitruncate__params_overrides_vert_t();
-    test_poly_cantitruncate__params_overrides_edge_c();
+    test_poly_cantellate__profile_face_df_and_c();
+    test_poly_cantitruncate__unsupported_profile_ignored();
+    test_poly_cantitruncate__profile_face_c();
+    test_poly_cantitruncate__profile_vert_t();
+    test_poly_cantitruncate__profile_edge_c();
     test_ps_cantitruncate_params_rows__direct_matches_scalar_cube();
     test_solve_cantitruncate_dominant_edges_params__matches_legacy_rows();
     test_ps_cantitruncate_params_rows__default_c_applies_missing_sizes();
@@ -719,9 +719,9 @@ module run_TestTruncation() {
     test_poly_snub__fixed_c_angle_solver_nonzero();
     test_poly_snub__fixed_c_auto_beats_zero_angle();
     test_poly_snub__default_solver_returns_structured_overrides();
-    test_poly_snub__params_overrides_face_angle_overrides_scalar();
-    test_poly_snub__params_overrides_face_df_overrides_scalar();
-    test_poly_snub__params_overrides_vert_c_overrides_scalar();
+    test_poly_snub__profile_face_angle_overrides_scalar();
+    test_poly_snub__profile_face_df_overrides_scalar();
+    test_poly_snub__profile_vert_c_overrides_scalar();
     if (ENABLE_SNUB_PERF_SMOKE)
         perf_snub__defaults_smoke();
     else

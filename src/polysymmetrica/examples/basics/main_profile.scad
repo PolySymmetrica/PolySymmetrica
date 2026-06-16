@@ -1,7 +1,7 @@
-use <../../core/params.scad>
+use <../../core/profile.scad>
 
 /*
-Params-overrides basics example.
+Profile basics example.
 
 Shows that `face_fid` is a family-id array indexed by face index.
 Here we use a synthetic 4-face case:
@@ -23,14 +23,13 @@ rows = [
 
 face_fid = [0, 1, 1, 0];
 
-face_df = ps_params_compile_key(rows, "face", "df", 4, face_fid);
-face_angle = ps_params_compile_key(rows, "face", "angle", 4, face_fid);
+face_df = ps_profile_compile_key(rows, "face", "df", 4, face_fid);
+face_angle = ps_profile_compile_key(rows, "face", "angle", 4, face_fid);
 
-echo("params example: face_fid=", face_fid);
-echo("params example: face_df=", face_df);         // [undef, 0.04, 0.04, undef]
-echo("params example: face_angle=", face_angle);   // [15, 15, 19, 19]
-ps_params_print(rows);
+echo("profile example: face_fid=", face_fid);
+echo("profile example: face_df=", face_df);         // [undef, 0.04, 0.04, undef]
+echo("profile example: face_angle=", face_angle);   // [15, 15, 19, 19]
+ps_profile_print(rows);
 
 // Minimal geometry so this file renders to a valid STL target.
 cube(1, center=true);
-

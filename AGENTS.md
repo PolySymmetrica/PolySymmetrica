@@ -106,7 +106,7 @@ the repo root. Do not commit `.tmp/` artifacts.
   `docs/construction.md`
 - Prisms, antiprisms, snubs, cantellation/cantitruncation:
   `docs/prisms.md`, `docs/snubs.md`, `docs/cantellation.md`,
-  `docs/cantitruncation.md`, and `docs/params_overrides.md`
+  `docs/cantitruncation.md`, and `docs/profile.md`
 
 ## Git And PRs
 

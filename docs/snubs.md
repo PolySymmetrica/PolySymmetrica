@@ -16,14 +16,14 @@ poly_snub(
     handedness = 1,
     eps = 1e-8,
     len_eps = 1e-6,
-    params_overrides = undef
+    profile = undef
 )
 ```
 
 Related helper:
 
 ```scad
-ps_snub_default_params_overrides(poly, handedness=1, eps=1e-9)
+ps_snub_default_profile(poly, handedness=1, eps=1e-9)
 ```
 
 ## Parameter Semantics
@@ -35,7 +35,7 @@ ps_snub_default_params_overrides(poly, handedness=1, eps=1e-9)
   - Internally mapped by `_ps_cantellate_df_from_c_linear(...)`.
   - If `c` is supplied and `de` is not, then `de` comes from `c`.
 - `handedness`: diagonal split/chirality selector (`>=0` vs `<0`).
-- `params_overrides`: structured per-element overrides (see `docs/params_overrides.md`).
+- `profile`: structured per-element overrides (see `docs/profile.md`).
 
 Important fallback rules:
 
@@ -101,10 +101,10 @@ params = [
     ["vert", "family", 0, ["c", 0.05]]
 ];
 
-q = poly_snub(p, params_overrides=params);
+q = poly_snub(p, profile=params);
 ```
 
-See full schema in `docs/params_overrides.md`.
+See full schema in `docs/profile.md`.
 
 ## Usage Examples
 
@@ -129,8 +129,8 @@ q = poly_snub(hexahedron(), df=0.10, de=0.10, angle=undef);
 ### 4) Use structured default rows directly
 
 ```scad
-rows = ps_snub_default_params_overrides(hexahedron());
-q = poly_snub(hexahedron(), params_overrides=rows);
+rows = ps_snub_default_profile(hexahedron());
+q = poly_snub(hexahedron(), profile=rows);
 ```
 
 ### 5) Family-specific tweak (requires family IDs from classify)
@@ -140,7 +140,7 @@ cls = poly_classify(poly_rectify(octahedron()), detail=1);
 // family id chosen from cls inspection
 q = poly_snub(
     poly_rectify(octahedron()),
-    params_overrides=[
+    profile=[
         ["face", "family", 0, ["df", 0.06], ["angle", 12]],
         ["vert", "all", ["c", 0.04]]
     ]
@@ -162,7 +162,7 @@ Snub behavior is currently pinned in `src/tests/core/TestTruncation.scad`, inclu
 ## Practical Caveats
 
 - Auto defaults are best on regular bases.
-- Multi-family bases may need `params_overrides` (especially `df/angle` by face family) for good planarity/shape quality.
+- Multi-family bases may need `profile` (especially `df/angle` by face family) for good planarity/shape quality.
 - The solver remains search-based and can be expensive on complex bases.
 - Current objective balances can trade off global edge uniformity vs triangle quality; tests reflect the current compromise.
 
@@ -170,7 +170,7 @@ Snub behavior is currently pinned in `src/tests/core/TestTruncation.scad`, inclu
 
 - Default solves are fast enough for basic regular cases but still search-based.
 - If you are generating many variants, prefer:
-  1. solve once (`ps_snub_default_params_overrides`),
+  1. solve once (`ps_snub_default_profile`),
   2. reuse rows in repeated `poly_snub` calls.
 
 ## Re-entry Notes

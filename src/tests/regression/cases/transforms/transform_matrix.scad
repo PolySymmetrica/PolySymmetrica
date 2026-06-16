@@ -17,7 +17,7 @@ TESTS = [
     ["prism6_dual", function() poly_dual(poly_prism(6))],
     ["prism6_cantellate", function() poly_cantellate(poly_prism(6))],
     ["ap5_2_truncate", function() poly_truncate(poly_antiprism(5, 2), t = 0.18)],
-    ["ap7_twist_cantellate", function() poly_cantellate(poly_antiprism(7, 3, angle = 12), params_overrides = _tm_ap7_rows())],
+    ["ap7_twist_cantellate", function() poly_cantellate(poly_antiprism(7, 3, angle = 12), profile = _tm_ap7_rows())],
     ["trunc_dod_dual", function() poly_dual(truncated_dodecahedron())],
     [
         "cuboct_dominant_ct",
@@ -25,7 +25,7 @@ TESTS = [
             cuboctahedron(),
             t = 0,
             c = 0,
-            params_overrides = solve_cantitruncate_dominant_edges_params(cuboctahedron(), 4)
+            profile = solve_cantitruncate_dominant_edges_params(cuboctahedron(), 4)
         )
     ]
 ];

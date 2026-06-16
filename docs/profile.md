@@ -1,6 +1,6 @@
-# Params Overrides Notes
+# Profile Notes
 
-This document describes the shared `params_overrides` mechanism and helper functions in `core/params.scad`.
+This document describes the shared `profile` mechanism and helper functions in `core/profile.scad`.
 
 It is intentionally operator-agnostic, so the same mechanism can be reused by truncation/cantellation/chamfer/snub/cantitruncation and future operators.
 
@@ -29,7 +29,7 @@ Rows can target all elements, families, or explicit element indices.
 Example with multiple params per row:
 
 ```scad
-params_overrides = [
+profile = [
     ["face", "all",    ["angle", 15], ["df", 0.03]],
     ["face", "family", 1, ["angle", 20], ["df", 0.04]],
     ["vert", "family", 0, ["c", 0.06], ["de", 0.05]],
@@ -47,14 +47,14 @@ For a given `(kind, element_id, family_id, key)`, precedence is fixed:
 
 Within a scope, later rows win; within a row, later duplicate keys win.
 
-## Helper API (`core/params.scad`)
+## Helper API (`core/profile.scad`)
 
 Generic helpers:
 
-- `ps_params_get(params_overrides, kind, key, element_id=undef, family_id=undef)`
-- `ps_params_count_kind(params_overrides, kind)`
-- `ps_params_compile_key(params_overrides, kind, key, count, family_ids=undef)`
-- `ps_params_compile_specs(params_overrides, specs)`
+- `ps_profile_get(profile, kind, key, element_id=undef, family_id=undef)`
+- `ps_profile_count_kind(profile, kind)`
+- `ps_profile_compile_key(profile, kind, key, count, family_ids=undef)`
+- `ps_profile_compile_specs(profile, specs)`
 - `ps_compiled_param_get(arr, idx)`
 
 ## Compile Specs
@@ -76,7 +76,7 @@ Important:
 Example (per-element compile with family-aware matching):
 
 ```scad
-params_compiled = ps_params_compile_specs(params_overrides, [
+params_compiled = ps_profile_compile_specs(profile, [
     ["face", "df", len(faces0), face_fid],
     ["face", "angle", len(faces0), face_fid],
     ["vert", "c", len(verts0), vert_fid],
@@ -95,12 +95,12 @@ Then lookup by element idx in O(1):
 df_ov = ps_compiled_param_get(face_df_by_idx, face_idx);
 ```
 
-If you are not compiling and call `ps_params_get(...)` directly, family matching still works if you pass `family_id` explicitly.
+If you are not compiling and call `ps_profile_get(...)` directly, family matching still works if you pass `family_id` explicitly.
 
 ## Usage Pattern
 
 1. Classify once (`poly_classify`) if family selectors are used.
-2. Compile requested keys once via `ps_params_compile_specs`.
+2. Compile requested keys once via `ps_profile_compile_specs`.
 3. During geometry loops, use `ps_compiled_param_get` and operator fallback precedence:
    - selector overrides (`id/family/all`)
    - scalar/operator explicit args
@@ -110,7 +110,7 @@ This keeps operator code fast and keeps parameterization semantics consistent ac
 
 ## Caveat: Geometric Compatibility
 
-`params_overrides` is intentionally expressive, so it can encode combinations that are
+`profile` is intentionally expressive, so it can encode combinations that are
 topologically or geometrically incompatible (for example, strongly selective local
 overrides that force conflicting constraints between adjacent regions).
 
@@ -140,23 +140,23 @@ This avoids family-id drift between overrides, transforms, and placement.
 
 Runnable example:
 
-- [`src/polysymmetrica/examples/basics/main_params.scad`](../src/polysymmetrica/examples/basics/main_params.scad)
+- [`src/polysymmetrica/examples/basics/main_profile.scad`](../src/polysymmetrica/examples/basics/main_profile.scad)
 
 It demonstrates:
 - `face_fid` as family-id-by-face-index
 - compiled dense arrays for `df` and `angle`
-- `ps_params_print(...)` output
+- `ps_profile_print(...)` output
 
 ## Snub Defaults As Structured Params
 
 Snub now has a structured default solver output:
 
-- `ps_snub_default_params_overrides(poly, handedness=1, eps=1e-9)`
+- `ps_snub_default_profile(poly, handedness=1, eps=1e-9)`
 
 This returns override rows directly (face/vert scopes), so it can be passed
 straight into `poly_snub`:
 
 ```scad
-rows = ps_snub_default_params_overrides(hexahedron());
-q = poly_snub(hexahedron(), params_overrides=rows);
+rows = ps_snub_default_profile(hexahedron());
+q = poly_snub(hexahedron(), profile=rows);
 ```

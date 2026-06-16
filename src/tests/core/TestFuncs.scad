@@ -1,6 +1,6 @@
 use <../../polysymmetrica/core/funcs.scad>
 use <../../polysymmetrica/core/cleanup.scad>
-use <../../polysymmetrica/core/params.scad>
+use <../../polysymmetrica/core/profile.scad>
 use <../../polysymmetrica/core/validate.scad>
 use <../../polysymmetrica/models/platonics_all.scad>
 use <../testing_util.scad>
@@ -530,8 +530,8 @@ module test_ps_face_local_context__accessors_and_default_center() {
     assert(is_undef(ps_face_local_context_dihedrals(ctx_default)), "face-local context default dihedrals");
 }
 
-// --- params-overrides helpers ---
-module test_params_overrides__lookup_and_count() {
+// --- profile helpers ---
+module test_profile__lookup_and_count() {
     pbf = [
         ["face", "family", 0, ["df", 0.1], ["angle", 5], ["df", 0.2]],
         ["face", "family", 0, ["df", undef], ["angle", 7]],
@@ -540,26 +540,26 @@ module test_params_overrides__lookup_and_count() {
         ["vert", "family", 0, ["c", 0.6]]
     ];
 
-    assert_int_eq(ps_params_count_kind(pbf, "face"), 3, "params count face rows");
-    assert_int_eq(ps_params_count_kind(pbf, "vert"), 2, "params count vert rows");
-    assert_int_eq(ps_params_count_kind(undef, "face"), 0, "params count undef");
+    assert_int_eq(ps_profile_count_kind(pbf, "face"), 3, "params count face rows");
+    assert_int_eq(ps_profile_count_kind(pbf, "vert"), 2, "params count vert rows");
+    assert_int_eq(ps_profile_count_kind(undef, "face"), 0, "params count undef");
 
-    assert_near(ps_params_get(pbf, "face", "df", 0, 0), 0.2, EPS, "params get face0 df");
-    assert_near(ps_params_get(pbf, "face", "angle", 0, 0), 7, EPS, "params get face0 angle");
-    assert_near(ps_params_get(pbf, "face", "df", 1, 1), 0.3, EPS, "params get face1 df");
-    assert_near(ps_params_get(pbf, "vert", "c", 0, 0), 0.6, EPS, "params get vert0 c");
-    assert_near(ps_params_get(pbf, "vert", "de", 0, 0), 0.5, EPS, "params get vert0 de");
-    assert(is_undef(ps_params_get(pbf, "face", "df", 2, 2)), "params get missing family -> undef");
-    assert(is_undef(ps_params_get(pbf, "face", "missing", 0, 0)), "params get missing key -> undef");
+    assert_near(ps_profile_get(pbf, "face", "df", 0, 0), 0.2, EPS, "params get face0 df");
+    assert_near(ps_profile_get(pbf, "face", "angle", 0, 0), 7, EPS, "params get face0 angle");
+    assert_near(ps_profile_get(pbf, "face", "df", 1, 1), 0.3, EPS, "params get face1 df");
+    assert_near(ps_profile_get(pbf, "vert", "c", 0, 0), 0.6, EPS, "params get vert0 c");
+    assert_near(ps_profile_get(pbf, "vert", "de", 0, 0), 0.5, EPS, "params get vert0 de");
+    assert(is_undef(ps_profile_get(pbf, "face", "df", 2, 2)), "params get missing family -> undef");
+    assert(is_undef(ps_profile_get(pbf, "face", "missing", 0, 0)), "params get missing key -> undef");
 }
 
-module test_params_overrides__compile_dense_arrays() {
+module test_profile__compile_dense_arrays() {
     pbf = [
         ["face", "family", 0, ["df", 0.2], ["angle", 7]],
         ["face", "family", 2, ["angle", 9]],
         ["vert", "family", 1, ["c", 0.6], ["de", 0.7]]
     ];
-    compiled = ps_params_compile_specs(pbf, [
+    compiled = ps_profile_compile_specs(pbf, [
         ["face", "df", 4, [0,1,2,3]],
         ["face", "angle", 4, [0,1,2,3]],
         ["vert", "c", 3, [0,1,2]],
@@ -599,12 +599,12 @@ module test_params_overrides__compile_dense_arrays() {
     assert(is_undef(ps_compiled_param_get(undef, 0)), "compiled get undef arr -> undef");
 }
 
-module test_params_overrides__compile_single_key() {
+module test_profile__compile_single_key() {
     pbf = [
         ["face", "family", 0, ["df", 0.2]],
         ["face", "family", 2, ["df", 0.9]]
     ];
-    arr = ps_params_compile_key(pbf, "face", "df", 4, [0,1,2,3]);
+    arr = ps_profile_compile_key(pbf, "face", "df", 4, [0,1,2,3]);
     assert_int_eq(len(arr), 4, "compile key len");
     assert_near(arr[0], 0.2, EPS, "compile key face0");
     assert(is_undef(arr[1]), "compile key face1 undef");
@@ -621,14 +621,14 @@ module test_params__selector_precedence_and_compile() {
     ];
 
     // id > family > all
-    assert_near(ps_params_get(p, "face", "df", 2, 1), 0.2, EPS, "params precedence family");
-    assert_near(ps_params_get(p, "face", "df", 3, 1), 0.4, EPS, "params precedence id over family");
-    assert_near(ps_params_get(p, "face", "df", 9, 0), 0.1, EPS, "params precedence all fallback");
-    assert_near(ps_params_get(p, "face", "angle", 4, 1), 11, EPS, "params id scalar selector");
-    assert_near(ps_params_get(p, "face", "angle", 1, 1), 5, EPS, "params all fallback angle");
+    assert_near(ps_profile_get(p, "face", "df", 2, 1), 0.2, EPS, "params precedence family");
+    assert_near(ps_profile_get(p, "face", "df", 3, 1), 0.4, EPS, "params precedence id over family");
+    assert_near(ps_profile_get(p, "face", "df", 9, 0), 0.1, EPS, "params precedence all fallback");
+    assert_near(ps_profile_get(p, "face", "angle", 4, 1), 11, EPS, "params id scalar selector");
+    assert_near(ps_profile_get(p, "face", "angle", 1, 1), 5, EPS, "params all fallback angle");
 
     fam_ids = [1, 1, 1, 1, 0];
-    arr = ps_params_compile_key(p, "face", "df", 5, fam_ids);
+    arr = ps_profile_compile_key(p, "face", "df", 5, fam_ids);
     assert_int_eq(len(arr), 5, "compile key element len");
     assert_near(arr[0], 0.2, EPS, "compile key elem0");
     assert_near(arr[1], 0.2, EPS, "compile key elem1");
@@ -737,9 +737,9 @@ module run_TestFuncs() {
     test_ps_solve3__identity_and_scale();
     test_ps_frame_matrix__basic_layout();
     test_ps_face_local_context__accessors_and_default_center();
-    test_params_overrides__lookup_and_count();
-    test_params_overrides__compile_dense_arrays();
-    test_params_overrides__compile_single_key();
+    test_profile__lookup_and_count();
+    test_profile__compile_dense_arrays();
+    test_profile__compile_single_key();
     test_params__selector_precedence_and_compile();
     test_poly_cleanup__normalizes_face_cycles();
     test_poly_cleanup__drops_degenerate_faces();

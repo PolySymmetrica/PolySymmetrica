@@ -73,4 +73,4 @@ p = poly_cantellate(base, sol_df);
 poly_describe(p, detail=3);
 ```
 
-See also `docs/params_overrides.md` for the shared family-parameter schema used across operators.
+See also `docs/profile.md` for the shared family-parameter schema used across operators.

@@ -49,7 +49,7 @@ Audit these record families first.
 | Boundary span sites | `core/segments.scad` | Documented; check duplicated frame components. |
 | Seam segment sites | `core/segments.scad` | Documented; check duplicated frame components. |
 | Face arrangement / boundary model composites | `core/segments.scad` | Partially described elsewhere; decide whether to formalize as semantic records and add accessors/docs if so. |
-| Params rows / compiled param arrays | `core/params.scad` | Fixed-position public-ish rows; decide whether `placement_data_model.md` or `developer_guide.md` owns them. |
+| Profile rows / compiled profile arrays | `core/profile.scad` | Fixed-position public-ish rows; decide whether `placement_data_model.md` or `developer_guide.md` owns them. |
 
 ## Phase 1: Build The Audit Table
 

@@ -77,11 +77,11 @@ For bases with multiple face families (e.g. cuboctahedron), one global `c` canno
   - improves planarity when a single `c_by_size` still warps vertex faces.
 
 - `solve_cantitruncate_dominant_edges_params(poly, dominant_size)`
-  - returns `params_overrides` rows (no tuple), including:
+  - returns `profile` rows (no tuple), including:
     - one global vertex row for `"t"`
     - face rows for family `"c"`
     - edge rows for pair-family `"c"`
-  - use with `poly_cantitruncate(..., t=0, c=0, params_overrides=rows)`.
+  - use with `poly_cantitruncate(..., t=0, c=0, profile=rows)`.
 This keeps the dominant family planar and lets secondary families follow.
 
 ## Inspecting Planarity
@@ -94,7 +94,7 @@ Use `poly_describe(poly, detail=3)` to echo `max_plane_err` per face. This is th
 base = poly_rectify(octahedron()); // cuboctahedron
 sol = solve_cantitruncate_dominant_edges(base, 4); // squares dominate
 rows = ps_cantitruncate_params_rows(base, sol[1], 0, sol[2]);
-p = poly_cantitruncate(base, t=sol[0], c=0, params_overrides=rows);
+p = poly_cantitruncate(base, t=sol[0], c=0, profile=rows);
 ```
 
 ## Usage Examples
@@ -108,7 +108,7 @@ p = poly_cantitruncate(hexahedron()); // defaults to trig solver for regular bas
 ```
 base = poly_rectify(octahedron()); // cuboctahedron
 rows = solve_cantitruncate_dominant_edges_params(base, 4); // prioritize squares
-p = poly_cantitruncate(base, t=0, c=0, params_overrides=rows);
+p = poly_cantitruncate(base, t=0, c=0, profile=rows);
 ```
 
 ### Inspect planarity
@@ -116,4 +116,4 @@ p = poly_cantitruncate(base, t=0, c=0, params_overrides=rows);
 poly_describe(p, detail=3); // shows max_plane_err per face
 ```
 
-See also `docs/params_overrides.md` for the shared family-parameter schema used across operators.
+See also `docs/profile.md` for the shared family-parameter schema used across operators.

@@ -8,7 +8,7 @@ use <funcs.scad>
 use <classify.scad>
 use <transform.scad>
 use <transform_util.scad>
-use <params.scad>
+use <profile.scad>
 use <solvers.scad>
 use <validate.scad>
 
@@ -39,7 +39,7 @@ function _ps_override_key_in(keys, k) =
 
 function _ps_override_row_keys(row) =
     let(
-        start = _ps_params_row_kv_start(row)
+        start = _ps_profile_row_kv_start(row)
     )
     (!is_list(row) || is_undef(start) || start > len(row)-1) ? []
         : [
@@ -50,8 +50,8 @@ function _ps_override_row_keys(row) =
 
 function _ps_override_row_is_unsupported(row, allowed_specs) =
     let(
-        kind = _ps_params_row_kind(row),
-        scope = _ps_params_row_scope(row),
+        kind = _ps_profile_row_kind(row),
+        scope = _ps_profile_row_scope(row),
         keys = _ps_override_row_keys(row),
         allowed_keys = _ps_override_allowed_keys_for_kind(allowed_specs, kind),
         bad_keys = [for (k = keys) if (!_ps_override_key_in(allowed_keys, k)) k]
@@ -62,7 +62,7 @@ function _ps_override_warn_unsupported(rows, op_name, allowed_specs) =
     let(
         bad_rows = [for (ri = [0:1:len(rows)-1]) if (_ps_override_row_is_unsupported(rows[ri], allowed_specs)) ri],
         _ = (len(bad_rows) > 0)
-            ? echo(str(op_name, ": params_overrides ignored rows=", bad_rows))
+            ? echo(str(op_name, ": profile ignored rows=", bad_rows))
             : 0
     )
     0;
@@ -240,7 +240,7 @@ function poly_truncate(
     t=undef,
     c=undef,
     eps = 1e-8,
-    params_overrides=undef,
+    profile=undef,
     cleanup=false,
     cleanup_eps=1e-8
 ) =
@@ -248,7 +248,7 @@ function poly_truncate(
         t_base = !is_undef(t)
             ? t
             : (!is_undef(c) ? _ps_truncate_norm_to_t(poly, c) : _ps_truncate_default_t(poly)),
-        rows = is_undef(params_overrides) ? [] : params_overrides,
+        rows = is_undef(profile) ? [] : profile,
         _pwarn = _ps_override_warn_unsupported(rows, "poly_truncate", [["vert", ["t", "c"]]])
     )
     let(
@@ -257,10 +257,10 @@ function poly_truncate(
             faces = base[1],
             edges = base[2],
             edge_faces = base[3],
-            vert_fid = (len(rows) > 0 && ps_params_uses_family(rows, "vert"))
+            vert_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "vert"))
                 ? ps_classify_vert_ids(poly_classify(poly, 1, 1e-6, 1, false), len(verts))
                 : undef,
-            params_compiled = (len(rows) == 0) ? undef : ps_params_compile_specs(rows, [
+            params_compiled = (len(rows) == 0) ? undef : ps_profile_compile_specs(rows, [
                 ["vert", "t", len(verts), vert_fid],
                 ["vert", "c", len(verts), vert_fid]
             ]),
@@ -337,12 +337,12 @@ function poly_truncate(
 // replaces each original vertex by the cycle of incident edge midpoints.
 function poly_rectify(
     poly,
-    params_overrides=undef,
+    profile=undef,
     cleanup=false,
     cleanup_eps=1e-8
 ) =
     let(
-        _p_ok = assert(ps_params_row_count(params_overrides) == 0, "poly_rectify: params_overrides not supported")
+        _p_ok = assert(ps_profile_row_count(profile) == 0, "poly_rectify: profile not supported")
     )
     let(
         base = _ps_poly_base(poly),
@@ -415,7 +415,7 @@ function poly_chamfer(
     c=undef,
     eps = 1e-8,
     len_eps = 1e-6,
-    params_overrides=undef,
+    profile=undef,
     cleanup=false,
     cleanup_eps=1e-8
 ) =
@@ -423,7 +423,7 @@ function poly_chamfer(
         t_base = !is_undef(t)
             ? t
             : (!is_undef(c) ? _ps_truncate_norm_to_t(poly, c) : _ps_truncate_default_t(poly)),
-        rows = is_undef(params_overrides) ? [] : params_overrides,
+        rows = is_undef(profile) ? [] : profile,
         _pwarn = _ps_override_warn_unsupported(rows, "poly_chamfer", [["face", ["t", "c"]]]),
         base = _ps_poly_base(poly),
         verts0 = base[0],
@@ -431,10 +431,10 @@ function poly_chamfer(
         edges = base[2],
         edge_faces = base[3],
         face_n = base[4],
-        face_fid = (len(rows) > 0 && ps_params_uses_family(rows, "face"))
+        face_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "face"))
             ? ps_classify_face_ids(poly_classify(poly, 1, 1e-6, 1, false), len(faces0))
             : undef,
-        params_compiled = (len(rows) == 0) ? undef : ps_params_compile_specs(rows, [
+        params_compiled = (len(rows) == 0) ? undef : ps_profile_compile_specs(rows, [
             ["face", "t", len(faces0), face_fid],
             ["face", "c", len(faces0), face_fid]
         ]),
@@ -591,12 +591,12 @@ function poly_cantellate(
     family_edge_idx=0,
     eps = 1e-8,
     len_eps = 1e-6,
-    params_overrides=undef,
+    profile=undef,
     cleanup=false,
     cleanup_eps=1e-8
 ) =
     let(
-        rows = is_undef(params_overrides) ? [] : params_overrides,
+        rows = is_undef(profile) ? [] : profile,
         _pwarn = _ps_override_warn_unsupported(rows, "poly_cantellate", [["face", ["df", "c"]]])
     )
     let(
@@ -607,10 +607,10 @@ function poly_cantellate(
         edge_faces = base[3],
         face_n = base[4],
         poly0 = base[5],
-        face_fid = (len(rows) > 0 && ps_params_uses_family(rows, "face"))
+        face_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "face"))
             ? ps_classify_face_ids(poly_classify(poly, 1, 1e-6, 1, false), len(faces0))
             : undef,
-        params_compiled = (len(rows) == 0) ? undef : ps_params_compile_specs(rows, [
+        params_compiled = (len(rows) == 0) ? undef : ps_profile_compile_specs(rows, [
             ["face", "df", len(faces0), face_fid],
             ["face", "c", len(faces0), face_fid]
         ]),
@@ -745,13 +745,13 @@ function poly_cantellate_norm(
     family_edge_idx=0,
     eps=1e-8,
     len_eps=1e-6,
-    params_overrides=undef,
+    profile=undef,
     cleanup=false,
     cleanup_eps=1e-8
 ) =
     let(df = _ps_cantellate_df_from_c(poly, c, df_max, steps, family_edge_idx))
     poly_cantellate(
-        poly, df, undef, df_max, steps, family_edge_idx, eps, len_eps, params_overrides,
+        poly, df, undef, df_max, steps, family_edge_idx, eps, len_eps, profile,
         cleanup, cleanup_eps
     );
 
@@ -1200,7 +1200,7 @@ function _ps_snub_params_rows(df, angle, c, face_df_by_family=undef) =
             [for (fid = [0:1:len(face_df_by_family)-1]) ["face", "family", fid, ["df", face_df_by_family[fid]]]]
         );
 
-function ps_snub_default_params_overrides(poly, handedness=1, eps=1e-9) =
+function ps_snub_default_profile(poly, handedness=1, eps=1e-9) =
     let(
         params = _ps_snub_default_params(poly, handedness, eps),
         face_df_by_family = (len(params) > 4) ? params[4] : undef
@@ -1211,8 +1211,8 @@ function ps_snub_default_params_overrides(poly, handedness=1, eps=1e-9) =
 //
 // Fallback strategy:
 // - If `angle`, `c`, `df`, and `de` are all `undef`, auto defaults are solved.
-// - Auto defaults are converted to `params_overrides` rows, then concatenated
-//   before explicit `params_overrides` rows so explicit rows win by precedence.
+// - Auto defaults are converted to `profile` rows, then concatenated
+//   before explicit `profile` rows so explicit rows win by precedence.
 // - Scalar args (`angle`, `c`, `df`, `de`) remain convenient globals; compiled
 //   overrides can replace them per face/vertex.
 function poly_snub(
@@ -1224,7 +1224,7 @@ function poly_snub(
     handedness=1,
     eps=1e-8,
     len_eps=1e-6,
-    params_overrides=undef,
+    profile=undef,
     cleanup=false,
     cleanup_eps=1e-8
 ) =
@@ -1234,13 +1234,13 @@ function poly_snub(
             ? _ps_snub_default_params(poly, handedness, 1e-9)
             : undef,
         auto_rows = is_undef(auto_params) ? [] : _ps_snub_params_rows(auto_params[0], auto_params[1], auto_params[2], (len(auto_params) > 4) ? auto_params[4] : undef),
-        params_rows = is_undef(params_overrides) ? auto_rows : concat(auto_rows, params_overrides),
+        params_rows = is_undef(profile) ? auto_rows : concat(auto_rows, profile),
         _pwarn = _ps_override_warn_unsupported(params_rows, "poly_snub", [["face", ["df", "angle"]], ["vert", ["c", "de"]]]),
         _choice = !is_undef(auto_params)
             ? echo(str("snub: using auto defaults tier=", auto_params[3], " c=", auto_params[2], " df=", auto_params[0], " angle=", auto_params[1]))
             : 0,
         _pf = (len(params_rows) == 0) ? 0
-            : echo(str("snub: params_overrides face_rows=", ps_params_count_kind(params_rows, "face"), " vert_rows=", ps_params_count_kind(params_rows, "vert"))),
+            : echo(str("snub: profile face_rows=", ps_profile_count_kind(params_rows, "face"), " vert_rows=", ps_profile_count_kind(params_rows, "vert"))),
         cmap = _ps_cantellate_df_map(poly, steps=6),
         df_mid = cmap[0],
         df_max_eff = cmap[1],
@@ -1282,7 +1282,7 @@ function poly_snub(
         cls = need_family_ids ? poly_classify(poly, 1) : undef,
         face_fid = need_family_ids ? _ps_family_ids_from_fams(len(faces0), cls[0]) : undef,
         vert_fid = need_family_ids ? _ps_family_ids_from_fams(len(verts0), cls[2]) : undef,
-        params_compiled = (len(params_rows) == 0) ? undef : ps_params_compile_specs(params_rows, [
+        params_compiled = (len(params_rows) == 0) ? undef : ps_profile_compile_specs(params_rows, [
             ["face", "df", len(faces0), face_fid],
             ["face", "angle", len(faces0), face_fid],
             ["vert", "c", len(verts0), vert_fid],
@@ -1422,12 +1422,12 @@ function poly_cantitruncate(
     c=undef,
     eps = 1e-8,
     len_eps = 1e-6,
-    params_overrides=undef,
+    profile=undef,
     cleanup=false,
     cleanup_eps=1e-8
 ) =
     let(
-        rows = is_undef(params_overrides) ? [] : params_overrides,
+        rows = is_undef(profile) ? [] : profile,
         _pwarn = _ps_override_warn_unsupported(rows, "poly_cantitruncate", [["face", ["c"]], ["vert", ["t", "c"]], ["edge", ["c", "de"]]]),
         sol = (is_undef(t) && is_undef(c) && _ps_is_regular_base(poly)) ? solve_cantitruncate_trig(poly) : [t, c],
         t_base = is_undef(sol[0]) ? _ps_truncate_default_t(poly) : sol[0],
@@ -1441,14 +1441,14 @@ function poly_cantitruncate(
         edge_faces = base[3],
         face_n = base[4],
         poly0 = base[5],
-        need_face_fid = (len(rows) > 0 && ps_params_uses_family(rows, "face")),
-        need_vert_fid = (len(rows) > 0 && ps_params_uses_family(rows, "vert")),
-        need_edge_fid = (len(rows) > 0 && ps_params_uses_family(rows, "edge")),
+        need_face_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "face")),
+        need_vert_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "vert")),
+        need_edge_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "edge")),
         cls = (need_face_fid || need_vert_fid || need_edge_fid) ? poly_classify(poly, 1, 1e-6, 1, false) : undef,
         edge_fid = need_edge_fid ? ps_classify_edge_ids(cls, len(edges)) : undef,
         vert_fid = need_vert_fid ? ps_classify_vert_ids(cls, len(verts0)) : undef,
         face_fid = need_face_fid ? ps_classify_face_ids(cls, len(faces0)) : undef,
-        params_compiled = (len(rows) == 0) ? undef : ps_params_compile_specs(rows, [
+        params_compiled = (len(rows) == 0) ? undef : ps_profile_compile_specs(rows, [
             ["vert", "t", len(verts0), vert_fid],
             ["vert", "c", len(verts0), vert_fid],
             ["face", "c", len(faces0), face_fid],
