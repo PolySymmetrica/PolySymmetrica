@@ -20,14 +20,14 @@ module assert_int_eq(a, b, msg="") {
 }
 
 function _count_faces_of_size(poly, k) =
-    sum([ for (f = poly_faces(poly)) (len(f)==k) ? 1 : 0 ]);
+    ps_sum([ for (f = poly_faces(poly)) (len(f)==k) ? 1 : 0 ]);
 
 function _edge_rel_spread(poly) =
     let(
         verts = poly_verts(poly),
         edges = poly_edges(poly),
         lens = [for (e = edges) norm(verts[e[0]] - verts[e[1]])],
-        avg = (len(lens) == 0) ? 0 : (sum(lens) / len(lens))
+        avg = (len(lens) == 0) ? 0 : (ps_sum(lens) / len(lens))
     )
     (len(lens) == 0 || avg == 0) ? 0 : ((max(lens) - min(lens)) / avg);
 
@@ -100,8 +100,8 @@ module test_poly_truncate__tetra_counts_at_one_third() {
     assert_int_eq(len(poly_faces(q)), 8, "trunc tetra faces=8");
 
     sizes = [for (f=poly_faces(q)) len(f)];
-    assert_int_eq(sum([for (s=sizes) if (s==3) 1]), 4, "4 tri faces");
-    assert_int_eq(sum([for (s=sizes) if (s==6) 1]), 4, "4 hex faces");
+    assert_int_eq(ps_sum([for (s=sizes) if (s==3) 1]), 4, "4 tri faces");
+    assert_int_eq(ps_sum([for (s=sizes) if (s==6) 1]), 4, "4 hex faces");
 }
 
 
@@ -195,7 +195,7 @@ module test_poly_cantitruncate__cube_edge_face_adjacency() {
     // adjacent face cycles are expected to share its vertices
     shared = [
         for (v = quad)
-            sum([for (f = [0:1:face_count-1]) (search([v], faces[f], 1)[0] >= 0) ? 1 : 0])
+            ps_sum([for (f = [0:1:face_count-1]) (search([v], faces[f], 1)[0] >= 0) ? 1 : 0])
     ];
     // each quad vertex should belong to at least one original-face cycle
     assert(min(shared) >= 1, "cantitruncate cube: quad vertices shared with face cycles");

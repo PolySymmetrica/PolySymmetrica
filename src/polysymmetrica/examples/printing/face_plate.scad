@@ -27,10 +27,10 @@ FACE_PLATE_SEAM_SUPPORT_T = 2.2;
  */
 module _face_plate_pillow_loop(pts, top_z, pillow_min_rad, pillow_inset, pillow_ramp, pillow_thk, eps) {
     loop_centroid = [
-        sum([for (p = pts) p[0]]) / len(pts),
-        sum([for (p = pts) p[1]]) / len(pts)
+        ps_sum([for (p = pts) p[0]]) / len(pts),
+        ps_sum([for (p = pts) p[1]]) / len(pts)
     ];
-    loop_rad = sum([for (p = pts) norm([p[0] - loop_centroid[0], p[1] - loop_centroid[1]])]) / len(pts);
+    loop_rad = ps_sum([for (p = pts) norm([p[0] - loop_centroid[0], p[1] - loop_centroid[1]])]) / len(pts);
     if (loop_rad > pillow_min_rad && loop_rad > pillow_inset + pillow_ramp + eps) {
         s0 = max(0, 1 - pillow_inset / loop_rad);
         s1 = max(0, 1 - (pillow_inset + pillow_ramp) / loop_rad);

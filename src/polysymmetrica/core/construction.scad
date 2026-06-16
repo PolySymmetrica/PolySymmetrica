@@ -63,7 +63,7 @@ function _ps_face_avg_edge_len(verts, f) =
         n = len(f),
         lens = [for (k = [0:1:n-1]) norm(verts[f[(k+1)%n]] - verts[f[k]])]
     )
-    (n == 0) ? 0 : sum(lens) / n;
+    (n == 0) ? 0 : ps_sum(lens) / n;
 
 function _ps_attach_map_point(p, frame1, frame2, mirror=false) =
     let(

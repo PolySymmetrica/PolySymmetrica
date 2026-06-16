@@ -160,7 +160,7 @@ function _ps_poly_area_abs_2d(pts2d) =
     (is_undef(pts2d) || len(pts2d) < 3) ? 0
   : let(
         n = len(pts2d),
-        a = sum([
+        a = ps_sum([
             for (i = [0:1:n-1])
                 let(
                     p0 = pts2d[i],
@@ -174,7 +174,7 @@ function _ps_poly_area_abs_2d(pts2d) =
 function _ps_poly_area_abs_2d_valid(pts2d) =
     let(
         n = is_undef(pts2d) ? 0 : len(pts2d),
-        ok = (n >= 3) && (sum([for (p = pts2d) is_undef(p) ? 1 : 0]) == 0)
+        ok = (n >= 3) && (ps_sum([for (p = pts2d) is_undef(p) ? 1 : 0]) == 0)
     )
     ok ? _ps_poly_area_abs_2d(pts2d) : undef;
 
@@ -726,7 +726,7 @@ function cantellate_square_df(poly, df_min, df_max, steps=40, family_edge_idx=0,
                     errs = [for (ei = family_edges) _ps_face_edge_spread(poly_verts(q), faces_q[face_count + ei])],
                     ok = len([for (e = errs) if (!is_undef(e)) 1]) == len(errs)
                 )
-                if (ok) [df, sum(errs)]
+                if (ok) [df, ps_sum(errs)]
         ],
         _ = assert(len(cands) > 0, "cantellate_square_df: no valid candidates"),
         errs = [for (c = cands) c[1]],
@@ -896,10 +896,10 @@ function _ps_snub_eval_errors_base(verts0, faces0, edges, edge_faces, face_n, po
         tri_eq_errs = [for (x = per_edge) x[1]],
         tri_iso_errs = [for (x = per_edge) x[2]],
         good = (len(lens_all) > 0) && (len([for (l = lens_all) if (is_undef(l) || l <= eps) 1]) == 0),
-        avg = good ? (sum(lens_all) / len(lens_all)) : undef,
+        avg = good ? (ps_sum(lens_all) / len(lens_all)) : undef,
         err_u = (!good || avg <= eps) ? undef : ((max(lens_all) - min(lens_all)) / avg),
-        err_eq = (len(tri_eq_errs) == 0) ? undef : (sum(tri_eq_errs) / len(tri_eq_errs)),
-        err_iso = (len(tri_iso_errs) == 0) ? undef : (sum(tri_iso_errs) / len(tri_iso_errs)),
+        err_eq = (len(tri_eq_errs) == 0) ? undef : (ps_sum(tri_eq_errs) / len(tri_eq_errs)),
+        err_iso = (len(tri_iso_errs) == 0) ? undef : (ps_sum(tri_iso_errs) / len(tri_iso_errs)),
         err_p = (len(vert_face_errs) == 0) ? undef : max(vert_face_errs)
     )
     [err_u, err_eq, err_p, err_iso];

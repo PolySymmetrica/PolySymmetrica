@@ -76,7 +76,7 @@ function solve_truncate_default_t(poly, tol = 1e-3, fallback = 0.2) =
 
         tmin = min(ts),
         tmax = max(ts),
-        tavg = sum(ts) / len(ts),
+        tavg = ps_sum(ts) / len(ts),
         ok = (tmax - tmin) <= tol
     )
     ok ? tavg : fallback;

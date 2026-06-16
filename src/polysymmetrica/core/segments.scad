@@ -165,7 +165,7 @@ function _ps_seg_trace_cycle(nodes, hedges, start_hi, cur_hi, acc_h, acc_n, dept
 function _ps_seg_poly_area2(pts2d) =
     let(n = len(pts2d))
     (n < 3) ? 0 :
-    sum([for (i = [0:1:n-1]) let(j = (i+1)%n) pts2d[i][0]*pts2d[j][1] - pts2d[j][0]*pts2d[i][1]]) / 2;
+    ps_sum([for (i = [0:1:n-1]) let(j = (i+1)%n) pts2d[i][0]*pts2d[j][1] - pts2d[j][0]*pts2d[i][1]]) / 2;
 
 function _ps_seg_set_true_many(flags, ids) =
     [for (i = [0:1:len(flags)-1]) flags[i] || _ps_list_contains(ids, i)];
@@ -223,7 +223,7 @@ function _ps_seg_point_in_poly_evenodd(pt, poly, eps=1e-9) =
                 (cond && x < xint) ? 1 : 0
         ]
     )
-    (sum(hits) % 2) == 1;
+    (ps_sum(hits) % 2) == 1;
 
 // Non-zero winding-number containment for self-intersecting loops.
 // Returns true when point is inside under non-zero winding rule.
@@ -232,7 +232,7 @@ function _ps_seg_point_in_poly_nonzero(pt, poly, eps=1e-9) =
         x = pt[0],
         y = pt[1],
         n = len(poly),
-        wn = sum([
+        wn = ps_sum([
             for (i = [0:1:n-1])
                 let(
                     j = (i + 1) % n,
@@ -300,8 +300,8 @@ function _ps_seg_point_on_poly_boundary(pt, poly, eps=1e-9) =
 function _ps_seg_cycle_probe_point(poly, eps=1e-9) =
     let(
         n = len(poly),
-        cx = sum([for (p = poly) p[0]]) / n,
-        cy = sum([for (p = poly) p[1]]) / n,
+        cx = ps_sum([for (p = poly) p[0]]) / n,
+        cy = ps_sum([for (p = poly) p[1]]) / n,
         centroid = [cx, cy],
         area = _ps_seg_poly_area2(poly),
         sgn = (area >= 0) ? 1 : -1,

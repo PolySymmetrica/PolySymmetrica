@@ -21,7 +21,7 @@ module assert_int_eq(a, b, msg="") {
 }
 
 function _count_faces_of_size(poly, k) =
-    sum([for (f = poly_faces(poly)) (len(f) == k) ? 1 : 0]);
+    ps_sum([for (f = poly_faces(poly)) (len(f) == k) ? 1 : 0]);
 
 function _cube_with_cycle_noise() =
     let(
@@ -141,10 +141,10 @@ module test_edge_equal__ordered() {
 }
 
 
-// --- sum / v_sum ---
-module test_sum__numbers() {
-    assert_near(sum([1,2,3,4]), 10, 0, "sum ints");
-    assert_near(sum([0.1,0.2,0.3]), 0.6, 1e-12, "sum floats");
+// --- ps_sum / v_sum ---
+module test_ps_sum__numbers() {
+    assert_near(ps_sum([1,2,3,4]), 10, 0, "ps_sum ints");
+    assert_near(ps_sum([0.1,0.2,0.3]), 0.6, 1e-12, "ps_sum floats");
 }
 
 module test_v_sum__vec3_list() {
@@ -692,7 +692,7 @@ module run_TestFuncs() {
     test_v_ops__dot_cross_norm();
 //    test_v_ordered();
     test_edge_equal__ordered();
-    test_sum__numbers();
+    test_ps_sum__numbers();
     test_v_sum__vec3_list();
     test_ps_centroid2d__basic();
     test_ps_segment_midpoint2d__basic();

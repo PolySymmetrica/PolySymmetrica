@@ -133,10 +133,10 @@ function _ps_face_site_from_local_poly(face_idx, faces, verts_local, poly_center
             for (k = [0:1:len(f)-1])
                 norm(verts_local[f[(k + 1) % len(f)]] - verts_local[f[k]])
         ],
-        edge_len = len(edge_lens) == 0 ? 0 : sum(edge_lens) / len(edge_lens),
+        edge_len = len(edge_lens) == 0 ? 0 : ps_sum(edge_lens) / len(edge_lens),
         face_midradius = norm(center),
         rad_vec = [for (vid = f) norm(verts_local[vid] - center)],
-        face_radius = len(rad_vec) == 0 ? 0 : sum(rad_vec) / len(rad_vec),
+        face_radius = len(rad_vec) == 0 ? 0 : ps_sum(rad_vec) / len(rad_vec),
         poly_center_parent = is_undef(poly_center_local_parent) ? [0, 0, 0] : poly_center_local_parent,
         poly_center_delta = poly_center_parent - center,
         poly_center_local_raw = [
@@ -155,7 +155,7 @@ function _ps_face_site_from_local_poly(face_idx, faces, verts_local, poly_center
                     [v_dot(p, ex), v_dot(p, ey), v_dot(p, ez)]
         ],
         zvals = [for (p = face_verts_local_raw) p[2]],
-        zmean = len(zvals) == 0 ? 0 : sum(zvals) / len(zvals),
+        zmean = len(zvals) == 0 ? 0 : ps_sum(zvals) / len(zvals),
         face_planarity_err = len(zvals) == 0 ? 0 : max([for (z = zvals) abs(z - zmean)]),
         face_pts3d_local = [for (p = face_verts_local_raw) [p[0], p[1], p[2] - zmean]],
         poly_center_local = [poly_center_local_raw[0], poly_center_local_raw[1], poly_center_local_raw[2] - zmean],
@@ -316,7 +316,7 @@ function _ps_vertex_site_from_local_poly(vertex_idx, faces, verts_local, poly_ce
                     [v_dot(pw, ex), v_dot(pw, ey), v_dot(pw, ez)]
         ],
         neighbor_lens = [for (p = neighbor_pts_local) norm(p)],
-        edge_len = len(neighbor_lens) == 0 ? 0 : sum(neighbor_lens) / len(neighbor_lens),
+        edge_len = len(neighbor_lens) == 0 ? 0 : ps_sum(neighbor_lens) / len(neighbor_lens),
         poly_center_delta = poly_center_parent - center,
         poly_center_local = [
             v_dot(poly_center_delta, ex),
@@ -614,7 +614,7 @@ function ps_face_foreign_proxy_replay_sites(face_pts2d, face_idx, ctx, eps=1e-8,
  * Returns: boolean
  */
 function _ps_faces_share_source_edge(face_a, face_b) =
-    sum([
+    ps_sum([
         for (i = [0:1:len(face_a)-1])
             let(a = face_a[i], b = face_a[(i + 1) % len(face_a)])
             ps_face_has_edge(face_b, a, b) ? 1 : 0
@@ -846,7 +846,7 @@ function ps_face_sites(poly, inter_radius = 1, edge_len = undef, classify = unde
                 ez = poly_face_ez(poly, fi, scale),
                 face_midradius = norm(center),
                 rad_vec = [for (vid = f) norm(verts[vid] * scale - center)],
-                face_radius = sum(rad_vec) / len(rad_vec),
+                face_radius = ps_sum(rad_vec) / len(rad_vec),
                 poly_center_local_raw = [
                     v_dot(-center, ex),
                     v_dot(-center, ey),
@@ -863,7 +863,7 @@ function ps_face_sites(poly, inter_radius = 1, edge_len = undef, classify = unde
                             [v_dot(p, ex), v_dot(p, ey), v_dot(p, ez)]
                 ],
                 zvals = [for (p = face_verts_local) p[2]],
-                zmean = (len(zvals) == 0) ? 0 : sum(zvals) / len(zvals),
+                zmean = (len(zvals) == 0) ? 0 : ps_sum(zvals) / len(zvals),
                 face_planarity_err = (len(zvals) == 0) ? 0 : max([for (z = zvals) abs(z - zmean)]),
                 face_pts3d_local = [for (p = face_verts_local) [p[0], p[1], p[2] - zmean]],
                 poly_center_local = [poly_center_local_raw[0], poly_center_local_raw[1], poly_center_local_raw[2] - zmean],

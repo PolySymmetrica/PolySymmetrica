@@ -100,7 +100,7 @@ function ps_face_radius_list(poly) =
                 c = ps_face_centroid(verts, f),
                 rs = [ for (vid = f) norm(verts[vid] - c) ]
             )
-            sum(rs) / len(rs)
+            ps_sum(rs) / len(rs)
     ];
 
 function ps_face_radius_stat(poly, face_k=undef) =
@@ -124,11 +124,11 @@ function ps_face_family_list(poly) =
         uniq = [
             for (i = [0:len(sizes)-1])
                 let(k = sizes[i])
-                    if (sum([ for (j = [0:1:i-1]) sizes[j] == k ? 1 : 0 ]) == 0) k
+                    if (ps_sum([ for (j = [0:1:i-1]) sizes[j] == k ? 1 : 0 ]) == 0) k
         ],
         ks = sort(uniq)
     )
-    [ for (k = ks) [k, sum([ for (s = sizes) s == k ? 1 : 0 ])] ];
+    [ for (k = ks) [k, ps_sum([ for (s = sizes) s == k ? 1 : 0 ])] ];
 
 // Return [k, count] for the face size that appears most frequently.
 // Ties are resolved by choosing the smallest k.
@@ -139,9 +139,9 @@ function ps_face_family_mode(poly) =
         uniq = [
             for (i = [0:len(sizes)-1])
                 let(k = sizes[i])
-                    if (sum([ for (j = [0:1:i-1]) sizes[j] == k ? 1 : 0 ]) == 0) k
+                    if (ps_sum([ for (j = [0:1:i-1]) sizes[j] == k ? 1 : 0 ]) == 0) k
         ],
-        counts = [ for (k = uniq) sum([ for (s = sizes) s == k ? 1 : 0 ]) ],
+        counts = [ for (k = uniq) ps_sum([ for (s = sizes) s == k ? 1 : 0 ]) ],
         max_count = max(counts),
         best = [
             for (i = [0:len(uniq)-1])
@@ -157,7 +157,7 @@ function ps_face_family_max(poly) =
         faces = poly_faces(poly),
         sizes = [ for (f = faces) len(f) ],
         k = max(sizes),
-        count = sum([ for (s = sizes) s == k ? 1 : 0 ])
+        count = ps_sum([ for (s = sizes) s == k ? 1 : 0 ])
     )
     [k, count];
 
@@ -166,7 +166,7 @@ function ps_face_family_max(poly) =
 function _ps_vertex_valence_list(verts, edges) =
     [
         for (vi = [0:len(verts)-1])
-            sum([
+            ps_sum([
                 for (e = edges)
                     (e[0] == vi || e[1] == vi) ? 1 : 0
             ])

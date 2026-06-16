@@ -57,8 +57,8 @@ function _ps_edges_winding_ok(faces, strict=true) =
             let(
                 u = e[0],
                 v = e[1],
-                fwd = sum([for (de = dir_edges) if (de[0]==u && de[1]==v && de[2]==1) 1]),
-                back = sum([for (de = dir_edges) if (de[0]==u && de[1]==v && de[2]==-1) 1])
+                fwd = ps_sum([for (de = dir_edges) if (de[0]==u && de[1]==v && de[2]==1) 1]),
+                back = ps_sum([for (de = dir_edges) if (de[0]==u && de[1]==v && de[2]==-1) 1])
             )
             strict ? ((fwd == 1 && back == 1) ? 1 : 0)
                    : ((fwd == back && fwd > 0) ? 1 : 0)
@@ -130,7 +130,7 @@ function _ps_edges_manifold(verts, faces) =
     let(edges = _ps_edges_from_faces(faces))
     min([
         for (e = edges)
-            let(count = sum([ for (f = faces) _ps_face_has_edge(f, e[0], e[1]) ? 1 : 0 ]))
+            let(count = ps_sum([ for (f = faces) _ps_face_has_edge(f, e[0], e[1]) ? 1 : 0 ]))
             count == 2 ? 1 : 0
     ]) == 1;
 

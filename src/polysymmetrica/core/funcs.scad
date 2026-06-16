@@ -414,8 +414,8 @@ function edge_equal(e1, e2) = (e1[0] == e2[0] && e1[1] == e2[1]);
  * Params: a (number list), i (start index)
  * Returns: scalar sum from `i` to end
  */
-function sum(a, i = 0) =
-    i >= len(a) ? 0 : a[i] + sum(a, i + 1);
+function ps_sum(a, i = 0) =
+    i >= len(a) ? 0 : a[i] + ps_sum(a, i + 1);
 
 /**
  * Function: Sum a list of equal-dimension vectors.
@@ -425,7 +425,7 @@ function sum(a, i = 0) =
 function v_sum(list) =
     (len(list) == 0) ? [] :
     let(n = len(list[0]))
-    [ for (i = [0:1:n-1]) sum([for (v = list) v[i]]) ];
+    [ for (i = [0:1:n-1]) ps_sum([for (v = list) v[i]]) ];
 
 /**
  * Function: Compute the simple centroid of a 2D point list.
@@ -758,7 +758,7 @@ function ps_face_normal(verts, f) =
 function ps_face_frame_normal(verts, f, eps=1e-12) =
     let(
         n = len(f),
-        nx = (n < 3) ? 0 : sum([
+        nx = (n < 3) ? 0 : ps_sum([
             for (i = [0:1:n-1])
                 let(
                     j = (i + 1) % n,
@@ -767,7 +767,7 @@ function ps_face_frame_normal(verts, f, eps=1e-12) =
                 )
                 (pi[1] - pj[1]) * (pi[2] + pj[2])
         ]),
-        ny = (n < 3) ? 0 : sum([
+        ny = (n < 3) ? 0 : ps_sum([
             for (i = [0:1:n-1])
                 let(
                     j = (i + 1) % n,
@@ -776,7 +776,7 @@ function ps_face_frame_normal(verts, f, eps=1e-12) =
                 )
                 (pi[2] - pj[2]) * (pi[0] + pj[0])
         ]),
-        nz = (n < 3) ? 0 : sum([
+        nz = (n < 3) ? 0 : ps_sum([
             for (i = [0:1:n-1])
                 let(
                     j = (i + 1) % n,
@@ -800,7 +800,7 @@ function ps_face_frame_normal(verts, f, eps=1e-12) =
  */
 function _ps_face_area_mag(verts, f) =
     (len(f) < 3) ? 0 :
-    sum([
+    ps_sum([
         for (i = [1:1:len(f)-2])
             norm(v_cross(verts[f[i]] - verts[f[0]], verts[f[i+1]] - verts[f[0]])) / 2
     ]);
@@ -869,7 +869,7 @@ function _ps_edges_from_faces(faces) =
         uniq_edges = [
             for (i = [0 : len(raw_edges)-1])
                 let(ei = raw_edges[i])
-                    if (sum([
+                    if (ps_sum([
                             for (j = [0 : 1 : i-1])
                                 edge_equal(raw_edges[j], ei) ? 1 : 0
                         ]) == 0) ei
@@ -899,7 +899,7 @@ function ps_edge_faces_table(faces, edges) =
  * Returns: boolean
  */
 function ps_face_has_edge(f, a, b) =
-    sum([
+    ps_sum([
         for (k = [0 : len(f)-1])
             let(
                 x = f[k],
@@ -918,7 +918,7 @@ function vertex_incident_faces(poly, vi) =
     [
         for (fi = [0 : len(faces)-1])
             let(f = faces[fi])
-            if (sum([for (k = [0 : len(f)-1]) f[k] == vi ? 1 : 0]) > 0) fi
+            if (ps_sum([for (k = [0 : len(f)-1]) f[k] == vi ? 1 : 0]) > 0) fi
     ];
 
 /**
@@ -990,9 +990,9 @@ function poly_face_center(poly, fi, scale) =
         zs  = [ for (vid = f) vs[vid][2] * scale ]
     )
     [
-        sum(xs) / len(f),
-        sum(ys) / len(f),
-        sum(zs) / len(f)
+        ps_sum(xs) / len(f),
+        ps_sum(ys) / len(f),
+        ps_sum(zs) / len(f)
     ];
 
 
