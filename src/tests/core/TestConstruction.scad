@@ -114,6 +114,16 @@ module test_poly_pyramid__pentagonal_counts_match_j2() {
     assert_int_eq(len(poly_edges(q)), 10, "J2 wrapper edge count");
 }
 
+module test_poly_pyramid__retro_step_preserves_crossed_winding() {
+    p = poly_pyramid(7, p=4);
+    assert_int_eq(_ps_polygram_signed_step(7, 4), -3, "retro pyramid signed step");
+    assert_int_eq(_ps_polygram_cycle(7, 4)[1], 4, "retro pyramid keeps requested winding");
+    assert_int_eq(len(poly_verts(p)), 8, "retro pyramid {7,4} vertex count");
+    assert_int_eq(len(poly_faces(p)), 8, "retro pyramid {7,4} face count");
+    assert_int_eq(len(poly_edges(p)), 14, "retro pyramid {7,4} edge count");
+    assert_true(poly_valid(p, "star_ok"), "retro pyramid {7,4} should be star_ok valid");
+}
+
 module test_poly_cupola__triangular_counts_match_j3() {
     p = poly_cupola(3);
     q = j3_triangular_cupola();
@@ -198,6 +208,7 @@ module run_TestConstruction() {
     test_poly_slice__tetra_near_vertex_capped_recovers_closed_mesh();
     test_poly_pyramid__square_counts_match_j1();
     test_poly_pyramid__pentagonal_counts_match_j2();
+    test_poly_pyramid__retro_step_preserves_crossed_winding();
     test_poly_cupola__triangular_counts_match_j3();
     test_poly_cupola__square_counts_match_j4();
     test_poly_cupola__pentagonal_counts_match_j5();

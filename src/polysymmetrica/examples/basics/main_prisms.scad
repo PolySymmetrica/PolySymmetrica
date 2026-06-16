@@ -47,6 +47,10 @@ prism_cases = [
 
 ];
 
+for (item = with_index(prism_cases)) {
+    translate([item[0] * spacing_x, play_y, 0]) demo(item[1][1](), name=item[1][0]);
+}
+
 antiprism_cases = [
     ["antiprism n=6 (+10deg)", function() poly_antiprism(6, angle=10)],
     ["antiprism n=6 (-10deg)", function() poly_antiprism(6, angle=-10)],
@@ -56,10 +60,21 @@ antiprism_cases = [
     ["rectify:antiprism {5/2}", function() poly_rectify(poly_antiprism(5, p=2))],
 ];
 
-for (item = with_index(prism_cases)) {
-    translate([item[0] * spacing_x, play_y, 0]) demo(item[1][1](), name=item[1][0]);
-}
-
 for (item = with_index(antiprism_cases)) {
     translate([item[0] * spacing_x, play_y + spacing_y, 0]) demo(item[1][1](), name=item[1][0]);
+}
+
+starprism_cases = [
+    ["prism {7/2}", function() poly_prism(7, 2)],
+    ["prism {7/3}", function() poly_prism(7, 3)],
+    ["prism {7/4}", function() poly_prism(7, 4)],
+    ["prism {7/5}", function() poly_prism(7, 5)],
+    ["antiprism {7/2}", function() poly_antiprism(7, 2)],
+    ["antiprism {7/3}", function() poly_antiprism(7, 3)],
+    ["antiprism {7/4}", function() poly_antiprism(7, 4)],
+    ["antiprism {7/5}", function() poly_antiprism(7, 5, height=0.5)],
+];
+
+for (item = with_index(starprism_cases)) {
+    translate([item[0] * spacing_x, play_y + spacing_y * 2, 0]) demo(item[1][1](), name=item[1][0]);
 }

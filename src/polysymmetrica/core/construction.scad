@@ -334,7 +334,9 @@ function poly_slice(
 // Regular/star pyramid with {n,p} base and a single apex.
 //
 // - n: number of base sides
-// - p: polygon step (1 <= p < n/2, gcd(n,p)=1). p=1 => ordinary pyramid.
+// - p: polygon step (1 <= p < n, p != n/2, gcd(n,p)=1). p=1 => ordinary pyramid.
+//      p > n/2 preserves retrograde winding. Compound bases are not supported
+//      because multiple base cycles would share one apex.
 // - edge: target base edge length; with height=undef this is also the side edge length.
 // - height: explicit apex-to-base-plane height (undef => solve regular side edges)
 // - height_scale: multiplier applied to the chosen base height

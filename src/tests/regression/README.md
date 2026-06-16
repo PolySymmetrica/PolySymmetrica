@@ -74,6 +74,16 @@ Each case file must support two modes:
 - Normal render mode: validate `T`, select data from `TESTS[T]` (often via
   `spec = TESTS[T]`), and render the selected scene.
 
+Cases may echo `REGRESSION_RENDER_ARGS=...` in `REG_LIST` mode to override the
+default render framing. The default is:
+
+```text
+--projection=o --autocenter --viewall --render
+```
+
+Use explicit camera args for scenes where text or other renderer-dependent
+geometry would otherwise perturb `--viewall` framing.
+
 Prefer putting the test definition in the `TESTS` entry rather than writing a
 large `if (T == ...)` cascade. The first field is always the stable test name
 used in the PNG filename. Later fields should be the data needed to render that

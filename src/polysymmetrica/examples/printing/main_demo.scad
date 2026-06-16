@@ -41,10 +41,11 @@ IR = 20 * SC;
 //p = poly_prism(n=5, p=2);
 //p = poly_antiprism(n=5, p=2, angle = 0);
 //p = poly_antiprism(n=5, p=2, angle = 15);
+p = poly_antiprism(n=5, p=3, angle = 0);
 //p = poly_antiprism(n=7, p=3, angle = 0);
 //p = poly_antiprism(n=7, p=3, angle = 15);
-//p = poly_antiprism(n=7, p=3, angle = 180);
-p = poly_truncate(tetrahedron(), t=-0.5);
+//p = poly_antiprism(n=7, p=4, angle = 0); // (12 min)
+//p = poly_truncate(tetrahedron(), t=-0.5);
 
 //p = j1_square_pyramid();
 //p = poly_dual(j2_pentagonal_pyramid());

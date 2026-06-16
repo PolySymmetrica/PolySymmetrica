@@ -533,19 +533,21 @@ function _ps_gcd(a, b) =
 
 /**
  * Function: Validate Schläfli-like polygon/polygram parameters.
- * Params: n (vertex count), p (step), who (caller label)
+ * Params: n (vertex count), p (step), who (caller label), allow_compound (bool)
  * Returns: rounded `[n, p]`
- * Limitations/Gotchas: requires `n,p` coprime so the polygram is a single cycle
+ * Limitations/Gotchas: non-coprime `n,p` describes a compound with multiple cycles,
+ * and must be explicitly allowed by the caller
  */
-function _ps_validate_np(n, p, who) =
+function _ps_validate_np(n, p, who, allow_compound=false) =
     let(
         n_i = round(n),
         p_i = round(p),
         _n_int = assert(abs(n - n_i) < 1e-9, str(who, ": n must be an integer")),
         _p_int = assert(abs(p - p_i) < 1e-9, str(who, ": p must be an integer")),
         _n_ok = assert(n_i >= 3, str(who, ": n must be >= 3")),
-        _p_ok = assert(p_i >= 1 && (2 * p_i) < n_i, str(who, ": p must satisfy 1 <= p < n/2")),
-        _cop = assert(_ps_gcd(n_i, p_i) == 1, str(who, ": n and p must be coprime"))
+        _p_ok = assert(p_i >= 1 && p_i < n_i, str(who, ": p must satisfy 1 <= p < n")),
+        _hemi = assert(2 * p_i != n_i, str(who, ": p=n/2 gives diameter cycles, not polygonal faces")),
+        _cop = assert(allow_compound || _ps_gcd(n_i, p_i) == 1, str(who, ": n and p must be coprime unless compounds are supported"))
     )
     [n_i, p_i];
 
@@ -558,6 +560,14 @@ function _ps_polygram_radius(n, p, edge) =
     edge / (2 * sin(180 * p / n));
 
 /**
+ * Function: Signed representative of a polygram step.
+ * Params: n (vertex count), p (step)
+ * Returns: `p` for forward steps, or `p-n` for retrograde steps
+ */
+function _ps_polygram_signed_step(n, p) =
+    (2 * p > n) ? (p - n) : p;
+
+/**
  * Function: Circumradius for regular polygon `{n,1}`.
  * Params: n (vertex count), edge (edge length)
  * Returns: radius scalar
@@ -566,12 +576,28 @@ function _ps_ngon_radius(n, edge) =
     _ps_polygram_radius(n, 1, edge);
 
 /**
- * Function: Vertex order for a single-cycle polygram `{n,p}`.
+ * Function: Vertex order for the first cycle of polygram `{n,p}`.
  * Params: n (vertex count), p (step)
- * Returns: index cycle `[(k*p)%n, ...]`
+ * Returns: index cycle `[(k*p)%n, ...]`; length is `n/gcd(n,p)`
  */
 function _ps_polygram_cycle(n, p) =
-    [for (k = [0:1:n-1]) (k * p) % n];
+    let(cycle_len = n / _ps_gcd(n, p))
+    [for (k = [0:1:cycle_len-1]) (k * p) % n];
+
+/**
+ * Function: Vertex orders for all cycles of polygram `{n,p}`.
+ * Params: n (vertex count), p (step)
+ * Returns: list of index cycles; non-coprime `n,p` returns a compound
+ */
+function _ps_polygram_cycles(n, p) =
+    let(
+        g = _ps_gcd(n, p),
+        cycle_len = n / g
+    )
+    [
+        for (start = [0:1:g-1])
+            [for (k = [0:1:cycle_len-1]) (start + k * p) % n]
+    ];
 
 /**
  * Function: Generate a regular support ring at fixed Z.
