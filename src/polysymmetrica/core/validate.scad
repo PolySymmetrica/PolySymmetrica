@@ -188,6 +188,6 @@ function poly_valid(poly, mode="closed", eps=1e-9) =
 function poly_validate_winding(poly, strict=true) =
     _ps_edges_winding_ok(poly_faces(poly), strict);
 
-module assert_poly_valid_mode(poly, mode="closed", eps=1e-9) {
+module ps_assert_poly_valid_mode(poly, mode="closed", eps=1e-9) {
     assert(poly_valid(poly, mode, eps), str("poly invalid (mode=", mode, ")"));
 }

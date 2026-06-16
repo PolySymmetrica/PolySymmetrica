@@ -31,9 +31,9 @@ function _star_pyramid_poly() =
     [verts, faces, 1];
 
 module test_validity__regulars_closed() {
-    assert_poly_valid_mode(tetrahedron(), "closed");
-    assert_poly_valid_mode(octahedron(), "closed");
-    assert_poly_valid_mode(hexahedron(), "closed");
+    ps_assert_poly_valid_mode(tetrahedron(), "closed");
+    ps_assert_poly_valid_mode(octahedron(), "closed");
+    ps_assert_poly_valid_mode(hexahedron(), "closed");
 }
 
 module test_validity__star_face_modes() {

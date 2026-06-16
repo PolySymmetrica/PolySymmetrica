@@ -8,7 +8,7 @@ use <../core/funcs.scad>
 use <../core/placement.scad>
 
 // ---- Canonical Octahedron (edge length = sqrt(2)) ----
-function octahedron() = let(unit_edge = sqrt(2)) make_poly(
+function octahedron() = let(unit_edge = sqrt(2)) poly_make(
     // verts (index 0)
     [
         [ 1, 0, 0],  // 0
@@ -54,7 +54,7 @@ place_on_vertices(octahedron(), 40) {
 
 
 place_on_faces(octahedron(), 40) {
-    face_debug();
+    ps_face_debug();
 }
 
 place_on_edges(octahedron(), 40) {

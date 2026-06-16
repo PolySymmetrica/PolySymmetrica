@@ -58,7 +58,7 @@ function _skew_quad_prism() =
             [3,0,4,7]
         ]
     )
-    make_poly(v, f);
+    poly_make(v, f);
 
 
 // point eq / find / unique
@@ -257,34 +257,34 @@ module test_poly_cantitruncate__profile_edge_c() {
     assert(_max_vertex_diff(q1, qx) < 1e-7, "cantitruncate profile edge c should apply with face c");
 }
 
-module test_ps_cantitruncate_params_rows__direct_matches_scalar_cube() {
+module test_ps_cantitruncate_profile_rows__direct_matches_scalar_cube() {
     p = hexahedron();
-    rows = ps_cantitruncate_params_rows(p, [[4, 0.2]], 0.1);
+    rows = ps_cantitruncate_profile_rows(p, [[4, 0.2]], 0.1);
     q1 = poly_cantitruncate(p, t=0.2, c=0, profile=rows);
     qx = poly_cantitruncate(p, 0.2, 0.2);
     assert(_max_vertex_diff(q1, qx) < 1e-7, "cantitruncate rows path should match scalar cube path");
 }
 
-module test_solve_cantitruncate_dominant_edges_params__matches_legacy_rows() {
+module test_solve_cantitruncate_dominant_edges_profile_rows__matches_legacy_rows() {
     base = poly_rectify(octahedron()); // cuboctahedron
     sol = solve_cantitruncate_dominant_edges(base, 4);
     t = sol[0];
-    rows = ps_cantitruncate_params_rows(base, sol[1], 0, sol[2]);
-    rowsp = solve_cantitruncate_dominant_edges_params(base, 4);
+    rows = ps_cantitruncate_profile_rows(base, sol[1], 0, sol[2]);
+    rowsp = solve_cantitruncate_dominant_edges_profile_rows(base, 4);
 
     q0 = poly_cantitruncate(base, t=t, c=0, profile=rows);
     q1 = poly_cantitruncate(base, t=0, c=0, profile=rowsp);
-    assert(_max_vertex_diff(q0, q1) < 1e-7, "cantitruncate dominant edges params solver should match map-to-rows path");
+    assert(_max_vertex_diff(q0, q1) < 1e-7, "cantitruncate dominant edges profile-rows solver should match map-to-rows path");
 }
 
-module test_ps_cantitruncate_params_rows__default_c_applies_missing_sizes() {
+module test_ps_cantitruncate_profile_rows__default_c_applies_missing_sizes() {
     base = poly_rectify(octahedron()); // cuboctahedron: face sizes 3 and 4
     // Deliberately provide only one size to ensure default_c is applied to the other.
-    rows = ps_cantitruncate_params_rows(base, [[4, 0.2]], 0.05);
+    rows = ps_cantitruncate_profile_rows(base, [[4, 0.2]], 0.05);
     faces = poly_faces(base);
     size4_face_ids = [for (fi = [0:1:len(faces)-1]) if (len(faces[fi]) == 4) fi];
 
-    // Params-only path: scalar c=0 should not matter if rows carry default_c for missing sizes.
+    // Profile-rows path: scalar c=0 should not matter if rows carry default_c for missing sizes.
     q_rows = poly_cantitruncate(base, t=0.2, c=0, profile=rows);
 
     // Independent reference path:
@@ -300,7 +300,7 @@ module test_ps_cantitruncate_params_rows__default_c_applies_missing_sizes() {
         ]
     );
 
-    assert(_max_vertex_diff(q_rows, q_ref) < 1e-7, "ps_cantitruncate_params_rows should encode default_c for missing face-size families");
+    assert(_max_vertex_diff(q_rows, q_ref) < 1e-7, "ps_cantitruncate_profile_rows should encode default_c for missing face-size families");
 }
 
 module test_poly_cantitruncate_dominant_edges__consistent_pairs() {
@@ -328,7 +328,7 @@ module test_poly_cantitruncate_dominant_edges__planarity() {
             base,
             t=sol[0],
             c=0,
-            profile=ps_cantitruncate_params_rows(base, sol[1], 0, sol[2])
+            profile=ps_cantitruncate_profile_rows(base, sol[1], 0, sol[2])
         );
         verts = poly_verts(p);
         faces = poly_faces(p);
@@ -344,7 +344,7 @@ module test_great_rhombi__cube_square_faces() {
 }
 module test_truncate__validity() {
     p = poly_truncate(tetrahedron(), 1/3);
-    assert_poly_valid_mode(p, "closed");
+    ps_assert_poly_valid_mode(p, "closed");
 }
 
 module test_truncate__tetra_archimedean_counts() {
@@ -691,9 +691,9 @@ module run_TestTruncation() {
     test_poly_cantitruncate__profile_face_c();
     test_poly_cantitruncate__profile_vert_t();
     test_poly_cantitruncate__profile_edge_c();
-    test_ps_cantitruncate_params_rows__direct_matches_scalar_cube();
-    test_solve_cantitruncate_dominant_edges_params__matches_legacy_rows();
-    test_ps_cantitruncate_params_rows__default_c_applies_missing_sizes();
+    test_ps_cantitruncate_profile_rows__direct_matches_scalar_cube();
+    test_solve_cantitruncate_dominant_edges_profile_rows__matches_legacy_rows();
+    test_ps_cantitruncate_profile_rows__default_c_applies_missing_sizes();
     test_poly_cantitruncate_dominant_edges__consistent_pairs();
     test_poly_cantitruncate_dominant_edges__planarity();
     test_great_rhombi__cube_square_faces();

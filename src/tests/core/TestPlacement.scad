@@ -501,7 +501,7 @@ module test_place_on_faces__local_z_origin_consistent_for_face_and_poly_verts() 
         for (i = [0:1:len(verts0)-1])
             (i == 0) ? (verts0[i] + [0.35, -0.2, 0.45]) : verts0[i]
     ];
-    p = make_poly(verts, faces0);
+    p = poly_make(verts, faces0);
 
     place_on_faces(p)
         let(

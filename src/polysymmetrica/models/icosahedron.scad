@@ -10,7 +10,7 @@ use <../core/placement.scad>
 phi = (1 + sqrt(5)) / 2;
 
 // ---- Canonical Icosahedron: edge length = 2 ----
-function icosahedron() = let(unit_edge = 2) make_poly(
+function icosahedron() = let(unit_edge = 2) poly_make(
     // verts (index 0)
     [
         // (0, ±1, ±φ)

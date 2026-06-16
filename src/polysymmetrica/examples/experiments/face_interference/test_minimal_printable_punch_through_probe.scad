@@ -166,7 +166,7 @@ module anti_interference_volume() {
 module printable_keep_body() {
     intersection() {
         face_material_slab();
-        face_visible_mask(FACE_THK, z_pad = 0.04, filter_parent = FILTER_PARENT_CUTS);
+        ps_face_visible_mask(FACE_THK, z_pad = 0.04, filter_parent = FILTER_PARENT_CUTS);
         anti_interference_volume();
     }
 }

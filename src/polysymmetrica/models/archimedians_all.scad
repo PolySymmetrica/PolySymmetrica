@@ -24,14 +24,14 @@ function icosidodecahedron() = poly_rectify(dodecahedron());
 function rhombicuboctahedron() =
     let(
         base = hexahedron(),
-        df = cantellate_square_df(base, 0, 1, 40, 0)
+        df = solve_cantellate_square_df(base, 0, 1, 40, 0)
     )
     poly_cantellate(base, df);
 
 function rhombicosidodecahedron() =
     let(
         base = dodecahedron(),
-        df = cantellate_square_df(base, 0, 1, 40, 0)
+        df = solve_cantellate_square_df(base, 0, 1, 40, 0)
     )
     poly_cantellate(base, df);
 

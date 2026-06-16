@@ -85,7 +85,7 @@ module _face_geom_cut_stencil(poly, ir=IR, thk=0.4) {
                 difference() {
                     linear_extrude(height=thk, center=true)
                         polygon(points = $ps_face_pts2d);
-                    face_cut_stencil(face_thk=thk, kerf=1.6, extend=0.6, z_pad=0.2, eps=1e-8, filter_parent=true);
+                    ps_face_cut_stencil(face_thk=thk, kerf=1.6, extend=0.6, z_pad=0.2, eps=1e-8, filter_parent=true);
                 }
             place_on_face_geom_cut_segments(eps=1e-8, filter_parent=true) {
                 color("black")

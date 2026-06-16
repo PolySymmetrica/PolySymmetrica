@@ -303,7 +303,7 @@ function _ps_vert_keys_from(verts, faces, edges, edge_faces, detail, eps) =
     [
         for (vi = [0:1:len(verts)-1])
             let(
-                fc = faces_around_vertex([verts, faces, 0], vi, edges, edge_faces),
+                fc = ps_faces_around_vertex([verts, faces, 0], vi, edges, edge_faces),
                 ks = _ps_cyclic_canonical([for (fi = fc) len(faces[fi])], "max", false),
                 elens = [
                     for (e = edges)
@@ -422,7 +422,7 @@ function _ps_refine_vert_keys(poly, vert_keys, face_keys, edges, edge_faces) =
     [
         for (vi = [0:1:len(poly_verts(poly))-1])
             let(
-                fc = faces_around_vertex(poly, vi, edges, edge_faces),
+                fc = ps_faces_around_vertex(poly, vi, edges, edge_faces),
                 nbr_ids = [for (fi = fc) face_ids[fi]],
                 nbr_key = _ps_cyclic_canonical(nbr_ids, "max", false)
             )
@@ -706,7 +706,7 @@ function ps_classify_face_idxs_by_n(cls, n) =
  * - module side effects only (echo output).
  */
 // Pretty-print classification info for a poly.
-module show_poly(poly, detail=1, eps=1e-6, radius=1, include_geom=false) {
+module poly_show(poly, detail=1, eps=1e-6, radius=1, include_geom=false) {
     cls = poly_classify(poly, detail, eps, radius, include_geom);
     face_fams = cls[0];
     edge_fams = cls[1];

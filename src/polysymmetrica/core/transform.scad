@@ -65,7 +65,7 @@ function _ps_poly_from_face_points(faces_pts_all, eps, len_eps=undef) =
         ir  = norm(mid),
         e_over_ir = unit_e / ir
     )
-    make_poly(uniq_verts / unit_e, faces_out, e_over_ir);
+    poly_make(uniq_verts / unit_e, faces_out, e_over_ir);
 
 // Build a poly from site-based face cycles.
 // cycle entries: [0, v_idx] for original vertex, [1, site_idx] for site point.

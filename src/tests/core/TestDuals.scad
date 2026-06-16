@@ -16,22 +16,22 @@ module assert_int_eq(a, b, msg="") {
 }
 
 function _tetra_poly() =
-    make_poly(
+    poly_make(
         [[1,1,1],[-1,-1,1],[-1,1,-1],[1,-1,-1]],
         [[0,1,2],[0,3,1],[0,2,3],[1,3,2]]
     );
 
 function _octa_poly() =
-    make_poly(
+    poly_make(
         [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]],
         [[0,4,2],[2,4,1],[1,4,3],[3,4,0],[2,5,0],[1,5,2],[3,5,1],[0,5,3]]
     );
 
 
-// vertex_incident_faces
-module test_vertex_incident_faces__tetra_valence3() {
+// ps_vertex_incident_faces
+module test_ps_vertex_incident_faces__tetra_valence3() {
     p=_tetra_poly();
-    inc = vertex_incident_faces(p, 0);
+    inc = ps_vertex_incident_faces(p, 0);
     assert_int_eq(len(inc), 3, "tetra vertex has 3 incident faces");
 }
 
@@ -43,41 +43,41 @@ module test_find_edge_index__finds_sorted_edge() {
     // edges are sorted pairs
     i = ps_find_edge_index(edges, 0, 1);
     assert(i >= 0, "edge index exists");
-    assert(edge_equal(edges[i], [0,1]) || edge_equal(edges[i],[1,0]) ? true : true, "edge is that pair (sorted in edges)");
+    assert(ps_edge_equal(edges[i], [0,1]) || ps_edge_equal(edges[i],[1,0]) ? true : true, "edge is that pair (sorted in edges)");
 }
 
 
-// next_face_around_vertex + faces_around_vertex cycle
-module test_faces_around_vertex__tetra_cycle_len3() {
+// _ps_next_face_around_vertex + ps_faces_around_vertex cycle
+module test_ps_faces_around_vertex__tetra_cycle_len3() {
     p=_tetra_poly();
     edges=_ps_edges_from_faces(poly_faces(p));
     ef=ps_edge_faces_table(poly_faces(p), edges);
-    cyc = faces_around_vertex(p, 0, edges, ef);
+    cyc = ps_faces_around_vertex(p, 0, edges, ef);
     assert_int_eq(len(cyc), 3, "cycle length 3");
 }
 
 
-// dual_faces: count should equal #original vertices
-module test_dual_faces__count_equals_original_vertices() {
+// _ps_dual_faces: count should equal #original vertices
+module test__ps_dual_faces__count_equals_original_vertices() {
     p=_octa_poly();
     v=poly_verts(p);
     f=ps_orient_all_faces_outward(v, poly_faces(p));
     centers = ps_face_polar_verts(v, f);
-    df = dual_faces(p, centers);
+    df = _ps_dual_faces(p, centers);
     assert_int_eq(len(df), len(v), "dual faces == original vertices");
 }
 
 module test_dual__validity() {
     d = poly_dual(octahedron());
-    assert_poly_valid_mode(d, "closed");
+    ps_assert_poly_valid_mode(d, "closed");
 }
 
 
-// dual_unit_edge_and_e_over_ir positivity
-module test_dual_unit_edge_and_e_over_ir__positive() {
+// _ps_dual_unit_edge_and_e_over_ir positivity
+module test__ps_dual_unit_edge_and_e_over_ir__positive() {
     p=_octa_poly();
     d=poly_dual(p);
-    ue_eir = dual_unit_edge_and_e_over_ir(poly_verts(d), poly_faces(d));
+    ue_eir = _ps_dual_unit_edge_and_e_over_ir(poly_verts(d), poly_faces(d));
     assert(ue_eir[0] > 0, "unit edge > 0");
     assert(ue_eir[1] > 0, "e_over_ir > 0");
 }
@@ -124,12 +124,12 @@ module test_poly_dual__tetra_self_dual_counts() {
 }
 
 
-// scale_dual returns sane positive
-module test_scale_dual__sane_range() {
+// ps_dual_scale returns sane positive
+module test_ps_dual_scale__sane_range() {
     p=_octa_poly();
     d=poly_dual(p);
-    m = scale_dual(p, d);
-    assert(m > 0.1 && m < 10, "scale_dual sane");
+    m = ps_dual_scale(p, d);
+    assert(m > 0.1 && m < 10, "ps_dual_scale sane");
 }
 
 // face-family helpers
@@ -153,11 +153,11 @@ module test_face_family_helpers__truncated_octa() {
     assert_int_eq(maxf[1], 8, "max count 8");
 }
 
-module test_scale_dual_edge_cross__octa_consistent() {
+module test_ps_dual_scale_edge_cross__octa_consistent() {
     p = octahedron();
     d = poly_dual(p);
-    s0 = scale_dual_edge_cross(p, d, 0, 0);
-    s1 = scale_dual_edge_cross(p, d, 0, 1);
+    s0 = ps_dual_scale_edge_cross(p, d, 0, 0);
+    s1 = ps_dual_scale_edge_cross(p, d, 0, 1);
     assert_near(s0, s1, 1e-6, "edge_cross consistent");
     assert(s0 > 0, "edge_cross positive");
 }
@@ -182,19 +182,19 @@ module test_poly_dual__empty_profile_noop() {
 
 // suite
 module run_TestDuals() {
-    test_vertex_incident_faces__tetra_valence3();
+    test_ps_vertex_incident_faces__tetra_valence3();
     test_find_edge_index__finds_sorted_edge();
-    test_faces_around_vertex__tetra_cycle_len3();
-    test_dual_faces__count_equals_original_vertices();
+    test_ps_faces_around_vertex__tetra_cycle_len3();
+    test__ps_dual_faces__count_equals_original_vertices();
     test_dual__validity();
-    test_dual_unit_edge_and_e_over_ir__positive();
+    test__ps_dual_unit_edge_and_e_over_ir__positive();
     test_ps_face_polar_verts__incidence_relation();
     test_poly_dual__octa_to_cube_counts();
     test_poly_dual__tetra_self_dual_counts();
-    test_scale_dual__sane_range();
+    test_ps_dual_scale__sane_range();
     test_face_family_helpers__rectified_octa();
     test_face_family_helpers__truncated_octa();
-    test_scale_dual_edge_cross__octa_consistent();
+    test_ps_dual_scale_edge_cross__octa_consistent();
     test_poly_dual__dual_dual_face_match_octa();
     test_poly_dual__empty_profile_noop();
 }

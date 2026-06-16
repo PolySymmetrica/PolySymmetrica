@@ -1566,7 +1566,7 @@ module place_on_edges(poly, inter_radius = 1, edge_len = undef, classify = undef
 }
 
 
-module face_debug() {
+module ps_face_debug() {
     // Face index
     color("white") translate([0,0,2])
         text(str($ps_face_idx), size=5, halign="center", valign="center");

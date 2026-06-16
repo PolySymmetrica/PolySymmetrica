@@ -60,7 +60,7 @@ function poly_prism(n=3, p=1, edge=1, height=undef, height_scale=1) =
         ir = _ps_poly_ir(verts, faces),
         e_over_ir = edge / ir
     )
-    make_poly(verts, faces, e_over_ir);
+    poly_make(verts, faces, e_over_ir);
 
 // Regular/star/compound antiprism with {n,p} caps and 2n side triangles.
 //
@@ -119,4 +119,4 @@ function poly_antiprism(n=3, p=1, edge=1, angle=0, height=undef, height_scale=1)
         ir = _ps_poly_ir(verts, faces),
         e_over_ir = edge / ir
     )
-    make_poly(verts, faces, e_over_ir);
+    poly_make(verts, faces, e_over_ir);
