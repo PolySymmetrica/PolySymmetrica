@@ -10,6 +10,8 @@ ACTUAL_ROOT="${ACTUAL_ROOT:-${TARGET_REG_ROOT}/actual}"
 DIFF_ROOT="${DIFF_ROOT:-${TARGET_REG_ROOT}/diff}"
 LOG_ROOT="${TARGET_REG_ROOT}/logs"
 OPENSCAD_BIN="${OPENSCAD_BIN:-openscad-nightly}"
+BASELINE_VERSION_FILE="${BASELINE_ROOT}/version.properties"
+CURRENT_VERSION_FILE="${TARGET_REG_ROOT}/version.properties"
 IMG_SIZE="${IMG_SIZE:-1280,960}"
 REGRESSION_JOBS="${REGRESSION_JOBS:-4}"
 PARALLEL_BIN="${PARALLEL_BIN:-parallel}"
@@ -136,6 +138,95 @@ has_gnu_parallel() {
     command -v "${parallel_bin}" >/dev/null 2>&1 &&
         "${parallel_bin}" --version 2>/dev/null | head -n 1 | rg -q '^GNU parallel '
 }
+
+openscad_version_line() {
+    local version rc first_line
+
+    set +e
+    version="$("${OPENSCAD_BIN}" --version 2>&1)"
+    rc=$?
+    set -e
+
+    if [[ "${rc}" -ne 0 ]]; then
+        printf 'UNKNOWN: %s --version failed with exit code %s\n' "${OPENSCAD_BIN}" "${rc}"
+        return
+    fi
+
+    first_line="$(printf '%s\n' "${version}" | sed '/^[[:space:]]*$/d' | head -n 1)"
+    printf '%s\n' "${first_line:-UNKNOWN: empty version output}"
+}
+
+write_version_properties() {
+    local file="$1"
+    local openscad_path openscad_version
+
+    openscad_path="$(command -v "${OPENSCAD_BIN}" 2>/dev/null || true)"
+    openscad_version="$(openscad_version_line)"
+
+    mkdir -p "$(dirname "${file}")"
+    {
+        printf 'openscad.bin=%s\n' "${OPENSCAD_BIN}"
+        printf 'openscad.path=%s\n' "${openscad_path}"
+        printf 'openscad.version=%s\n' "${openscad_version}"
+    } >"${file}"
+}
+
+property_value() {
+    local file="$1"
+    local key="$2"
+
+    [[ -f "${file}" ]] || return 0
+    awk -F= -v key="${key}" '
+        $1 == key {
+            sub(/^[^=]*=/, "")
+            value = $0
+        }
+        END {
+            if (value != "")
+                print value
+        }
+    ' "${file}"
+}
+
+print_version_drift_notice() {
+    local baseline_version current_version baseline_path current_path
+
+    baseline_version="$(property_value "${BASELINE_VERSION_FILE}" openscad.version)"
+    current_version="$(property_value "${CURRENT_VERSION_FILE}" openscad.version)"
+    baseline_path="$(property_value "${BASELINE_VERSION_FILE}" openscad.path)"
+    current_path="$(property_value "${CURRENT_VERSION_FILE}" openscad.path)"
+
+    echo
+    echo "======================================================================"
+    echo "OPENSCAD VERSION CHECK FOR VISUAL REGRESSION FAILURE"
+    echo "Baseline marker: ${BASELINE_VERSION_FILE}"
+    echo "Current marker:  ${CURRENT_VERSION_FILE}"
+    echo
+    echo "Baseline OpenSCAD: ${baseline_version:-UNKNOWN: no baseline version marker}"
+    echo "Current OpenSCAD:  ${current_version:-UNKNOWN: no current version marker}"
+
+    if [[ -n "${baseline_path}" || -n "${current_path}" ]]; then
+        echo "Baseline path:     ${baseline_path:-UNKNOWN}"
+        echo "Current path:      ${current_path:-UNKNOWN}"
+    fi
+
+    if [[ -n "${baseline_version}" && -n "${current_version}" && "${baseline_version}" != "${current_version}" ]]; then
+        echo
+        echo "WARNING: OpenSCAD version drift detected."
+        echo "Check renderer drift before debugging geometry or updating baselines."
+    else
+        echo
+        echo "No OpenSCAD version drift was detected from the recorded markers."
+    fi
+
+    echo "======================================================================"
+    echo
+}
+
+write_version_properties "${CURRENT_VERSION_FILE}"
+if [[ "${MODE}" == "generate" ]]; then
+    cp "${CURRENT_VERSION_FILE}" "${BASELINE_VERSION_FILE}"
+fi
 
 list_case_tests() {
     local case_file="$1"
@@ -368,6 +459,7 @@ if [[ "${failures}" -ne 0 ]]; then
     echo "Regression image failures: ${failures}"
     echo "Actual images: ${ACTUAL_ROOT}"
     echo "Diff images: ${DIFF_ROOT}"
+    print_version_drift_notice
     exit 1
 fi
 

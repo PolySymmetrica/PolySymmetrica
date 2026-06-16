@@ -30,6 +30,11 @@ The default OpenSCAD command is `openscad-nightly`. Override it with
 In CI, visual regressions run through `xvfb-run` with
 `LIBGL_ALWAYS_SOFTWARE=1` to reduce renderer drift.
 
+The committed baseline set records the renderer version in
+`baselines/openscad/version.properties`. Each run writes the current renderer
+version to `target/regression-tests/version.properties`; on a regression
+failure, the runner prints both versions and warns loudly when they differ.
+
 Render/compare jobs run with GNU `parallel` when it is available. Other
 commands named `parallel`, such as moreutils parallel, are ignored. The default
 fan-out is `REGRESSION_JOBS=4`; set `REGRESSION_JOBS=1` for serial output or a
@@ -49,7 +54,7 @@ budget for renderer antialiasing drift; `strict` allows no changed pixels.
 
 - `cases/`: source `.scad` files. Subdirectories become output subdirectories.
 - `common/`: shared rendering helpers, labels, colors, and portable digits.
-- `baselines/openscad/`: committed expected PNGs.
+- `baselines/openscad/`: committed expected PNGs and renderer version marker.
 - `.tmp/regression/actual/`: generated images in `diff` mode.
 - `.tmp/regression/diff/`: ImageMagick difference images in `diff` mode.
 - `.tmp/regression/logs/`: OpenSCAD render and list logs.
