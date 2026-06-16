@@ -25,7 +25,7 @@ TESTS = [
             cuboctahedron(),
             t = 0,
             c = 0,
-            profile = solve_cantitruncate_dominant_edges_params(cuboctahedron(), 4)
+            profile = solve_cantitruncate_dominant_edges_profile_rows(cuboctahedron(), 4)
         )
     ]
 ];

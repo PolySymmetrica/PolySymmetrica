@@ -151,7 +151,7 @@ Faces are ordered **clockwise when viewed from outside**.
 - `include_geom`: when true, appends average edge length to keys (rounded by `eps`).
 - `radius`: controls propagation depth for `detail=2` refinement.
 
-Helper for printing: `show_poly(poly, detail, eps, radius, include_geom)`.
+Helper for printing: `poly_show(poly, detail, eps, radius, include_geom)`.
 
 ---
 
@@ -696,7 +696,7 @@ Check:
 
 * `edges_from_faces`
 * `edge_faces_table`
-* `faces_around_vertex_rec`
+* `_ps_faces_around_vertex_rec`
 
 ### **Scaling strange?**
 
@@ -704,7 +704,7 @@ Confirm:
 
 * `e_over_ir`,
 * inter_radius argument,
-* use scale_dual(poly, dual) to calculate dual's inter_radius.
+* use ps_dual_scale(poly, dual) to calculate dual's inter_radius.
 
 ---
 

@@ -105,7 +105,7 @@ function _ps_fr_winding_number(pt, poly, eps=1e-9) =
         y = pt[1],
         n = len(poly)
     )
-    sum([
+    ps_sum([
         for (i = [0:1:n-1])
             let(
                 j = (i + 1) % n,
@@ -174,7 +174,7 @@ function _ps_fr_loop_exposure_sign(loop_sites, input_sign, cell_winding_signs) =
     let(
         signs = [for (site = loop_sites) _ps_fr_span_exposure_sign(site, input_sign, cell_winding_signs)],
         first = len(signs) == 0 ? 0 : signs[0],
-        mixed_count = sum([for (sign = signs) sign == first ? 0 : 1]),
+        mixed_count = ps_sum([for (sign = signs) sign == first ? 0 : 1]),
         _has_sites = assert(len(signs) > 0, "ps_face_region_loop_shells: boundary loop has no sites"),
         _consistent = assert(mixed_count == 0, "ps_face_region_loop_shells: boundary loop mixes exposure signs")
     )

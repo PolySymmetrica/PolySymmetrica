@@ -76,7 +76,7 @@ function solve_truncate_default_t(poly, tol = 1e-3, fallback = 0.2) =
 
         tmin = min(ts),
         tmax = max(ts),
-        tavg = sum(ts) / len(ts),
+        tavg = ps_sum(ts) / len(ts),
         ok = (tmax - tmin) <= tol
     )
     ok ? tavg : fallback;
@@ -103,7 +103,7 @@ function _ps_cantitruncate_edge_ids_of_pair(faces0, edges, edge_faces, n0, n1) =
     ];
 
 // Convert cantitruncate family maps into profile rows for poly_cantitruncate().
-function ps_cantitruncate_params_rows(poly, c_by_size, default_c=0, c_edge_by_pair=undef) =
+function ps_cantitruncate_profile_rows(poly, c_by_size, default_c=0, c_edge_by_pair=undef) =
     let(
         verts = poly_verts(poly),
         faces0 = ps_orient_all_faces_outward(verts, poly_faces(poly)),
@@ -138,7 +138,7 @@ function solve_cantitruncate_dominant(poly, dominant_size, edge_idx=undef) =
     let(
         verts = poly_verts(poly),
         faces0 = ps_orient_all_faces_outward(verts, poly_faces(poly)),
-        poly0 = make_poly(verts, faces0, poly_e_over_ir(poly)),
+        poly0 = poly_make(verts, faces0, poly_e_over_ir(poly)),
         edges = _ps_edges_from_faces(faces0),
         face_sizes = [for (f = faces0) len(f)],
         size_set = _ps_unique_ints(face_sizes),
@@ -178,10 +178,10 @@ function solve_cantitruncate_dominant_edges(poly, dominant_size, edge_idx=undef)
 // Includes a global vertex t row so callers can use:
 //   poly_cantitruncate(poly, t=0, c=0, profile=rows)
 // without carrying a separate tuple.
-function solve_cantitruncate_dominant_edges_params(poly, dominant_size, edge_idx=undef, default_c=0) =
+function solve_cantitruncate_dominant_edges_profile_rows(poly, dominant_size, edge_idx=undef, default_c=0) =
     let(
         sol = solve_cantitruncate_dominant_edges(poly, dominant_size, edge_idx),
-        rows = ps_cantitruncate_params_rows(poly, sol[1], default_c, sol[2])
+        rows = ps_cantitruncate_profile_rows(poly, sol[1], default_c, sol[2])
     )
     concat(
         [["vert", "all", ["t", sol[0]]]],

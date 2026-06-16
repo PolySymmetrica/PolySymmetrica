@@ -2,7 +2,7 @@ use <../../polysymmetrica/core/funcs.scad>
 use <../../polysymmetrica/core/truncation.scad>
 
 function _tetra_poly() =
-    make_poly(
+    poly_make(
         [[1,1,1],[-1,-1,1],[-1,1,-1],[1,-1,-1]],
         [[0,1,2],[0,3,1],[0,2,3],[1,3,2]]
     );

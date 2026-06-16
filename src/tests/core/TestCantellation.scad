@@ -10,7 +10,7 @@ module assert_int_eq(a, b, msg="") {
 }
 
 function _count_faces_of_size(poly, k) =
-    sum([ for (f = poly_faces(poly)) (len(f)==k) ? 1 : 0 ]);
+    ps_sum([ for (f = poly_faces(poly)) (len(f)==k) ? 1 : 0 ]);
 
 module test_poly_cantellate__tetra_counts() {
     p = tetrahedron();

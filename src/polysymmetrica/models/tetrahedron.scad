@@ -8,7 +8,7 @@ use <../core/funcs.scad>
 use <../core/placement.scad>
 
 // ---- Canonical Tetrahedron (edge length = 2*sqrt(2)) ----
-function tetrahedron() = let(unit_edge = 2 * sqrt(2)) make_poly(
+function tetrahedron() = let(unit_edge = 2 * sqrt(2)) poly_make(
     // verts (index 0)
     [
         [ 1,  1,  1],   // 0

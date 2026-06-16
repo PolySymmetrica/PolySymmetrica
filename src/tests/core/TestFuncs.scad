@@ -21,7 +21,7 @@ module assert_int_eq(a, b, msg="") {
 }
 
 function _count_faces_of_size(poly, k) =
-    sum([for (f = poly_faces(poly)) (len(f) == k) ? 1 : 0]);
+    ps_sum([for (f = poly_faces(poly)) (len(f) == k) ? 1 : 0]);
 
 function _cube_with_cycle_noise() =
     let(
@@ -86,26 +86,26 @@ module test_all_faces_valid__true_false() {
 }
 
 
-// --- make_poly (positive path) ---
-module test_make_poly__valid_tetra_computes_e_over_ir() {
+// --- poly_make (positive path) ---
+module test_poly_make__valid_tetra_computes_e_over_ir() {
     verts = [[1,1,1],[-1,-1,1],[-1,1,-1],[1,-1,-1]];
     faces = [[0,1,2],[0,3,1],[0,2,3],[1,3,2]];
-    p = make_poly(verts, faces);
+    p = poly_make(verts, faces);
     assert_int_eq(len(poly_verts(p)), 4, "verts");
     assert_int_eq(len(poly_faces(p)), 4, "faces");
     assert(poly_e_over_ir(p) > 0, "e_over_ir > 0");
 }
 
-module test_make_poly__recenters_off_origin_mesh_by_edge_midpoints() {
+module test_poly_make__recenters_off_origin_mesh_by_edge_midpoints() {
     base = hexahedron();
     shift = [3, -2, 5];
     verts = [for (v = poly_verts(base)) v + shift];
     faces = poly_faces(base);
-    p = make_poly(verts, faces);
+    p = poly_make(verts, faces);
     mids = [for (e = poly_edges(p)) (poly_verts(p)[e[0]] + poly_verts(p)[e[1]]) / 2];
     mid_avg = v_scale(v_sum(mids), 1 / len(mids));
-    assert_vec3_near(mid_avg, [0,0,0], 1e-9, "make_poly recenter by edge-midpoints");
-    assert_near(poly_e_over_ir(p), poly_e_over_ir(base), 1e-9, "make_poly preserves e_over_ir under translation");
+    assert_vec3_near(mid_avg, [0,0,0], 1e-9, "poly_make recenter by edge-midpoints");
+    assert_near(poly_e_over_ir(p), poly_e_over_ir(base), 1e-9, "poly_make preserves e_over_ir under translation");
 }
 
 // --- poly_fix_winding ---
@@ -134,17 +134,17 @@ module test_v_ordered() {
     assert(v_ordered(2,1) == [1,2], "sorted 2,1");
 }
 
-// --- edge_equal ---
-module test_edge_equal__ordered() {
-    assert(edge_equal([0,1],[0,1]), "ordered equal");
-    assert(!edge_equal([0,1],[1,0]), "reverse not equal");
+// --- ps_edge_equal ---
+module test_ps_edge_equal__ordered() {
+    assert(ps_edge_equal([0,1],[0,1]), "ordered equal");
+    assert(!ps_edge_equal([0,1],[1,0]), "reverse not equal");
 }
 
 
-// --- sum / v_sum ---
-module test_sum__numbers() {
-    assert_near(sum([1,2,3,4]), 10, 0, "sum ints");
-    assert_near(sum([0.1,0.2,0.3]), 0.6, 1e-12, "sum floats");
+// --- ps_sum / v_sum ---
+module test_ps_sum__numbers() {
+    assert_near(ps_sum([1,2,3,4]), 10, 0, "ps_sum ints");
+    assert_near(ps_sum([0.1,0.2,0.3]), 0.6, 1e-12, "ps_sum floats");
 }
 
 module test_v_sum__vec3_list() {
@@ -364,7 +364,7 @@ module test_face_frame_normal__nonplanar_is_unit_and_oriented() {
 module test_poly_vertex_neighbor__returns_incident_vertex() {
     verts = [[0,0,0],[1,0,0],[0,1,0],[0,0,1]];
     faces = [[0,1,2],[0,1,3],[0,2,3],[1,2,3]];
-    p = make_poly(verts, faces, 1);
+    p = poly_make(verts, faces, 1);
     n = poly_vertex_neighbor(p, 0);
     assert(n==1 || n==2 || n==3, "neighbor must be incident");
 }
@@ -402,7 +402,7 @@ module test_edge_faces_table__tetra_each_edge_two_faces() {
 module test_poly_face_center__matches_centroid_for_triangle() {
     verts = [[0,0,0],[2,0,0],[0,2,0],[0,0,2]];
     faces = [[0,1,2],[0,1,3],[0,2,3],[1,2,3]];
-    p = make_poly(verts, faces, 1);
+    p = poly_make(verts, faces, 1);
     c = poly_face_center(p, 0, 1);
     expect = ps_face_centroid(poly_verts(p), poly_faces(p)[0]);
     assert_vec3_near(c, expect, 1e-12, "face center");
@@ -411,7 +411,7 @@ module test_poly_face_center__matches_centroid_for_triangle() {
 module test_poly_face_axes__orthonormalish() {
     verts = [[0,0,0],[2,0,0],[0,2,0],[0,0,2]];
     faces = [[0,1,2],[0,1,3],[0,2,3],[1,2,3]];
-    p = make_poly(verts, faces, 1);
+    p = poly_make(verts, faces, 1);
 
     ex = poly_face_ex(p, 0, 1);
     ey = poly_face_ey(p, 0, 1);
@@ -685,14 +685,14 @@ module run_TestFuncs() {
 
     test_all_indices_in_range__true_false();
     test_all_faces_valid__true_false();
-    test_make_poly__valid_tetra_computes_e_over_ir();
-    test_make_poly__recenters_off_origin_mesh_by_edge_midpoints();
+    test_poly_make__valid_tetra_computes_e_over_ir();
+    test_poly_make__recenters_off_origin_mesh_by_edge_midpoints();
     test_poly_fix_winding__repairs_edge_dirs();
 
     test_v_ops__dot_cross_norm();
 //    test_v_ordered();
-    test_edge_equal__ordered();
-    test_sum__numbers();
+    test_ps_edge_equal__ordered();
+    test_ps_sum__numbers();
     test_v_sum__vec3_list();
     test_ps_centroid2d__basic();
     test_ps_segment_midpoint2d__basic();

@@ -54,7 +54,7 @@ module demo(p, ir = IR, detail = 0, name = undef) {
     }
 }
 
-module combo(p, scale_f = function(p,d) scale_dual_edge_cross(p,d, 0)) {
+module combo(p, scale_f = function(p,d) ps_dual_scale_edge_cross(p,d, 0)) {
     d = poly_dual(p);
     m = scale_f(p, d);       
     

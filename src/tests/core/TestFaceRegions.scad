@@ -205,8 +205,8 @@ module test_ps_face_region_loop_shells__anti_tet_winding_splits_exposure() {
         for (shell = shells)
             ps_loop_shell_exposure_sign(shell)
     ];
-    top_count = sum([for (sign = exposure_signs) sign > 0 ? 1 : 0]);
-    bottom_count = sum([for (sign = exposure_signs) sign < 0 ? 1 : 0]);
+    top_count = ps_sum([for (sign = exposure_signs) sign > 0 ? 1 : 0]);
+    bottom_count = ps_sum([for (sign = exposure_signs) sign < 0 ? 1 : 0]);
 
     assert_int_eq(top_count, 1, "anti-tet same-winding centre shell should be top-exposed");
     assert_int_eq(bottom_count, 3, "anti-tet opposite-winding corner shells should be bottom-exposed");
@@ -231,8 +231,8 @@ module test_ps_face_region_loop_shells__anti_tet_past_zero_area_keeps_atom_regio
         for (shell = shells)
             ps_loop_shell_exposure_sign(shell)
     ];
-    top_count = sum([for (sign = exposure_signs) sign > 0 ? 1 : 0]);
-    bottom_count = sum([for (sign = exposure_signs) sign < 0 ? 1 : 0]);
+    top_count = ps_sum([for (sign = exposure_signs) sign > 0 ? 1 : 0]);
+    bottom_count = ps_sum([for (sign = exposure_signs) sign < 0 ? 1 : 0]);
 
     assert_int_eq(top_count, 1, "anti-tet threshold centre shell should remain top-exposed");
     assert_int_eq(bottom_count, 3, "anti-tet threshold corner shells should remain bottom-exposed");

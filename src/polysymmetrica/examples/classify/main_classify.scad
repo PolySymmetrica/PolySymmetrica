@@ -24,7 +24,7 @@ spacing = 120;
 
 module show_classify(p, name, pos=[0,0,0]) {
     translate(pos) demo(p, name=name);
-    show_poly(p, detail = 1);
+    poly_show(p, detail = 1);
 }
 
 show_classify(hexahedron(), "cube", [spacing, 0, 0]);
@@ -40,11 +40,11 @@ show_classify(disdyakis_dodecahedron(), "disdyakis_dodeca", [spacing*4, -spacing
 
 
 
-//show_poly(truncated_tetrahedron());
-//show_poly(cuboctahedron(), detail=5);
-//show_poly(rhombicuboctahedron(), detail = 3);
-//show_poly(great_rhombicuboctahedron(), detail = 3);
-//show_poly(poly_truncate(rhombic_triacontahedron()), detail = 3);
+//poly_show(truncated_tetrahedron());
+//poly_show(cuboctahedron(), detail=5);
+//poly_show(rhombicuboctahedron(), detail = 3);
+//poly_show(great_rhombicuboctahedron(), detail = 3);
+//poly_show(poly_truncate(rhombic_triacontahedron()), detail = 3);
 
 
 //show_classify(hexahedron(), "cube", [spacing, 0, 0]);

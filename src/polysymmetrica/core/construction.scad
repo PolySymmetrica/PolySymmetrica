@@ -63,7 +63,7 @@ function _ps_face_avg_edge_len(verts, f) =
         n = len(f),
         lens = [for (k = [0:1:n-1]) norm(verts[f[(k+1)%n]] - verts[f[k]])]
     )
-    (n == 0) ? 0 : sum(lens) / n;
+    (n == 0) ? 0 : ps_sum(lens) / n;
 
 function _ps_attach_map_point(p, frame1, frame2, mirror=false) =
     let(
@@ -370,7 +370,7 @@ function poly_pyramid(n=4, p=1, edge=1, height=undef, height_scale=1) =
         ir = _ps_poly_ir(verts, faces),
         e_over_ir = edge / ir
     )
-    make_poly(verts, faces, e_over_ir);
+    poly_make(verts, faces, e_over_ir);
 
 // Exact n-gonal cupola with unit top/base/side edges.
 //
@@ -424,7 +424,7 @@ function poly_cupola(n=3, edge=1, height=undef, height_scale=1) =
         ir = _ps_poly_ir(verts, faces),
         e_over_ir = edge / ir
     )
-    make_poly(verts, faces, e_over_ir);
+    poly_make(verts, faces, e_over_ir);
 
 function _ps_first_face_of_arity(poly, arity, who) =
     let(

@@ -118,7 +118,7 @@ function j40_elongated_pentagonal_orthocupolarotunda_approx() =
         ],
         faces = ps_orient_all_faces_outward(verts, faces_raw)
     )
-    make_poly(verts, faces);
+    poly_make(verts, faces);
 
 /**
 Return current Johnson previews as [[name, fn], ...],

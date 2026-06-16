@@ -100,8 +100,8 @@ function poly_cleanup(
         faces6 = compacted[1],
         max_planarity_after = _ps_faces_max_planarity_err(verts6, faces6, eps),
 
-        // make_poly recomputes e_over_ir from current geometry.
-        p0 = make_poly(verts6, faces6),
+        // poly_make recomputes e_over_ir from current geometry.
+        p0 = poly_make(verts6, faces6),
         p = fix_winding ? poly_fix_winding(p0) : p0,
 
         report = [

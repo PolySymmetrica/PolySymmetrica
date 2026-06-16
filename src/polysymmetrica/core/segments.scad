@@ -165,7 +165,7 @@ function _ps_seg_trace_cycle(nodes, hedges, start_hi, cur_hi, acc_h, acc_n, dept
 function _ps_seg_poly_area2(pts2d) =
     let(n = len(pts2d))
     (n < 3) ? 0 :
-    sum([for (i = [0:1:n-1]) let(j = (i+1)%n) pts2d[i][0]*pts2d[j][1] - pts2d[j][0]*pts2d[i][1]]) / 2;
+    ps_sum([for (i = [0:1:n-1]) let(j = (i+1)%n) pts2d[i][0]*pts2d[j][1] - pts2d[j][0]*pts2d[i][1]]) / 2;
 
 function _ps_seg_set_true_many(flags, ids) =
     [for (i = [0:1:len(flags)-1]) flags[i] || _ps_list_contains(ids, i)];
@@ -223,7 +223,7 @@ function _ps_seg_point_in_poly_evenodd(pt, poly, eps=1e-9) =
                 (cond && x < xint) ? 1 : 0
         ]
     )
-    (sum(hits) % 2) == 1;
+    (ps_sum(hits) % 2) == 1;
 
 // Non-zero winding-number containment for self-intersecting loops.
 // Returns true when point is inside under non-zero winding rule.
@@ -232,7 +232,7 @@ function _ps_seg_point_in_poly_nonzero(pt, poly, eps=1e-9) =
         x = pt[0],
         y = pt[1],
         n = len(poly),
-        wn = sum([
+        wn = ps_sum([
             for (i = [0:1:n-1])
                 let(
                     j = (i + 1) % n,
@@ -300,8 +300,8 @@ function _ps_seg_point_on_poly_boundary(pt, poly, eps=1e-9) =
 function _ps_seg_cycle_probe_point(poly, eps=1e-9) =
     let(
         n = len(poly),
-        cx = sum([for (p = poly) p[0]]) / n,
-        cy = sum([for (p = poly) p[1]]) / n,
+        cx = ps_sum([for (p = poly) p[0]]) / n,
+        cy = ps_sum([for (p = poly) p[1]]) / n,
         centroid = [cx, cy],
         area = _ps_seg_poly_area2(poly),
         sgn = (area >= 0) ? 1 : -1,
@@ -2514,12 +2514,12 @@ module _ps_face_cut_strip(seg2d, face_thk, kerf=0.2, extend=0.5, z_pad=0.2, eps=
 
 // Build a subtraction body from geometry-derived face cut segments.
 // Use inside place_on_faces(...), typically in difference() with a face plate/face polygon.
-module face_cut_stencil(face_thk, kerf=0.2, extend=0.5, z_pad=0.2, mode="nonzero", eps=1e-8, filter_parent=true) {
-    assert(face_thk > 0, "face_cut_stencil: face_thk must be > 0");
-    assert(!is_undef($ps_face_pts2d), "face_cut_stencil: requires place_on_faces context");
-    assert(!is_undef($ps_face_idx), "face_cut_stencil: requires place_on_faces context");
-    assert(!is_undef($ps_poly_faces_idx), "face_cut_stencil: requires place_on_faces context");
-    assert(!is_undef($ps_poly_verts_local), "face_cut_stencil: requires place_on_faces context");
+module ps_face_cut_stencil(face_thk, kerf=0.2, extend=0.5, z_pad=0.2, mode="nonzero", eps=1e-8, filter_parent=true) {
+    assert(face_thk > 0, "ps_face_cut_stencil: face_thk must be > 0");
+    assert(!is_undef($ps_face_pts2d), "ps_face_cut_stencil: requires place_on_faces context");
+    assert(!is_undef($ps_face_idx), "ps_face_cut_stencil: requires place_on_faces context");
+    assert(!is_undef($ps_poly_faces_idx), "ps_face_cut_stencil: requires place_on_faces context");
+    assert(!is_undef($ps_poly_verts_local), "ps_face_cut_stencil: requires place_on_faces context");
 
     segs = ps_face_geom_cut_segments($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, eps, mode, filter_parent);
     union() {
@@ -2531,12 +2531,12 @@ module face_cut_stencil(face_thk, kerf=0.2, extend=0.5, z_pad=0.2, mode="nonzero
 // Extruded keep-mask built from the visible cells of the current face.
 // Use this in intersection() with a finished face body to keep only printable
 // face pieces instead of subtracting an oversized stencil hull.
-module face_visible_mask(face_thk, z_pad=0.2, mode="nonzero", eps=1e-8, filter_parent=true) {
-    assert(face_thk > 0, "face_visible_mask: face_thk must be > 0");
-    assert(!is_undef($ps_face_pts2d), "face_visible_mask: requires place_on_faces context");
-    assert(!is_undef($ps_face_idx), "face_visible_mask: requires place_on_faces context");
-    assert(!is_undef($ps_poly_faces_idx), "face_visible_mask: requires place_on_faces context");
-    assert(!is_undef($ps_poly_verts_local), "face_visible_mask: requires place_on_faces context");
+module ps_face_visible_mask(face_thk, z_pad=0.2, mode="nonzero", eps=1e-8, filter_parent=true) {
+    assert(face_thk > 0, "ps_face_visible_mask: face_thk must be > 0");
+    assert(!is_undef($ps_face_pts2d), "ps_face_visible_mask: requires place_on_faces context");
+    assert(!is_undef($ps_face_idx), "ps_face_visible_mask: requires place_on_faces context");
+    assert(!is_undef($ps_poly_faces_idx), "ps_face_visible_mask: requires place_on_faces context");
+    assert(!is_undef($ps_poly_verts_local), "ps_face_visible_mask: requires place_on_faces context");
 
     segs = ps_face_visible_segments($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, eps, mode, filter_parent);
     linear_extrude(height = face_thk + 2 * z_pad, center = true)

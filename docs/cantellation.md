@@ -7,7 +7,7 @@ This document captures current cantellation behavior, parameterization, and solv
 `poly_cantellate(poly, df=undef, c=undef, df_max=undef, steps=16, family_edge_idx=0, eps, len_eps)`
 
 - **df** controls face offsets (how far original faces move along their normals).
-- **c** provides a normalized knob; `c=0.5` targets square edge faces (via `cantellate_square_df`).
+- **c** provides a normalized knob; `c=0.5` targets square edge faces (via `solve_cantellate_square_df`).
 - If `df` is omitted, `c` (or a default `c=0.5`) is used to derive a `df`.
 - `df_max` bounds the normalized mapping; `steps` controls the square‑target search.
 
@@ -37,7 +37,7 @@ Current limitations:
 
 ## Solvers / Helpers
 
-- `cantellate_square_df(poly, df_min, df_max, steps, family_edge_idx, eps)`
+- `solve_cantellate_square_df(poly, df_min, df_max, steps, family_edge_idx, eps)`
   - Searches for a `df` that makes a chosen edge‑family as square as possible.
 
 - `poly_cantellate_norm(poly, c, df_max=undef, steps=16, family_edge_idx=0, eps, len_eps)`
@@ -64,7 +64,7 @@ p = poly_cantellate_norm(hexahedron(), 0.5);
 ```
 base = poly_rectify(octahedron()); // cuboctahedron
 // pick a representative edge from the family you want squared
-sol_df = cantellate_square_df(base, 0.0, 1.0, 40, family_edge_idx=0);
+sol_df = solve_cantellate_square_df(base, 0.0, 1.0, 40, family_edge_idx=0);
 p = poly_cantellate(base, sol_df);
 ```
 

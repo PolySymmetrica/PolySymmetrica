@@ -40,7 +40,7 @@ function _ps_poly_from_face_points(faces_pts_all, eps, len_eps=undef) =
                     if (
                         is_undef(p) ||
                         (len(p) < 3) ||
-                        (sum([for (c = p) is_undef(c) ? 1 : 0]) > 0)
+                        (ps_sum([for (c = p) is_undef(c) ? 1 : 0]) > 0)
                     )
                     [fi, pi, p]
         ],
@@ -65,7 +65,7 @@ function _ps_poly_from_face_points(faces_pts_all, eps, len_eps=undef) =
         ir  = norm(mid),
         e_over_ir = unit_e / ir
     )
-    make_poly(uniq_verts / unit_e, faces_out, e_over_ir);
+    poly_make(uniq_verts / unit_e, faces_out, e_over_ir);
 
 // Build a poly from site-based face cycles.
 // cycle entries: [0, v_idx] for original vertex, [1, site_idx] for site point.
@@ -85,7 +85,7 @@ function ps_poly_transform_from_sites(verts0, sites, site_points, face_cycles, e
                     if (
                         is_undef(p) ||
                         (len(p) < 3) ||
-                        (sum([for (v = p) is_undef(v) ? 1 : 0]) > 0)
+                        (ps_sum([for (v = p) is_undef(v) ? 1 : 0]) > 0)
                     )
                     [cyi, ci, c, p]
         ],

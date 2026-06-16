@@ -48,7 +48,7 @@ function ps_clamp(x, lo, hi) = min(max(x, lo), hi);
  * Returns: `[centered_verts, faces, e_over_ir]`
  * Limitations/Gotchas: recenters by mean edge-midpoint center and computes default scale from minimum edge-midradius
  */
-function make_poly(verts, faces, e_over_ir=undef) =
+function poly_make(verts, faces, e_over_ir=undef) =
     let(
         // Validation
         _0 = assert(len(verts) >= 3, "Polyhedron must have at least 3 vertices"),
@@ -67,7 +67,7 @@ function make_poly(verts, faces, e_over_ir=undef) =
                 norm((verts_centered[e[0]] + verts_centered[e[1]]) / 2)
         ],
         ir = min(mids),
-        _ir_ok = assert(ir > 0, "make_poly: inter-radius (min edge-midradius) must be positive"),
+        _ir_ok = assert(ir > 0, "poly_make: inter-radius (min edge-midradius) must be positive"),
 
         // choose an edge achieving that min (first one that matches)
         ei_ir = [ for (i = [0:len(edges)-1]) if (abs(mids[i] - ir) < 1e-12) i ][0],
@@ -407,15 +407,15 @@ function _ps_ordered_pair(a, b) = (a < b) ? [a,b] : [b,a];
  * Params: e1,e2 (`[a,b]`)
  * Returns: boolean
  */
-function edge_equal(e1, e2) = (e1[0] == e2[0] && e1[1] == e2[1]);
+function ps_edge_equal(e1, e2) = (e1[0] == e2[0] && e1[1] == e2[1]);
 
 /**
  * Function: Sum scalar list entries recursively.
  * Params: a (number list), i (start index)
  * Returns: scalar sum from `i` to end
  */
-function sum(a, i = 0) =
-    i >= len(a) ? 0 : a[i] + sum(a, i + 1);
+function ps_sum(a, i = 0) =
+    i >= len(a) ? 0 : a[i] + ps_sum(a, i + 1);
 
 /**
  * Function: Sum a list of equal-dimension vectors.
@@ -425,7 +425,7 @@ function sum(a, i = 0) =
 function v_sum(list) =
     (len(list) == 0) ? [] :
     let(n = len(list[0]))
-    [ for (i = [0:1:n-1]) sum([for (v = list) v[i]]) ];
+    [ for (i = [0:1:n-1]) ps_sum([for (v = list) v[i]]) ];
 
 /**
  * Function: Compute the simple centroid of a 2D point list.
@@ -479,7 +479,7 @@ function ps_rot_axis(v, axis, ang) =
 function ps_find_edge_index(edges, a, b) =
     let(
         e = _ps_ordered_pair(a, b),
-        idxs = [for (i = [0 : len(edges)-1]) if (edge_equal(edges[i], e)) i]
+        idxs = [for (i = [0 : len(edges)-1]) if (ps_edge_equal(edges[i], e)) i]
     )
     idxs[0];   // assume the edge exists
 
@@ -758,7 +758,7 @@ function ps_face_normal(verts, f) =
 function ps_face_frame_normal(verts, f, eps=1e-12) =
     let(
         n = len(f),
-        nx = (n < 3) ? 0 : sum([
+        nx = (n < 3) ? 0 : ps_sum([
             for (i = [0:1:n-1])
                 let(
                     j = (i + 1) % n,
@@ -767,7 +767,7 @@ function ps_face_frame_normal(verts, f, eps=1e-12) =
                 )
                 (pi[1] - pj[1]) * (pi[2] + pj[2])
         ]),
-        ny = (n < 3) ? 0 : sum([
+        ny = (n < 3) ? 0 : ps_sum([
             for (i = [0:1:n-1])
                 let(
                     j = (i + 1) % n,
@@ -776,7 +776,7 @@ function ps_face_frame_normal(verts, f, eps=1e-12) =
                 )
                 (pi[2] - pj[2]) * (pi[0] + pj[0])
         ]),
-        nz = (n < 3) ? 0 : sum([
+        nz = (n < 3) ? 0 : ps_sum([
             for (i = [0:1:n-1])
                 let(
                     j = (i + 1) % n,
@@ -800,7 +800,7 @@ function ps_face_frame_normal(verts, f, eps=1e-12) =
  */
 function _ps_face_area_mag(verts, f) =
     (len(f) < 3) ? 0 :
-    sum([
+    ps_sum([
         for (i = [1:1:len(f)-2])
             norm(v_cross(verts[f[i]] - verts[f[0]], verts[f[i+1]] - verts[f[0]])) / 2
     ]);
@@ -869,9 +869,9 @@ function _ps_edges_from_faces(faces) =
         uniq_edges = [
             for (i = [0 : len(raw_edges)-1])
                 let(ei = raw_edges[i])
-                    if (sum([
+                    if (ps_sum([
                             for (j = [0 : 1 : i-1])
-                                edge_equal(raw_edges[j], ei) ? 1 : 0
+                                ps_edge_equal(raw_edges[j], ei) ? 1 : 0
                         ]) == 0) ei
         ]
     )
@@ -899,7 +899,7 @@ function ps_edge_faces_table(faces, edges) =
  * Returns: boolean
  */
 function ps_face_has_edge(f, a, b) =
-    sum([
+    ps_sum([
         for (k = [0 : len(f)-1])
             let(
                 x = f[k],
@@ -913,12 +913,12 @@ function ps_face_has_edge(f, a, b) =
  * Params: poly (poly descriptor), vi (vertex index)
  * Returns: unordered face-index list
  */
-function vertex_incident_faces(poly, vi) =
+function ps_vertex_incident_faces(poly, vi) =
     let(faces = poly_faces(poly))
     [
         for (fi = [0 : len(faces)-1])
             let(f = faces[fi])
-            if (sum([for (k = [0 : len(f)-1]) f[k] == vi ? 1 : 0]) > 0) fi
+            if (ps_sum([for (k = [0 : len(f)-1]) f[k] == vi ? 1 : 0]) > 0) fi
     ];
 
 /**
@@ -927,7 +927,7 @@ function vertex_incident_faces(poly, vi) =
  * Returns: next face index in the local fan
  * Limitations/Gotchas: assumes manifold local topology
  */
-function next_face_around_vertex(v, f_cur, f_prev, faces, edges, edge_faces) =
+function _ps_next_face_around_vertex(v, f_cur, f_prev, faces, edges, edge_faces) =
     let(
         f = faces[f_cur],
         n = len(f),
@@ -953,11 +953,11 @@ function next_face_around_vertex(v, f_cur, f_prev, faces, edges, edge_faces) =
  * Params: v (vertex index), f_cur/f_prev/f_start (face indices), faces/edges/edge_faces (topology tables), acc (accumulator)
  * Returns: cyclically ordered face-index list
  */
-function faces_around_vertex_rec(v, f_cur, f_prev, f_start, faces, edges, edge_faces, acc = []) =
-    let(next = next_face_around_vertex(v, f_cur, f_prev, faces, edges, edge_faces))
+function _ps_faces_around_vertex_rec(v, f_cur, f_prev, f_start, faces, edges, edge_faces, acc = []) =
+    let(next = _ps_next_face_around_vertex(v, f_cur, f_prev, faces, edges, edge_faces))
     (next == f_start)
         ? concat(acc, [f_cur])
-        : faces_around_vertex_rec(v, next, f_cur, f_start, faces, edges, edge_faces, concat(acc, [f_cur]));
+        : _ps_faces_around_vertex_rec(v, next, f_cur, f_start, faces, edges, edge_faces, concat(acc, [f_cur]));
 
 /**
  * Function: Return incident faces around a vertex in cyclic order.
@@ -965,13 +965,13 @@ function faces_around_vertex_rec(v, f_cur, f_prev, f_start, faces, edges, edge_f
  * Returns: ordered face-index list
  * Limitations/Gotchas: assumes manifold vertex neighborhood
  */
-function faces_around_vertex(poly, v, edges, edge_faces) =
+function ps_faces_around_vertex(poly, v, edges, edge_faces) =
     let(
         faces = poly_faces(poly),
-        inc = vertex_incident_faces(poly, v),
+        inc = ps_vertex_incident_faces(poly, v),
         start = inc[0]
     )
-    faces_around_vertex_rec(v, start, -1, start, faces, edges, edge_faces);
+    _ps_faces_around_vertex_rec(v, start, -1, start, faces, edges, edge_faces);
 
 
 ///////////////////////////////////////
@@ -990,9 +990,9 @@ function poly_face_center(poly, fi, scale) =
         zs  = [ for (vid = f) vs[vid][2] * scale ]
     )
     [
-        sum(xs) / len(f),
-        sum(ys) / len(f),
-        sum(zs) / len(f)
+        ps_sum(xs) / len(f),
+        ps_sum(ys) / len(f),
+        ps_sum(zs) / len(f)
     ];
 
 

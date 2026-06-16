@@ -8,7 +8,7 @@ use <funcs.scad>
 use <profile.scad>
 
 
-function dual_faces(poly, centers) =
+function _ps_dual_faces(poly, centers) =
     let(
         faces      = poly_faces(poly),
         edges      = _ps_edges_from_faces(faces),
@@ -17,11 +17,11 @@ function dual_faces(poly, centers) =
     )
     [
         for (vi = [0 : len(verts)-1])
-            faces_around_vertex(poly, vi, edges, edge_faces)
+            ps_faces_around_vertex(poly, vi, edges, edge_faces)
     ];
 
 
-function dual_unit_edge_and_e_over_ir(verts, faces) =
+function _ps_dual_unit_edge_and_e_over_ir(verts, faces) =
     let(
         edges    = _ps_edges_from_faces(faces),
         e0       = edges[0],
@@ -57,7 +57,7 @@ function ps_face_polar_verts(verts, faces) =
 function poly_dual_polar_vf(verts, faces) =
     let(
         dual_verts  = ps_face_polar_verts(verts, faces),
-        faces_raw   = dual_faces([verts, faces, 1, 1], dual_verts),
+        faces_raw   = _ps_dual_faces([verts, faces, 1, 1], dual_verts),
         faces_orient = ps_orient_all_faces_outward(dual_verts, faces_raw)
     )
     [dual_verts, faces_orient];
@@ -100,7 +100,7 @@ function ps_face_radius_list(poly) =
                 c = ps_face_centroid(verts, f),
                 rs = [ for (vid = f) norm(verts[vid] - c) ]
             )
-            sum(rs) / len(rs)
+            ps_sum(rs) / len(rs)
     ];
 
 function ps_face_radius_stat(poly, face_k=undef) =
@@ -124,11 +124,11 @@ function ps_face_family_list(poly) =
         uniq = [
             for (i = [0:len(sizes)-1])
                 let(k = sizes[i])
-                    if (sum([ for (j = [0:1:i-1]) sizes[j] == k ? 1 : 0 ]) == 0) k
+                    if (ps_sum([ for (j = [0:1:i-1]) sizes[j] == k ? 1 : 0 ]) == 0) k
         ],
         ks = sort(uniq)
     )
-    [ for (k = ks) [k, sum([ for (s = sizes) s == k ? 1 : 0 ])] ];
+    [ for (k = ks) [k, ps_sum([ for (s = sizes) s == k ? 1 : 0 ])] ];
 
 // Return [k, count] for the face size that appears most frequently.
 // Ties are resolved by choosing the smallest k.
@@ -139,9 +139,9 @@ function ps_face_family_mode(poly) =
         uniq = [
             for (i = [0:len(sizes)-1])
                 let(k = sizes[i])
-                    if (sum([ for (j = [0:1:i-1]) sizes[j] == k ? 1 : 0 ]) == 0) k
+                    if (ps_sum([ for (j = [0:1:i-1]) sizes[j] == k ? 1 : 0 ]) == 0) k
         ],
-        counts = [ for (k = uniq) sum([ for (s = sizes) s == k ? 1 : 0 ]) ],
+        counts = [ for (k = uniq) ps_sum([ for (s = sizes) s == k ? 1 : 0 ]) ],
         max_count = max(counts),
         best = [
             for (i = [0:len(uniq)-1])
@@ -157,7 +157,7 @@ function ps_face_family_max(poly) =
         faces = poly_faces(poly),
         sizes = [ for (f = faces) len(f) ],
         k = max(sizes),
-        count = sum([ for (s = sizes) s == k ? 1 : 0 ])
+        count = ps_sum([ for (s = sizes) s == k ? 1 : 0 ])
     )
     [k, count];
 
@@ -166,7 +166,7 @@ function ps_face_family_max(poly) =
 function _ps_vertex_valence_list(verts, edges) =
     [
         for (vi = [0:len(verts)-1])
-            sum([
+            ps_sum([
                 for (e = edges)
                     (e[0] == vi || e[1] == vi) ? 1 : 0
             ])
@@ -200,7 +200,7 @@ function ps_edge_from_face(poly, face_idx, edge_pos) =
 // Compute a scale that makes dual edges intersect the selected edge family.
 // face_idx selects a face; edge_pos selects the reference edge within that face.
 // The edge family is defined by matching adjacent face sizes and endpoint valences.
-function scale_dual_edge_cross(poly, dual, face_idx, edge_pos=0, eps=1e-12, len_eps=1e-6) =
+function ps_dual_scale_edge_cross(poly, dual, face_idx, edge_pos=0, eps=1e-12, len_eps=1e-6) =
     let(
         verts = poly_verts(poly),
         faces = poly_faces(poly),
@@ -255,7 +255,7 @@ function scale_dual_edge_cross(poly, dual, face_idx, edge_pos=0, eps=1e-12, len_
         ],
 
         s_vals = [ for (s = scales) if (!is_undef(s)) s ],
-        _0 = assert(len(s_vals) > 0, "scale_dual_edge_cross: no valid edges found"),
+        _0 = assert(len(s_vals) > 0, "ps_dual_scale_edge_cross: no valid edges found"),
         sorted = _ps_sort(s_vals),
         n = len(sorted)
     )
@@ -266,7 +266,7 @@ function scale_dual_edge_cross(poly, dual, face_idx, edge_pos=0, eps=1e-12, len_
 
 // ---- IR overlay multiplier so dual's edges line up with poly's edges (mid-sphere style) ----
 // Returns multiplier 'm' such that using IR*m for the dual tends to align edge crossings.
-function scale_dual(poly, dual) =
+function ps_dual_scale(poly, dual) =
     let(
         // scaling from unit-edge coords to "per-IR world coords":
         // world = IR * (e_over_ir/unit_edge) * verts_unit
@@ -276,21 +276,21 @@ function scale_dual(poly, dual) =
         rp = ps_edge_midradius_stat(poly),
         rd = ps_edge_midradius_stat(dual),
 
-        _0 = assert(abs(rd) > 1e-12, "scale_dual: dual edge midradius ~ 0")
+        _0 = assert(abs(rd) > 1e-12, "ps_dual_scale: dual edge midradius ~ 0")
     )
     (sp * rp) / (sd * rd);
 
 // ---- Face-radius scaling to align face overlays ----
 // Returns multiplier 'm' so that the unit-edge face radius of poly matches the dual's.
 // Use face_k (vertex count) to select a face family on the poly (e.g., 4 for squares).
-// For world-space overlays, multiply this by scale_dual(poly, dual).
-function scale_dual_face_radius(poly, dual, face_k=undef, dual_face_k=undef) =
+// For world-space overlays, multiply this by ps_dual_scale(poly, dual).
+function ps_dual_scale_face_radius(poly, dual, face_k=undef, dual_face_k=undef) =
     let(
         rp = ps_face_radius_stat(poly, face_k),
         rd = ps_face_radius_stat(dual, dual_face_k),
-        _0 = assert(abs(rd) > 1e-12, "scale_dual_face_radius: dual face radius ~ 0")
+        _0 = assert(abs(rd) > 1e-12, "ps_dual_scale_face_radius: dual face radius ~ 0")
     )
-    rp / rd * scale_dual(poly, dual);
+    rp / rd * ps_dual_scale(poly, dual);
 
 
 
@@ -311,7 +311,7 @@ function poly_dual(poly, profile=undef) =
         df_raw = dual_vf_raw[1],
 
         // Compute metrics for raw dual
-        ue_eir_raw = dual_unit_edge_and_e_over_ir(dv_raw, df_raw),
+        ue_eir_raw = _ps_dual_unit_edge_and_e_over_ir(dv_raw, df_raw),
         unit_e_raw = ue_eir_raw[0],
         e_over_ir_raw = ue_eir_raw[1],
 
@@ -320,7 +320,7 @@ function poly_dual(poly, profile=undef) =
         dv = dv_raw * k,
 
         // Recompute metrics after renormalisation
-        ue_eir = dual_unit_edge_and_e_over_ir(dv, df_raw),
+        ue_eir = _ps_dual_unit_edge_and_e_over_ir(dv, df_raw),
         e_over_ir = ue_eir[1]
     )
-    make_poly(dv, df_raw, e_over_ir);
+    poly_make(dv, df_raw, e_over_ir);

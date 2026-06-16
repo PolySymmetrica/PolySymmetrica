@@ -12,7 +12,7 @@ function _ps_ls_orient2(a, b, c) =
 function _ps_ls_poly_area2(pts2d) =
     let(n = len(pts2d))
     (n < 3) ? 0 :
-    sum([for (i = [0:1:n-1]) let(j = (i + 1) % n) pts2d[i][0] * pts2d[j][1] - pts2d[j][0] * pts2d[i][1]]) / 2;
+    ps_sum([for (i = [0:1:n-1]) let(j = (i + 1) % n) pts2d[i][0] * pts2d[j][1] - pts2d[j][0] * pts2d[i][1]]) / 2;
 
 function _ps_ls_nonadj(n, i, j) =
     abs(i - j) > 1 && !(i == 0 && j == n - 1);
@@ -206,7 +206,7 @@ function ps_loop_shell_from_projected_lines(
     let(
         bottom = ps_loop_shell_projected_loop(bottom_lines, eps),
         top = ps_loop_shell_projected_loop(top_lines, eps),
-        capped_count = sum(concat(
+        capped_count = ps_sum(concat(
             [for (line = bottom_lines) (len(line) > 2 && line[2]) ? 1 : 0],
             [for (line = top_lines) (len(line) > 2 && line[2]) ? 1 : 0]
         ))

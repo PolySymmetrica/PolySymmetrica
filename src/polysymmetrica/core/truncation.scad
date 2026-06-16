@@ -160,7 +160,7 @@ function _ps_poly_area_abs_2d(pts2d) =
     (is_undef(pts2d) || len(pts2d) < 3) ? 0
   : let(
         n = len(pts2d),
-        a = sum([
+        a = ps_sum([
             for (i = [0:1:n-1])
                 let(
                     p0 = pts2d[i],
@@ -174,7 +174,7 @@ function _ps_poly_area_abs_2d(pts2d) =
 function _ps_poly_area_abs_2d_valid(pts2d) =
     let(
         n = is_undef(pts2d) ? 0 : len(pts2d),
-        ok = (n >= 3) && (sum([for (p = pts2d) is_undef(p) ? 1 : 0]) == 0)
+        ok = (n >= 3) && (ps_sum([for (p = pts2d) is_undef(p) ? 1 : 0]) == 0)
     )
     ok ? _ps_poly_area_abs_2d(pts2d) : undef;
 
@@ -310,7 +310,7 @@ function poly_truncate(
                 vert_cycles = [
                     for (vi = [0:1:len(verts)-1])
                         let(
-                            fc = faces_around_vertex(poly, vi, edges, edge_faces),
+                            fc = ps_faces_around_vertex(poly, vi, edges, edge_faces),
                             neigh = [
                                 for (idx = [0:1:len(fc)-1])
                                     let(
@@ -376,7 +376,7 @@ function poly_rectify(
         vert_faces = [
             for (vi = [0:1:len(verts)-1])
                 let(
-                    fc = faces_around_vertex(poly0, vi, edges, edge_faces),
+                    fc = ps_faces_around_vertex(poly0, vi, edges, edge_faces),
                     neigh = [
                         for (idx = [0:1:len(fc)-1])
                             let(
@@ -561,7 +561,7 @@ function _ps_cantellate_df_map(poly, df_max=undef, steps=16, family_edge_idx=0) 
         edge_len = norm(verts[e0[1]] - verts[e0[0]]),
         ir = edge_len / poly_e_over_ir(poly),
         df_max_eff = is_undef(df_max) ? (2 * ir) : df_max,
-        df_mid = cantellate_square_df(poly, 0, df_max_eff, steps, family_edge_idx)
+        df_mid = solve_cantellate_square_df(poly, 0, df_max_eff, steps, family_edge_idx)
     )
     [df_mid, df_max_eff, ir];
 
@@ -676,7 +676,7 @@ function poly_cantellate(
         ],
         vert_cycles = [
             for (vi = [0:1:len(verts0)-1])
-                let(fc = faces_around_vertex(poly0, vi, edges, edge_faces))
+                let(fc = ps_faces_around_vertex(poly0, vi, edges, edge_faces))
                 [
                     for (fi = fc)
                         let(pos = _ps_index_of(faces0[fi], vi))
@@ -697,7 +697,7 @@ function _ps_face_edge_spread(verts, face) =
     (n == 4) ? (max(ls) - min(ls)) : undef;
 
 // Solve df so that the chosen edge-face family is as square as possible.
-function cantellate_square_df(poly, df_min, df_max, steps=40, family_edge_idx=0, eps=1e-9) =
+function solve_cantellate_square_df(poly, df_min, df_max, steps=40, family_edge_idx=0, eps=1e-9) =
     let(
         faces0 = ps_orient_all_faces_outward(poly_verts(poly), poly_faces(poly)),
         edges0 = _ps_edges_from_faces(faces0),
@@ -726,9 +726,9 @@ function cantellate_square_df(poly, df_min, df_max, steps=40, family_edge_idx=0,
                     errs = [for (ei = family_edges) _ps_face_edge_spread(poly_verts(q), faces_q[face_count + ei])],
                     ok = len([for (e = errs) if (!is_undef(e)) 1]) == len(errs)
                 )
-                if (ok) [df, sum(errs)]
+                if (ok) [df, ps_sum(errs)]
         ],
-        _ = assert(len(cands) > 0, "cantellate_square_df: no valid candidates"),
+        _ = assert(len(cands) > 0, "solve_cantellate_square_df: no valid candidates"),
         errs = [for (c = cands) c[1]],
         e_min = min(errs),
         idx = [for (i = [0:1:len(errs)-1]) if (abs(errs[i] - e_min) <= eps) i][0]
@@ -886,7 +886,7 @@ function _ps_snub_eval_errors_base(verts0, faces0, edges, edge_faces, face_n, po
         vert_face_errs = [
             for (vi = [0:1:len(verts0)-1])
                 let(
-                    fc = faces_around_vertex(poly0, vi, edges, edge_faces),
+                    fc = ps_faces_around_vertex(poly0, vi, edges, edge_faces),
                     pts = [for (fi = fc) _ps_snub_face_cached_point(face_pts, faces0, fi, vi)]
                 )
                 if (len([for (p = pts) if (is_undef(p)) 1]) == 0)
@@ -896,10 +896,10 @@ function _ps_snub_eval_errors_base(verts0, faces0, edges, edge_faces, face_n, po
         tri_eq_errs = [for (x = per_edge) x[1]],
         tri_iso_errs = [for (x = per_edge) x[2]],
         good = (len(lens_all) > 0) && (len([for (l = lens_all) if (is_undef(l) || l <= eps) 1]) == 0),
-        avg = good ? (sum(lens_all) / len(lens_all)) : undef,
+        avg = good ? (ps_sum(lens_all) / len(lens_all)) : undef,
         err_u = (!good || avg <= eps) ? undef : ((max(lens_all) - min(lens_all)) / avg),
-        err_eq = (len(tri_eq_errs) == 0) ? undef : (sum(tri_eq_errs) / len(tri_eq_errs)),
-        err_iso = (len(tri_iso_errs) == 0) ? undef : (sum(tri_iso_errs) / len(tri_iso_errs)),
+        err_eq = (len(tri_eq_errs) == 0) ? undef : (ps_sum(tri_eq_errs) / len(tri_eq_errs)),
+        err_iso = (len(tri_iso_errs) == 0) ? undef : (ps_sum(tri_iso_errs) / len(tri_iso_errs)),
         err_p = (len(vert_face_errs) == 0) ? undef : max(vert_face_errs)
     )
     [err_u, err_eq, err_p, err_iso];
@@ -1186,7 +1186,7 @@ function _ps_snub_default_params_full(poly, handedness=1, c_steps=10, a_steps=12
     )
     [df_best, a_best, c_best, e_min2];
 
-function _ps_snub_params_rows(df, angle, c, face_df_by_family=undef) =
+function _ps_snub_profile_rows(df, angle, c, face_df_by_family=undef) =
     is_undef(face_df_by_family)
         ? [
             ["face", "all", ["df", df], ["angle", angle]],
@@ -1205,7 +1205,7 @@ function ps_snub_default_profile(poly, handedness=1, eps=1e-9) =
         params = _ps_snub_default_params(poly, handedness, eps),
         face_df_by_family = (len(params) > 4) ? params[4] : undef
     )
-    _ps_snub_params_rows(params[0], params[1], params[2], face_df_by_family);
+    _ps_snub_profile_rows(params[0], params[1], params[2], face_df_by_family);
 
 // Snub operator with optional scalar controls and/or structured per-element overrides.
 //
@@ -1233,14 +1233,14 @@ function poly_snub(
         auto_params = (is_undef(c) && is_undef(df) && is_undef(angle) && is_undef(de))
             ? _ps_snub_default_params(poly, handedness, 1e-9)
             : undef,
-        auto_rows = is_undef(auto_params) ? [] : _ps_snub_params_rows(auto_params[0], auto_params[1], auto_params[2], (len(auto_params) > 4) ? auto_params[4] : undef),
-        params_rows = is_undef(profile) ? auto_rows : concat(auto_rows, profile),
-        _pwarn = _ps_override_warn_unsupported(params_rows, "poly_snub", [["face", ["df", "angle"]], ["vert", ["c", "de"]]]),
+        auto_rows = is_undef(auto_params) ? [] : _ps_snub_profile_rows(auto_params[0], auto_params[1], auto_params[2], (len(auto_params) > 4) ? auto_params[4] : undef),
+        profile_rows = is_undef(profile) ? auto_rows : concat(auto_rows, profile),
+        _pwarn = _ps_override_warn_unsupported(profile_rows, "poly_snub", [["face", ["df", "angle"]], ["vert", ["c", "de"]]]),
         _choice = !is_undef(auto_params)
             ? echo(str("snub: using auto defaults tier=", auto_params[3], " c=", auto_params[2], " df=", auto_params[0], " angle=", auto_params[1]))
             : 0,
-        _pf = (len(params_rows) == 0) ? 0
-            : echo(str("snub: profile face_rows=", ps_profile_count_kind(params_rows, "face"), " vert_rows=", ps_profile_count_kind(params_rows, "vert"))),
+        _pf = (len(profile_rows) == 0) ? 0
+            : echo(str("snub: profile face_rows=", ps_profile_count_kind(profile_rows, "face"), " vert_rows=", ps_profile_count_kind(profile_rows, "vert"))),
         cmap = _ps_cantellate_df_map(poly, steps=6),
         df_mid = cmap[0],
         df_max_eff = cmap[1],
@@ -1278,11 +1278,11 @@ function poly_snub(
         edge_faces = base[3],
         face_n = base[4],
         poly0 = base[5],
-        need_family_ids = len(params_rows) > 0,
+        need_family_ids = len(profile_rows) > 0,
         cls = need_family_ids ? poly_classify(poly, 1) : undef,
         face_fid = need_family_ids ? _ps_family_ids_from_fams(len(faces0), cls[0]) : undef,
         vert_fid = need_family_ids ? _ps_family_ids_from_fams(len(verts0), cls[2]) : undef,
-        params_compiled = (len(params_rows) == 0) ? undef : ps_profile_compile_specs(params_rows, [
+        params_compiled = (len(profile_rows) == 0) ? undef : ps_profile_compile_specs(profile_rows, [
             ["face", "df", len(faces0), face_fid],
             ["face", "angle", len(faces0), face_fid],
             ["vert", "c", len(verts0), vert_fid],
@@ -1374,7 +1374,7 @@ function poly_snub(
         ],
         vert_cycles = [
             for (vi = [0:1:len(verts0)-1])
-                let(fc = faces_around_vertex(poly0, vi, edges, edge_faces))
+                let(fc = ps_faces_around_vertex(poly0, vi, edges, edge_faces))
                 [
                     for (fi = fc)
                         let(pos = _ps_index_of(faces0[fi], vi))
@@ -1408,7 +1408,7 @@ function poly_snub(
             : 0
     )
     let(
-        p_snub = make_poly(verts, faces_oriented, poly_e_over_ir(q))
+        p_snub = poly_make(verts, faces_oriented, poly_e_over_ir(q))
     )
     ps_finalize_poly(p_snub, cleanup, cleanup_eps);
 

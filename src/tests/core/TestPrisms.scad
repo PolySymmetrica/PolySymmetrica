@@ -19,14 +19,14 @@ module assert_true(v, msg="") {
 }
 
 function _count_faces_of_size(poly, k) =
-    sum([for (f = poly_faces(poly)) (len(f) == k) ? 1 : 0]);
+    ps_sum([for (f = poly_faces(poly)) (len(f) == k) ? 1 : 0]);
 
 function _edge_rel_spread(poly) =
     let(
         verts = poly_verts(poly),
         edges = poly_edges(poly),
         lens = [for (e = edges) norm(verts[e[0]] - verts[e[1]])],
-        avg = (len(lens) == 0) ? 0 : sum(lens) / len(lens)
+        avg = (len(lens) == 0) ? 0 : ps_sum(lens) / len(lens)
     )
     (len(lens) == 0 || avg == 0) ? 0 : ((max(lens) - min(lens)) / avg);
 

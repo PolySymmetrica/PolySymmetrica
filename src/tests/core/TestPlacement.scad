@@ -501,12 +501,12 @@ module test_place_on_faces__local_z_origin_consistent_for_face_and_poly_verts() 
         for (i = [0:1:len(verts0)-1])
             (i == 0) ? (verts0[i] + [0.35, -0.2, 0.45]) : verts0[i]
     ];
-    p = make_poly(verts, faces0);
+    p = poly_make(verts, faces0);
 
     place_on_faces(p)
         let(
             face = faces0[$ps_face_idx],
-            zmean = sum([for (q = $ps_face_pts3d_local) q[2]]) / len($ps_face_pts3d_local)
+            zmean = ps_sum([for (q = $ps_face_pts3d_local) q[2]]) / len($ps_face_pts3d_local)
         ) {
             assert(abs(zmean) < 1e-9, str("face local z should be mean-centered, fi=", $ps_face_idx, " zmean=", zmean));
             for (k = [0:1:len(face)-1])
@@ -538,7 +538,7 @@ module test_seg_face_tris3__concave_area_preserved() {
     pts3 = [[0,0,0], [4,0,0], [4,1,0], [1,1,0], [1,4,0], [0,4,0]];
     tris = _ps_seg_face_tris3([0,1,2,3,4,5], pts3, 1e-9);
     area_poly = abs(_ps_seg_poly_area2([for (p = pts3) [p[0], p[1]]]));
-    area_tris = sum([
+    area_tris = ps_sum([
         for (t = tris)
             _tri2_area(
                 [t[0][0], t[0][1]],
@@ -794,7 +794,7 @@ module test_ps_face_visible_segments__cube_face_unchanged() {
             assert(abs(area_vis - area_face) < 1e-6, str("cube visible area mismatch face=", area_face, " vis=", area_vis));
             assert_int_eq(len(vis[0][2]), len(vis[0][0]), "cube visible edge-id count");
             assert_int_eq(len(vis[0][3]), len(vis[0][0]), "cube visible edge-kind count");
-            assert(sum([for (k = vis[0][3]) (k == "parent") ? 1 : 0]) == len(vis[0][0]), "cube visible cell edges should all be parent");
+            assert(ps_sum([for (k = vis[0][3]) (k == "parent") ? 1 : 0]) == len(vis[0][0]), "cube visible cell edges should all be parent");
         }
     }
 }
@@ -813,9 +813,9 @@ module test_ps_face_visible_segments__star_antiprism_side_reduced() {
             assert(area_vis > 1e-6, "star antiprism visible area should stay positive");
             assert(area_vis < area_face - 1e-6, str("star antiprism side should lose hidden area face=", area_face, " vis=", area_vis));
             assert(
-                sum([
+                ps_sum([
                     for (s = vis)
-                        sum([for (k = s[3]) (k == "cut") ? 1 : 0])
+                        ps_sum([for (k = s[3]) (k == "cut") ? 1 : 0])
                 ]) > 0,
                 "star antiprism visible cells should include cut edges"
             );

@@ -35,7 +35,7 @@ module test_ps_render_mesh__auto_triangulates_star_faces() {
     assert(max([for (f = mesh_auto[1]) len(f)]) == 3, "star auto triangulated max arity");
     assert(len(mesh_auto[1]) > len(mesh_raw[1]), "star auto should produce more triangles than raw faces");
 
-    q_auto = make_poly(mesh_auto[0], mesh_auto[1]);
+    q_auto = poly_make(mesh_auto[0], mesh_auto[1]);
     assert(_ps_edges_manifold(mesh_auto[0], mesh_auto[1]), "star auto triangulated mesh should be edge-manifold");
     assert(poly_valid(q_auto, "star_ok"), "star auto triangulated mesh should be star_ok valid");
 }
