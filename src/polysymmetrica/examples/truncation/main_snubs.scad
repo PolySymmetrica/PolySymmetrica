@@ -1,5 +1,5 @@
 use <../../core/truncation.scad>
-use <../../core/params.scad>
+use <../../core/profile.scad>
 use <../../core/duals.scad>
 use <../../core/render.scad>
 use <../../models/platonics_all.scad>
@@ -38,7 +38,7 @@ demo(p, name="snub");
 //    translate([spacing*5, h*spacing, 0]) demo(poly_snub(b4, handedness = h), name="snub_rh_triaconta");
 //}
 
-//// params_overrides examples
+//// profile examples
 //// Format:
 //// [
 ////   ["face", "family", <face_family_id>, ["angle", deg], ["df", value]],
@@ -49,7 +49,7 @@ demo(p, name="snub");
 //// are two face families (triangles/squares) and typically one vertex family.
 //
 //p0 = poly_rectify(octahedron()); // cuboctahedron
-//seed_rows = ps_snub_default_params_overrides(p0);
+//seed_rows = ps_snub_default_profile(p0);
 //
 ////// Baseline (fully automatic defaults).
 //translate([0, 0, 0]) demo(
@@ -64,7 +64,7 @@ demo(p, name="snub");
 //        angle=15,
 //        c=0.04,
 //        df=0.035,
-//        params_overrides=[
+//        profile=[
 //            ["face", "family", 0, ["angle", 20], ["df", 0.03]]
 //        ]
 //    ),
@@ -78,7 +78,7 @@ demo(p, name="snub");
 //        angle=15,
 //        c=0.04,
 //        df=0.035,
-//        params_overrides=[
+//        profile=[
 //            ["face", "family", 1, ["angle", 10], ["df", 0.045]]
 //        ]
 //    ),
@@ -90,11 +90,11 @@ demo(p, name="snub");
 //translate([spacing*3, 0, 0]) demo(
 //    poly_snub(
 //        p0,
-//        params_overrides=concat(
+//        profile=concat(
 //            seed_rows,
 //            [
-//                ["face", "family", 0, ["df", ps_params_get(seed_rows, "face", "df", 0, 0) * 0.9], ["angle", ps_params_get(seed_rows, "face", "angle", 0, 0) + 2]],
-//                ["face", "family", 1, ["df", ps_params_get(seed_rows, "face", "df", 0, 1) * 1.1], ["angle", ps_params_get(seed_rows, "face", "angle", 0, 1) - 2]]
+//                ["face", "family", 0, ["df", ps_profile_get(seed_rows, "face", "df", 0, 0) * 0.9], ["angle", ps_profile_get(seed_rows, "face", "angle", 0, 0) + 2]],
+//                ["face", "family", 1, ["df", ps_profile_get(seed_rows, "face", "df", 0, 1) * 1.1], ["angle", ps_profile_get(seed_rows, "face", "angle", 0, 1) - 2]]
 //            ]
 //        )
 //    ),

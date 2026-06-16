@@ -25,7 +25,7 @@ IR = 20 * SC;
 //sol = solve_cantitruncate_trig(base);
 //s = poly_cantellate_norm(base, 0.5);
 //p = poly_dual(great_rhombicuboctahedron());
-//p = poly_truncate(poly_dual(poly_truncate(hexahedron())), t=0, params_overrides=[["vert", "id", [0,1,2,3,4,55], ["t",0.5001]]]);
+//p = poly_truncate(poly_dual(poly_truncate(hexahedron())), t=0, profile=[["vert", "id", [0,1,2,3,4,55], ["t",0.5001]]]);
 //p = poly_attach(octahedron(), icosahedron(), f1=[0,7]);
 //p = poly_attach(octahedron(), icosahedron(), f1=[0,1,2,3,4,5,6,7]);
 //p = poly_attach(p1, icosahedron(), f1=0);
@@ -35,7 +35,7 @@ IR = 20 * SC;
 //    ["face", "family", 1, ["df", 0.30]]
 //];
 
-//p = poly_cantellate(poly_antiprism(6), params_overrides=AP_CANT_ROWS);
+//p = poly_cantellate(poly_antiprism(6), profile=AP_CANT_ROWS);
 //p = poly_prism(5);
 //p = poly_antiprism(5);
 //p = poly_prism(n=5, p=2);

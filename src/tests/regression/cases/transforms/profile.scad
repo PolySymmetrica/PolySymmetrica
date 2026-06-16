@@ -30,7 +30,7 @@ TESTS = [
         function() poly_truncate(
             tetrahedron(),
             t = 0.001,
-            params_overrides = [["vert", "id", _some_top_verts(tetrahedron(), 2), ["t", 0.25]]],
+            profile = [["vert", "id", _some_top_verts(tetrahedron(), 2), ["t", 0.25]]],
             cleanup = true,
             cleanup_eps = 1e-8
         )
@@ -40,7 +40,7 @@ TESTS = [
         function() poly_cantellate(
             hexahedron(),
             df = 0,
-            params_overrides = [["face", "id", [_top_face_idx(hexahedron())], ["df", 0.14]]],
+            profile = [["face", "id", [_top_face_idx(hexahedron())], ["df", 0.14]]],
             cleanup = true,
             cleanup_eps = 1e-8
         )
@@ -50,7 +50,7 @@ TESTS = [
         function() poly_chamfer(
             hexahedron(),
             t = 0,
-            params_overrides = [["face", "id", [_top_face_idx(hexahedron())], ["t", 0.30]]],
+            profile = [["face", "id", [_top_face_idx(hexahedron())], ["t", 0.30]]],
             cleanup = true,
             cleanup_eps = 1e-8
         )
@@ -61,7 +61,7 @@ TESTS = [
             hexahedron(),
             t = 0,
             c = 0,
-            params_overrides = [
+            profile = [
                 ["face", "all", ["c", 0.0]],
                 ["face", "id", [_top_face_idx(hexahedron())], ["c", 0.40]]
             ],
@@ -76,7 +76,7 @@ TESTS = [
             angle = 0,
             c = 0,
             df = 0,
-            params_overrides = [
+            profile = [
                 ["face", "all", ["df", 0.2], ["angle", 0]],
                 ["face", "id", [_top_face_idx(hexahedron())], ["df", 0.02], ["angle", 25]],
                 ["vert", "all", ["c", 0.01]]
@@ -91,7 +91,7 @@ TESTS = [
             poly_cantellate(
                 p,
                 df = 0,
-                params_overrides = [["face", "id", _tri_family_faces(p), ["df", 0.12]]],
+                profile = [["face", "id", _tri_family_faces(p), ["df", 0.12]]],
                 cleanup = true,
                 cleanup_eps = 1e-8
             )

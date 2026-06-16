@@ -102,7 +102,7 @@ function _ps_cantitruncate_edge_ids_of_pair(faces0, edges, edge_faces, n0, n1) =
             if (ok && alo == lo && ahi == hi) ei
     ];
 
-// Convert cantitruncate family maps into params_overrides rows for poly_cantitruncate().
+// Convert cantitruncate family maps into profile rows for poly_cantitruncate().
 function ps_cantitruncate_params_rows(poly, c_by_size, default_c=0, c_edge_by_pair=undef) =
     let(
         verts = poly_verts(poly),
@@ -174,9 +174,9 @@ function solve_cantitruncate_dominant_edges(poly, dominant_size, edge_idx=undef)
     )
     [t, c_by_size, c_edge_by_pair];
 
-// Solve dominant-edge cantitruncate and return params_overrides rows for poly_cantitruncate().
+// Solve dominant-edge cantitruncate and return profile rows for poly_cantitruncate().
 // Includes a global vertex t row so callers can use:
-//   poly_cantitruncate(poly, t=0, c=0, params_overrides=rows)
+//   poly_cantitruncate(poly, t=0, c=0, profile=rows)
 // without carrying a separate tuple.
 function solve_cantitruncate_dominant_edges_params(poly, dominant_size, edge_idx=undef, default_c=0) =
     let(

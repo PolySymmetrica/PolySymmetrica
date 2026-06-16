@@ -44,7 +44,7 @@ module test_cleanup_regression__truncate_preserves_e_over_ir() {
     q_no = poly_truncate(
         p,
         t=0.001,
-        params_overrides=[
+        profile=[
             ["vert", "id", some_vs, ["t", 0.25]]
         ],
         cleanup=false
@@ -53,7 +53,7 @@ module test_cleanup_regression__truncate_preserves_e_over_ir() {
     q_yes = poly_truncate(
         p,
         t=0.001,
-        params_overrides=[
+        profile=[
             ["vert", "id", some_vs, ["t", 0.25]]
         ],
         cleanup=true,

@@ -55,7 +55,7 @@ PolySymmetrica/
 │   │   │   ├─ funcs.scad           # math, vector, centroid, helpers
 │   │   │   ├─ placement.scad       # face/edge/vertex placement
 │   │   │   ├─ truncation.scad      # truncate/rectify/chamfer/cantellate/cantitruncate
-│   │   │   ├─ params.scad          # shared params_overrides helpers
+│   │   │   ├─ profile.scad         # shared profile helpers
 │   │   │   ├─ solvers.scad         # parameter solvers (cantitruncate, etc.)
 │   │   │   ├─ transform.scad       # site-based mesh assembly
 │   │   │   ├─ transform_util.scad  # shared transform helpers
@@ -85,7 +85,7 @@ PolySymmetrica/
 │
 └─ docs/
     ├─ developer_guide.md
-    ├─ params_overrides.md
+    ├─ profile.md
     ├─ cantitruncation.md
     ├─ cantellation.md
     ├─ snubs.md
@@ -101,7 +101,7 @@ Related deep-dive notes:
 - [Cantitruncation notes](cantitruncation.md)
 - [Snub notes](snubs.md)
 - [Prisms and antiprisms](prisms.md)
-- [Params overrides](params_overrides.md)
+- [Profile](profile.md)
 - [Face attachment](attach.md)
 - [Construction helpers](construction.md)
 - [Placement data model](placement_data_model.md)
@@ -386,12 +386,12 @@ PolySymmetrica supports operator-agnostic structured overrides using shared row 
 ["face"|"vert"|"edge", "id", id_or_ids, ["key", value], ...]
 ```
 
-Implemented in `core/params.scad` and used by operators such as `poly_snub(...)`.
+Implemented in `core/profile.scad` and used by operators such as `poly_snub(...)`.
 Rows can set multiple keys, and precedence is `id > family > all`.
 For hot paths, compile rows once with:
 
-- `ps_params_compile_key(...)`
-- `ps_params_compile_specs(...)`
+- `ps_profile_compile_key(...)`
+- `ps_profile_compile_specs(...)`
 
 and read in O(1) with:
 
@@ -399,8 +399,8 @@ and read in O(1) with:
 
 For schema details, compile-spec format, and examples, see:
 
-- [params_overrides.md](params_overrides.md)
-- [`src/polysymmetrica/examples/basics/main_params.scad`](../src/polysymmetrica/examples/basics/main_params.scad)
+- [profile.md](profile.md)
+- [`src/polysymmetrica/examples/basics/main_profile.scad`](../src/polysymmetrica/examples/basics/main_profile.scad)
 
 When using family-targeted overrides (`"family"` rows), keep classification context consistent (`detail`, `radius`, `include_geom`) across all stages; best practice is to classify once and reuse that object.
 

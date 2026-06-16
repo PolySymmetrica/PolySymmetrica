@@ -52,9 +52,9 @@ for (op = with_index(transform_ops)) {
         p1 = (op[1][0] != "cantellate")
             ? op[1][1](p0)
             : (shape[1][0] == "antiprism(6)")
-                ? poly_cantellate(p0, params_overrides=AP6_CANT_ROWS)
+                ? poly_cantellate(p0, profile=AP6_CANT_ROWS)
             : (shape[1][0] == "antiprism(7, twist)")
-                ? poly_cantellate(p0, params_overrides=AP7_CANT_ROWS)
+                ? poly_cantellate(p0, profile=AP7_CANT_ROWS)
             : poly_cantellate(p0);
         label = str(shape[1][0], " (", op[1][0], ")");
         translate([shape[0] * sx, op[0] * sy, 0]) demo(p1, name=label);
@@ -67,11 +67,11 @@ p_pr = poly_prism(6);
 p_ap = poly_antiprism(6);
 
 translate([0, len(transform_ops) * sy + 20, 0])
-    demo(poly_cantitruncate(p_pr, t=PR6_CT_T, c=PR6_CT_C, params_overrides=undef),
+    demo(poly_cantitruncate(p_pr, t=PR6_CT_T, c=PR6_CT_C, profile=undef),
          name="prism(6) cantitruncate fixed");
 
 translate([sx, len(transform_ops) * sy + 20, 0])
-    demo(poly_cantitruncate(p_ap, t=AP6_CT_T, c=AP6_CT_C, params_overrides=undef),
+    demo(poly_cantitruncate(p_ap, t=AP6_CT_T, c=AP6_CT_C, profile=undef),
          name="antiprism(6) cantitruncate fixed");
 
 translate([2 * sx, len(transform_ops) * sy + 20, 0])
