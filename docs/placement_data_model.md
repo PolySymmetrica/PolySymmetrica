@@ -1,9 +1,12 @@
 # Placement Data Model
 
-`src/polysymmetrica/core/placement.scad` and its sibling core modules use small
-list-backed records for placement and proxy replay data. The public contract is
-the accessor functions, not the numeric list positions. Treat raw indexing into
-these records as an implementation detail.
+`src/polysymmetrica/core/placement.scad`,
+`src/polysymmetrica/core/placement_data.scad`, and sibling core modules use
+small list-backed records for placement and proxy replay data.
+`placement.scad` owns the site/replay construction logic; `placement_data.scad`
+owns the public accessors for the placement-site and proxy record families.
+The public contract is the accessor functions, not the numeric list positions.
+Treat raw indexing into these records as an implementation detail.
 
 This document describes the semantic model: what the records mean, which
 coordinate space each field belongs to, and how they relate to the `$ps_*`

@@ -53,7 +53,8 @@ PolySymmetrica/
 │   ├─ polysymmetrica/
 │   │   ├─ core/
 │   │   │   ├─ funcs.scad           # math, vector, centroid, helpers
-│   │   │   ├─ placement.scad       # face/edge/vertex placement
+│   │   │   ├─ placement.scad       # face/edge/vertex placement and replay logic
+│   │   │   ├─ placement_data.scad  # placement/proxy record accessors
 │   │   │   ├─ truncation.scad      # truncate/rectify/chamfer/cantellate/cantitruncate
 │   │   │   ├─ profile.scad         # shared profile helpers
 │   │   │   ├─ solvers.scad         # parameter solvers (cantitruncate, etc.)
@@ -318,8 +319,9 @@ See [segments.md](segments.md) for the face-local analysis layer:
 Use this layer when you want analyzable face-local cells, cuts, and visibility,
 not arbitrary 3D clipping.
 
-For punch-through/proxy work, `placement.scad` also provides the first replay
-iterator built from those records:
+For punch-through/proxy work, `placement.scad` provides the replay iterators
+and builders, while `placement_data.scad` owns the public accessors for the
+resulting record families:
 
 - `ps_face_foreign_face_replay_sites(...)`
 - `ps_face_foreign_proxy_replay_sites(...)`
