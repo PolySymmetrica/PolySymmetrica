@@ -1,3 +1,7 @@
+// This file is part of PolySymmetrica, a Polyhedral Geometry Modelling System.
+// Copyright 2025-2026 Susan Witts
+// SPDX-License-Identifier: MIT
+
 use <funcs.scad>
 
 function _ps_prism_height(edge, height, height_scale) =

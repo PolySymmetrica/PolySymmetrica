@@ -1,3 +1,7 @@
+// This file is part of PolySymmetrica, a Polyhedral Geometry Modelling System.
+// Copyright 2025-2026 Susan Witts
+// SPDX-License-Identifier: MIT
+
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Segment data records
 // Shared record accessors for boundary spans, intrusions, seam-clearance loops,

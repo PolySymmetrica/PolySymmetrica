@@ -1,3 +1,7 @@
+// This file is part of PolySymmetrica, a Polyhedral Geometry Modelling System.
+// Copyright 2025-2026 Susan Witts
+// SPDX-License-Identifier: MIT
+
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Face segmentation helpers
 // Extracts simple face segments from possibly self-intersecting face loops.

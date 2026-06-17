@@ -1,3 +1,7 @@
+// This file is part of PolySymmetrica, a Polyhedral Geometry Modelling System.
+// Copyright 2025-2026 Susan Witts
+// SPDX-License-Identifier: MIT
+
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Solver helpers
 // Parameter solvers for mixed-face transforms.

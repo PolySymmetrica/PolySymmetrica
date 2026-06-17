@@ -1,3 +1,7 @@
+// This file is part of PolySymmetrica, a Polyhedral Geometry Modelling System.
+// Copyright 2025-2026 Susan Witts
+// SPDX-License-Identifier: MIT
+
 use <core/TestFuncs.scad>
 use <core/TestDuals.scad>
 use <core/TestCantellation.scad>

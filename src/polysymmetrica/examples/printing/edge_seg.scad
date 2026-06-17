@@ -1,3 +1,7 @@
+// This file is part of PolySymmetrica, a Polyhedral Geometry Modelling System.
+// Copyright 2025-2026 Susan Witts
+// SPDX-License-Identifier: MIT
+
 // Edge strut diameter (mm).
 EDGE_SEG_EDGE_T = 3;
 // Support fin diameter (mm).
