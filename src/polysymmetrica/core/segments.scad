@@ -809,6 +809,48 @@ function ps_boundary_span_site_is_generated(site) =
     ps_boundary_span_site_kind(site) != "source_edge";
 
 /**
+ * Function: Build a description string for a boundary span site.
+ * Params: site (boundary span site record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: description string
+ */
+function ps_boundary_span_site_describe_str(site, detail=0, kvpair_to_str=undef, field_sep=", ") =
+    ps_describe_record_str(
+        "BoundarySpanSite",
+        [
+            ps_describe_kvpair_str("idx", ps_boundary_span_site_idx(site), kvpair_to_str),
+            ps_describe_kvpair_str("kind", ps_boundary_span_site_kind(site), kvpair_to_str),
+            ps_describe_kvpair_str("source_edge_idx", ps_boundary_span_site_source_edge_idx(site), kvpair_to_str),
+            ps_describe_kvpair_str("len", ps_boundary_span_site_len(site), kvpair_to_str)
+        ],
+        detail,
+        [
+            ps_describe_kvpair_str("frame", ps_placement_frame_describe_str(ps_boundary_span_site_frame(site), max(0, detail - 1), kvpair_to_str, field_sep), kvpair_to_str),
+            ps_describe_kvpair_str("segment2d_local", ps_boundary_span_site_segment2d_local(site), kvpair_to_str),
+            ps_describe_kvpair_str("loop_idx", ps_boundary_span_site_loop_idx(site), kvpair_to_str),
+            ps_describe_kvpair_str("source_t0", ps_boundary_span_site_source_t0(site), kvpair_to_str),
+            ps_describe_kvpair_str("source_t1", ps_boundary_span_site_source_t1(site), kvpair_to_str),
+            ps_describe_kvpair_str("raw_kind", ps_boundary_span_site_raw_kind(site), kvpair_to_str),
+            ps_describe_kvpair_str("filled_cell_idx", ps_boundary_span_site_filled_cell_idx(site), kvpair_to_str),
+            ps_describe_kvpair_str("other_cell_idx", ps_boundary_span_site_other_cell_idx(site), kvpair_to_str),
+            ps_describe_kvpair_str("adj_face_idx", ps_boundary_span_site_adj_face_idx(site), kvpair_to_str),
+            ps_describe_kvpair_str("dihedral", ps_boundary_span_site_dihedral(site), kvpair_to_str),
+            ps_describe_kvpair_str("adj_face_normal_local", ps_boundary_span_site_adj_face_normal_local(site), kvpair_to_str),
+            ps_describe_kvpair_str("filled_side", ps_boundary_span_site_filled_side(site), kvpair_to_str),
+            ps_describe_kvpair_str("adj_face_dir_span_local", ps_boundary_span_site_adj_face_dir_span_local(site), kvpair_to_str)
+        ],
+        field_sep
+    );
+
+/**
+ * Module: Echo a boundary span site description.
+ * Params: site (boundary span site record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: none
+ */
+module ps_boundary_span_site_describe(site, detail=0, kvpair_to_str=undef, field_sep=", ") {
+    echo(ps_boundary_span_site_describe_str(site, detail, kvpair_to_str, field_sep));
+}
+
+/**
  * Function: Build the planar arrangement induced by one face loop.
  * Params: face_pts3d_local (loop in face-local 3D), eps (geometric tolerance)
  * Returns: `[face_pts2d, crossings, nodes, spans, cells]`
@@ -1613,6 +1655,38 @@ function ps_intrusion_dihedral(record) = record[5];
 function ps_intrusion_confidence(record) = record[6];
 
 /**
+ * Function: Build a description string for a foreign intrusion record.
+ * Params: record (foreign intrusion record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: description string
+ */
+function ps_intrusion_describe_str(record, detail=0, kvpair_to_str=undef, field_sep=", ") =
+    ps_describe_record_str(
+        "Intrusion",
+        [
+            ps_describe_kvpair_str("kind", ps_intrusion_kind(record), kvpair_to_str),
+            ps_describe_kvpair_str("target_face_idx", ps_intrusion_target_face_idx(record), kvpair_to_str),
+            ps_describe_kvpair_str("foreign_kind", ps_intrusion_foreign_kind(record), kvpair_to_str),
+            ps_describe_kvpair_str("foreign_idx", ps_intrusion_foreign_idx(record), kvpair_to_str)
+        ],
+        detail,
+        [
+            ps_describe_kvpair_str("segment2d_local", ps_intrusion_segment2d_local(record), kvpair_to_str),
+            ps_describe_kvpair_str("dihedral", ps_intrusion_dihedral(record), kvpair_to_str),
+            ps_describe_kvpair_str("confidence", ps_intrusion_confidence(record), kvpair_to_str)
+        ],
+        field_sep
+    );
+
+/**
+ * Module: Echo a foreign intrusion description.
+ * Params: record (foreign intrusion record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: none
+ */
+module ps_intrusion_describe(record, detail=0, kvpair_to_str=undef, field_sep=", ") {
+    echo(ps_intrusion_describe_str(record, detail, kvpair_to_str, field_sep));
+}
+
+/**
  * Function: Derive exact foreign intrusion records for the current face plane.
  * Params: face_pts2d (target face loop), face_idx (target face index), poly_faces_idx/poly_verts_local (full poly in target face-local coordinates), eps (tolerance), mode (foreign face triangulation fill rule), filter_parent (drop cuts that coincide with parent edges)
  * Returns: `[[record_kind, target_face_idx, foreign_kind, foreign_idx, seg2d_local, cut_dihed, confidence], ...]`
@@ -2376,6 +2450,52 @@ function ps_seam_site_frame(site) =
  * Returns: true when support kind is not `"none"`
  */
 function ps_seam_site_is_support_candidate(site) = ps_seam_site_support_kind(site) != "none";
+
+/**
+ * Function: Build a description string for a seam segment site.
+ * Params: site (seam segment site record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: description string
+ */
+function ps_seam_site_describe_str(site, detail=0, kvpair_to_str=undef, field_sep=", ") =
+    ps_describe_record_str(
+        "SeamSite",
+        [
+            ps_describe_kvpair_str("idx", ps_seam_site_idx(site), kvpair_to_str),
+            ps_describe_kvpair_str("source", ps_seam_site_source(site), kvpair_to_str),
+            ps_describe_kvpair_str("source_kind", ps_seam_site_source_kind(site), kvpair_to_str),
+            ps_describe_kvpair_str("len", ps_seam_site_len(site), kvpair_to_str)
+        ],
+        detail,
+        [
+            ps_describe_kvpair_str("frame", ps_placement_frame_describe_str(ps_seam_site_frame(site), max(0, detail - 1), kvpair_to_str, field_sep), kvpair_to_str),
+            ps_describe_kvpair_str("segment2d_local", ps_seam_site_segment2d_local(site), kvpair_to_str),
+            ps_describe_kvpair_str("foreign_kind", ps_seam_site_foreign_kind(site), kvpair_to_str),
+            ps_describe_kvpair_str("foreign_idx", ps_seam_site_foreign_idx(site), kvpair_to_str),
+            ps_describe_kvpair_str("dihedral", ps_seam_site_dihedral(site), kvpair_to_str),
+            ps_describe_kvpair_str("confidence", ps_seam_site_confidence(site), kvpair_to_str),
+            ps_describe_kvpair_str(
+                "record",
+                ps_seam_site_source(site) == "boundary"
+                    ? ps_boundary_span_site_describe_str(ps_seam_site_record(site), max(0, detail - 1), kvpair_to_str, field_sep)
+                    : ps_intrusion_describe_str(ps_seam_site_record(site), max(0, detail - 1), kvpair_to_str, field_sep),
+                kvpair_to_str
+            ),
+            ps_describe_kvpair_str("foreign_normal_local", ps_seam_site_foreign_normal_local(site), kvpair_to_str),
+            ps_describe_kvpair_str("support_kind", ps_seam_site_support_kind(site), kvpair_to_str),
+            ps_describe_kvpair_str("support_reason", ps_seam_site_support_reason(site), kvpair_to_str),
+            ps_describe_kvpair_str("current_normal_seam_local", ps_seam_site_current_normal_seam_local(site), kvpair_to_str)
+        ],
+        field_sep
+    );
+
+/**
+ * Module: Echo a seam-site description.
+ * Params: site (seam segment site record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: none
+ */
+module ps_seam_site_describe(site, detail=0, kvpair_to_str=undef, field_sep=", ") {
+    echo(ps_seam_site_describe_str(site, detail, kvpair_to_str, field_sep));
+}
 
 function _ps_seg_optional_idx_selected(idx, indices) =
     is_undef(indices) || is_undef(idx)

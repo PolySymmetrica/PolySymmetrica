@@ -94,6 +94,24 @@ module test_classify__group_by_key_composite() {
     assert_int_eq(len(fams[0][1]) + len(fams[1][1]), 5, "group_by_key: total count");
 }
 
+module test_ps_classification_describe_str__summary() {
+    cls = poly_classify(hexahedron(), 0);
+    s = ps_classification_describe_str(cls, 0);
+    assert(s == "Classification(face_families=1, edge_families=1, vert_families=1)", "classification summary string");
+}
+
+module test_ps_classification_describe_str__formatter_override() {
+    cls = poly_classify(hexahedron(), 0);
+    s = ps_classification_describe_str(
+        cls,
+        0,
+        function(k, v) str("\"", k, "\":", v),
+        " | ",
+        "\n"
+    );
+    assert(s == "Classification(\"face_families\":1 | \"edge_families\":1 | \"vert_families\":1)", "classification formatter override");
+}
+
 
 module run_TestClassify() {
     test_classify__platonics_single_family();
@@ -103,6 +121,8 @@ module run_TestClassify() {
     test_classify__dual_trunc_rhomb_triaconta_faces_split();
     test_classify__detail_refines_faces();
     test_classify__group_by_key_composite();
+    test_ps_classification_describe_str__summary();
+    test_ps_classification_describe_str__formatter_override();
 }
 
 run_TestClassify();

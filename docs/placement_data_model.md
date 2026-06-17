@@ -12,6 +12,11 @@ This document describes the semantic model: what the records mean, which
 coordinate space each field belongs to, and how they relate to the `$ps_*`
 metadata exposed by placement modules.
 
+Each semantic record family also has:
+
+- `ps_*_describe(record, detail=...)` to `echo(...)` a human-readable summary;
+- `ps_*_describe_str(record, detail=...)` when a caller needs the string value.
+
 ## Definitions
 
 - `placement frame`
@@ -106,6 +111,13 @@ Accessors:
 `ps_placement_frame(...)` stores axes as supplied. The caller that constructs a
 frame is responsible for making it orthonormal.
 
+Describe example:
+
+```scad
+place_on_faces(poly, indices = 0)
+    ps_placement_frame_describe($ps_face_frame, detail = 1);
+```
+
 ## Target-Local Poly Context
 
 Use this when passing the whole source poly through nested geometry code:
@@ -125,6 +137,13 @@ Accessors:
 - `ps_target_local_poly_context_center_local(ctx)`
 
 If the center is omitted, `ps_target_local_poly_context(...)` stores `[0, 0, 0]`.
+
+Describe example:
+
+```scad
+place_on_faces(poly, indices = 0)
+    ps_target_local_poly_context_describe($ps_target_local_poly_context, detail = 1);
+```
 
 ## Face-Local Context
 
@@ -160,6 +179,13 @@ This record is the preferred argument shape for helpers that operate inside an
 existing `place_on_faces(...)` child context. It avoids long argument lists and
 keeps the current face, adjacent-face metadata, and target-local poly data
 together.
+
+Describe example:
+
+```scad
+place_on_faces(poly, indices = 0)
+    ps_face_local_context_describe($ps_face_local_context, detail = 1);
+```
 
 ## Face Site Records
 
@@ -209,6 +235,13 @@ it. The stored face-local context is the next-level shared object for nested
 face helpers; the face-local geometry/topology accessors are derived from that
 context rather than duplicated in the outer site record.
 
+Describe example:
+
+```scad
+site = ps_face_sites(poly)[0];
+ps_face_site_describe(site, detail = 1);
+```
+
 ## Edge Site Records
 
 Built by:
@@ -245,6 +278,13 @@ when it can. Boundary or degenerate edges fall back to a radial frame.
 `ps_placement_frame(...)` tail element to each site record; the frame is the
 stored source of truth for edge center/axis accessors.
 
+Describe example:
+
+```scad
+site = ps_edge_sites(poly)[0];
+ps_edge_site_describe(site, detail = 1);
+```
+
 ## Vertex Site Records
 
 Built by:
@@ -278,6 +318,13 @@ Vertex site accessors:
 to each site record. `place_on_vertices(...)` exposes the same semantic data as
 `$ps_vertex_*` and `$ps_vertex_frame`; center/axis accessors derive from the
 stored frame.
+
+Describe example:
+
+```scad
+site = ps_vertex_sites(poly)[0];
+ps_vertex_site_describe(site, detail = 1);
+```
 
 ## Replay Site Records
 
@@ -342,6 +389,20 @@ from an exact face intrusion. Those candidates are helper records, not a public
 record family, and they intentionally reuse the same intrusion accessors once
 they are converted into replay sites.
 
+Describe example:
+
+```scad
+place_on_faces(poly, indices = target_face_idx)
+    ps_replay_site_describe(
+        ps_face_foreign_face_replay_sites(
+            $ps_face_pts2d,
+            $ps_face_idx,
+            $ps_target_local_poly_context
+        )[0],
+        detail = 1
+    );
+```
+
 ## Proxy Volume Group Records
 
 Built by:
@@ -372,6 +433,14 @@ target-local poly context directly and use its accessors when they need source
 topology or target-local vertex positions. When a face site is already in
 hand, prefer the stored face-local context and its nested target-local context
 rather than rebuilding them from sibling fields.
+
+Describe example:
+
+```scad
+place_on_faces(poly, indices = target_face_idx)
+    place_on_face_foreign_proxy_volume_groups()
+        ps_proxy_volume_group_describe($ps_proxy_volume_group_record, detail = 1);
+```
 
 ## Intrusion Records
 
@@ -405,6 +474,14 @@ Intrusion records are exact provenance records. They are intentionally not
 expanded into a solid here; replay and proxy volume grouping are later stages
 that decide how much geometry to emit from the same source record.
 
+Describe example:
+
+```scad
+place_on_faces(poly, indices = target_face_idx)
+    place_on_face_foreign_intrusions()
+        ps_intrusion_describe($ps_intrusion_record, detail = 1);
+```
+
 ## Loop Shell Records
 
 Generic loop shell records are built by adapters such as:
@@ -437,6 +514,14 @@ Accessors:
 Shell records are mesh outputs, not canonical source records. They should be
 treated as derived geometry that can be regenerated from the face-local
 context. Face-region/A.I. shells are positive admissible geometry.
+
+Describe example:
+
+```scad
+place_on_faces(poly, indices = 0)
+    place_on_face_seam_clearance_shells(-0.4, 0.6)
+        ps_loop_shell_describe($ps_loop_shell_record, detail = 1);
+```
 
 ## Arrangement And Boundary-Model Composites
 
@@ -513,6 +598,23 @@ The span frame convention is:
 Use `ps_placement_frame_matrix(ps_boundary_span_site_frame(site))` when placing
 children manually.
 
+Describe example:
+
+```scad
+place_on_faces(poly, indices = target_face_idx)
+    ps_boundary_span_site_describe(
+        _ps_face_boundary_span_sites(
+            $ps_face_pts3d_local,
+            $ps_face_idx,
+            $ps_poly_faces_idx,
+            $ps_poly_verts_local,
+            $ps_face_neighbors_idx,
+            $ps_face_dihedrals
+        )[0],
+        detail = 1
+    );
+```
+
 ## Seam Segment Site Records
 
 Seam segment sites are built by:
@@ -569,6 +671,16 @@ Accessors:
 seam frame. It also exposes edge-compatible aliases such as `$ps_edge_len`,
 `$ps_edge_pts_local`, and `$ps_edge_adj_faces_idx` so simple edge child modules
 can be reused on generated seams.
+
+Describe example:
+
+```scad
+place_on_faces(poly, indices = target_face_idx)
+    ps_seam_site_describe(
+        ps_face_seam_segment_sites($ps_face_local_context)[0],
+        detail = 1
+    );
+```
 
 ## Accessor Rule
 

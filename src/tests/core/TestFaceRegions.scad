@@ -71,6 +71,15 @@ module test_ps_face_region_loop_shells__cube_face_single_quad_shell() {
     assert_near(max(zs), 0.6, EPS, "cube shell max z");
 }
 
+module test_ps_loop_shell_describe_str__summary() {
+    p = hexahedron();
+    site = _test_face_site(p, 0);
+    face_ctx = ps_face_site_face_local_context(site);
+    shell = ps_face_region_loop_shells(face_ctx, -0.4, 0.6)[0];
+    s = ps_loop_shell_describe_str(shell);
+    assert(s == "LoopShell(source_kind=face_region, source_idx=0, point_count=8, face_count=8)", "loop shell summary string");
+}
+
 module test_ps_face_region_loop_shells__boundary_inset_shrinks_shell() {
     p = hexahedron();
     site = _test_face_site(p, 0);
@@ -247,6 +256,7 @@ module test_ps_face_region_projection_cap__limits_offset() {
 
 module run_TestFaceRegions() {
     test_ps_face_region_loop_shells__cube_face_single_quad_shell();
+    test_ps_loop_shell_describe_str__summary();
     test_ps_face_region_loop_shells__boundary_inset_shrinks_shell();
     test_ps_face_region_loop_shells__site_context_matches_raw_context_builder();
     test_ps_face_region_loop_shells__side_inset_compensates_face_offset();

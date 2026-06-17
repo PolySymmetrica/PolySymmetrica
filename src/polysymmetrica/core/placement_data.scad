@@ -606,3 +606,193 @@ function ps_vertex_site_vertex_family_count(site) = site[10];
  * Returns: stored placement frame `[center, ex, ey, ez]`
  */
 function ps_vertex_site_frame(site) = site[11];
+
+/**
+ * Function: Build a description string for a proxy volume group.
+ * Params: group (proxy volume-group record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: description string
+ */
+function ps_proxy_volume_group_describe_str(group, detail=0, kvpair_to_str=undef, field_sep=", ") =
+    ps_describe_record_str(
+        "ProxyVolumeGroup",
+        [
+            ps_describe_kvpair_str("target_face_idx", ps_proxy_volume_group_target_face_idx(group), kvpair_to_str),
+            ps_describe_kvpair_str("idx", ps_proxy_volume_group_idx(group), kvpair_to_str),
+            ps_describe_kvpair_str("face_count", len(ps_proxy_volume_group_face_idxs(group)), kvpair_to_str),
+            ps_describe_kvpair_str("edge_count", len(ps_proxy_volume_group_edge_idxs(group)), kvpair_to_str),
+            ps_describe_kvpair_str("vertex_count", len(ps_proxy_volume_group_vertex_idxs(group)), kvpair_to_str)
+        ],
+        detail,
+        [
+            ps_describe_kvpair_str("kind", ps_proxy_volume_group_kind(group), kvpair_to_str),
+            ps_describe_kvpair_str("face_idxs", ps_proxy_volume_group_face_idxs(group), kvpair_to_str),
+            ps_describe_kvpair_str("record_idxs", ps_proxy_volume_group_record_idxs(group), kvpair_to_str),
+            ps_describe_kvpair_str("records", ps_proxy_volume_group_records(group), kvpair_to_str),
+            ps_describe_kvpair_str("edge_idxs", ps_proxy_volume_group_edge_idxs(group), kvpair_to_str),
+            ps_describe_kvpair_str("vertex_idxs", ps_proxy_volume_group_vertex_idxs(group), kvpair_to_str),
+            ps_describe_kvpair_str("support_face_idxs", ps_proxy_volume_group_support_face_idxs(group), kvpair_to_str)
+        ],
+        field_sep
+    );
+
+/**
+ * Module: Echo a proxy volume-group description.
+ * Params: group (proxy volume-group record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: none
+ */
+module ps_proxy_volume_group_describe(group, detail=0, kvpair_to_str=undef, field_sep=", ") {
+    echo(ps_proxy_volume_group_describe_str(group, detail, kvpair_to_str, field_sep));
+}
+
+/**
+ * Function: Build a description string for a replay site.
+ * Params: site (foreign replay site), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: description string
+ */
+function ps_replay_site_describe_str(site, detail=0, kvpair_to_str=undef, field_sep=", ") =
+    ps_describe_record_str(
+        "ReplaySite",
+        [
+            ps_describe_kvpair_str("idx", ps_replay_site_idx(site), kvpair_to_str),
+            ps_describe_kvpair_str("foreign_kind", ps_replay_site_foreign_kind(site), kvpair_to_str),
+            ps_describe_kvpair_str("foreign_idx", ps_replay_site_foreign_idx(site), kvpair_to_str),
+            ps_describe_kvpair_str("confidence", ps_replay_site_intrusion_confidence(site), kvpair_to_str)
+        ],
+        detail,
+        [
+            ps_describe_kvpair_str("frame", ps_placement_frame_describe_str(ps_replay_site_frame(site), max(0, detail - 1), kvpair_to_str, field_sep), kvpair_to_str),
+            ps_describe_kvpair_str("intrusion_record", ps_replay_site_intrusion_record(site), kvpair_to_str),
+            ps_describe_kvpair_str("face_pts2d", ps_replay_site_face_pts2d(site), kvpair_to_str),
+            ps_describe_kvpair_str("face_pts3d_local", ps_replay_site_face_pts3d_local(site), kvpair_to_str),
+            ps_describe_kvpair_str("poly_verts_local", ps_replay_site_poly_verts_local(site), kvpair_to_str),
+            ps_describe_kvpair_str("poly_center_local", ps_replay_site_poly_center_local(site), kvpair_to_str),
+            ps_describe_kvpair_str("face_verts_idx", ps_replay_site_face_verts_idx(site), kvpair_to_str),
+            ps_describe_kvpair_str("intrusion_segment2d_local", ps_replay_site_intrusion_segment2d_local(site), kvpair_to_str),
+            ps_describe_kvpair_str("intrusion_dihedral", ps_replay_site_intrusion_dihedral(site), kvpair_to_str),
+            ps_describe_kvpair_str("face_site", is_undef(ps_replay_site_face_site(site)) ? undef : ps_face_site_describe_str(ps_replay_site_face_site(site), max(0, detail - 1), kvpair_to_str, field_sep), kvpair_to_str),
+            ps_describe_kvpair_str("edge_site", is_undef(ps_replay_site_edge_site(site)) ? undef : ps_edge_site_describe_str(ps_replay_site_edge_site(site), max(0, detail - 1), kvpair_to_str, field_sep), kvpair_to_str),
+            ps_describe_kvpair_str("vertex_site", is_undef(ps_replay_site_vertex_site(site)) ? undef : ps_vertex_site_describe_str(ps_replay_site_vertex_site(site), max(0, detail - 1), kvpair_to_str, field_sep), kvpair_to_str)
+        ],
+        field_sep
+    );
+
+/**
+ * Module: Echo a replay-site description.
+ * Params: site (foreign replay site), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: none
+ */
+module ps_replay_site_describe(site, detail=0, kvpair_to_str=undef, field_sep=", ") {
+    echo(ps_replay_site_describe_str(site, detail, kvpair_to_str, field_sep));
+}
+
+/**
+ * Function: Build a description string for a face placement site.
+ * Params: site (face placement site record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: description string
+ */
+function ps_face_site_describe_str(site, detail=0, kvpair_to_str=undef, field_sep=", ") =
+    ps_describe_record_str(
+        "FaceSite",
+        [
+            ps_describe_kvpair_str("idx", ps_face_site_idx(site), kvpair_to_str),
+            ps_describe_kvpair_str("vertex_count", ps_face_site_vertex_count(site), kvpair_to_str),
+            ps_describe_kvpair_str("family_id", ps_face_site_family_id(site), kvpair_to_str),
+            ps_describe_kvpair_str("frame", ps_placement_frame_describe_str(ps_face_site_frame(site), max(0, detail - 1), kvpair_to_str, field_sep), kvpair_to_str)
+        ],
+        detail,
+        [
+            ps_describe_kvpair_str("edge_len", ps_face_site_edge_len(site), kvpair_to_str),
+            ps_describe_kvpair_str("midradius", ps_face_site_midradius(site), kvpair_to_str),
+            ps_describe_kvpair_str("radius", ps_face_site_radius(site), kvpair_to_str),
+            ps_describe_kvpair_str("planarity_err", ps_face_site_planarity_err(site), kvpair_to_str),
+            ps_describe_kvpair_str("is_planar", ps_face_site_is_planar(site), kvpair_to_str),
+            ps_describe_kvpair_str("face_family_count", ps_face_site_face_family_count(site), kvpair_to_str),
+            ps_describe_kvpair_str("edge_family_count", ps_face_site_edge_family_count(site), kvpair_to_str),
+            ps_describe_kvpair_str("vertex_family_count", ps_face_site_vertex_family_count(site), kvpair_to_str),
+            ps_describe_kvpair_str("face_local_context", ps_face_local_context_describe_str(ps_face_site_face_local_context(site), max(0, detail - 1), kvpair_to_str, field_sep), kvpair_to_str)
+        ],
+        field_sep
+    );
+
+/**
+ * Module: Echo a face-site description.
+ * Params: site (face placement site record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: none
+ */
+module ps_face_site_describe(site, detail=0, kvpair_to_str=undef, field_sep=", ") {
+    echo(ps_face_site_describe_str(site, detail, kvpair_to_str, field_sep));
+}
+
+/**
+ * Function: Build a description string for an edge placement site.
+ * Params: site (edge placement site record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: description string
+ */
+function ps_edge_site_describe_str(site, detail=0, kvpair_to_str=undef, field_sep=", ") =
+    ps_describe_record_str(
+        "EdgeSite",
+        [
+            ps_describe_kvpair_str("idx", ps_edge_site_idx(site), kvpair_to_str),
+            ps_describe_kvpair_str("edge_len", ps_edge_site_edge_len(site), kvpair_to_str),
+            ps_describe_kvpair_str("family_id", ps_edge_site_family_id(site), kvpair_to_str),
+            ps_describe_kvpair_str("frame", ps_placement_frame_describe_str(ps_edge_site_frame(site), max(0, detail - 1), kvpair_to_str, field_sep), kvpair_to_str)
+        ],
+        detail,
+        [
+            ps_describe_kvpair_str("midradius", ps_edge_site_midradius(site), kvpair_to_str),
+            ps_describe_kvpair_str("poly_center_local", ps_edge_site_poly_center_local(site), kvpair_to_str),
+            ps_describe_kvpair_str("pts_local", ps_edge_site_pts_local(site), kvpair_to_str),
+            ps_describe_kvpair_str("verts_idx", ps_edge_site_verts_idx(site), kvpair_to_str),
+            ps_describe_kvpair_str("adj_faces_idx", ps_edge_site_adj_faces_idx(site), kvpair_to_str),
+            ps_describe_kvpair_str("face_family_count", ps_edge_site_face_family_count(site), kvpair_to_str),
+            ps_describe_kvpair_str("edge_family_count", ps_edge_site_edge_family_count(site), kvpair_to_str),
+            ps_describe_kvpair_str("vertex_family_count", ps_edge_site_vertex_family_count(site), kvpair_to_str)
+        ],
+        field_sep
+    );
+
+/**
+ * Module: Echo an edge-site description.
+ * Params: site (edge placement site record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: none
+ */
+module ps_edge_site_describe(site, detail=0, kvpair_to_str=undef, field_sep=", ") {
+    echo(ps_edge_site_describe_str(site, detail, kvpair_to_str, field_sep));
+}
+
+/**
+ * Function: Build a description string for a vertex placement site.
+ * Params: site (vertex placement site record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: description string
+ */
+function ps_vertex_site_describe_str(site, detail=0, kvpair_to_str=undef, field_sep=", ") =
+    ps_describe_record_str(
+        "VertexSite",
+        [
+            ps_describe_kvpair_str("idx", ps_vertex_site_idx(site), kvpair_to_str),
+            ps_describe_kvpair_str("valence", ps_vertex_site_valence(site), kvpair_to_str),
+            ps_describe_kvpair_str("family_id", ps_vertex_site_family_id(site), kvpair_to_str),
+            ps_describe_kvpair_str("frame", ps_placement_frame_describe_str(ps_vertex_site_frame(site), max(0, detail - 1), kvpair_to_str, field_sep), kvpair_to_str)
+        ],
+        detail,
+        [
+            ps_describe_kvpair_str("edge_len", ps_vertex_site_edge_len(site), kvpair_to_str),
+            ps_describe_kvpair_str("radius", ps_vertex_site_radius(site), kvpair_to_str),
+            ps_describe_kvpair_str("poly_center_local", ps_vertex_site_poly_center_local(site), kvpair_to_str),
+            ps_describe_kvpair_str("neighbors_idx", ps_vertex_site_neighbors_idx(site), kvpair_to_str),
+            ps_describe_kvpair_str("neighbor_pts_local", ps_vertex_site_neighbor_pts_local(site), kvpair_to_str),
+            ps_describe_kvpair_str("face_family_count", ps_vertex_site_face_family_count(site), kvpair_to_str),
+            ps_describe_kvpair_str("edge_family_count", ps_vertex_site_edge_family_count(site), kvpair_to_str),
+            ps_describe_kvpair_str("vertex_family_count", ps_vertex_site_vertex_family_count(site), kvpair_to_str)
+        ],
+        field_sep
+    );
+
+/**
+ * Module: Echo a vertex-site description.
+ * Params: site (vertex placement site record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: none
+ */
+module ps_vertex_site_describe(site, detail=0, kvpair_to_str=undef, field_sep=", ") {
+    echo(ps_vertex_site_describe_str(site, detail, kvpair_to_str, field_sep));
+}
