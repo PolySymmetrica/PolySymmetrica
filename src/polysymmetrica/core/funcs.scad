@@ -118,6 +118,28 @@ function ps_indices_in_range(face, max_idx) =
     len([for (vi = face) if (vi >= 0 && vi < max_idx) 1]) == len(face);
 
 /**
+ * Function: Join a list of strings with a separator.
+ * Params: parts (string list), sep (separator), i (recursion index)
+ * Returns: joined string
+ */
+function ps_join_strs(parts, sep="", i=0) =
+    (i >= len(parts)) ? "" :
+    (i == len(parts)-1) ? parts[i] :
+    str(parts[i], sep, ps_join_strs(parts, sep, i + 1));
+
+function _ps_describe_default_kvpair_str(k, v) = str(k, "=", v);
+
+/**
+ * Function: Format one key/value pair for a describe helper.
+ * Params: k (key), v (value), kvpair_to_str (optional function `(k, v) -> string`)
+ * Returns: formatted key/value string
+ */
+function ps_describe_kvpair_str(k, v, kvpair_to_str=undef) =
+    is_undef(kvpair_to_str)
+        ? _ps_describe_default_kvpair_str(k, v)
+        : kvpair_to_str(k, v);
+
+/**
  * Function: Build successive pairs from a circular list.
  * Params: list (item list)
  * Returns: `[[list[i], list[i+1]], ... , [last, first]]`, or `[]` for lists shorter than 2

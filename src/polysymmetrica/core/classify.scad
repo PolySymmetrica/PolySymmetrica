@@ -697,35 +697,63 @@ function ps_classify_face_idxs_by_n(cls, n) =
     [for (fam = ff) if (len(fam[0]) > 0 && fam[0][0] == n) each fam[1]];
 
 /**
- * Debug/inspection printer for classification output.
+ * Build a formatted string for one classification family row.
  *
  * Args:
- * - same as `poly_classify(...)`.
+ * - `label`: family label prefix.
+ * - `idx`: family index.
+ * - `fam`: family record `[key, idxs]`.
+ * - `detail`: describe detail level.
+ * - `fmt`: optional describe formatter record.
  *
  * Returns:
- * - module side effects only (echo output).
+ * - formatted string.
  */
-// Pretty-print classification info for a poly.
-module poly_show(poly, detail=1, eps=1e-6, radius=1, include_geom=false) {
-    cls = poly_classify(poly, detail, eps, radius, include_geom);
-    face_fams = cls[0];
-    edge_fams = cls[1];
-    vert_fams = cls[2];
+function _ps_classification_family_describe_str(label, idx, fam, detail, kvpair_to_str=undef, field_sep=", ") =
+    let(
+        fields = concat(
+            [
+                ps_describe_kvpair_str("family", str(label, "#", idx), kvpair_to_str),
+                ps_describe_kvpair_str("key", fam[0], kvpair_to_str),
+                ps_describe_kvpair_str("count", len(fam[1]), kvpair_to_str)
+            ],
+            (detail > 1) ? [ps_describe_kvpair_str("idxs", fam[1], kvpair_to_str)] : []
+        )
+    )
+    ps_join_strs(fields, field_sep);
 
-    echo("=== poly_classify ===");
-    echo("face_families:", len(face_fams));
-    for (i = [0:1:len(face_fams)-1])
-        let(k = face_fams[i][0], idxs = face_fams[i][1])
-            echo("  face_family#", i, "key=", k, include_geom ? "(n, avg_edge_len)" : "(n)", "count=", len(idxs), "idxs=", idxs);
+/**
+ * Function: Build a formatted string for a classification tuple.
+ * Params: cls (classification tuple), detail (describe detail), kvpair_to_str (optional function), field_sep (string), section_sep (string)
+ * Returns: formatted string
+ */
+function ps_classification_describe_str(cls, detail=1, kvpair_to_str=undef, field_sep=", ", section_sep="\n") =
+    let(
+        face_fams = ps_classify_face_families(cls),
+        edge_fams = ps_classify_edge_families(cls),
+        vert_fams = ps_classify_vert_families(cls),
+        counts = [
+            ps_describe_kvpair_str("face_families", len(face_fams), kvpair_to_str),
+            ps_describe_kvpair_str("edge_families", len(edge_fams), kvpair_to_str),
+            ps_describe_kvpair_str("vert_families", len(vert_fams), kvpair_to_str)
+        ],
+        header = str("Classification(", ps_join_strs(counts, field_sep), ")"),
+        rows = (detail <= 0)
+            ? []
+            : concat(
+                [for (i = [0:1:len(face_fams)-1]) _ps_classification_family_describe_str("face_family", i, face_fams[i], detail, kvpair_to_str, field_sep)],
+                [for (i = [0:1:len(edge_fams)-1]) _ps_classification_family_describe_str("edge_family", i, edge_fams[i], detail, kvpair_to_str, field_sep)],
+                [for (i = [0:1:len(vert_fams)-1]) _ps_classification_family_describe_str("vert_family", i, vert_fams[i], detail, kvpair_to_str, field_sep)]
+            )
+    )
+    (len(rows) == 0)
+        ? header
+        : str(header, section_sep, ps_join_strs(rows, section_sep));
 
-    echo("edge_families:", len(edge_fams));
-    for (i = [0:1:len(edge_fams)-1])
-        let(k = edge_fams[i][0], idxs = edge_fams[i][1])
-            echo("  edge_family#", i, "key=", k, include_geom ? "(adj face sizes, edge_len)" : "(adj face sizes)", "count=", len(idxs), "idxs=", idxs);
-
-    echo("vert_families:", len(vert_fams));
-    for (i = [0:1:len(vert_fams)-1])
-        let(k = vert_fams[i][0], idxs = vert_fams[i][1])
-            echo("  vert_family#", i, "key=", k, include_geom ? "(valence, face sizes..., avg_edge_len)" : "(valence, face sizes...)", "count=", len(idxs), "idxs=", idxs);
-    echo("====================");
+/**
+ * Module: Echo a formatted description of a classification tuple.
+ * Params: cls (classification tuple), detail (describe detail), kvpair_to_str (optional function), field_sep (string), section_sep (string)
+ */
+module ps_classification_describe(cls, detail=1, kvpair_to_str=undef, field_sep=", ", section_sep="\n") {
+    echo(ps_classification_describe_str(cls, detail, kvpair_to_str, field_sep, section_sep));
 }
