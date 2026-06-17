@@ -55,6 +55,8 @@ PolySymmetrica/
 │   │   │   ├─ funcs.scad           # math, vector, centroid, helpers
 │   │   │   ├─ placement.scad       # face/edge/vertex placement and replay logic
 │   │   │   ├─ placement_data.scad  # placement/proxy record accessors
+│   │   │   ├─ segments.scad        # face-local segmentation, cut analysis, seam iteration
+│   │   │   ├─ segments_data.scad   # boundary span / intrusion / seam record accessors
 │   │   │   ├─ truncation.scad      # truncate/rectify/chamfer/cantellate/cantitruncate
 │   │   │   ├─ profile.scad         # shared profile helpers
 │   │   │   ├─ solvers.scad         # parameter solvers (cantitruncate, etc.)
@@ -323,6 +325,10 @@ See [segments.md](segments.md) for the face-local analysis layer:
 
 Use this layer when you want analyzable face-local cells, cuts, and visibility,
 not arbitrary 3D clipping.
+
+`segments.scad` owns the segmentation and seam-building logic; `segments_data.scad`
+owns the public accessors for boundary-span, intrusion, seam-clearance-loop,
+and seam-site records.
 
 For punch-through/proxy work, `placement.scad` provides the replay iterators
 and builders, while `placement_data.scad` owns the public accessors for the
