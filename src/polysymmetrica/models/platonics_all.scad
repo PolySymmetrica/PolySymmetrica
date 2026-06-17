@@ -1,4 +1,3 @@
-
 /**
 This is a handy utility file to pull in all 5 Platonic solid definitions, including named functions for dodecahedron and hexahedron (cube).
 */

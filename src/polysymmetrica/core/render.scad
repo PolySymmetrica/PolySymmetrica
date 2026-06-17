@@ -1,4 +1,3 @@
-
 use <funcs.scad>
 use <placement.scad>
 use <segments.scad>

@@ -1,4 +1,3 @@
-
 /**
 Defines the hexahedron (simple cube!) - derived from icosahedron() using poly_dual().
 */

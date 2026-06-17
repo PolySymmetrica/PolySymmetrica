@@ -1,4 +1,3 @@
-
 use <funcs.scad>
 
 function _ps_prism_height(edge, height, height_scale) =

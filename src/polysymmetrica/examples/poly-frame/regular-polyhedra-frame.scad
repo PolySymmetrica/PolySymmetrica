@@ -1,4 +1,3 @@
-
 use <../../core/placement.scad>
 use <../../models/tetrahedron.scad>
 use <../../models/octahedron.scad>

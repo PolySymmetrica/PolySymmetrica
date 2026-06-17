@@ -1,4 +1,3 @@
-
 /**
 Defines the dodecahedron - derived from icosahedron() using poly_dual().
 */

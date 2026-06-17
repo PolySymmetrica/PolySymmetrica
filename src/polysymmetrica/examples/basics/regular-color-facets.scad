@@ -1,4 +1,3 @@
-
 use <../../core/placement.scad>
 use <../../models/platonics_all.scad>
 
