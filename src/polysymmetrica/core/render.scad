@@ -1,8 +1,3 @@
-// ---------------------------------------------------------------------------
-// PolySymmetrica - Polyhedral Geometry Engine
-// Version: 0.1.0
-// Copyright 2026 Susan Witts
-// SPDX-License-Identifier: MIT
 
 use <funcs.scad>
 use <placement.scad>

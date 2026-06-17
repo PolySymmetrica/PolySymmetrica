@@ -1,8 +1,3 @@
-// ---------------------------------------------------------------------------
-// PolySymmetrica - Johnson solids (more to come!)
-// Version: 0.1.0
-// Copyright 2026 Susan Witts
-// SPDX-License-Identifier: MIT
 
 use <../core/funcs.scad>
 use <../core/construction.scad>
