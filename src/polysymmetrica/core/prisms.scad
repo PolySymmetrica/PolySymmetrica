@@ -1,7 +1,5 @@
-// ---------------------------------------------------------------------------
-// PolySymmetrica - Prism generators
-// Version: 0.1.0
-// Copyright 2026 Susan Witts
+// This file is part of PolySymmetrica, a Polyhedral Geometry Modelling System.
+// Copyright 2025-2026 Susan Witts
 // SPDX-License-Identifier: MIT
 
 use <funcs.scad>

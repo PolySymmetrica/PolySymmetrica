@@ -1,3 +1,7 @@
+// This file is part of PolySymmetrica, a Polyhedral Geometry Modelling System.
+// Copyright 2025-2026 Susan Witts
+// SPDX-License-Identifier: MIT
+
 use <../testing_util.scad>
 use <../../polysymmetrica/core/classify.scad>
 use <../../polysymmetrica/core/truncation.scad>

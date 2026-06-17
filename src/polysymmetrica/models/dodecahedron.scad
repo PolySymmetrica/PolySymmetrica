@@ -1,8 +1,6 @@
-// ---------------------------------------------------------------------------
-// PolySymmetrica - Polyhedral Geometry Engine
-// Version: 0.1.0
-// Copyright 2025 Susan Witts
-// SPDX-License-Identifier: MIT
+// This file is part of PolySymmetrica, a Polyhedral Geometry Modelling System.
+// Copyright 2025-2026 Susan Witts
+// SPDX-License-Identifier: MIT
 
 /**
 Defines the dodecahedron - derived from icosahedron() using poly_dual().

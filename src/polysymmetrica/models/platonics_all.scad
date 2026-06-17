@@ -1,8 +1,6 @@
-// ---------------------------------------------------------------------------
-// PolySymmetrica - Polyhedral Geometry Engine
-// Version: 0.1.0
-// Copyright 2025 Susan Witts
-// SPDX-License-Identifier: MIT
+// This file is part of PolySymmetrica, a Polyhedral Geometry Modelling System.
+// Copyright 2025-2026 Susan Witts
+// SPDX-License-Identifier: MIT
 
 /**
 This is a handy utility file to pull in all 5 Platonic solid definitions, including named functions for dodecahedron and hexahedron (cube).

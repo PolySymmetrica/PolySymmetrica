@@ -1,3 +1,7 @@
+// This file is part of PolySymmetrica, a Polyhedral Geometry Modelling System.
+// Copyright 2025-2026 Susan Witts
+// SPDX-License-Identifier: MIT
+
 use <../../core/render.scad>
 use <../../models/archimedians_all.scad>
 use <../truncation/util_demo.scad>

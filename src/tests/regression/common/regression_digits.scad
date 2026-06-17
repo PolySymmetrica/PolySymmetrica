@@ -1,3 +1,7 @@
+// This file is part of PolySymmetrica, a Polyhedral Geometry Modelling System.
+// Copyright 2025-2026 Susan Witts
+// SPDX-License-Identifier: MIT
+
 // Deterministic numeric labels for visual regression scenes.
 //
 // OpenSCAD text() depends on platform font discovery. These labels use a tiny
