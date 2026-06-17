@@ -9,6 +9,11 @@
 
 This file is about data and iteration, not arbitrary 3D clipping.
 
+`segments.scad` owns the analysis/builders. Its sibling
+`src/polysymmetrica/core/segments_data.scad` owns the public accessors for the
+record families emitted by this layer: boundary spans, foreign intrusions,
+seam-clearance loops, and seam sites.
+
 See also [face_arrangement.md](face_arrangement.md) for the next planned layer:
 explicit arrangement, boundary-model, face-cell, and atom APIs for self-crossing
 faces.
