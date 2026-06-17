@@ -306,6 +306,12 @@ module test_ps_face_foreign_intrusion_records__7_3_15_triangle_wraps_exact_face_
     );
 }
 
+module test_ps_intrusion_describe_str__summary() {
+    record = ["face_plane_cut", TRI_FACE_IDX, "face", 3, [[-1, 0], [1, 0]], 120, "exact"];
+    s = ps_intrusion_describe_str(record);
+    assert(s == "Intrusion(kind=face_plane_cut, target_face_idx=12, foreign_kind=face, foreign_idx=3)", "intrusion summary string");
+}
+
 module test_ps_face_foreign_intrusion_records__preserves_coincident_foreign_face_provenance() {
     face_pts2d = [[-2, -2], [2, -2], [2, 2], [-2, 2]];
     records = ps_face_foreign_intrusion_records(
@@ -612,6 +618,36 @@ module test_ps_proxy_volume_group_context_helpers__match_public_wrappers() {
 
     assert(groups_ctx == groups_public, "context volume group helper should match public wrapper output");
     assert(group_sites_ctx == group_sites_public, "context volume group face replay helper should match public wrapper output");
+}
+
+module test_ps_replay_and_proxy_describe_str__summary() {
+    frame = ps_placement_frame([0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]);
+    intrusion = ["face_plane_cut", TRI_FACE_IDX, "face", 3, [[-1, 0], [1, 0]], 120, "exact"];
+    replay = [
+        0,
+        intrusion,
+        frame,
+        3,
+        [[0, 0], [1, 0], [0, 1]],
+        [[0, 0, 0], [1, 0, 0], [0, 1, 0]],
+        [[0, 0, 0], [1, 0, 0], [0, 1, 0]],
+        [0, 0, -1],
+        [0, 1, 2],
+        "face",
+        [[-1, 0], [1, 0]],
+        120,
+        "exact",
+        undef,
+        undef,
+        undef
+    ];
+    group = ["foreign_proxy_volume_group", TRI_FACE_IDX, 1, [3, 9], [0, 2], [intrusion], [7, 8], [2, 4], [10]];
+
+    replay_s = ps_replay_site_describe_str(replay);
+    group_s = ps_proxy_volume_group_describe_str(group);
+
+    assert(replay_s == "ReplaySite(idx=0, foreign_kind=face, foreign_idx=3, confidence=exact)", "replay summary string");
+    assert(group_s == "ProxyVolumeGroup(target_face_idx=12, idx=1, face_count=2, edge_count=2, vertex_count=2)", "proxy volume group summary string");
 }
 
 module test_place_on_face_foreign_proxy_volume_groups__7_3_15_triangle_exposes_context() {
@@ -992,6 +1028,32 @@ module test_ps_face_seam_segment_sites__triangle_builds_boundary_edge_records() 
     }
 }
 
+module test_ps_boundary_and_seam_describe_str__summary() {
+    frame = ps_placement_frame([1, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]);
+    span_site = [0, frame, 2, [[0, 0], [2, 0]], 1, 5, 0, 1, "source", 7, 8, 9, 120, [0, 0, 1], 1, [0, 1, 0], "generated_cut"];
+    seam_site = _ps_face_seam_segment_site(
+        0,
+        [[0, 0], [2, 0]],
+        "boundary",
+        "generated_cut",
+        "face",
+        9,
+        [0, 0, 1],
+        120,
+        "exact",
+        span_site,
+        "generated_cut",
+        "generated_cut",
+        [0, 0, 0]
+    );
+
+    span_s = ps_boundary_span_site_describe_str(span_site);
+    seam_s = ps_seam_site_describe_str(seam_site);
+
+    assert(span_s == "BoundarySpanSite(idx=0, kind=generated_cut, source_edge_idx=5, len=2)", "boundary span summary string");
+    assert(seam_s == "SeamSite(idx=0, source=boundary, source_kind=generated_cut, len=2)", "seam site summary string");
+}
+
 module test_place_on_face_seam_segments__triangle_exposes_foreign_edge_aliases() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
@@ -1289,6 +1351,7 @@ module run_TestSelfCrossing() {
     test_ps_face_filled_boundary_source_edges__7_3_15_star_groups_surviving_spans();
     test_ps_face_geom_cut_entries__7_3_15_triangle_records_foreign_cutters();
     test_ps_face_foreign_intrusion_records__7_3_15_triangle_wraps_exact_face_cuts();
+    test_ps_intrusion_describe_str__summary();
     test_ps_face_foreign_intrusion_records__preserves_coincident_foreign_face_provenance();
     test_ps_face_foreign_face_replay_sites__7_3_15_triangle_builds_target_local_frames();
     test_ps_face_foreign_replay_context_helpers__match_public_wrappers();
@@ -1299,6 +1362,7 @@ module run_TestSelfCrossing() {
     test_ps_face_foreign_proxy_volume_groups__preserves_duplicate_exact_face_cut_records();
     test_ps_proxy_volume_group_face_replay_sites__7_3_15_triangle_builds_renderable_units();
     test_ps_proxy_volume_group_context_helpers__match_public_wrappers();
+    test_ps_replay_and_proxy_describe_str__summary();
     test_ps_face_visible_segments__7_3_15_triangle_splits_into_visible_cells();
     test_ps_face_visible_segments__7_3_0_triangle_catches_meeting_cut_edges();
     test_ps_face_visible_segments__atut_past_zero_area_uses_semantic_target_winding();
@@ -1312,6 +1376,7 @@ module run_TestSelfCrossing() {
     test_place_on_face_boundary_spans__kind_filter_exposes_generated_seams();
     test_place_on_face_foreign_intrusions__7_3_15_triangle_exposes_context();
     test_ps_face_seam_segment_sites__triangle_builds_boundary_edge_records();
+    test_ps_boundary_and_seam_describe_str__summary();
     test_place_on_face_seam_segments__triangle_exposes_foreign_edge_aliases();
     test_place_on_face_seam_segments__element_coords_exposes_frame_backed_edge_aliases();
     test_ps_face_seam_segment_sites__source_partial_spans_are_not_support_candidates();

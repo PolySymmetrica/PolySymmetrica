@@ -140,6 +140,26 @@ function ps_describe_kvpair_str(k, v, kvpair_to_str=undef) =
         : kvpair_to_str(k, v);
 
 /**
+ * Function: Build a standard `Name(k=v, ...)` record description string.
+ * Params: name (record type label), base_parts (summary field strings), detail (detail level), detail_parts (optional extra field strings), field_sep (field separator)
+ * Returns: description string
+ */
+function ps_describe_record_str(name, base_parts, detail=0, detail_parts=undef, field_sep=", ") =
+    str(
+        name,
+        "(",
+        ps_join_strs(
+            detail > 0 && !is_undef(detail_parts)
+                ? concat(base_parts, detail_parts)
+                : base_parts,
+            field_sep
+        ),
+        ")"
+    );
+
+function _ps_describe_count(xs) = is_undef(xs) ? undef : len(xs);
+
+/**
  * Function: Build successive pairs from a circular list.
  * Params: list (item list)
  * Returns: `[[list[i], list[i+1]], ... , [last, first]]`, or `[]` for lists shorter than 2
@@ -1128,6 +1148,34 @@ function ps_placement_frame_matrix(frame) =
     );
 
 /**
+ * Function: Build a description string for a placement frame.
+ * Params: frame (placement frame), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: description string
+ */
+function ps_placement_frame_describe_str(frame, detail=0, kvpair_to_str=undef, field_sep=", ") =
+    ps_describe_record_str(
+        "PlacementFrame",
+        [
+            ps_describe_kvpair_str("center", ps_placement_frame_center(frame), kvpair_to_str),
+            ps_describe_kvpair_str("ex", ps_placement_frame_ex(frame), kvpair_to_str),
+            ps_describe_kvpair_str("ey", ps_placement_frame_ey(frame), kvpair_to_str),
+            ps_describe_kvpair_str("ez", ps_placement_frame_ez(frame), kvpair_to_str)
+        ],
+        detail,
+        undef,
+        field_sep
+    );
+
+/**
+ * Module: Echo a placement frame description.
+ * Params: frame (placement frame), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: none
+ */
+module ps_placement_frame_describe(frame, detail=0, kvpair_to_str=undef, field_sep=", ") {
+    echo(ps_placement_frame_describe_str(frame, detail, kvpair_to_str, field_sep));
+}
+
+/**
  * Function: Build a target-local poly context record.
  * Params: poly_faces_idx (poly face index loops), poly_verts_local (poly vertices in target-local coordinates), poly_center_local (optional poly center in target-local coordinates)
  * Returns: target-local poly context `[poly_faces_idx, poly_verts_local, poly_center_local]`
@@ -1159,6 +1207,36 @@ function ps_target_local_poly_context_verts_local(ctx) = ctx[1];
  * Returns: poly center in target-local coordinates
  */
 function ps_target_local_poly_context_center_local(ctx) = ctx[2];
+
+/**
+ * Function: Build a description string for a target-local poly context.
+ * Params: ctx (target-local poly context), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: description string
+ */
+function ps_target_local_poly_context_describe_str(ctx, detail=0, kvpair_to_str=undef, field_sep=", ") =
+    ps_describe_record_str(
+        "TargetLocalPolyContext",
+        [
+            ps_describe_kvpair_str("face_count", len(ps_target_local_poly_context_faces_idx(ctx)), kvpair_to_str),
+            ps_describe_kvpair_str("vert_count", len(ps_target_local_poly_context_verts_local(ctx)), kvpair_to_str),
+            ps_describe_kvpair_str("center_local", ps_target_local_poly_context_center_local(ctx), kvpair_to_str)
+        ],
+        detail,
+        [
+            ps_describe_kvpair_str("faces_idx", ps_target_local_poly_context_faces_idx(ctx), kvpair_to_str),
+            ps_describe_kvpair_str("verts_local", ps_target_local_poly_context_verts_local(ctx), kvpair_to_str)
+        ],
+        field_sep
+    );
+
+/**
+ * Module: Echo a target-local poly context description.
+ * Params: ctx (target-local poly context), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: none
+ */
+module ps_target_local_poly_context_describe(ctx, detail=0, kvpair_to_str=undef, field_sep=", ") {
+    echo(ps_target_local_poly_context_describe_str(ctx, detail, kvpair_to_str, field_sep));
+}
 
 /**
  * Function: Build a face-local context record for nested face operations.
@@ -1249,6 +1327,40 @@ function ps_face_local_context_neighbors_idx(ctx) = ctx[4];
  * Returns: dihedral metadata per source face edge, or `undef`
  */
 function ps_face_local_context_dihedrals(ctx) = ctx[5];
+
+/**
+ * Function: Build a description string for a face-local context.
+ * Params: ctx (face-local context), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: description string
+ */
+function ps_face_local_context_describe_str(ctx, detail=0, kvpair_to_str=undef, field_sep=", ") =
+    ps_describe_record_str(
+        "FaceLocalContext",
+        [
+            ps_describe_kvpair_str("face_idx", ps_face_local_context_idx(ctx), kvpair_to_str),
+            ps_describe_kvpair_str("vertex_count", len(ps_face_local_context_pts2d(ctx)), kvpair_to_str),
+            ps_describe_kvpair_str("neighbor_count", _ps_describe_count(ps_face_local_context_neighbors_idx(ctx)), kvpair_to_str),
+            ps_describe_kvpair_str("dihedral_count", _ps_describe_count(ps_face_local_context_dihedrals(ctx)), kvpair_to_str)
+        ],
+        detail,
+        [
+            ps_describe_kvpair_str("pts3d_local", ps_face_local_context_pts3d_local(ctx), kvpair_to_str),
+            ps_describe_kvpair_str("pts2d", ps_face_local_context_pts2d(ctx), kvpair_to_str),
+            ps_describe_kvpair_str("target_local_poly_context", ps_target_local_poly_context_describe_str(ps_face_local_context_target_local_poly_context(ctx), max(0, detail - 1), kvpair_to_str, field_sep), kvpair_to_str),
+            ps_describe_kvpair_str("neighbors_idx", ps_face_local_context_neighbors_idx(ctx), kvpair_to_str),
+            ps_describe_kvpair_str("dihedrals", ps_face_local_context_dihedrals(ctx), kvpair_to_str)
+        ],
+        field_sep
+    );
+
+/**
+ * Module: Echo a face-local context description.
+ * Params: ctx (face-local context), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: none
+ */
+module ps_face_local_context_describe(ctx, detail=0, kvpair_to_str=undef, field_sep=", ") {
+    echo(ps_face_local_context_describe_str(ctx, detail, kvpair_to_str, field_sep));
+}
 
 
 /**

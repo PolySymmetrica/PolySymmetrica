@@ -88,6 +88,15 @@ module test_ps_placement_frame__accessors_and_matrix_match_raw_frame() {
     assert(ps_placement_frame_matrix(frame) == ps_frame_matrix(center, ex, ey, ez), "placement frame matrix");
 }
 
+module test_ps_placement_frame_describe_str__summary_and_formatter() {
+    frame = ps_placement_frame([1, 2, 3], [1, 0, 0], [0, 1, 0], [0, 0, 1]);
+    s0 = ps_placement_frame_describe_str(frame);
+    s1 = ps_placement_frame_describe_str(frame, 0, function(k, v) str("\"", k, "\":", v), " | ");
+
+    assert(s0 == "PlacementFrame(center=[1, 2, 3], ex=[1, 0, 0], ey=[0, 1, 0], ez=[0, 0, 1])", "placement frame summary string");
+    assert(s1 == "PlacementFrame(\"center\":[1, 2, 3] | \"ex\":[1, 0, 0] | \"ey\":[0, 1, 0] | \"ez\":[0, 0, 1])", "placement frame formatter override");
+}
+
 module test_ps_target_local_poly_context__accessors_and_default_center() {
     faces = [[0, 1, 2]];
     verts_local = [[0, 0, 0], [1, 0, 0], [0, 1, 0]];
@@ -99,6 +108,26 @@ module test_ps_target_local_poly_context__accessors_and_default_center() {
     assert(ps_target_local_poly_context_verts_local(ctx) == verts_local, "target-local context vertices");
     assert(ps_target_local_poly_context_center_local(ctx) == center_local, "target-local context center");
     assert(ps_target_local_poly_context_center_local(ctx_default) == [0, 0, 0], "target-local context default center");
+}
+
+module test_ps_target_local_poly_context_describe_str__summary() {
+    ctx = ps_target_local_poly_context([[0, 1, 2]], [[0, 0, 0], [1, 0, 0], [0, 1, 0]]);
+    s = ps_target_local_poly_context_describe_str(ctx);
+    assert(s == "TargetLocalPolyContext(face_count=1, vert_count=3, center_local=[0, 0, 0])", "target-local context summary string");
+}
+
+module test_ps_face_local_context_describe_str__summary() {
+    ctx = ps_face_local_context(
+        [[0, 0, 0], [1, 0, 0], [0, 1, 0]],
+        [[0, 0], [1, 0], [0, 1]],
+        4,
+        [[0, 1, 2]],
+        [[0, 0, 0], [1, 0, 0], [0, 1, 0]],
+        [5, 6, 7],
+        [90, 90, 90]
+    );
+    s = ps_face_local_context_describe_str(ctx);
+    assert(s == "FaceLocalContext(face_idx=4, vertex_count=3, neighbor_count=3, dihedral_count=3)", "face-local context summary string");
 }
 
 module test_ps_face_sites__cube_records_match_face_structure() {
@@ -188,6 +217,23 @@ module test_ps_face_site_frame_and_context__match_site_accessors() {
     assert(ps_face_local_context_poly_center_local(face_ctx) == ps_face_site_poly_center_local(site), "face site face-local context center");
     assert(ps_face_local_context_neighbors_idx(face_ctx) == ps_face_site_neighbors_idx(site), "face site face-local context neighbors");
     assert(ps_face_local_context_dihedrals(face_ctx) == ps_face_site_dihedrals(site), "face site face-local context dihedrals");
+}
+
+module test_ps_placement_site_describe_str__detail_includes_nested_context() {
+    p = hexahedron();
+    face_site = ps_face_sites(p)[0];
+    edge_site = ps_edge_sites(p)[0];
+    vertex_site = ps_vertex_sites(p)[0];
+    face_s = ps_face_site_describe_str(face_site, 1);
+    edge_s = ps_edge_site_describe_str(edge_site, 1);
+    vertex_s = ps_vertex_site_describe_str(vertex_site, 1);
+
+    assert(len(search("FaceSite(", face_s)) > 0, "face site describe prefix");
+    assert(len(search("face_local_context=FaceLocalContext(", face_s)) > 0, "face site detail should include nested face-local context");
+    assert(len(search("EdgeSite(", edge_s)) > 0, "edge site describe prefix");
+    assert(len(search("adj_faces_idx=", edge_s)) > 0, "edge site detail should include adjacent faces");
+    assert(len(search("VertexSite(", vertex_s)) > 0, "vertex site describe prefix");
+    assert(len(search("neighbor_pts_local=", vertex_s)) > 0, "vertex site detail should include neighbor points");
 }
 
 module test_place_on_faces__exposes_stored_context_objects() {
@@ -865,10 +911,14 @@ module run_TestPlacement() {
     test_place_on_vertices__family_ids_and_counts_from_classify();
     test_place_on_faces__auto_classify_matches_precomputed();
     test_ps_placement_frame__accessors_and_matrix_match_raw_frame();
+    test_ps_placement_frame_describe_str__summary_and_formatter();
     test_ps_target_local_poly_context__accessors_and_default_center();
+    test_ps_target_local_poly_context_describe_str__summary();
+    test_ps_face_local_context_describe_str__summary();
     test_ps_face_sites__cube_records_match_face_structure();
     test_ps_face_site_accessors__match_record_layout();
     test_ps_face_site_frame_and_context__match_site_accessors();
+    test_ps_placement_site_describe_str__detail_includes_nested_context();
     test_ps_edge_sites__cube_records_match_edge_structure();
     test_ps_edge_site_accessors__match_record_layout();
     test_ps_edge_site_frame__matches_site_accessors();

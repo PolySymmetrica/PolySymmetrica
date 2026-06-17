@@ -291,6 +291,42 @@ function ps_loop_shell_capped_count(shell) = shell[10];
 function ps_loop_shell_exposure_sign(shell) = shell[11];
 
 /**
+ * Function: Build a description string for a loop shell record.
+ * Params: shell (loop shell record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: description string
+ */
+function ps_loop_shell_describe_str(shell, detail=0, kvpair_to_str=undef, field_sep=", ") =
+    ps_describe_record_str(
+        "LoopShell",
+        [
+            ps_describe_kvpair_str("source_kind", ps_loop_shell_source_kind(shell), kvpair_to_str),
+            ps_describe_kvpair_str("source_idx", ps_loop_shell_source_idx(shell), kvpair_to_str),
+            ps_describe_kvpair_str("point_count", len(ps_loop_shell_points(shell)), kvpair_to_str),
+            ps_describe_kvpair_str("face_count", len(ps_loop_shell_faces(shell)), kvpair_to_str)
+        ],
+        detail,
+        [
+            ps_describe_kvpair_str("bottom_loop2d", ps_loop_shell_bottom_loop2d(shell), kvpair_to_str),
+            ps_describe_kvpair_str("top_loop2d", ps_loop_shell_top_loop2d(shell), kvpair_to_str),
+            ps_describe_kvpair_str("z0", ps_loop_shell_z0(shell), kvpair_to_str),
+            ps_describe_kvpair_str("z1", ps_loop_shell_z1(shell), kvpair_to_str),
+            ps_describe_kvpair_str("lineage", ps_loop_shell_lineage(shell), kvpair_to_str),
+            ps_describe_kvpair_str("capped_count", ps_loop_shell_capped_count(shell), kvpair_to_str),
+            ps_describe_kvpair_str("exposure_sign", ps_loop_shell_exposure_sign(shell), kvpair_to_str)
+        ],
+        field_sep
+    );
+
+/**
+ * Module: Echo a loop-shell description.
+ * Params: shell (loop shell record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
+ * Returns: none
+ */
+module ps_loop_shell_describe(shell, detail=0, kvpair_to_str=undef, field_sep=", ") {
+    echo(ps_loop_shell_describe_str(shell, detail, kvpair_to_str, field_sep));
+}
+
+/**
  * Module: Emit a generic loop-shell polyhedron.
  * Params: shell (`ps_loop_shell` record), convexity (OpenSCAD hint)
  * Returns: none
@@ -303,4 +339,3 @@ module ps_loop_shell(shell, convexity=6) {
         convexity = convexity
     );
 }
-
