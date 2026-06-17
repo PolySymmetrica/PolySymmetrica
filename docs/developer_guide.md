@@ -151,7 +151,12 @@ Faces are ordered **clockwise when viewed from outside**.
 - `include_geom`: when true, appends average edge length to keys (rounded by `eps`).
 - `radius`: controls propagation depth for `detail=2` refinement.
 
-To print a supplied classification tuple, use `ps_classification_describe(cls, detail=1)`.
+To print a supplied classification tuple:
+
+```scad
+cls = poly_classify(poly, detail = 1);
+ps_classification_describe(cls, detail = 1);
+```
 
 ---
 
