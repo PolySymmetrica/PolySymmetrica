@@ -114,8 +114,8 @@ frame is responsible for making it orthonormal.
 Describe example:
 
 ```scad
-frame = ps_placement_frame(center, ex, ey, ez);
-ps_placement_frame_describe(frame, detail = 1);
+place_on_faces(poly, indices = 0)
+    ps_placement_frame_describe($ps_face_frame, detail = 1);
 ```
 
 ## Target-Local Poly Context
@@ -141,12 +141,8 @@ If the center is omitted, `ps_target_local_poly_context(...)` stores `[0, 0, 0]`
 Describe example:
 
 ```scad
-ctx = ps_target_local_poly_context(
-    $ps_poly_faces_idx,
-    $ps_poly_verts_local,
-    $ps_poly_center_local
-);
-ps_target_local_poly_context_describe(ctx, detail = 1);
+place_on_faces(poly, indices = 0)
+    ps_target_local_poly_context_describe($ps_target_local_poly_context, detail = 1);
 ```
 
 ## Face-Local Context
@@ -187,17 +183,8 @@ together.
 Describe example:
 
 ```scad
-face_ctx = ps_face_local_context(
-    $ps_face_pts3d_local,
-    $ps_face_pts2d,
-    $ps_face_idx,
-    $ps_poly_faces_idx,
-    $ps_poly_verts_local,
-    $ps_face_neighbors_idx,
-    $ps_face_dihedrals,
-    $ps_poly_center_local
-);
-ps_face_local_context_describe(face_ctx, detail = 1);
+place_on_faces(poly, indices = 0)
+    ps_face_local_context_describe($ps_face_local_context, detail = 1);
 ```
 
 ## Face Site Records
@@ -405,8 +392,15 @@ they are converted into replay sites.
 Describe example:
 
 ```scad
-site = ps_face_foreign_face_replay_sites(...)[0];
-ps_replay_site_describe(site, detail = 1);
+place_on_faces(poly, indices = target_face_idx)
+    ps_replay_site_describe(
+        ps_face_foreign_face_replay_sites(
+            $ps_face_pts2d,
+            $ps_face_idx,
+            $ps_target_local_poly_context
+        )[0],
+        detail = 1
+    );
 ```
 
 ## Proxy Volume Group Records
@@ -443,8 +437,9 @@ rather than rebuilding them from sibling fields.
 Describe example:
 
 ```scad
-group = ps_face_foreign_proxy_volume_groups(...)[0];
-ps_proxy_volume_group_describe(group, detail = 1);
+place_on_faces(poly, indices = target_face_idx)
+    place_on_face_foreign_proxy_volume_groups()
+        ps_proxy_volume_group_describe($ps_proxy_volume_group_record, detail = 1);
 ```
 
 ## Intrusion Records
@@ -482,8 +477,9 @@ that decide how much geometry to emit from the same source record.
 Describe example:
 
 ```scad
-record = ps_face_foreign_intrusion_records(...)[0];
-ps_intrusion_describe(record, detail = 1);
+place_on_faces(poly, indices = target_face_idx)
+    place_on_face_foreign_intrusions()
+        ps_intrusion_describe($ps_intrusion_record, detail = 1);
 ```
 
 ## Loop Shell Records
@@ -522,8 +518,9 @@ context. Face-region/A.I. shells are positive admissible geometry.
 Describe example:
 
 ```scad
-shell = ps_face_region_loop_shells(face_ctx, -0.4, 0.6)[0];
-ps_loop_shell_describe(shell, detail = 1);
+place_on_faces(poly, indices = 0)
+    place_on_face_seam_clearance_shells(-0.4, 0.6)
+        ps_loop_shell_describe($ps_loop_shell_record, detail = 1);
 ```
 
 ## Arrangement And Boundary-Model Composites
@@ -604,8 +601,18 @@ children manually.
 Describe example:
 
 ```scad
-site = _ps_face_boundary_span_sites(...)[0];
-ps_boundary_span_site_describe(site, detail = 1);
+place_on_faces(poly, indices = target_face_idx)
+    ps_boundary_span_site_describe(
+        _ps_face_boundary_span_sites(
+            $ps_face_pts3d_local,
+            $ps_face_idx,
+            $ps_poly_faces_idx,
+            $ps_poly_verts_local,
+            $ps_face_neighbors_idx,
+            $ps_face_dihedrals
+        )[0],
+        detail = 1
+    );
 ```
 
 ## Seam Segment Site Records
@@ -668,8 +675,11 @@ can be reused on generated seams.
 Describe example:
 
 ```scad
-site = ps_face_seam_segment_sites(face_ctx)[0];
-ps_seam_site_describe(site, detail = 1);
+place_on_faces(poly, indices = target_face_idx)
+    ps_seam_site_describe(
+        ps_face_seam_segment_sites($ps_face_local_context)[0],
+        detail = 1
+    );
 ```
 
 ## Accessor Rule
