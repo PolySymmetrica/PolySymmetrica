@@ -1,114 +1,127 @@
-[![Run Tests under OpenSCAD](https://github.com/susanw1/PolySymmetrica/actions/workflows/run_tests.yml/badge.svg)](https://github.com/susanw1/PolySymmetrica/actions/workflows/run_tests.yml)
+# PolySymmetrica
 
----
+PolySymmetrica is a polyhedral modelling library for OpenSCAD.
 
-# **PolySymmetrica**
+It gives you named solids, geometric transforms, placement tools, and topology
+helpers for building structured polyhedral models without hand-writing the
+rotations and coordinate frames yourself.
 
-### *A parametric polyhedral symmetry engine for OpenSCAD*
+Use it to make:
 
-PolySymmetrica is a geometry engine that generates and manipulates polyhedra using symmetry, duals, and parametric structure. It provides a clean framework for constructing 3D-printable polyhedral frames, exploring duals and truncations, and attaching arbitrary geometry to faces, edges, or vertices of any polyhedron.
+- decorated Platonic, Archimedean, Catalan, Johnson, prism, and antiprism forms;
+- custom geometry attached cleanly to every face, edge, or vertex of a solid;
+- transformed solids using duals, truncation, rectification, chamfering,
+  cantellation, cantitruncation, snubs, and construction helpers;
+- exploratory or printable polyhedral frame and face assemblies.
 
----
+PolySymmetrica is still OpenSCAD: the output is ordinary OpenSCAD geometry, and
+your child modules can be regular OpenSCAD modules. The library supplies the
+polyhedral structure, local frames, and metadata.
 
-## 🔶 Features
+## The Core Idea
 
-* **Primitive symmetry families**
+OpenSCAD is good at describing a piece of geometry. It is less pleasant when
+you need to repeat that geometry across every symmetry site of a polyhedron.
 
-  * tetrahedral
-  * octahedral
-  * icosahedral
+PolySymmetrica turns a polyhedron into a reusable placement surface:
 
-* **Derived solids through duality**
+- `place_on_faces(...)` runs child geometry once per face;
+- `place_on_edges(...)` runs child geometry once per edge;
+- `place_on_vertices(...)` runs child geometry once per vertex.
 
-  * cube (dual of octahedron)
-  * dodecahedron (dual of icosahedron)
+Inside those child modules, `$ps_*` values describe the current site: local
+axes, lengths, radii, source indices, family ids, neighbouring faces, and other
+context. That lets a child module size and orient itself from the polyhedron
+instead of from hand-coded rotations.
 
-* **Generic placement operators**
-  Attach arbitrary geometry to:
+## First Taste
 
-  * faces
-  * edges
-  * vertices
-
-* **Automatic scaling using inter-radius**
-  Ensures consistent geometry across derived solids.
-
-* **Fully combinatorial dual operator**
-  Works for any convex polyhedron defined in the system.
-
-* **Contextual `$ps_*` variables**
-  Child modules automatically receive local coordinate frames and geometry metadata.
-
----
-
-## 🔶 Quick Start
+Create an OpenSCAD file in the repository root:
 
 ```scad
-use <polysymmetrica/core/placement.scad>
-use <polysymmetrica/models/octahedron.scad>
+use <src/polysymmetrica/core/placement.scad>
+use <src/polysymmetrica/core/render.scad>
+use <src/polysymmetrica/core/truncation.scad>
+use <src/polysymmetrica/models/platonics_all.scad>
 
-place_on_faces(octahedron(), 30)
-    circle(r = $ps_face_radius, $fn = 3);
+p = poly_truncate(dodecahedron());
+
+color("lightsteelblue")
+    poly_render(p, inter_radius = 35);
+
+color("gold")
+    place_on_vertices(p, inter_radius = 35)
+        sphere(1.6, $fn = 16);
 ```
 
-Attach geometry to edges:
+This builds a truncated dodecahedron, renders its faces, and places a small
+sphere on every vertex using the vertex-local placement context.
 
-```scad
-use <polysymmetrica/core/placement.scad>
-use <polysymmetrica/models/icosahedron.scad>
+## What You Can Build With
 
-place_on_edges(icosahedron(), 40)
-    cube([$ps_edge_len, 5, 1], center = true);
-```
+**Named models**
 
-Create dual polyhedra:
+Platonic solids, Archimedean and Catalan families, selected Johnson solids,
+prisms, antiprisms, and polygram variants.
 
-```scad
-dual_dodeca = poly_dual(icosahedron());
-place_on_edges(dual_dodeca, 40)
-    cube([$ps_edge_len, 1, 1], center = true);
-```
+**Transforms**
 
----
+Duals, truncation, rectification, chamfering, cantellation, cantitruncation,
+snub construction, and construction operations such as delete/cap/slice/attach.
 
-## 🔶 Directory Structure
+**Placement**
 
-```
-src/polysymmetrica/
-    core/        # math, placement, duals, truncation
-    models/      # tetra, octa, icosa…
-    examples/    # 3D printable frames
-docs/
-    developer_guide.md
-```
+Face, edge, and vertex placement with stable local frames and site metadata.
+This is the main route for decorative surfaces, frames, labels, sockets, and
+custom repeated geometry.
 
----
+**Classification and profiles**
 
-## 🔶 Documentation
+Faces, edges, and vertices can be grouped into families. Those families can
+drive placement, structured parameter profiles, and transform behavior.
 
-See:
-📄 **[Developer Guide](docs/developer_guide.md)**
-for a full explanation of:
+**Advanced face analysis**
 
-* polyhedral descriptors
-* placement operators
-* dual construction
-* scaling system
-* extending with new solids
+Self-crossing and non-convex faces can be split, inspected, and used in more
+specialized face-region and proxy-interaction workflows.
 
----
+## Examples To Open
 
-## 🔶 Roadmap
+Start here:
 
-* Stellation framework
-* Compound construction
-* More examples and printable models
+- `src/polysymmetrica/examples/basics/main_basics.scad`
+- `src/polysymmetrica/examples/basics/main_prisms.scad`
+- `src/polysymmetrica/examples/basics/main_attach.scad`
+- `src/polysymmetrica/examples/truncation/main_transforms_all.scad`
+- `src/polysymmetrica/examples/classify/main_classify.scad`
 
----
+More advanced demos live under:
 
-## 🔶 License
+- `src/polysymmetrica/examples/segments/`
+- `src/polysymmetrica/examples/printing/`
+- `src/polysymmetrica/examples/poly-frame/`
 
-MIT — permissive and open for community use.
+## Documentation
 
----
+Current guides and notes:
 
+- [Developer guide](docs/developer_guide.md)
+- [Construction helpers](docs/construction.md)
+- [Face attachment](docs/attach.md)
+- [Prisms and antiprisms](docs/prisms.md)
+- [Profile rows](docs/profile.md)
+- [Cantellation](docs/cantellation.md)
+- [Cantitruncation](docs/cantitruncation.md)
+- [Snubs](docs/snubs.md)
+
+Advanced design notes:
+
+- [Placement data model](docs/placement_data_model.md)
+- [Face segments](docs/segments.md)
+- [Face regions](docs/face_regions.md)
+- [Face arrangement](docs/face_arrangement.md)
+- [Proxy interaction](docs/proxy_interaction.md)
+
+## License
+
+PolySymmetrica is released under the MIT license.
