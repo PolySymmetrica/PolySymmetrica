@@ -51,7 +51,7 @@ p = poly_truncate(dodecahedron());
 
 color("lightsteelblue")
     place_on_faces(p, inter_radius = 35)
-        linear_extrude(1) offset(-1.5) polygon($ps_face_pts2d);
+        linear_extrude(1) polygon($ps_face_pts2d);
 
 color("gold")
     place_on_vertices(p, inter_radius = 35)
