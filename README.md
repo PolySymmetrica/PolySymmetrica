@@ -1,3 +1,5 @@
+[![Run Tests under OpenSCAD](https://github.com/susanw1/PolySymmetrica/actions/workflows/run_tests.yml/badge.svg)](https://github.com/susanw1/PolySymmetrica/actions/workflows/run_tests.yml)
+
 # PolySymmetrica
 
 PolySymmetrica is a polyhedral modelling library for OpenSCAD.
@@ -47,15 +49,22 @@ use <src/polysymmetrica/models/platonics_all.scad>
 p = poly_truncate(dodecahedron());
 
 color("lightsteelblue")
-    poly_render(p, inter_radius = 35);
+    place_on_faces(p, inter_radius = 35)
+        linear_extrude(1) offset(-1.5) polygon($ps_face_pts2d);
 
 color("gold")
     place_on_vertices(p, inter_radius = 35)
         sphere(1.6, $fn = 16);
+
+color("silver")
+    place_on_edges(p, inter_radius = 35)
+        cube([$ps_edge_len, 1, 1], center = true);
+
 ```
 
-This builds a truncated dodecahedron, renders its faces, and places a small
-sphere on every vertex using the vertex-local placement context.
+This builds a truncated dodecahedron: it renders a polygon on each face, places a small
+sphere on every vertex using the vertex-local placement context, and puts a silver bar on
+each edge.
 
 ## What You Can Build With
 
