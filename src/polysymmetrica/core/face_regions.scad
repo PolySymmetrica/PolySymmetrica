@@ -178,7 +178,7 @@ function _ps_fr_loop_exposure_sign(loop_sites, input_sign, cell_winding_signs) =
     let(
         signs = [for (site = loop_sites) _ps_fr_span_exposure_sign(site, input_sign, cell_winding_signs)],
         first = len(signs) == 0 ? 0 : signs[0],
-        mixed_count = ps_sum([for (sign = signs) sign == first ? 0 : 1]),
+        mixed_count = len([for (sign = signs) if (sign != first) 1]),
         _has_sites = assert(len(signs) > 0, "ps_face_region_loop_shells: boundary loop has no sites"),
         _consistent = assert(mixed_count == 0, "ps_face_region_loop_shells: boundary loop mixes exposure signs")
     )

@@ -908,9 +908,9 @@ function _ps_edges_from_faces(faces) =
         uniq_edges = [
             for (i = [0 : len(raw_edges)-1])
                 let(ei = raw_edges[i])
-                    if (ps_sum([
+                    if (len([
                             for (j = [0 : 1 : i-1])
-                                ps_edge_equal(raw_edges[j], ei) ? 1 : 0
+                                if (ps_edge_equal(raw_edges[j], ei)) 1
                         ]) == 0) ei
         ]
     )
@@ -938,13 +938,13 @@ function ps_edge_faces_table(faces, edges) =
  * Returns: boolean
  */
 function ps_face_has_edge(f, a, b) =
-    ps_sum([
+    len([
         for (k = [0 : len(f)-1])
             let(
                 x = f[k],
                 y = f[(k+1) % len(f)]
             )
-            ((x==a && y==b) || (x==b && y==a)) ? 1 : 0
+            if ((x==a && y==b) || (x==b && y==a)) 1
     ]) > 0;
 
 /**
@@ -957,7 +957,7 @@ function ps_vertex_incident_faces(poly, vi) =
     [
         for (fi = [0 : len(faces)-1])
             let(f = faces[fi])
-            if (ps_sum([for (k = [0 : len(f)-1]) f[k] == vi ? 1 : 0]) > 0) fi
+            if (len([for (k = [0 : len(f)-1]) if (f[k] == vi) 1]) > 0) fi
     ];
 
 /**

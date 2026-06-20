@@ -210,10 +210,10 @@ function ps_loop_shell_from_projected_lines(
     let(
         bottom = ps_loop_shell_projected_loop(bottom_lines, eps),
         top = ps_loop_shell_projected_loop(top_lines, eps),
-        capped_count = ps_sum(concat(
-            [for (line = bottom_lines) (len(line) > 2 && line[2]) ? 1 : 0],
-            [for (line = top_lines) (len(line) > 2 && line[2]) ? 1 : 0]
-        ))
+        capped_count = len([
+            for (line = concat(bottom_lines, top_lines))
+                if (len(line) > 2 && line[2]) 1
+        ])
     )
     ps_loop_shell_from_loops(bottom, top, z0, z1, source_kind, source_idx, lineage, capped_count, exposure_sign, eps);
 
