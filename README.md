@@ -39,13 +39,12 @@ instead of from hand-coded rotations.
 
 ## First Taste
 
-Create an OpenSCAD file in the repository root:
+With `polysymmetrica/` available on OpenSCAD's library path, try:
 
 ```scad
-use <src/polysymmetrica/core/placement.scad>
-use <src/polysymmetrica/core/render.scad>
-use <src/polysymmetrica/core/truncation.scad>
-use <src/polysymmetrica/models/platonics_all.scad>
+use <polysymmetrica/core/placement.scad>
+use <polysymmetrica/core/truncation.scad>
+use <polysymmetrica/models/platonics_all.scad>
 
 p = poly_truncate(dodecahedron());
 
@@ -60,12 +59,11 @@ color("gold")
 color("silver")
     place_on_edges(p, inter_radius = 35)
         cube([$ps_edge_len, 1, 1], center = true);
-
 ```
 
 This builds a truncated dodecahedron: it renders a polygon on each face, places a small
 sphere on every vertex using the vertex-local placement context, and puts a silver bar on
-each edge.
+each edge. See [Getting started](docs/getting_started.md) for checkout and project setup.
 
 ## What You Can Build With
 
@@ -115,6 +113,7 @@ More advanced demos live under:
 
 Current guides and notes:
 
+- [Getting started](docs/getting_started.md)
 - [Developer guide](docs/developer_guide.md)
 - [Construction helpers](docs/construction.md)
 - [Face attachment](docs/attach.md)
