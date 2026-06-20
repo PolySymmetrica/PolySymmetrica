@@ -65,6 +65,10 @@ This builds a truncated dodecahedron: it renders a polygon on each face, places 
 sphere on every vertex using the vertex-local placement context, and puts a silver bar on
 each edge. See [Getting started](docs/getting_started.md) for checkout and project setup.
 
+![Truncated dodecahedron with face, edge, and vertex placements](docs/images/generated/first_taste.png)
+
+Source: [`docs/examples/first_taste.scad`](docs/examples/first_taste.scad)
+
 ## What You Can Build With
 
 **Named models**
@@ -114,6 +118,7 @@ More advanced demos live under:
 Current guides and notes:
 
 - [Getting started](docs/getting_started.md)
+- [Documentation images](docs/images.md)
 - [Developer guide](docs/developer_guide.md)
 - [Construction helpers](docs/construction.md)
 - [Face attachment](docs/attach.md)
