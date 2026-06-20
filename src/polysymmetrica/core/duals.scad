@@ -122,11 +122,11 @@ function ps_face_family_list(poly) =
         uniq = [
             for (i = [0:len(sizes)-1])
                 let(k = sizes[i])
-                    if (ps_sum([ for (j = [0:1:i-1]) sizes[j] == k ? 1 : 0 ]) == 0) k
+                    if (len([for (j = [0:1:i-1]) if (sizes[j] == k) 1]) == 0) k
         ],
         ks = sort(uniq)
     )
-    [ for (k = ks) [k, ps_sum([ for (s = sizes) s == k ? 1 : 0 ])] ];
+    [ for (k = ks) [k, len([for (s = sizes) if (s == k) 1])] ];
 
 // Return [k, count] for the face size that appears most frequently.
 // Ties are resolved by choosing the smallest k.
@@ -137,9 +137,9 @@ function ps_face_family_mode(poly) =
         uniq = [
             for (i = [0:len(sizes)-1])
                 let(k = sizes[i])
-                    if (ps_sum([ for (j = [0:1:i-1]) sizes[j] == k ? 1 : 0 ]) == 0) k
+                    if (len([for (j = [0:1:i-1]) if (sizes[j] == k) 1]) == 0) k
         ],
-        counts = [ for (k = uniq) ps_sum([ for (s = sizes) s == k ? 1 : 0 ]) ],
+        counts = [ for (k = uniq) len([for (s = sizes) if (s == k) 1]) ],
         max_count = max(counts),
         best = [
             for (i = [0:len(uniq)-1])
@@ -155,7 +155,7 @@ function ps_face_family_max(poly) =
         faces = poly_faces(poly),
         sizes = [ for (f = faces) len(f) ],
         k = max(sizes),
-        count = ps_sum([ for (s = sizes) s == k ? 1 : 0 ])
+        count = len([for (s = sizes) if (s == k) 1])
     )
     [k, count];
 
@@ -164,10 +164,7 @@ function ps_face_family_max(poly) =
 function _ps_vertex_valence_list(verts, edges) =
     [
         for (vi = [0:len(verts)-1])
-            ps_sum([
-                for (e = edges)
-                    (e[0] == vi || e[1] == vi) ? 1 : 0
-            ])
+            len([for (e = edges) if (e[0] == vi || e[1] == vi) 1])
     ];
 
 function _ps_edge_signature_full(edges, faces, edge_faces, valences, ei) =

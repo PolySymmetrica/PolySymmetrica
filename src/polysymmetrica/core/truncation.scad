@@ -172,7 +172,7 @@ function _ps_poly_area_abs_2d(pts2d) =
 function _ps_poly_area_abs_2d_valid(pts2d) =
     let(
         n = is_undef(pts2d) ? 0 : len(pts2d),
-        ok = (n >= 3) && (ps_sum([for (p = pts2d) is_undef(p) ? 1 : 0]) == 0)
+        ok = (n >= 3) && (len([for (p = pts2d) if (is_undef(p)) 1]) == 0)
     )
     ok ? _ps_poly_area_abs_2d(pts2d) : undef;
 

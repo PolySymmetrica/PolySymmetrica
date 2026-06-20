@@ -52,7 +52,7 @@ function _ps_edge_len(verts, e) =
 function _ps_unique_keys(keys) =
     [
         for (i = [0:1:len(keys)-1])
-            if (ps_sum([for (j = [0:1:i-1]) keys[j] == keys[i] ? 1 : 0]) == 0)
+            if (len([for (j = [0:1:i-1]) if (keys[j] == keys[i]) 1]) == 0)
                 keys[i]
     ];
 
@@ -301,7 +301,7 @@ function _ps_vert_keys_from(verts, faces, edges, edge_faces, detail, eps) =
     let(
         valences = [
             for (vi = [0:1:len(verts)-1])
-                ps_sum([for (e = edges) (e[0] == vi || e[1] == vi) ? 1 : 0])
+                len([for (e = edges) if (e[0] == vi || e[1] == vi) 1])
         ]
     )
     [

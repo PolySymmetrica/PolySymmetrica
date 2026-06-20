@@ -612,10 +612,10 @@ function ps_face_foreign_proxy_replay_sites(face_pts2d, face_idx, ctx, eps=1e-8,
  * Returns: boolean
  */
 function _ps_faces_share_source_edge(face_a, face_b) =
-    ps_sum([
+    len([
         for (i = [0:1:len(face_a)-1])
             let(a = face_a[i], b = face_a[(i + 1) % len(face_a)])
-            ps_face_has_edge(face_b, a, b) ? 1 : 0
+            if (ps_face_has_edge(face_b, a, b)) 1
     ]) > 0;
 
 /**
