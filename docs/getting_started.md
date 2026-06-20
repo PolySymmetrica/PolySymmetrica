@@ -151,6 +151,7 @@ Common examples:
 
 ## Where To Go Next
 
+- Work through the [tutorials](tutorials/index.md) for small runnable lessons.
 - Open `src/polysymmetrica/examples/basics/main_basics.scad` for the broadest
   first demo.
 - Read [prisms and antiprisms](prisms.md) for prism/polygram constructors.

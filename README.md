@@ -118,6 +118,7 @@ More advanced demos live under:
 Current guides and notes:
 
 - [Getting started](docs/getting_started.md)
+- [Tutorials](docs/tutorials/index.md)
 - [Documentation images](docs/images.md)
 - [Developer guide](docs/developer_guide.md)
 - [Construction helpers](docs/construction.md)
