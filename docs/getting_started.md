@@ -76,6 +76,11 @@ scripts prefer a project-local setup or a command-scoped `OPENSCADPATH`.
 
 ## First Model
 
+The full runnable source for this example is
+[`docs/examples/first_taste.scad`](examples/first_taste.scad).
+
+![Truncated dodecahedron with face, edge, and vertex placements](images/generated/first_taste.png)
+
 Create `first.scad` in the repository root:
 
 ```scad
