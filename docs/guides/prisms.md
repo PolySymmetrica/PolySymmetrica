@@ -55,19 +55,19 @@ If that radicand is negative, the requested `(n, edge, angle)` is infeasible and
 ## Usage examples
 
 ```scad
-use <src/polysymmetrica/core/prisms.scad>
-use <src/polysymmetrica/examples/truncation/util_demo.scad>
+use <polysymmetrica/core/prisms.scad>
 
-demo(poly_prism(6));                         // regular hexagonal prism
-demo(poly_prism(5, height=0.8));             // explicit height
-demo(poly_prism(5, p=2));                    // pentagrammic prism {5/2}
-demo(poly_prism(7, p=4));                    // retrograde heptagrammic prism {7/4}
-demo(poly_prism(6, p=2));                    // compound: two triangular prisms
-demo(poly_antiprism(5));                     // regular pentagonal antiprism
-demo(poly_antiprism(5, angle=8));            // extra twist
-demo(poly_antiprism(6, height=1.0));         // explicit antiprism height
-demo(poly_antiprism(5, p=2));                // pentagrammic antiprism {5/2}
-demo(poly_antiprism(7, p=4));                // retrograde heptagrammic antiprism {7/4}
+p0 = poly_prism(6);                  // regular hexagonal prism
+p1 = poly_prism(5, height = 0.8);    // explicit height
+p2 = poly_prism(5, p = 2);           // pentagrammic prism {5/2}
+p3 = poly_prism(7, p = 4);           // retrograde heptagrammic prism {7/4}
+p4 = poly_prism(6, p = 2);           // compound: two triangular prisms
+
+ap0 = poly_antiprism(5);                  // regular pentagonal antiprism
+ap1 = poly_antiprism(5, angle = 8);       // extra twist
+ap2 = poly_antiprism(6, height = 1.0);    // explicit antiprism height
+ap3 = poly_antiprism(5, p = 2);           // pentagrammic antiprism {5/2}
+ap4 = poly_antiprism(7, p = 4);           // retrograde heptagrammic antiprism {7/4}
 ```
 
 Example scene:

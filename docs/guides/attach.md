@@ -56,8 +56,8 @@ poly_attach(
 Basic usage:
 
 ```scad
-use <../src/polysymmetrica/core/construction.scad>
-use <../src/polysymmetrica/models/platonics_all.scad>
+use <polysymmetrica/core/construction.scad>
+use <polysymmetrica/models/platonics_all.scad>
 
 q = poly_attach(hexahedron(), hexahedron(), f1=0, f2=0);
 ```
