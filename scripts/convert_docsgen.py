@@ -44,11 +44,28 @@ def split_top_level(text: str) -> list[str]:
     bracket_depth = 0
     brace_depth = 0
     in_backticks = False
+    in_single_quote = False
+    in_double_quote = False
+    escaped = False
 
     for ch in text:
-        if ch == "`":
+        if escaped:
+            current.append(ch)
+            escaped = False
+            continue
+
+        if (in_single_quote or in_double_quote) and ch == "\\":
+            current.append(ch)
+            escaped = True
+            continue
+
+        if not in_single_quote and not in_double_quote and ch == "`":
             in_backticks = not in_backticks
-        elif not in_backticks:
+        elif not in_backticks and ch == "'" and not in_double_quote:
+            in_single_quote = not in_single_quote
+        elif not in_backticks and ch == '"' and not in_single_quote:
+            in_double_quote = not in_double_quote
+        elif not in_backticks and not in_single_quote and not in_double_quote:
             if ch == "(":
                 paren_depth += 1
             elif ch == ")" and paren_depth > 0:
@@ -93,9 +110,11 @@ def parse_doc_block(block_text: str) -> DocBlock | None:
             if current_key:
                 fields.setdefault(current_key, []).append("")
             continue
-        match = re.match(r"^(Function|Module|Params|Returns|Limitations/Gotchas):\s*(.*)$", line)
+        match = re.match(r"^(Function|Module|Params|Returns|Limitations/Gotchas|Limitations):\s*(.*)$", line)
         if match:
             current_key = match.group(1)
+            if current_key == "Limitations":
+                current_key = "Limitations/Gotchas"
             fields.setdefault(current_key, []).append(match.group(2).strip())
         elif current_key:
             fields.setdefault(current_key, []).append(line)
@@ -176,7 +195,12 @@ def parse_param_items(params_text: str | None) -> list[tuple[str, str]]:
             name = item.strip()
             desc = ""
         if name:
-            items.append((name, desc))
+            split_names = [part.strip() for part in re.split(r"\s*/\s*", name) if part.strip()]
+            if split_names:
+                for split_name in split_names:
+                    items.append((split_name, desc))
+            else:
+                items.append((name, desc))
     return items
 
 
@@ -200,10 +224,10 @@ def render_docsgen_block(doc: DocBlock, decl: Declaration) -> str:
     lines.append(f"//   {doc.summary}")
     if doc.returns:
         lines.append("//   .")
-        lines.append(f"//   Returns: {doc.returns}")
+        lines.append(f"//   - Returns: {doc.returns}")
     for limitation in doc.limitations:
         lines.append("//   .")
-        lines.append(f"//   Limitations/Gotchas: {limitation}")
+        lines.append(f"//   - Limitations/Gotchas: {limitation}")
 
     param_items = parse_param_items(doc.params)
     if param_items:
