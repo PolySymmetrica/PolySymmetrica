@@ -13,10 +13,10 @@ and move feature-specific design notes to `docs/`.
   `src/tests/negative/`.
 - `docs/`: design notes and API explanations. Start with:
   - `docs/developer_guide.md`
-  - `docs/placement_data_model.md`
-  - `docs/segments.md`
-  - `docs/face_regions.md`
-  - `docs/proxy_interaction.md`
+  - `docs/reference/placement_data_model.md`
+  - `docs/design/segments.md`
+  - `docs/design/face_regions.md`
+  - `docs/design/proxy_interaction.md`
   - `docs/construction.md`
 
 ## Commands
@@ -62,7 +62,7 @@ the repo root. Do not commit `.tmp/` artifacts.
 - Orientation follows OpenSCAD LHR: faces are clockwise when viewed from
   outside. `ps_face_normal(...)` and `poly_face_ez(...)` follow this convention.
 - Placement metadata uses `$ps_*` variables. Keep names stable and document new
-  public metadata in `docs/placement_data_model.md`.
+  public metadata in `docs/reference/placement_data_model.md`.
 - In proxy replay, child modules run in the replayed foreign element context;
   use `$ps_proxy_target_face_idx` when filtering geometry that must not include
   the original face being cut.
@@ -95,13 +95,13 @@ the repo root. Do not commit `.tmp/` artifacts.
 ## Documentation Map
 
 - Placement frames, `$ps_*` metadata, site records:
-  `docs/placement_data_model.md`
+  `docs/reference/placement_data_model.md`
 - Self-crossing faces, boundary spans, seam segments:
-  `docs/segments.md` and `docs/face_arrangement.md`
+  `docs/design/segments.md` and `docs/design/face_arrangement.md`
 - Positive face volumes and anti-interference shells:
-  `docs/face_regions.md`
+  `docs/design/face_regions.md`
 - Foreign proxy replay and punch-through handling:
-  `docs/proxy_interaction.md`
+  `docs/design/proxy_interaction.md`
 - Construction, attach, slice, cap, Johnson helpers:
   `docs/construction.md`
 - Prisms, antiprisms, snubs, cantellation/cantitruncation:

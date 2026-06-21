@@ -30,11 +30,11 @@ documentation structure for the release documentation work tracked by #25.
 
 | Path | Current role | Proposed role |
 | --- | --- | --- |
-| `docs/face_arrangement.md` | Proposed arrangement/boundary model design | Design note |
-| `docs/face_regions.md` | Face-region and shell internals | Design note with API companion links |
-| `docs/placement_data_model.md` | Placement and record model reference | Design/reference note |
-| `docs/proxy_interaction.md` | Proxy replay and punch-through design | Design note |
-| `docs/segments.md` | Face segmentation APIs and internals | Design note plus API companion |
+| `docs/design/face_arrangement.md` | Proposed arrangement/boundary model design | Design note |
+| `docs/design/face_regions.md` | Face-region and shell internals | Design note with API companion links |
+| `docs/reference/placement_data_model.md` | Placement and record model reference, including `$ps_*` variables | Reference note |
+| `docs/design/proxy_interaction.md` | Proxy replay and punch-through design | Design note |
+| `docs/design/segments.md` | Face segmentation APIs and internals | Design note plus API companion |
 
 ### Examples
 
@@ -54,7 +54,8 @@ They fall into these groups:
 
 ### Images
 
-There are currently 6 image assets in `docs/images/`.
+There are currently 9 image assets in `docs/images/`, including generated
+tutorial and getting-started renders.
 
 The docs should distinguish:
 
@@ -73,7 +74,7 @@ README.md
 docs/
     getting_started.md
     documentation_inventory.md
-    tutorial/
+    tutorials/
         01_models.md
         02_placement.md
         03_classification.md
@@ -90,13 +91,14 @@ docs/
         prisms.md
         profile.md
         snubs.md
+    reference/
+        placement_data_model.md
     api/
         index.md
         ...
     design/
         face_arrangement.md
         face_regions.md
-        placement_data_model.md
         proxy_interaction.md
         segments.md
     images/
@@ -152,8 +154,8 @@ These are good follow-up checks for #186, #187, #190, or #193:
   public concept is now `profile`.
 - `docs/snubs.md` has one example assigning `profile=params`; that should be
   checked against current naming conventions.
-- `docs/face_arrangement.md` is explicitly proposal-oriented and should stay in
-  `docs/design/` unless or until those APIs are fully public.
+- `docs/design/face_arrangement.md` is explicitly proposal-oriented and should
+  stay in `docs/design/` unless or until those APIs are fully public.
 - `docs/images/` contains useful existing renders, but their source examples
   and render commands are not documented yet.
 

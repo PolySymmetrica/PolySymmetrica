@@ -129,13 +129,13 @@ Current guides and notes:
 - [Cantitruncation](docs/cantitruncation.md)
 - [Snubs](docs/snubs.md)
 
-Advanced design notes:
+Reference and design notes:
 
-- [Placement data model](docs/placement_data_model.md)
-- [Face segments](docs/segments.md)
-- [Face regions](docs/face_regions.md)
-- [Face arrangement](docs/face_arrangement.md)
-- [Proxy interaction](docs/proxy_interaction.md)
+- [Placement data model](docs/reference/placement_data_model.md)
+- [Face segments](docs/design/segments.md)
+- [Face regions](docs/design/face_regions.md)
+- [Face arrangement](docs/design/face_arrangement.md)
+- [Proxy interaction](docs/design/proxy_interaction.md)
 
 ## License
 
