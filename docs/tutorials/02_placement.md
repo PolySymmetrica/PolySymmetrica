@@ -38,6 +38,8 @@ module inset_face_panel() {
             polygon(points = $ps_face_pts2d * 0.75);
 }
 ```
+Normally, the list of points in `$ps_face_pts2d` would exactly fit the face location, but multiplying it by 0.75 shrinks it,
+as shown.
 
 The edge child uses `$ps_edge_len` so every bar fits its current edge:
 

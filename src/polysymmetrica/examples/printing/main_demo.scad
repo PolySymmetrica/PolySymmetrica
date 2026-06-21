@@ -226,28 +226,9 @@ module model_2(faces_to_print = undef) {
 
 
 //F = [2];
-*if (is_undef(F)) {
+if (is_undef(F)) {
     model_2();
 //    model_2_f(undef); // Shows body with faces too
 } else {
     model_2(F);
 }
-
-
-
-p = poly_truncate(dodecahedron());
-ir = 35;
-
-color("plum")
-    place_on_faces(p, inter_radius = ir)
-        linear_extrude(height = 1)
-            polygon(points = $ps_face_pts2d);
-
-color("silver")
-    place_on_edges(p, inter_radius = ir)
-        cube([$ps_edge_len, 1.5, 2], center = true);
-
-color("gold")
-    place_on_vertices(p, inter_radius = ir)
-        sphere(1.6, $fn = 16);
-                                                                                                                                                                                                                                    
