@@ -37,6 +37,11 @@ class Declaration:
     params: list[str]
 
 
+@dataclass
+class PlainBlock:
+    lines: list[str]
+
+
 def split_top_level(text: str) -> list[str]:
     items: list[str] = []
     current: list[str] = []
@@ -151,6 +156,20 @@ def parse_doc_block(block_text: str) -> DocBlock | None:
     )
 
 
+def parse_plain_block(block_text: str) -> PlainBlock | None:
+    raw_lines = block_text.splitlines()
+    lines: list[str] = []
+    for line in raw_lines:
+        stripped = line.strip()
+        if stripped.startswith("/**") or stripped == "*/":
+            continue
+        if stripped.startswith("*"):
+            stripped = stripped[1:].lstrip()
+        if stripped:
+            lines.append(stripped)
+    return PlainBlock(lines=lines) if lines else None
+
+
 def extract_declaration(source_text: str, start_index: int) -> Declaration | None:
     tail = source_text[start_index:]
     match = re.match(r"\s*(function|module)\s+([A-Za-z0-9_]+)\s*\(", tail)
@@ -179,6 +198,22 @@ def extract_declaration(source_text: str, start_index: int) -> Declaration | Non
     param_specs = split_top_level("".join(params_chars))
     param_names = [spec.split("=", 1)[0].strip() for spec in param_specs if spec.strip()]
     return Declaration(kind=decl_kind, name=name, params=param_names)
+
+
+def find_first_public_declaration(source_text: str) -> Declaration | None:
+    match = re.search(r"(?m)^\s*(function|module)\s+([A-Za-z0-9_]+)\s*\(", source_text)
+    if not match:
+        return None
+    return extract_declaration(source_text, match.start())
+
+
+def count_public_declarations(source_text: str) -> int:
+    return len(
+        re.findall(
+            r"(?m)^\s*(?:function|module)\s+([A-Za-z0-9_]+)\s*\(",
+            source_text,
+        )
+    )
 
 
 def parse_param_items(params_text: str | None) -> list[tuple[str, str]]:
@@ -247,6 +282,13 @@ def sanitize_source_chunk(text: str) -> str:
     )
 
 
+def inject_before_first_public_declaration(text: str, injected_block: str) -> str:
+    match = re.search(r"(?m)^(\s*(?:function|module)\s+[A-Za-z0-9_]+\s*\()", text)
+    if not match:
+        return injected_block + "\n" + text
+    return text[:match.start()] + injected_block + "\n" + text[match.start():]
+
+
 def should_keep_block(doc: DocBlock, decl: Declaration | None, visibility: str) -> bool:
     if decl is None:
         return False
@@ -264,22 +306,22 @@ def infer_import_path(rel_path: Path) -> str:
     return rel_path.as_posix()
 
 
-def build_file_header(rel_path: Path, visibility: str) -> str:
+def build_file_header(rel_path: Path, visibility: str, intro_lines: list[str] | None = None) -> str:
     basename = rel_path.name
     import_path = infer_import_path(rel_path)
     section_title = "Public API" if visibility == "public" else "Documented API"
-    return "\n".join(
-        [
-            f"// LibFile: {basename}",
-            f"//   Scratch docsgen conversion for `{import_path}`.",
-            "// FileSummary: Generated docsgen preview converted from in-source Javadoc comments.",
-            "// Includes:",
-            f"//   use <{import_path}>",
-            f"// Section: {section_title}",
-            "//   Generated automatically by scripts/convert_docsgen.py.",
-            "",
-        ]
-    )
+    body = intro_lines or [f"Scratch docsgen conversion for `{import_path}`."]
+    lines = [
+        f"// LibFile: {basename}",
+        *[f"//   {line}" for line in body],
+        "// FileSummary: Generated docsgen preview converted from in-source Javadoc comments.",
+        "// Includes:",
+        f"//   use <{import_path}>",
+        f"// Section: {section_title}",
+        "//   Generated automatically by scripts/convert_docsgen.py.",
+        "",
+    ]
+    return "\n".join(lines)
 
 
 def convert_source(source_path: Path, rel_path: Path, output_root: Path, visibility: str) -> Path:
@@ -290,22 +332,65 @@ def convert_source(source_path: Path, rel_path: Path, output_root: Path, visibil
     output_path = output_root.joinpath(*out_parts)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    pieces: list[str] = [build_file_header(rel_path, visibility)]
+    public_decl_count = count_public_declarations(source_text)
+    file_intro_lines: list[str] | None = None
+    first_plain_intro_lines: list[str] | None = None
+    plain_block_count = 0
+    emitted_public_doc = False
     last_index = 0
+    pieces: list[str] = []
+    header_written = False
 
     for match in re.finditer(r"/\*\*(.*?)\*/", source_text, flags=re.DOTALL):
         block_text = match.group(0)
         doc = parse_doc_block(block_text)
+        plain = parse_plain_block(block_text)
         decl = extract_declaration(source_text, match.end())
+        if plain:
+            plain_block_count += 1
+
+        if not header_written:
+            if plain and not decl:
+                first_plain_intro_lines = plain.lines
+                if public_decl_count != 1:
+                    file_intro_lines = plain.lines
+            pieces.append(build_file_header(rel_path, visibility, file_intro_lines))
+            header_written = True
 
         pieces.append(sanitize_source_chunk(source_text[last_index:match.start()]))
         if doc and should_keep_block(doc, decl, visibility):
             pieces.append(render_docsgen_block(doc, decl))
+            emitted_public_doc = True
+        elif plain and decl and not decl.name.startswith("_"):
+            inferred = DocBlock(
+                kind=decl.kind,
+                summary=" ".join(plain.lines),
+                params=None,
+                returns=None,
+                limitations=[],
+            )
+            pieces.append(render_docsgen_block(inferred, decl))
+            emitted_public_doc = True
         else:
             pieces.append(block_text)
         last_index = match.end()
 
-    pieces.append(sanitize_source_chunk(source_text[last_index:]))
+    if not header_written:
+        pieces.append(build_file_header(rel_path, visibility))
+    tail = sanitize_source_chunk(source_text[last_index:])
+    if public_decl_count == 1 and first_plain_intro_lines and plain_block_count == 1 and not emitted_public_doc:
+        decl = find_first_public_declaration(source_text)
+        if decl and not decl.name.startswith("_"):
+            inferred = DocBlock(
+                kind=decl.kind,
+                summary=" ".join(first_plain_intro_lines),
+                params=None,
+                returns=None,
+                limitations=[],
+            )
+            tail = inject_before_first_public_declaration(tail, render_docsgen_block(inferred, decl))
+            emitted_public_doc = True
+    pieces.append(tail)
     output_path.write_text("".join(pieces), encoding="utf-8")
     return output_path
 
