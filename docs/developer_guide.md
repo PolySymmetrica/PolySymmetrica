@@ -107,7 +107,7 @@ Related deep-dive notes:
 - [Profile](profile.md)
 - [Face attachment](attach.md)
 - [Construction helpers](construction.md)
-- [Placement data model](placement_data_model.md)
+- [Placement data model](reference/placement_data_model.md)
 
 ---
 
@@ -230,7 +230,8 @@ The contract is about **semantics**, not implementation details. Future helper
 functions such as site-record builders should preserve these meanings.
 
 For the underlying site records, frame helpers, target-local poly context, and
-proxy/replay records, see [placement_data_model.md](placement_data_model.md).
+proxy/replay records, see
+[placement_data_model.md](reference/placement_data_model.md).
 
 #### Common guarantees
 
@@ -314,7 +315,7 @@ These make the system extremely expressive.
 
 ### **3.6 Face Segment Notes**
 
-See [segments.md](segments.md) for the face-local analysis layer:
+See [segments.md](design/segments.md) for the face-local analysis layer:
 
 - `ps_face_arrangement(...)`
 - `ps_face_segments(...)`
@@ -358,19 +359,19 @@ target face-local frame and only exposes metadata. The main metadata vars are:
 - `$ps_replay_poly_verts_local`, `$ps_replay_poly_center_local`
 - `$ps_replay_intrusion_record`, `$ps_replay_intrusion_segment2d_local`, `$ps_replay_intrusion_dihedral`, `$ps_replay_intrusion_confidence`
 
-See [proxy_interaction.md](proxy_interaction.md) for the higher-level proxy
+See [proxy_interaction.md](design/proxy_interaction.md) for the higher-level proxy
 child contract. In short, `place_on_face_foreign_proxy_sites(...)` dispatches
 candidate foreign sites to child slots (`face`, `edge`, `vertex`) and exposes
 `$ps_proxy_*` metadata so caller-supplied closed proxy bodies can be replayed
 deliberately.
 
-See [face_regions.md](face_regions.md) for positive face-local volumes built
+See [face_regions.md](design/face_regions.md) for positive face-local volumes built
 from those boundary spans:
 
 - `ps_face_region_loop_shells(...)`
 - `ps_face_region_loop_volume(...)`
 
-See [face_arrangement.md](face_arrangement.md) for the planned next layer:
+See [face_arrangement.md](design/face_arrangement.md) for the planned next layer:
 
 - `ps_face_arrangement(...)`
 - `ps_face_boundary_model(...)`

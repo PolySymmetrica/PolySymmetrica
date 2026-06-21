@@ -158,5 +158,5 @@ Common examples:
 - Read [construction helpers](construction.md) for delete/cap/slice/attach.
 - Read [profile rows](profile.md) once you want family-specific transform
   parameters.
-- Read [placement data model](placement_data_model.md) for the full `$ps_*`
+- Read [placement data model](reference/placement_data_model.md) for the full `$ps_*`
   metadata contract.

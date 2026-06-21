@@ -139,7 +139,7 @@ bound the offset distance.
 This layer defines positive face-local admissible volumes. It deliberately does
 not include strip-prism "clearance" approximations around intrusion line
 segments. Real punch-through handling should use the proxy replay contract in
-`docs/proxy_interaction.md`, where caller-supplied face/edge/vertex proxy
+`proxy_interaction.md`, where caller-supplied face/edge/vertex proxy
 geometry is replayed and subtracted deliberately.
 
 ## Current Limits
