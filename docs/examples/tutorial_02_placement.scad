@@ -10,9 +10,9 @@ p = poly_truncate(hexahedron());
 ir = 32;
 
 module inset_face_panel() {
-    color("lightsteelblue")
+    color("plum")
         linear_extrude(height = 1.2)
-            polygon(points = [for (pt = $ps_face_pts2d) pt * 0.78]);
+            polygon(points = $ps_face_pts2d * 0.75);
 }
 
 module edge_bar() {

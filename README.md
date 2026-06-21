@@ -48,17 +48,17 @@ use <polysymmetrica/models/platonics_all.scad>
 
 p = poly_truncate(dodecahedron());
 
-color("lightsteelblue")
+color("plum")
     place_on_faces(p, inter_radius = 35)
         linear_extrude(1) polygon($ps_face_pts2d);
 
 color("gold")
     place_on_vertices(p, inter_radius = 35)
-        sphere(1.6, $fn = 16);
+        sphere(r = 1.6, $fn = 16);
 
 color("silver")
     place_on_edges(p, inter_radius = 35)
-        cube([$ps_edge_len, 1, 1], center = true);
+        cube([$ps_edge_len, 1.5, 1], center = true);
 ```
 
 This builds a truncated dodecahedron: it renders a polygon on each face, places a small

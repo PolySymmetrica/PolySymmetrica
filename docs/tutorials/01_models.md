@@ -12,9 +12,9 @@ module:
 
 ```scad
 translate([-72, 0, 0])
-    preview_poly(tetrahedron(), 24, "lightsteelblue");
+    preview_poly(tetrahedron(), 24, "plum");
 
-preview_poly(octahedron(), 24, "thistle");
+preview_poly(octahedron(), 24, "orange");
 
 translate([72, 0, 0])
     preview_poly(dodecahedron(), 24, "palegreen");
