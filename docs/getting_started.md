@@ -91,18 +91,18 @@ use <polysymmetrica/models/platonics_all.scad>
 p = poly_truncate(dodecahedron());
 ir = 35;
 
-color("lightsteelblue")
+color("plum")
     place_on_faces(p, inter_radius = ir)
         linear_extrude(height = 1)
             polygon(points = $ps_face_pts2d);
 
 color("silver")
     place_on_edges(p, inter_radius = ir)
-        cube([$ps_edge_len, 1, 1], center = true);
+        cube([$ps_edge_len, 1.5, 1], center = true);
 
 color("gold")
     place_on_vertices(p, inter_radius = ir)
-        sphere(1.6, $fn = 16);
+        sphere(r = 1.6, $fn = 16);
 ```
 
 Render it:
@@ -151,6 +151,7 @@ Common examples:
 
 ## Where To Go Next
 
+- Work through the [tutorials](tutorials/index.md) for small runnable lessons.
 - Open `src/polysymmetrica/examples/basics/main_basics.scad` for the broadest
   first demo.
 - Read [prisms and antiprisms](prisms.md) for prism/polygram constructors.

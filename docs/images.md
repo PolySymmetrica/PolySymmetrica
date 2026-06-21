@@ -28,6 +28,8 @@ Render one target with:
 scripts/render_docs_images.sh first_taste
 ```
 
+Available targets are listed by `scripts/render_docs_images.sh --help`.
+
 On a headless machine, wrap the command with `xvfb-run`:
 
 ```bash
