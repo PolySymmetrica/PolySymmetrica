@@ -116,4 +116,4 @@ p = poly_cantitruncate(base, t=0, c=0, profile=rows);
 poly_describe(p, detail=3); // shows max_plane_err per face
 ```
 
-See also `docs/profile.md` for the shared family-parameter schema used across operators.
+See also `profile.md` for the shared family-parameter schema used across operators.

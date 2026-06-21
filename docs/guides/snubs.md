@@ -35,7 +35,7 @@ ps_snub_default_profile(poly, handedness=1, eps=1e-9)
   - Internally mapped by `_ps_cantellate_df_from_c_linear(...)`.
   - If `c` is supplied and `de` is not, then `de` comes from `c`.
 - `handedness`: diagonal split/chirality selector (`>=0` vs `<0`).
-- `profile`: structured per-element overrides (see `docs/profile.md`).
+- `profile`: structured per-element overrides (see `profile.md`).
 
 Important fallback rules:
 
@@ -104,7 +104,7 @@ params = [
 q = poly_snub(p, profile=params);
 ```
 
-See full schema in `docs/profile.md`.
+See full schema in `profile.md`.
 
 ## Usage Examples
 
@@ -180,4 +180,3 @@ Snub behavior is currently pinned in `src/tests/core/TestTruncation.scad`, inclu
   - is edge face-pair ordering canonicalized?
 - Validate against tests before changing search granularity.
 - Prefer fixing objective correctness before tuning step counts.
-

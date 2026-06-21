@@ -18,13 +18,13 @@ documentation structure for the release documentation work tracked by #25.
 
 | Path | Current role | Proposed role |
 | --- | --- | --- |
-| `docs/attach.md` | Face attachment API note | User guide or API companion |
-| `docs/cantellation.md` | Cantellation implementation/use note | User guide for cantellation |
-| `docs/cantitruncation.md` | Cantitruncation implementation/use note | User guide for cantitruncation |
-| `docs/construction.md` | Construction helper notes | User guide plus API companion |
-| `docs/prisms.md` | Prism and antiprism notes | User guide |
-| `docs/profile.md` | Profile row schema | User guide plus API companion |
-| `docs/snubs.md` | Snub API, caveats, and usage | User guide |
+| `docs/guides/attach.md` | Face attachment API note | User guide or API companion |
+| `docs/guides/cantellation.md` | Cantellation implementation/use note | User guide for cantellation |
+| `docs/guides/cantitruncation.md` | Cantitruncation implementation/use note | User guide for cantitruncation |
+| `docs/guides/construction.md` | Construction helper notes | User guide plus API companion |
+| `docs/guides/prisms.md` | Prism and antiprism notes | User guide |
+| `docs/guides/profile.md` | Profile row schema | User guide plus API companion |
+| `docs/guides/snubs.md` | Snub API, caveats, and usage | User guide |
 
 ### Lower-Level Design Notes
 
@@ -152,7 +152,7 @@ These are good follow-up checks for #186, #187, #190, or #193:
   tree.
 - `docs/developer_guide.md` still uses "override" language in places where the
   public concept is now `profile`.
-- `docs/snubs.md` has one example assigning `profile=params`; that should be
+- `docs/guides/snubs.md` has one example assigning `profile=params`; that should be
   checked against current naming conventions.
 - `docs/design/face_arrangement.md` is explicitly proposal-oriented and should
   stay in `docs/design/` unless or until those APIs are fully public.

@@ -121,13 +121,13 @@ Current guides and notes:
 - [Tutorials](docs/tutorials/index.md)
 - [Documentation images](docs/images.md)
 - [Developer guide](docs/developer_guide.md)
-- [Construction helpers](docs/construction.md)
-- [Face attachment](docs/attach.md)
-- [Prisms and antiprisms](docs/prisms.md)
-- [Profile rows](docs/profile.md)
-- [Cantellation](docs/cantellation.md)
-- [Cantitruncation](docs/cantitruncation.md)
-- [Snubs](docs/snubs.md)
+- [Construction helpers](docs/guides/construction.md)
+- [Face attachment](docs/guides/attach.md)
+- [Prisms and antiprisms](docs/guides/prisms.md)
+- [Profile rows](docs/guides/profile.md)
+- [Cantellation](docs/guides/cantellation.md)
+- [Cantitruncation](docs/guides/cantitruncation.md)
+- [Snubs](docs/guides/snubs.md)
 
 Reference and design notes:
 
