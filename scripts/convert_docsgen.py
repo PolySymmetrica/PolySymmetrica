@@ -238,6 +238,15 @@ def render_docsgen_block(doc: DocBlock, decl: Declaration) -> str:
     return "\n".join(lines)
 
 
+def sanitize_source_chunk(text: str) -> str:
+    return re.sub(
+        r"^(\s*)//(\s*)([A-Z][A-Za-z0-9/& \-]*:)",
+        r"\1///\2\3",
+        text,
+        flags=re.MULTILINE,
+    )
+
+
 def should_keep_block(doc: DocBlock, decl: Declaration | None, visibility: str) -> bool:
     if decl is None:
         return False
@@ -289,14 +298,14 @@ def convert_source(source_path: Path, rel_path: Path, output_root: Path, visibil
         doc = parse_doc_block(block_text)
         decl = extract_declaration(source_text, match.end())
 
-        pieces.append(source_text[last_index:match.start()])
+        pieces.append(sanitize_source_chunk(source_text[last_index:match.start()]))
         if doc and should_keep_block(doc, decl, visibility):
             pieces.append(render_docsgen_block(doc, decl))
         else:
             pieces.append(block_text)
         last_index = match.end()
 
-    pieces.append(source_text[last_index:])
+    pieces.append(sanitize_source_chunk(source_text[last_index:]))
     output_path.write_text("".join(pieces), encoding="utf-8")
     return output_path
 
@@ -311,6 +320,27 @@ def run_docsgen(docsgen_bin: str, docs_out: Path, converted_paths: Iterable[Path
         *[str(path) for path in converted_paths],
     ]
     subprocess.run(cmd, check=True)
+
+
+def expand_source_paths(raw_paths: Iterable[str]) -> list[Path]:
+    expanded: list[Path] = []
+    seen: set[Path] = set()
+
+    for raw_path in raw_paths:
+        path = Path(raw_path).resolve()
+        candidates: list[Path]
+        if path.is_dir():
+            candidates = sorted(path.rglob("*.scad"))
+        else:
+            candidates = [path]
+
+        for candidate in candidates:
+            if candidate in seen:
+                continue
+            seen.add(candidate)
+            expanded.append(candidate)
+
+    return expanded
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -356,8 +386,7 @@ def main() -> int:
     args = parser.parse_args()
 
     converted_paths: list[Path] = []
-    for raw_path in args.paths:
-        source_path = Path(raw_path).resolve()
+    for source_path in expand_source_paths(args.paths):
         rel_path = source_path.relative_to(REPO_ROOT)
         converted_paths.append(
             convert_source(
