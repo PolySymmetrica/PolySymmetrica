@@ -17,7 +17,7 @@ and move feature-specific design notes to `docs/`.
   - `docs/design/segments.md`
   - `docs/design/face_regions.md`
   - `docs/design/proxy_interaction.md`
-  - `docs/construction.md`
+  - `docs/guides/construction.md`
 
 ## Commands
 
@@ -103,10 +103,11 @@ the repo root. Do not commit `.tmp/` artifacts.
 - Foreign proxy replay and punch-through handling:
   `docs/design/proxy_interaction.md`
 - Construction, attach, slice, cap, Johnson helpers:
-  `docs/construction.md`
+  `docs/guides/construction.md`
 - Prisms, antiprisms, snubs, cantellation/cantitruncation:
-  `docs/prisms.md`, `docs/snubs.md`, `docs/cantellation.md`,
-  `docs/cantitruncation.md`, and `docs/profile.md`
+  `docs/guides/prisms.md`, `docs/guides/snubs.md`,
+  `docs/guides/cantellation.md`, `docs/guides/cantitruncation.md`, and
+  `docs/guides/profile.md`
 
 ## Git And PRs
 

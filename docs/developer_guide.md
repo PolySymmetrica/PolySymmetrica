@@ -88,11 +88,14 @@ PolySymmetrica/
 │
 └─ docs/
     ├─ developer_guide.md
-    ├─ profile.md
-    ├─ cantitruncation.md
-    ├─ cantellation.md
-    ├─ snubs.md
-    ├─ attach.md
+    ├─ guides/
+    │   ├─ profile.md
+    │   ├─ cantitruncation.md
+    │   ├─ cantellation.md
+    │   ├─ snubs.md
+    │   └─ attach.md
+    ├─ design/
+    ├─ reference/
     └─ images/
 ```
 
@@ -100,13 +103,13 @@ Each module is deliberately small so that users can take only what they need.
 
 Related deep-dive notes:
 
-- [Cantellation notes](cantellation.md)
-- [Cantitruncation notes](cantitruncation.md)
-- [Snub notes](snubs.md)
-- [Prisms and antiprisms](prisms.md)
-- [Profile](profile.md)
-- [Face attachment](attach.md)
-- [Construction helpers](construction.md)
+- [Cantellation notes](guides/cantellation.md)
+- [Cantitruncation notes](guides/cantitruncation.md)
+- [Snub notes](guides/snubs.md)
+- [Prisms and antiprisms](guides/prisms.md)
+- [Profile](guides/profile.md)
+- [Face attachment](guides/attach.md)
+- [Construction helpers](guides/construction.md)
 - [Placement data model](reference/placement_data_model.md)
 
 ---
@@ -380,15 +383,15 @@ See [face_arrangement.md](design/face_arrangement.md) for the planned next layer
 
 ### **3.7 Cantitruncation Notes**
 
-See [cantitruncation.md](cantitruncation.md) for current parameterization, trig solver, and dominant‑family notes.
+See [cantitruncation.md](guides/cantitruncation.md) for current parameterization, trig solver, and dominant-family notes.
 
 ### **3.8 Cantellation Notes**
 
-See [cantellation.md](cantellation.md) for current parameterization, helpers, and planarity notes.
+See [cantellation.md](guides/cantellation.md) for current parameterization, helpers, and planarity notes.
 
 ### **3.9 Snub Notes**
 
-See [snubs.md](snubs.md) for snub usage, default solving, helper notes, and current caveats.
+See [snubs.md](guides/snubs.md) for snub usage, default solving, helper notes, and current caveats.
 
 ### **3.10 Shared Params Overrides**
 
@@ -413,7 +416,7 @@ and read in O(1) with:
 
 For schema details, compile-spec format, and examples, see:
 
-- [profile.md](profile.md)
+- [profile.md](guides/profile.md)
 - [`src/polysymmetrica/examples/basics/main_profile.scad`](../src/polysymmetrica/examples/basics/main_profile.scad)
 
 When using family-targeted overrides (`"family"` rows), keep classification context consistent (`detail`, `radius`, `include_geom`) across all stages; best practice is to classify once and reuse that object.
@@ -444,7 +447,7 @@ poly_attach(
 
 See:
 
-- [attach.md](attach.md)
+- [attach.md](guides/attach.md)
 - [`src/polysymmetrica/examples/basics/main_attach.scad`](../src/polysymmetrica/examples/basics/main_attach.scad)
 
 ### **3.12 Validation Modes**
@@ -677,8 +680,8 @@ Operator parameters follow their construction, so the sign may differ by operato
 
 * **Chamfer**: positive `t` offsets face planes **inward** (toward the poly center); negative `t` produces an anti‑chamfer.
 * **Cantellate/expand**: positive offsets typically push new edge/vertex features **outward** from the original poly.
-* **Cantitruncate**: `t` is a truncation-style edge fraction; `c` offsets face/edge planes by `±c * ir` (see [cantitruncation.md](cantitruncation.md)).
-* **Snub**: `angle` controls in-face twist, with `df/de/c` controlling offsets; defaults are solver-derived (see [snubs.md](snubs.md)).
+* **Cantitruncate**: `t` is a truncation-style edge fraction; `c` offsets face/edge planes by `±c * ir` (see [cantitruncation.md](guides/cantitruncation.md)).
+* **Snub**: `angle` controls in-face twist, with `df/de/c` controlling offsets; defaults are solver-derived (see [snubs.md](guides/snubs.md)).
 
 ### **6.4 Custom placement modes**
 
