@@ -1,3 +1,4 @@
 *.stl
 target/
 .tmp/
+scripts/__pycache__/

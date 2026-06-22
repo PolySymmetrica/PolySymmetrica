@@ -120,6 +120,7 @@ Current guides and notes:
 - [Getting started](docs/getting_started.md)
 - [Tutorials](docs/tutorials/index.md)
 - [Documentation images](docs/images.md)
+- [API reference](docs/api/index.md)
 - [Developer guide](docs/developer_guide.md)
 - [Construction helpers](docs/guides/construction.md)
 - [Face attachment](docs/guides/attach.md)

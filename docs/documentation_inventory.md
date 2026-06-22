@@ -95,7 +95,8 @@ docs/
         placement_data_model.md
     api/
         index.md
-        ...
+        core/
+        models/
     design/
         face_arrangement.md
         face_regions.md
@@ -167,3 +168,5 @@ These are good follow-up checks for #186, #187, #190, or #193:
 - Avoid generic promotional language; use concrete claims and real renders.
 - Link every committed docs image to its source or provenance.
 - Keep API reference generated or reproducibly extractable from source comments.
+- Keep generated API markdown out of the repo until the published-docs path is
+  stable; use a reproducible scratch build in the meantime.
