@@ -6,6 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 SCRATCH_ROOT="${API_SCRATCH_ROOT:-${REPO_ROOT}/target/docs-api}"
 CONVERTED_ROOT="${API_CONVERTED_ROOT:-${REPO_ROOT}/target/docsgen-src}"
+DOCS_OUT="${API_DOCS_OUT:-${REPO_ROOT}/target/docsgen-out}"
 
 usage() {
     cat <<EOF
@@ -19,6 +20,7 @@ trees (`core/` and `models/`) under:
 Environment:
   API_SCRATCH_ROOT    Override the publish-style preview root.
   API_CONVERTED_ROOT  Override the scratch docsgen source tree.
+  API_DOCS_OUT        Override the docsgen markdown output tree.
 EOF
 }
 
@@ -28,18 +30,41 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
 fi
 
 mkdir -p "${SCRATCH_ROOT}"
+mkdir -p "${DOCS_OUT}"
 
 "${REPO_ROOT}/scripts/convert_docsgen.py" \
     --run-docsgen \
     --output-root "${CONVERTED_ROOT}" \
+    --docs-out "${DOCS_OUT}" \
     src/polysymmetrica/core \
     src/polysymmetrica/models >/dev/null
 
 rm -rf "${SCRATCH_ROOT}/core" "${SCRATCH_ROOT}/models"
 mkdir -p "${SCRATCH_ROOT}/core" "${SCRATCH_ROOT}/models"
 
-cp "${CONVERTED_ROOT}/polysymmetrica/core/"*.md "${SCRATCH_ROOT}/core/"
-cp "${CONVERTED_ROOT}/polysymmetrica/models/"*.md "${SCRATCH_ROOT}/models/"
+copy_generated_markdown() {
+    local section="$1"
+    local output_dir="$2"
+    local -a docsgen_candidates=("${DOCS_OUT}/polysymmetrica/${section}"/*.md)
+    local -a converted_candidates=("${CONVERTED_ROOT}/polysymmetrica/${section}"/*.md)
+
+    shopt -s nullglob
+    docsgen_candidates=("${DOCS_OUT}/polysymmetrica/${section}"/*.md)
+    converted_candidates=("${CONVERTED_ROOT}/polysymmetrica/${section}"/*.md)
+    shopt -u nullglob
+
+    if ((${#docsgen_candidates[@]} > 0)); then
+        cp "${docsgen_candidates[@]}" "${output_dir}/"
+    elif ((${#converted_candidates[@]} > 0)); then
+        cp "${converted_candidates[@]}" "${output_dir}/"
+    else
+        echo "No generated markdown found for ${section} in ${DOCS_OUT} or ${CONVERTED_ROOT}" >&2
+        exit 1
+    fi
+}
+
+copy_generated_markdown core "${SCRATCH_ROOT}/core"
+copy_generated_markdown models "${SCRATCH_ROOT}/models"
 
 {
     cat <<'EOF'
