@@ -4,8 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-SCRATCH_ROOT="${API_SCRATCH_ROOT:-${REPO_ROOT}/.tmp/docs-api}"
-CONVERTED_ROOT="${API_CONVERTED_ROOT:-${REPO_ROOT}/.tmp/docsgen-src}"
+SCRATCH_ROOT="${API_SCRATCH_ROOT:-${REPO_ROOT}/target/docs-api}"
+CONVERTED_ROOT="${API_CONVERTED_ROOT:-${REPO_ROOT}/target/docsgen-src}"
 
 usage() {
     cat <<EOF

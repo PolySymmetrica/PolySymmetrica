@@ -21,7 +21,7 @@ scripts/build_api_reference.sh
 That builds a publish-style preview tree at:
 
 ```text
-.tmp/docs-api/
+target/docs-api/
     index.md
     core/
         index.md
