@@ -4,40 +4,92 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/models/johnsons_all.scad
+//   Johnson-solid preview constructors and collection helpers.
+
 use <../core/funcs.scad>
 use <../core/construction.scad>
 
-// *** WARNING! *** 
+// Warning.
 // These definitions are currently for experimentation only, to verify correct behaviour on non-uniform
 // shapes! One day we will have a complete list of all the johnsons, created with construction.
 // Even the names here are just placeholders.
 
-// J1: square pyramid.
+// Function: j1_square_pyramid()
+// Usage:
+//   result = j1_square_pyramid();
+// Description:
+//   Return the Johnson-solid preview for J1, the square pyramid.
 function j1_square_pyramid() =
     poly_pyramid(4);
 
-// J2: pentagonal pyramid.
+// Function: j2_pentagonal_pyramid()
+// Usage:
+//   result = j2_pentagonal_pyramid();
+// Description:
+//   Return the Johnson-solid preview for J2, the pentagonal pyramid.
 function j2_pentagonal_pyramid() =
     poly_pyramid(5);
 
-// J3/J4/J5: exact cupolae.
+// Function: j3_triangular_cupola()
+// Usage:
+//   result = j3_triangular_cupola();
+// Description:
+//   Return the Johnson-solid preview for J3, the triangular cupola.
 function j3_triangular_cupola() = poly_cupola(3);
+// Function: j4_square_cupola()
+// Usage:
+//   result = j4_square_cupola();
+// Description:
+//   Return the Johnson-solid preview for J4, the square cupola.
 function j4_square_cupola() = poly_cupola(4);
+// Function: j5_pentagonal_cupola()
+// Usage:
+//   result = j5_pentagonal_cupola();
+// Description:
+//   Return the Johnson-solid preview for J5, the pentagonal cupola.
 function j5_pentagonal_cupola() = poly_cupola(5);
 
-// J6: exact pentagonal rotunda.
+// Function: j6_pentagonal_rotunda()
+// Usage:
+//   result = j6_pentagonal_rotunda();
+// Description:
+//   Return the Johnson-solid preview for J6, the pentagonal rotunda.
 function j6_pentagonal_rotunda() = poly_rotunda();
 
-// J18/J19/J20: exact elongated cupolae via prism belts.
+// Function: j18_elongated_triangular_cupola()
+// Usage:
+//   result = j18_elongated_triangular_cupola();
+// Description:
+//   Return the Johnson-solid preview for J18, the elongated triangular cupola.
 function j18_elongated_triangular_cupola() = poly_elongate(j3_triangular_cupola(), f=0);
+// Function: j19_elongated_square_cupola()
+// Usage:
+//   result = j19_elongated_square_cupola();
+// Description:
+//   Return the Johnson-solid preview for J19, the elongated square cupola.
 function j19_elongated_square_cupola() = poly_elongate(j4_square_cupola(), f=0);
+// Function: j20_elongated_pentagonal_cupola()
+// Usage:
+//   result = j20_elongated_pentagonal_cupola();
+// Description:
+//   Return the Johnson-solid preview for J20, the elongated pentagonal cupola.
 function j20_elongated_pentagonal_cupola() = poly_elongate(j5_pentagonal_cupola(), f=0);
 
-// J22: exact gyroelongated triangular cupola via antiprism belt.
+// Function: j22_gyroelongated_triangular_cupola()
+// Usage:
+//   result = j22_gyroelongated_triangular_cupola();
+// Description:
+//   Return the Johnson-solid preview for J22, the gyroelongated triangular cupola.
 function j22_gyroelongated_triangular_cupola() = poly_gyroelongate(j3_triangular_cupola(), f=0);
 
-// J40: elongated pentagonal orthocupolarotunda (imported coords; preview-only).
-// Faces are reoriented outward for LHR compatibility.
+// Function: j40_elongated_pentagonal_orthocupolarotunda_approx()
+// Usage:
+//   result = j40_elongated_pentagonal_orthocupolarotunda_approx();
+// Description:
+//   Return a preview approximation of Johnson solid J40, the elongated
+//   pentagonal orthocupolarotunda, using imported coordinates reoriented
+//   outward for LHR compatibility.
 function j40_elongated_pentagonal_orthocupolarotunda_approx() =
     let(
         verts = [
@@ -120,12 +172,14 @@ function j40_elongated_pentagonal_orthocupolarotunda_approx() =
     )
     poly_make(verts, faces);
 
-/**
-Return current Johnson previews as [[name, fn], ...],
-where fn is a zero-arg function returning the poly.
-
-These are still a mixed set of exact constructors and approximate placeholders.
-*/
+// Function: johnsons_all()
+// Usage:
+//   result = johnsons_all();
+// Description:
+//   Return the current Johnson-solid preview registry as `[[name, fn], ...]`,
+//   where `fn` is a zero-argument function returning the corresponding poly
+//   descriptor. This list is currently a mixture of exact constructors and
+//   approximate placeholders.
 function johnsons_all() = [
     ["j1_square_pyramid", function() j1_square_pyramid()],
     ["j2_pentagonal_pyramid", function() j2_pentagonal_pyramid()],
