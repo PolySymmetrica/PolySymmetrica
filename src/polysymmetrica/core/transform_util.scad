@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/core/transform_util.scad
 // ---------------------------------------------------------------------------
 // PolySymmetrica - transform utilities
 // Shared helpers for transform-style operators.
@@ -11,8 +12,16 @@
 use <funcs.scad>
 use <cleanup.scad>
 
-// Shared transform finalizer.
-// Keeps fast path unchanged when cleanup=false.
+// Function: ps_finalize_poly()
+// Usage:
+//   result = ps_finalize_poly(poly, cleanup=false, cleanup_eps=1e-8);
+// Description:
+//   Finalize a transform result, optionally applying narrow cleanup while
+//   preserving the operator-computed `e_over_ir`.
+// Arguments:
+//   poly = transformed poly descriptor
+//   cleanup = whether to run cleanup
+//   cleanup_eps = cleanup tolerance
 function ps_finalize_poly(
     poly,
     cleanup=false,
@@ -31,8 +40,8 @@ function ps_finalize_poly(
                 remove_unreferenced=false
             )
         )
-        // Preserve the operator's e_over_ir descriptor to avoid
-        // re-scaling regressions when transformed meshes carry large coordinates.
+        // Preserve the operator's e_over_ir descriptor to avoid re-scaling
+        // regressions when transformed meshes carry large coordinates.
         poly_make(poly_verts(cleaned), poly_faces(cleaned), poly_e_over_ir(poly))
         : poly;
 

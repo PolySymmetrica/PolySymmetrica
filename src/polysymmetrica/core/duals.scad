@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/core/duals.scad
 use <funcs.scad>
 use <profile.scad>
 
@@ -35,9 +36,14 @@ function _ps_dual_unit_edge_and_e_over_ir(verts, faces) =
     [unit_e, e_over_ir];
 
 
-// Polar dual vertices from face planes.
-// verts: vertex positions (unit-edge OR world-space; doesn't matter as long as origin is inside)
-// faces: outward oriented faces
+// Function: ps_face_polar_verts()
+// Usage:
+//   result = ps_face_polar_verts(verts, faces);
+// Description:
+//   Build polar-dual vertices from outward face planes.
+// Arguments:
+//   verts = vertex positions in any consistent coordinate scale
+//   faces = outward-oriented face list
 function ps_face_polar_verts(verts, faces) =
     [
         for (fi = [0 : len(faces)-1])
@@ -51,9 +57,15 @@ function ps_face_polar_verts(verts, faces) =
     ];
 
 
-// Build polar dual in the *same world units* as the given verts/faces.
-// verts_world: already scaled positions (not unit-edge)
-// faces: oriented outward
+// Function: poly_dual_polar_vf()
+// Usage:
+//   result = poly_dual_polar_vf(verts, faces);
+// Description:
+//   Build raw polar-dual vertex and face lists in the same world-space units as
+//   the supplied geometry.
+// Arguments:
+//   verts = scaled vertex positions
+//   faces = outward-oriented face list
 function poly_dual_polar_vf(verts, faces) =
     let(
         dual_verts  = ps_face_polar_verts(verts, faces),
@@ -66,7 +78,13 @@ function poly_dual_polar_vf(verts, faces) =
 
 // ---- Edge midradius helpers ----
 
-// Return list of edge midpoint radii for a poly in its own coordinate system (unit-edge verts)
+// Function: ps_edge_midradius_list()
+// Usage:
+//   result = ps_edge_midradius_list(poly);
+// Description:
+//   Return edge-midpoint radii for a poly in its own coordinate system.
+// Arguments:
+//   poly = source poly descriptor
 function ps_edge_midradius_list(poly) =
     let(
         verts = poly_verts(poly),
@@ -82,13 +100,26 @@ function ps_edge_midradius_list(poly) =
     assert(len(rs) > 0, "ps_edge_midradius_list: poly has no edges")
     rs;
 
+// Function: ps_edge_midradius_stat()
+// Usage:
+//   result = ps_edge_midradius_stat(poly);
+// Description:
+//   Return the minimum edge-midpoint radius for a poly.
+// Arguments:
+//   poly = source poly descriptor
 function ps_edge_midradius_stat(poly) =
     let(rs = ps_edge_midradius_list(poly))
         min(rs);
 
 // ---- Face radius helpers ----
 
-// Mean vertex distance from face centroid for each face (unit-edge coords).
+// Function: ps_face_radius_list()
+// Usage:
+//   result = ps_face_radius_list(poly);
+// Description:
+//   Return the mean vertex distance from each face centroid.
+// Arguments:
+//   poly = source poly descriptor
 function ps_face_radius_list(poly) =
     let(
         verts = poly_verts(poly),
@@ -103,6 +134,14 @@ function ps_face_radius_list(poly) =
             ps_sum(rs) / len(rs)
     ];
 
+// Function: ps_face_radius_stat()
+// Usage:
+//   result = ps_face_radius_stat(poly, face_k=undef);
+// Description:
+//   Return the minimum face radius overall, or within one face arity.
+// Arguments:
+//   poly = source poly descriptor
+//   face_k = face arity filter
 function ps_face_radius_stat(poly, face_k=undef) =
     let(
         faces = poly_faces(poly),
@@ -116,7 +155,13 @@ function ps_face_radius_stat(poly, face_k=undef) =
 
 // ---- Face-family helpers ----
 
-// Return [[k, count], ...] for each face size k, sorted by k ascending.
+// Function: ps_face_family_list()
+// Usage:
+//   result = ps_face_family_list(poly);
+// Description:
+//   Summarize face families by arity.
+// Arguments:
+//   poly = source poly descriptor
 function ps_face_family_list(poly) =
     let(
         faces = poly_faces(poly),
@@ -130,8 +175,14 @@ function ps_face_family_list(poly) =
     )
     [ for (k = ks) [k, len([for (s = sizes) if (s == k) 1])] ];
 
-// Return [k, count] for the face size that appears most frequently.
-// Ties are resolved by choosing the smallest k.
+// Function: ps_face_family_mode()
+// Usage:
+//   result = ps_face_family_mode(poly);
+// Description:
+//   Return the most common face arity. Ties are resolved by choosing the
+//   smallest `k`.
+// Arguments:
+//   poly = source poly descriptor
 function ps_face_family_mode(poly) =
     let(
         faces = poly_faces(poly),
@@ -151,7 +202,13 @@ function ps_face_family_mode(poly) =
     )
     [k, max_count];
 
-// Return [k, count] for the largest face size.
+// Function: ps_face_family_max()
+// Usage:
+//   result = ps_face_family_max(poly);
+// Description:
+//   Return the largest face arity present on a poly.
+// Arguments:
+//   poly = source poly descriptor
 function ps_face_family_max(poly) =
     let(
         faces = poly_faces(poly),
@@ -182,7 +239,15 @@ function _ps_edge_signature_full(edges, faces, edge_faces, valences, ei) =
     )
     [ks[0], ks[1], vs[0], vs[1]];
 
-// Return edge index for an edge on face face_idx at edge_pos.
+// Function: ps_edge_from_face()
+// Usage:
+//   result = ps_edge_from_face(poly, face_idx, edge_pos);
+// Description:
+//   Return the global edge index for a face-local edge position.
+// Arguments:
+//   poly = source poly descriptor
+//   face_idx = face index
+//   edge_pos = edge position within that face
 function ps_edge_from_face(poly, face_idx, edge_pos) =
     let(
         faces = poly_faces(poly),
@@ -194,9 +259,20 @@ function ps_edge_from_face(poly, face_idx, edge_pos) =
     )
     ps_find_edge_index(edges, a, b);
 
-// Compute a scale that makes dual edges intersect the selected edge family.
-// face_idx selects a face; edge_pos selects the reference edge within that face.
-// The edge family is defined by matching adjacent face sizes and endpoint valences.
+// Function: ps_dual_scale_edge_cross()
+// Usage:
+//   result = ps_dual_scale_edge_cross(poly, dual, face_idx, edge_pos=0,
+//       eps=1e-12, len_eps=1e-6);
+// Description:
+//   Compute a dual scale factor that aligns dual edges with the selected edge
+//   family of the source poly.
+// Arguments:
+//   poly = source poly descriptor
+//   dual = dual poly descriptor
+//   face_idx = reference face index on `poly`
+//   edge_pos = reference edge position within that face
+//   eps = solver tolerance
+//   len_eps = edge-length matching tolerance
 function ps_dual_scale_edge_cross(poly, dual, face_idx, edge_pos=0, eps=1e-12, len_eps=1e-6) =
     let(
         verts = poly_verts(poly),
@@ -261,8 +337,15 @@ function ps_dual_scale_edge_cross(poly, dual, face_idx, edge_pos=0, eps=1e-12, l
         : (sorted[n/2 - 1] + sorted[n/2]) / 2;
 
 
-// ---- IR overlay multiplier so dual's edges line up with poly's edges (mid-sphere style) ----
-// Returns multiplier 'm' such that using IR*m for the dual tends to align edge crossings.
+// Function: ps_dual_scale()
+// Usage:
+//   result = ps_dual_scale(poly, dual);
+// Description:
+//   Return an inter-radius multiplier that tends to align dual edges with the
+//   source poly's edges.
+// Arguments:
+//   poly = source poly descriptor
+//   dual = dual poly descriptor
 function ps_dual_scale(poly, dual) =
     let(
         // scaling from unit-edge coords to "per-IR world coords":
@@ -277,10 +360,17 @@ function ps_dual_scale(poly, dual) =
     )
     (sp * rp) / (sd * rd);
 
-// ---- Face-radius scaling to align face overlays ----
-// Returns multiplier 'm' so that the unit-edge face radius of poly matches the dual's.
-// Use face_k (vertex count) to select a face family on the poly (e.g., 4 for squares).
-// For world-space overlays, multiply this by ps_dual_scale(poly, dual).
+// Function: ps_dual_scale_face_radius()
+// Usage:
+//   result = ps_dual_scale_face_radius(poly, dual, face_k=undef, dual_face_k=undef);
+// Description:
+//   Return a scale multiplier that aligns face radii between a poly and its
+//   dual, optionally restricted to selected face arities.
+// Arguments:
+//   poly = source poly descriptor
+//   dual = dual poly descriptor
+//   face_k = source face arity filter
+//   dual_face_k = dual face arity filter
 function ps_dual_scale_face_radius(poly, dual, face_k=undef, dual_face_k=undef) =
     let(
         rp = ps_face_radius_stat(poly, face_k),
@@ -291,8 +381,15 @@ function ps_dual_scale_face_radius(poly, dual, face_k=undef, dual_face_k=undef) 
 
 
 
-// Public: polar dual, returned as a normalised poly descriptor.
-// Default behaviour: returns a descriptor with unit_edge = 1 (library convention).
+// Function: poly_dual()
+// Usage:
+//   result = poly_dual(poly, profile=undef);
+// Description:
+//   Build the polar dual of a poly and return it as a normalized descriptor
+//   with unit edge length 1.
+// Arguments:
+//   poly = source poly descriptor
+//   profile = reserved for future extensions; currently unsupported
 function poly_dual(poly, profile=undef) =
     let(
         _p_ok = assert(ps_profile_row_count(profile) == 0, "poly_dual: profile not supported")

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/core/validate.scad
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Polyhedral Geometry Engine
 // Validation helpers (structural + geometric)
@@ -159,11 +160,20 @@ function _ps_poly_convex(verts, faces, eps=1e-9) =
 
 // ---- public validators ----
 
-// mode meanings:
-// - "struct": structural + planarity checks only (no manifoldness or intersections)
-// - "closed": structural + planarity + manifoldness + no self-intersections
-// - "star_ok": structural + planarity + manifoldness (allows self-intersections)
-// - "convex": closed + outward orientation + convexity
+// Validation modes:
+// - `"struct"`: structural + planarity checks only
+// - `"closed"`: structural + planarity + manifoldness + no self-intersections
+// - `"star_ok"`: structural + planarity + manifoldness
+// - `"convex"`: closed + outward orientation + convexity
+// Function: poly_valid()
+// Usage:
+//   result = poly_valid(poly, mode="closed", eps=1e-9);
+// Description:
+//   Validate a poly descriptor against one of the library validation modes.
+// Arguments:
+//   poly = source poly descriptor
+//   mode = validation mode
+//   eps = geometric tolerance
 function poly_valid(poly, mode="closed", eps=1e-9) =
     let(
         verts = poly_verts(poly),
@@ -190,10 +200,26 @@ function poly_valid(poly, mode="closed", eps=1e-9) =
     (mode == "convex" ? (outward_ok && convex_ok && no_self_intersect) :
      mode == "closed" ? no_self_intersect : true);
 
-// Returns true if every undirected edge appears exactly twice with opposing directions.
+// Function: poly_validate_winding()
+// Usage:
+//   result = poly_validate_winding(poly, strict=true);
+// Description:
+//   Check that every undirected edge appears with opposing directed windings.
+// Arguments:
+//   poly = source poly descriptor
+//   strict = whether each undirected edge must appear exactly twice
 function poly_validate_winding(poly, strict=true) =
     _ps_edges_winding_ok(poly_faces(poly), strict);
 
+// Module: ps_assert_poly_valid_mode()
+// Usage:
+//   ps_assert_poly_valid_mode(poly, mode="closed", eps=1e-9);
+// Description:
+//   Assert that a poly descriptor satisfies one validation mode.
+// Arguments:
+//   poly = source poly descriptor
+//   mode = validation mode
+//   eps = geometric tolerance
 module ps_assert_poly_valid_mode(poly, mode="closed", eps=1e-9) {
     assert(poly_valid(poly, mode, eps), str("poly invalid (mode=", mode, ")"));
 }

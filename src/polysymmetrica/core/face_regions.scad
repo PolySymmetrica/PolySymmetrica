@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/core/face_regions.scad
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Face-region volume helpers
 // Builds positive face-local volumes from filled face boundary spans.
@@ -471,12 +472,24 @@ function _ps_face_region_loop_shells_from_fields(
                 shell
     ];
 
-/**
- * Function: Build positive face-region loop shells from a face-local context.
- * Params: face_ctx (face-local context), z0/z1 (target local Z planes), mode (`"nonzero"`, `"evenodd"`, or `"all"`), max_project (optional projection-distance cap), eps (geometric tolerance), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`)
- * Returns: list of `ps_loop_shell` records
- * Limitations/Gotchas: context-first public entry point
- */
+// Function: ps_face_region_loop_shells()
+// Usage:
+//   result = ps_face_region_loop_shells(face_ctx, z0, z1, mode, max_project, eps, boundary_inset, boundary_inset_mode);
+// Description:
+//   Build positive face-region loop shells from a face-local context.
+//   .
+//   - Returns: list of `ps_loop_shell` records
+//   .
+//   - Limitations/Gotchas: context-first public entry point
+// Arguments:
+//   face_ctx = face-local context
+//   z0 = target local Z planes
+//   z1 = target local Z planes
+//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
+//   max_project = optional projection-distance cap
+//   eps = geometric tolerance
+//   boundary_inset = positive shift toward filled side
+//   boundary_inset_mode = `"side"` or `"face"`
 function ps_face_region_loop_shells(
     face_ctx,
     z0,
@@ -498,12 +511,24 @@ function ps_face_region_loop_shells(
         boundary_inset_mode
     );
 
-/**
- * Module: Emit the current face's positive face-region loop volume.
- * Params: z0/z1 (target local Z planes), mode (`"nonzero"`, `"evenodd"`, or `"all"`), max_project (optional projection-distance cap), eps (geometric tolerance), convexity (OpenSCAD polyhedron convexity hint), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`)
- * Returns: none; intended for use inside `place_on_faces(...)`, usually inside `intersection()`
- * Limitations/Gotchas: this is only the boundary-span volume primitive; it does not yet subtract or union proxy punch-through voids
- */
+// Module: ps_face_region_loop_volume()
+// Usage:
+//   ps_face_region_loop_volume(z0, z1, mode, max_project, eps, convexity, boundary_inset, boundary_inset_mode);
+// Description:
+//   Emit the current face's positive face-region loop volume.
+//   .
+//   - Returns: none; intended for use inside `place_on_faces(...)`, usually inside `intersection()`
+//   .
+//   - Limitations/Gotchas: this is only the boundary-span volume primitive; it does not yet subtract or union proxy punch-through voids
+// Arguments:
+//   z0 = target local Z planes
+//   z1 = target local Z planes
+//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
+//   max_project = optional projection-distance cap
+//   eps = geometric tolerance
+//   convexity = OpenSCAD polyhedron convexity hint
+//   boundary_inset = positive shift toward filled side
+//   boundary_inset_mode = `"side"` or `"face"`
 module ps_face_region_loop_volume(z0, z1, mode="nonzero", max_project=undef, eps=1e-8, convexity=6, boundary_inset=0, boundary_inset_mode="side") {
     assert(!is_undef($ps_face_pts3d_local), "ps_face_region_loop_volume: requires place_on_faces context ($ps_face_pts3d_local)");
     assert(!is_undef($ps_face_idx), "ps_face_region_loop_volume: requires place_on_faces context ($ps_face_idx)");

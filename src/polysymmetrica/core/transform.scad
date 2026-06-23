@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/core/transform.scad
 use <funcs.scad>
 
 // Generic site/cycle poly transform kernel.
-// Keep this file minimal and reusable across future operators (snub, cantitruncate, etc.).
+// Keep this file minimal and reusable across future operators.
 
 // index of point p in list (or -1)
 function _ps_find_point(list, p, eps, i=0) =
@@ -67,8 +68,20 @@ function _ps_poly_from_face_points(faces_pts_all, eps, len_eps=undef) =
     )
     poly_make(uniq_verts / unit_e, faces_out, e_over_ir);
 
-// Build a poly from site-based face cycles.
-// cycle entries: [0, v_idx] for original vertex, [1, site_idx] for site point.
+// Function: ps_poly_transform_from_sites()
+// Usage:
+//   result = ps_poly_transform_from_sites(verts0, sites, site_points,
+//       face_cycles, eps=1e-8, len_eps=1e-6);
+// Description:
+//   Build a poly descriptor from site-based face cycles.
+// Arguments:
+//   verts0 = original vertex list
+//   sites = site metadata records
+//   site_points = point list for site records
+//   face_cycles = cycles using `[0, v_idx]` for original vertices and
+//       `[1, site_idx]` for site points
+//   eps = geometric tolerance
+//   len_eps = point-merging tolerance
 function ps_poly_transform_from_sites(verts0, sites, site_points, face_cycles, eps=1e-8, len_eps=1e-6) =
     let(
         faces_pts_all = [

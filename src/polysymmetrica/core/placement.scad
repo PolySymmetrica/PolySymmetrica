@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/core/placement.scad
 use <funcs.scad>
 include <placement_data.scad>
 include <segments.scad>
@@ -527,12 +528,22 @@ function _ps_face_foreign_face_replay_sites_from_context(face_pts2d, face_idx, c
             _ps_face_foreign_face_replay_site(ri, records[ri], ctx, eps)
     ];
 
-/**
- * Function: Build target-local replay sites for exact foreign face intrusions from a target-local poly context.
- * Params: face_pts2d (target face loop), face_idx (target face index), ctx (target-local poly context), eps (tolerance), mode (foreign face fill rule), filter_parent (drop parent-edge cuts)
- * Returns: replay site records for intruding foreign faces, with frames expressed in the target face-local coordinate system
- * Limitations/Gotchas: context-first public entry point
- */
+// Function: ps_face_foreign_face_replay_sites()
+// Usage:
+//   result = ps_face_foreign_face_replay_sites(face_pts2d, face_idx, ctx, eps, mode, filter_parent);
+// Description:
+//   Build target-local replay sites for exact foreign face intrusions from a target-local poly context.
+//   .
+//   - Returns: replay site records for intruding foreign faces, with frames expressed in the target face-local coordinate system
+//   .
+//   - Limitations/Gotchas: context-first public entry point
+// Arguments:
+//   face_pts2d = target face loop
+//   face_idx = target face index
+//   ctx = target-local poly context
+//   eps = tolerance
+//   mode = foreign face fill rule
+//   filter_parent = drop parent-edge cuts
 function ps_face_foreign_face_replay_sites(face_pts2d, face_idx, ctx, eps=1e-8, mode="nonzero", filter_parent=true) =
     _ps_face_foreign_face_replay_sites_from_context(face_pts2d, face_idx, ctx, eps, mode, filter_parent);
 
@@ -599,12 +610,22 @@ function _ps_face_foreign_proxy_replay_sites_from_context(face_pts2d, face_idx, 
     )
     _ps_face_foreign_proxy_replay_sites_from_records_context(face_idx, face_records, ctx, eps);
 
-/**
- * Function: Build provenance-driven proxy replay sites for foreign face/edge/vertex sources from a target-local poly context.
- * Params: face_pts2d (target face loop), face_idx (target face index), ctx (target-local poly context), eps (tolerance), mode (foreign face fill rule), filter_parent (drop parent-edge cuts)
- * Returns: replay site records for exact foreign faces plus every boundary edge/vertex of those exact face intruders
- * Limitations/Gotchas: context-first public entry point
- */
+// Function: ps_face_foreign_proxy_replay_sites()
+// Usage:
+//   result = ps_face_foreign_proxy_replay_sites(face_pts2d, face_idx, ctx, eps, mode, filter_parent);
+// Description:
+//   Build provenance-driven proxy replay sites for foreign face/edge/vertex sources from a target-local poly context.
+//   .
+//   - Returns: replay site records for exact foreign faces plus every boundary edge/vertex of those exact face intruders
+//   .
+//   - Limitations/Gotchas: context-first public entry point
+// Arguments:
+//   face_pts2d = target face loop
+//   face_idx = target face index
+//   ctx = target-local poly context
+//   eps = tolerance
+//   mode = foreign face fill rule
+//   filter_parent = drop parent-edge cuts
 function ps_face_foreign_proxy_replay_sites(face_pts2d, face_idx, ctx, eps=1e-8, mode="nonzero", filter_parent=true) =
     _ps_face_foreign_proxy_replay_sites_from_context(face_pts2d, face_idx, ctx, eps, mode, filter_parent);
 
@@ -784,12 +805,22 @@ function _ps_face_foreign_proxy_volume_groups_from_context(face_pts2d, face_idx,
     )
     _ps_face_foreign_proxy_volume_groups_from_records_context(face_idx, face_records, ctx, eps);
 
-/**
- * Function: Build connected foreign proxy volume-group records for a target face from a target-local poly context.
- * Params: face_pts2d (target face loop), face_idx (target face index), ctx (target-local poly context), eps (tolerance), mode (foreign face fill rule), filter_parent (drop parent-edge cuts)
- * Returns: data-only volume-group records for exact intruding foreign faces
- * Limitations/Gotchas: context-first public entry point
- */
+// Function: ps_face_foreign_proxy_volume_groups()
+// Usage:
+//   result = ps_face_foreign_proxy_volume_groups(face_pts2d, face_idx, ctx, eps, mode, filter_parent);
+// Description:
+//   Build connected foreign proxy volume-group records for a target face from a target-local poly context.
+//   .
+//   - Returns: data-only volume-group records for exact intruding foreign faces
+//   .
+//   - Limitations/Gotchas: context-first public entry point
+// Arguments:
+//   face_pts2d = target face loop
+//   face_idx = target face index
+//   ctx = target-local poly context
+//   eps = tolerance
+//   mode = foreign face fill rule
+//   filter_parent = drop parent-edge cuts
 function ps_face_foreign_proxy_volume_groups(face_pts2d, face_idx, ctx, eps=1e-8, mode="nonzero", filter_parent=true) =
     _ps_face_foreign_proxy_volume_groups_from_context(face_pts2d, face_idx, ctx, eps, mode, filter_parent);
 
@@ -805,21 +836,37 @@ function _ps_proxy_volume_group_face_replay_sites_from_context(group, ctx, eps=1
             _ps_face_foreign_face_replay_site(ri, records[ri], ctx, eps)
     ];
 
-/**
- * Function: Build renderable exact face replay sites for one proxy volume group from a target-local poly context.
- * Params: group (proxy volume-group record), ctx (target-local poly context), eps (tolerance)
- * Returns: replay site records for exact foreign faces in the group
- * Limitations/Gotchas: context-first public entry point
- */
+// Function: ps_proxy_volume_group_face_replay_sites()
+// Usage:
+//   result = ps_proxy_volume_group_face_replay_sites(group, ctx, eps);
+// Description:
+//   Build renderable exact face replay sites for one proxy volume group from a target-local poly context.
+//   .
+//   - Returns: replay site records for exact foreign faces in the group
+//   .
+//   - Limitations/Gotchas: context-first public entry point
+// Arguments:
+//   group = proxy volume-group record
+//   ctx = target-local poly context
+//   eps = tolerance
 function ps_proxy_volume_group_face_replay_sites(group, ctx, eps=1e-8) =
     _ps_proxy_volume_group_face_replay_sites_from_context(group, ctx, eps);
 
-/**
- * Function: Build face placement site records for `place_on_faces(...)`.
- * Params: poly (poly descriptor), inter_radius (scale input), edge_len (explicit scale override), classify/classify_opts (optional classification context)
- * Returns: list of face site records `[face_idx, edge_len, vertex_count, face_midradius, face_radius, face_planarity_err, face_is_planar, face_family_id, face_family_count, edge_family_count, vertex_family_count, frame, face_local_context]`
- * Limitations: record shape is currently positional; keep the semantics stable even if the internal representation changes later
- */
+// Function: ps_face_sites()
+// Usage:
+//   result = ps_face_sites(poly, inter_radius, edge_len, classify, classify_opts);
+// Description:
+//   Build face placement site records for `place_on_faces(...)`.
+//   .
+//   - Returns: list of face site records `[face_idx, edge_len, vertex_count, face_midradius, face_radius, face_planarity_err, face_is_planar, face_family_id, face_family_count, edge_family_count, vertex_family_count, frame, face_local_context]`
+//   .
+//   - Limitations/Gotchas: record shape is currently positional; keep the semantics stable even if the internal representation changes later
+// Arguments:
+//   poly = poly descriptor
+//   inter_radius = scale input
+//   edge_len = explicit scale override
+//   classify = optional classification context
+//   classify_opts = optional classification context
 function ps_face_sites(poly, inter_radius = 1, edge_len = undef, classify = undef, classify_opts = undef) =
     let(
         exp_edge_len = is_undef(edge_len) ? inter_radius * poly_e_over_ir(poly) : edge_len,
@@ -899,12 +946,22 @@ function ps_face_sites(poly, inter_radius = 1, edge_len = undef, classify = unde
             ]
     ];
 
-/**
- * Module: Place children on selected faces of a polyhedron.
- * Params: poly (poly descriptor), inter_radius (scale input), edge_len (explicit scale override), classify/classify_opts (optional classification context), indices (`undef`, scalar face index, or list of face indices)
- * Returns: none; exposes `$ps_face_*` metadata, `$ps_face_frame`, `$ps_face_local_context`, and `$ps_target_local_poly_context` for each selected face
- * Limitations: `indices` filters the placement loop only; `ps_face_sites(...)` still builds the complete site list so element ids and classification metadata remain global
- */
+// Module: place_on_faces()
+// Usage:
+//   place_on_faces(poly, inter_radius, edge_len, classify, classify_opts, indices);
+// Description:
+//   Place children on selected faces of a polyhedron.
+//   .
+//   - Returns: none; exposes `$ps_face_*` metadata, `$ps_face_frame`, `$ps_face_local_context`, and `$ps_target_local_poly_context` for each selected face
+//   .
+//   - Limitations/Gotchas: `indices` filters the placement loop only; `ps_face_sites(...)` still builds the complete site list so element ids and classification metadata remain global
+// Arguments:
+//   poly = poly descriptor
+//   inter_radius = scale input
+//   edge_len = explicit scale override
+//   classify = optional classification context
+//   classify_opts = optional classification context
+//   indices = `undef`, scalar face index, or list of face indices
 module place_on_faces(poly, inter_radius = 1, edge_len = undef, classify = undef, classify_opts = undef, indices = undef) {
     sites = ps_face_sites(poly, inter_radius, edge_len, classify, classify_opts);
 
@@ -942,12 +999,20 @@ module place_on_faces(poly, inter_radius = 1, edge_len = undef, classify = undef
     }
 }
 
-/**
- * Module: Replay exact foreign face intrusion sites inside the current placed target face.
- * Params: mode (foreign face fill rule), eps (tolerance), filter_parent (drop parent-edge cuts), coords (`"element"` or `"parent"`)
- * Returns: none; exposes `$ps_replay_*` metadata and optionally places children in the foreign face replay frame
- * Limitations/Gotchas: requires `place_on_faces(...)`; does not generate or subtract proxy geometry
- */
+// Module: place_on_face_foreign_face_replay_sites()
+// Usage:
+//   place_on_face_foreign_face_replay_sites(mode, eps, filter_parent, coords);
+// Description:
+//   Replay exact foreign face intrusion sites inside the current placed target face.
+//   .
+//   - Returns: none; exposes `$ps_replay_*` metadata and optionally places children in the foreign face replay frame
+//   .
+//   - Limitations/Gotchas: requires `place_on_faces(...)`; does not generate or subtract proxy geometry
+// Arguments:
+//   mode = foreign face fill rule
+//   eps = tolerance
+//   filter_parent = drop parent-edge cuts
+//   coords = `"element"` or `"parent"`
 module place_on_face_foreign_face_replay_sites(mode="nonzero", eps=1e-8, filter_parent=true, coords="element") {
     assert(!is_undef($ps_face_pts2d), "place_on_face_foreign_face_replay_sites: requires place_on_faces context ($ps_face_pts2d)");
     assert(!is_undef($ps_face_idx), "place_on_face_foreign_face_replay_sites: requires place_on_faces context ($ps_face_idx)");
@@ -1011,12 +1076,23 @@ module place_on_face_foreign_face_replay_sites(mode="nonzero", eps=1e-8, filter_
     }
 }
 
-/**
- * Module: Replay caller-supplied proxy geometry for foreign sites affecting the current placed face.
- * Params: mode (foreign face fill rule), eps (tolerance), filter_parent (drop parent-edge cuts), coords (`"element"` or `"parent"`), face_child/edge_child/vertex_child (child slots)
- * Returns: none; exposes `$ps_proxy_*` metadata and calls the child slot matching the foreign source kind
- * Limitations/Gotchas: face sites are exact face-plane intrusions; edge/vertex sites are deduped boundary candidates from those intruding faces, not distance-envelope proximity tests
- */
+// Module: place_on_face_foreign_proxy_sites()
+// Usage:
+//   place_on_face_foreign_proxy_sites(mode, eps, filter_parent, coords, face_child, edge_child, vertex_child);
+// Description:
+//   Replay caller-supplied proxy geometry for foreign sites affecting the current placed face.
+//   .
+//   - Returns: none; exposes `$ps_proxy_*` metadata and calls the child slot matching the foreign source kind
+//   .
+//   - Limitations/Gotchas: face sites are exact face-plane intrusions; edge/vertex sites are deduped boundary candidates from those intruding faces, not distance-envelope proximity tests
+// Arguments:
+//   mode = foreign face fill rule
+//   eps = tolerance
+//   filter_parent = drop parent-edge cuts
+//   coords = `"element"` or `"parent"`
+//   face_child = child slots
+//   edge_child = child slots
+//   vertex_child = child slots
 module place_on_face_foreign_proxy_sites(
     mode="nonzero",
     eps=1e-8,
@@ -1167,12 +1243,19 @@ module place_on_face_foreign_proxy_sites(
     }
 }
 
-/**
- * Module: Iterate data-only connected foreign proxy volume groups affecting the current placed face.
- * Params: mode (foreign face fill rule), eps (tolerance), filter_parent (drop parent-edge cuts)
- * Returns: none; exposes `$ps_proxy_volume_group_*` metadata and calls children in the current face-local frame
- * Limitations/Gotchas: this is a provenance iterator only; it does not construct or transform a solid volume
- */
+// Module: place_on_face_foreign_proxy_volume_groups()
+// Usage:
+//   place_on_face_foreign_proxy_volume_groups(mode, eps, filter_parent);
+// Description:
+//   Iterate data-only connected foreign proxy volume groups affecting the current placed face.
+//   .
+//   - Returns: none; exposes `$ps_proxy_volume_group_*` metadata and calls children in the current face-local frame
+//   .
+//   - Limitations/Gotchas: this is a provenance iterator only; it does not construct or transform a solid volume
+// Arguments:
+//   mode = foreign face fill rule
+//   eps = tolerance
+//   filter_parent = drop parent-edge cuts
 module place_on_face_foreign_proxy_volume_groups(mode="nonzero", eps=1e-8, filter_parent=true) {
     assert(!is_undef($ps_face_pts2d), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_face_pts2d)");
     assert(!is_undef($ps_face_idx), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_face_idx)");
@@ -1203,12 +1286,20 @@ module place_on_face_foreign_proxy_volume_groups(mode="nonzero", eps=1e-8, filte
     }
 }
 
-/**
- * Module: Iterate renderable exact foreign face units, grouped by proxy volume group.
- * Params: mode (foreign face fill rule), eps (tolerance), filter_parent (drop parent-edge cuts), coords (`"element"` or `"parent"`)
- * Returns: none; exposes `$ps_proxy_volume_group_*`, `$ps_proxy_volume_unit_*`, and face-compatible `$ps_proxy_*` metadata on child slot 0
- * Limitations/Gotchas: emits grouped face replay units only; it does not infer or close the volume enclosed by those faces
- */
+// Module: place_on_face_foreign_proxy_volume_group_faces()
+// Usage:
+//   place_on_face_foreign_proxy_volume_group_faces(mode, eps, filter_parent, coords);
+// Description:
+//   Iterate renderable exact foreign face units, grouped by proxy volume group.
+//   .
+//   - Returns: none; exposes `$ps_proxy_volume_group_*`, `$ps_proxy_volume_unit_*`, and face-compatible `$ps_proxy_*` metadata on child slot 0
+//   .
+//   - Limitations/Gotchas: emits grouped face replay units only; it does not infer or close the volume enclosed by those faces
+// Arguments:
+//   mode = foreign face fill rule
+//   eps = tolerance
+//   filter_parent = drop parent-edge cuts
+//   coords = `"element"` or `"parent"`
 module place_on_face_foreign_proxy_volume_group_faces(
     mode="nonzero",
     eps=1e-8,
@@ -1305,12 +1396,21 @@ module place_on_face_foreign_proxy_volume_group_faces(
     }
 }
 
-/**
- * Module: Render one conservative convex hull per foreign proxy volume group.
- * Params: mode (foreign face fill rule), eps (tolerance), filter_parent (drop parent-edge cuts), point_r (default hull point radius), point_fn (default hull point facets)
- * Returns: none; emits a hull around grouped source-face vertices in the current face-local frame
- * Limitations/Gotchas: debug/conservative helper only; convexifies each group and can over-subtract concave or disconnected real user geometry
- */
+// Module: place_on_face_foreign_proxy_volume_group_hulls()
+// Usage:
+//   place_on_face_foreign_proxy_volume_group_hulls(mode, eps, filter_parent, point_r, point_fn);
+// Description:
+//   Render one conservative convex hull per foreign proxy volume group.
+//   .
+//   - Returns: none; emits a hull around grouped source-face vertices in the current face-local frame
+//   .
+//   - Limitations/Gotchas: debug/conservative helper only; convexifies each group and can over-subtract concave or disconnected real user geometry
+// Arguments:
+//   mode = foreign face fill rule
+//   eps = tolerance
+//   filter_parent = drop parent-edge cuts
+//   point_r = default hull point radius
+//   point_fn = default hull point facets
 module place_on_face_foreign_proxy_volume_group_hulls(
     mode="nonzero",
     eps=1e-8,
@@ -1366,12 +1466,21 @@ module _ps_place_on_face_foreign_proxy_volume_group_hull(group, group_idx, group
     }
 }
 
-/**
- * Function: Build edge placement site records for `place_on_edges(...)`.
- * Params: poly (poly descriptor), inter_radius (scale input), edge_len (explicit scale override), classify/classify_opts (optional classification context)
- * Returns: list of edge site records `[edge_idx, edge_len, edge_midradius, poly_center_local, edge_pts_local, edge_verts_idx, edge_adj_faces_idx, edge_family_id, face_family_count, edge_family_count, vertex_family_count, frame]`
- * Limitations: uses an adjacent-face normal bisector for `+Z` when a usable face pair exists, with radial fallback on boundary or degenerate edges
- */
+// Function: ps_edge_sites()
+// Usage:
+//   result = ps_edge_sites(poly, inter_radius, edge_len, classify, classify_opts);
+// Description:
+//   Build edge placement site records for `place_on_edges(...)`.
+//   .
+//   - Returns: list of edge site records `[edge_idx, edge_len, edge_midradius, poly_center_local, edge_pts_local, edge_verts_idx, edge_adj_faces_idx, edge_family_id, face_family_count, edge_family_count, vertex_family_count, frame]`
+//   .
+//   - Limitations/Gotchas: uses an adjacent-face normal bisector for `+Z` when a usable face pair exists, with radial fallback on boundary or degenerate edges
+// Arguments:
+//   poly = poly descriptor
+//   inter_radius = scale input
+//   edge_len = explicit scale override
+//   classify = optional classification context
+//   classify_opts = optional classification context
 function ps_edge_sites(poly, inter_radius = 1, edge_len = undef, classify = undef, classify_opts = undef) =
     let(
         exp_edge_len = is_undef(edge_len) ? inter_radius * poly_e_over_ir(poly) : edge_len,
@@ -1441,12 +1550,21 @@ function ps_edge_sites(poly, inter_radius = 1, edge_len = undef, classify = unde
             ]
     ];
 
-/**
- * Function: Build vertex placement site records for `place_on_vertices(...)`.
- * Params: poly (poly descriptor), inter_radius (scale input), edge_len (explicit scale override), classify/classify_opts (optional classification context)
- * Returns: list of vertex site records `[vertex_idx, edge_len, vert_radius, poly_center_local, vertex_valence, vertex_neighbors_idx, vertex_neighbor_pts_local, vertex_family_id, face_family_count, edge_family_count, vertex_family_count, frame]`
- * Limitations: preserves the current radial vertex frame derived from one projected neighbor direction
- */
+// Function: ps_vertex_sites()
+// Usage:
+//   result = ps_vertex_sites(poly, inter_radius, edge_len, classify, classify_opts);
+// Description:
+//   Build vertex placement site records for `place_on_vertices(...)`.
+//   .
+//   - Returns: list of vertex site records `[vertex_idx, edge_len, vert_radius, poly_center_local, vertex_valence, vertex_neighbors_idx, vertex_neighbor_pts_local, vertex_family_id, face_family_count, edge_family_count, vertex_family_count, frame]`
+//   .
+//   - Limitations/Gotchas: preserves the current radial vertex frame derived from one projected neighbor direction
+// Arguments:
+//   poly = poly descriptor
+//   inter_radius = scale input
+//   edge_len = explicit scale override
+//   classify = optional classification context
+//   classify_opts = optional classification context
 function ps_vertex_sites(poly, inter_radius = 1, edge_len = undef, classify = undef, classify_opts = undef) =
     let(
         exp_edge_len = is_undef(edge_len) ? inter_radius * poly_e_over_ir(poly) : edge_len,
@@ -1500,12 +1618,22 @@ function ps_vertex_sites(poly, inter_radius = 1, edge_len = undef, classify = un
             ]
     ];
 
-/**
- * Module: Place children on selected vertices of a polyhedron.
- * Params: poly (poly descriptor), inter_radius (scale input), edge_len (explicit scale override), classify/classify_opts (optional classification context), indices (`undef`, scalar vertex index, or list of vertex indices)
- * Returns: none; exposes `$ps_vertex_*` metadata and `$ps_vertex_frame` for each selected vertex
- * Limitations: `indices` filters the placement loop only; `ps_vertex_sites(...)` still builds the complete site list so element ids and classification metadata remain global
- */
+// Module: place_on_vertices()
+// Usage:
+//   place_on_vertices(poly, inter_radius, edge_len, classify, classify_opts, indices);
+// Description:
+//   Place children on selected vertices of a polyhedron.
+//   .
+//   - Returns: none; exposes `$ps_vertex_*` metadata and `$ps_vertex_frame` for each selected vertex
+//   .
+//   - Limitations/Gotchas: `indices` filters the placement loop only; `ps_vertex_sites(...)` still builds the complete site list so element ids and classification metadata remain global
+// Arguments:
+//   poly = poly descriptor
+//   inter_radius = scale input
+//   edge_len = explicit scale override
+//   classify = optional classification context
+//   classify_opts = optional classification context
+//   indices = `undef`, scalar vertex index, or list of vertex indices
 module place_on_vertices(poly, inter_radius = 1, edge_len = undef, classify = undef, classify_opts = undef, indices = undef) {
     sites = ps_vertex_sites(poly, inter_radius, edge_len, classify, classify_opts);
 
@@ -1533,12 +1661,22 @@ module place_on_vertices(poly, inter_radius = 1, edge_len = undef, classify = un
 }
 
 
-/**
- * Module: Place children on selected edges of a polyhedron.
- * Params: poly (poly descriptor), inter_radius (scale input), edge_len (explicit scale override), classify/classify_opts (optional classification context), indices (`undef`, scalar edge index, or list of edge indices)
- * Returns: none; exposes `$ps_edge_*` metadata and `$ps_edge_frame` for each selected edge
- * Limitations: `indices` filters the placement loop only; `ps_edge_sites(...)` still builds the complete site list so element ids and classification metadata remain global
- */
+// Module: place_on_edges()
+// Usage:
+//   place_on_edges(poly, inter_radius, edge_len, classify, classify_opts, indices);
+// Description:
+//   Place children on selected edges of a polyhedron.
+//   .
+//   - Returns: none; exposes `$ps_edge_*` metadata and `$ps_edge_frame` for each selected edge
+//   .
+//   - Limitations/Gotchas: `indices` filters the placement loop only; `ps_edge_sites(...)` still builds the complete site list so element ids and classification metadata remain global
+// Arguments:
+//   poly = poly descriptor
+//   inter_radius = scale input
+//   edge_len = explicit scale override
+//   classify = optional classification context
+//   classify_opts = optional classification context
+//   indices = `undef`, scalar edge index, or list of edge indices
 module place_on_edges(poly, inter_radius = 1, edge_len = undef, classify = undef, classify_opts = undef, indices = undef) {
     sites = ps_edge_sites(poly, inter_radius, edge_len, classify, classify_opts);
 

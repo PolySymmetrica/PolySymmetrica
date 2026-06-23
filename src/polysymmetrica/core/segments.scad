@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/core/segments.scad
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Face segmentation helpers
 // Extracts simple face segments from possibly self-intersecting face loops.
@@ -656,12 +657,18 @@ function _ps_face_boundary_span_sites(face_pts3d_local, face_idx, poly_faces_idx
             )
     ];
 
-/**
- * Function: Build the planar arrangement induced by one face loop.
- * Params: face_pts3d_local (loop in face-local 3D), eps (geometric tolerance)
- * Returns: `[face_pts2d, crossings, nodes, spans, cells]`
- * Limitations/Gotchas: cells are all traced simple arrangement cells before any fill-rule filtering; they are not guaranteed convex
- */
+// Function: ps_face_arrangement()
+// Usage:
+//   result = ps_face_arrangement(face_pts3d_local, eps);
+// Description:
+//   Build the planar arrangement induced by one face loop.
+//   .
+//   - Returns: `[face_pts2d, crossings, nodes, spans, cells]`
+//   .
+//   - Limitations/Gotchas: cells are all traced simple arrangement cells before any fill-rule filtering; they are not guaranteed convex
+// Arguments:
+//   face_pts3d_local = loop in face-local 3D
+//   eps = geometric tolerance
 function ps_face_arrangement(face_pts3d_local, eps=1e-8) =
     let(
         n = len(face_pts3d_local),
@@ -727,12 +734,19 @@ function ps_face_arrangement(face_pts3d_local, eps=1e-8) =
     )
     [face_pts2d, crossings, nodes, spans, cells];
 
-/**
- * Function: Derive the true filled boundary from a face arrangement.
- * Params: face_pts3d_local (loop in face-local 3D), mode (`"nonzero"`, `"evenodd"`, or `"all"`), eps (geometric tolerance)
- * Returns: `[mode, filled_cell_ids, boundary_loops, boundary_spans]`
- * Limitations/Gotchas: boundary spans are currently sourced from arrangement spans only; later synthetic/cut spans can build on this record shape
- */
+// Function: ps_face_boundary_model()
+// Usage:
+//   result = ps_face_boundary_model(face_pts3d_local, mode, eps);
+// Description:
+//   Derive the true filled boundary from a face arrangement.
+//   .
+//   - Returns: `[mode, filled_cell_ids, boundary_loops, boundary_spans]`
+//   .
+//   - Limitations/Gotchas: boundary spans are currently sourced from arrangement spans only; later synthetic/cut spans can build on this record shape
+// Arguments:
+//   face_pts3d_local = loop in face-local 3D
+//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
+//   eps = geometric tolerance
 function ps_face_boundary_model(face_pts3d_local, mode="nonzero", eps=1e-8) =
     let(
         arr = ps_face_arrangement(face_pts3d_local, eps),
@@ -776,12 +790,19 @@ function ps_face_boundary_model(face_pts3d_local, mode="nonzero", eps=1e-8) =
     )
     [mode, filled_cell_ids, boundary_loops, boundary_spans];
 
-/**
- * Function: Group true filled-boundary spans by their original source edge.
- * Params: face_pts3d_local (loop in face-local 3D), mode (`"nonzero"`, `"evenodd"`, or `"all"`), eps (geometric tolerance)
- * Returns: `[[source_edge_idx, source_seg2d, source_boundary_spans], ...]`
- * Limitations/Gotchas: returns only source edges with at least one surviving filled-boundary span
- */
+// Function: ps_face_filled_boundary_source_edges()
+// Usage:
+//   result = ps_face_filled_boundary_source_edges(face_pts3d_local, mode, eps);
+// Description:
+//   Group true filled-boundary spans by their original source edge.
+//   .
+//   - Returns: `[[source_edge_idx, source_seg2d, source_boundary_spans], ...]`
+//   .
+//   - Limitations/Gotchas: returns only source edges with at least one surviving filled-boundary span
+// Arguments:
+//   face_pts3d_local = loop in face-local 3D
+//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
+//   eps = geometric tolerance
 function ps_face_filled_boundary_source_edges(face_pts3d_local, mode="nonzero", eps=1e-8) =
     let(
         n = len(face_pts3d_local),
@@ -823,12 +844,19 @@ function ps_face_filled_boundary_source_edges(face_pts3d_local, mode="nonzero", 
                 [ei, source_seg2d, source_boundary_spans]
     ];
 
-/**
- * Function: Split a face loop into simple face-local cells.
- * Params: face_pts3d_local (loop in face-local 3D), mode (`"nonzero"`, `"evenodd"`, or `"all"`), eps (geometric tolerance)
- * Returns: `[[seg_pts2d, seg_pts3d_local, seg_parent_edge_ids, seg_edge_kinds], ...]`
- * Limitations/Gotchas: `mode="nonzero"` is the intended default for solid self-crossing faces; use `"evenodd"` only when parity fill is genuinely wanted
- */
+// Function: ps_face_segments()
+// Usage:
+//   result = ps_face_segments(face_pts3d_local, mode, eps);
+// Description:
+//   Split a face loop into simple face-local cells.
+//   .
+//   - Returns: `[[seg_pts2d, seg_pts3d_local, seg_parent_edge_ids, seg_edge_kinds], ...]`
+//   .
+//   - Limitations/Gotchas: `mode="nonzero"` is the intended default for solid self-crossing faces; use `"evenodd"` only when parity fill is genuinely wanted
+// Arguments:
+//   face_pts3d_local = loop in face-local 3D
+//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
+//   eps = geometric tolerance
 function ps_face_segments(face_pts3d_local, mode="nonzero", eps=1e-8) =
     let(
         n = len(face_pts3d_local),
@@ -867,11 +895,16 @@ function _ps_seg_first_nonzero_side(sides, i=0) =
     (sides[i] != 0) ? sides[i] :
     _ps_seg_first_nonzero_side(sides, i + 1);
 
-/**
- * Module: Iterate simple face-local cells for the current placed face.
- * Params: mode (`"nonzero"`, `"evenodd"`, or `"all"`), eps (geometric tolerance)
- * Returns: none; exposes `$ps_seg_*` metadata and calls children once per cell
- */
+// Module: place_on_face_segments()
+// Usage:
+//   place_on_face_segments(mode, eps);
+// Description:
+//   Iterate simple face-local cells for the current placed face.
+//   .
+//   - Returns: none; exposes `$ps_seg_*` metadata and calls children once per cell
+// Arguments:
+//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
+//   eps = geometric tolerance
 module place_on_face_segments(mode="nonzero", eps=1e-8) {
     face_pts3d_local = is_undef($ps_face_pts3d_local)
         ? [for (p = $ps_face_pts2d) [p[0], p[1], 0]]
@@ -891,11 +924,17 @@ module place_on_face_segments(mode="nonzero", eps=1e-8) {
     }
 }
 
-/**
- * Module: Iterate source edges that contribute to the current face's true filled boundary.
- * Params: mode (`"nonzero"`, `"evenodd"`, or `"all"`), eps (geometric tolerance), coords (`"element"` or `"parent"`)
- * Returns: none; exposes `$ps_boundary_source_edge_*` metadata and places children in normalized source-edge coords or parent face coords
- */
+// Module: place_on_face_filled_boundary_source_edges()
+// Usage:
+//   place_on_face_filled_boundary_source_edges(mode, eps, coords);
+// Description:
+//   Iterate source edges that contribute to the current face's true filled boundary.
+//   .
+//   - Returns: none; exposes `$ps_boundary_source_edge_*` metadata and places children in normalized source-edge coords or parent face coords
+// Arguments:
+//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
+//   eps = geometric tolerance
+//   coords = `"element"` or `"parent"`
 module place_on_face_filled_boundary_source_edges(mode="nonzero", eps=1e-8, coords="element") {
     assert(!is_undef($ps_face_pts3d_local), "place_on_face_filled_boundary_source_edges: requires place_on_faces context ($ps_face_pts3d_local)");
     assert(coords == "element" || coords == "parent", "place_on_face_filled_boundary_source_edges: coords must be \"element\" or \"parent\"");
@@ -952,11 +991,18 @@ module place_on_face_filled_boundary_source_edges(mode="nonzero", eps=1e-8, coor
     }
 }
 
-/**
- * Module: Iterate dihedral-aware boundary spans for the current placed face.
- * Params: mode (`"nonzero"`, `"evenodd"`, or `"all"`), eps (geometric tolerance), coords (`"element"` or `"parent"`), kind (`"all"`, `"source"`, `"source_edge"`, `"source_partial"`, `"generated"`, or `"generated_cut"`)
- * Returns: none; exposes `$ps_boundary_span_*` metadata and places children in span coords or parent face coords
- */
+// Module: place_on_face_boundary_spans()
+// Usage:
+//   place_on_face_boundary_spans(mode, eps, coords, kind);
+// Description:
+//   Iterate dihedral-aware boundary spans for the current placed face.
+//   .
+//   - Returns: none; exposes `$ps_boundary_span_*` metadata and places children in span coords or parent face coords
+// Arguments:
+//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
+//   eps = geometric tolerance
+//   coords = `"element"` or `"parent"`
+//   kind = `"all"`, `"source"`, `"source_edge"`, `"source_partial"`, `"generated"`, or `"generated_cut"`
 module place_on_face_boundary_spans(mode="nonzero", eps=1e-8, coords="element", kind="all") {
     assert(!is_undef($ps_face_pts3d_local), "place_on_face_boundary_spans: requires place_on_faces context ($ps_face_pts3d_local)");
     assert(!is_undef($ps_face_idx), "place_on_face_boundary_spans: requires place_on_faces context ($ps_face_idx)");
@@ -1009,12 +1055,19 @@ module place_on_face_boundary_spans(mode="nonzero", eps=1e-8, coords="element", 
     }
 }
 
-/**
- * Module: Render a safe 2D polygon fill for concave or self-intersecting loops.
- * Params: points (2D loop), mode (`"nonzero"`, `"evenodd"`, or `"all"`), eps (geometric tolerance)
- * Returns: none; emits 2D filled geometry via the segmented cells
- * Limitations/Gotchas: intended as a drop-in replacement for raw `polygon(points=...)` when backend behavior on crossing loops is unreliable
- */
+// Module: ps_polygon()
+// Usage:
+//   ps_polygon(points, mode, eps);
+// Description:
+//   Render a safe 2D polygon fill for concave or self-intersecting loops.
+//   .
+//   - Returns: none; emits 2D filled geometry via the segmented cells
+//   .
+//   - Limitations/Gotchas: intended as a drop-in replacement for raw `polygon(points=...)` when backend behavior on crossing loops is unreliable
+// Arguments:
+//   points = 2D loop
+//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
+//   eps = geometric tolerance
 module ps_polygon(points, mode="nonzero", eps=1e-8) {
     assert(!is_undef(points), "ps_polygon: points must be defined");
     assert(len(points) >= 3, "ps_polygon: need at least 3 points");
@@ -1379,11 +1432,21 @@ function _ps_seg_cut_entries_dedupe(entries, eps=1e-8, i=0, acc=[]) =
     )
     _ps_seg_cut_entries_dedupe(entries, eps, i + 1, acc2);
 
-/**
- * Function: Derive geometry cut entries where other faces cross the current face plane.
- * Params: face_pts2d (current face loop), face_idx (current face index), poly_faces_idx/poly_verts_local (full poly in current face-local coordinates), eps (tolerance), mode (cutter triangulation fill rule), filter_parent (drop cuts that coincide with parent edges)
- * Returns: `[[seg2d, cutter_face_idx, cut_dihed], ...]`
- */
+// Function: ps_face_geom_cut_entries()
+// Usage:
+//   result = ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent);
+// Description:
+//   Derive geometry cut entries where other faces cross the current face plane.
+//   .
+//   - Returns: `[[seg2d, cutter_face_idx, cut_dihed], ...]`
+// Arguments:
+//   face_pts2d = current face loop
+//   face_idx = current face index
+//   poly_faces_idx = full poly in current face-local coordinates
+//   poly_verts_local = full poly in current face-local coordinates
+//   eps = tolerance
+//   mode = cutter triangulation fill rule
+//   filter_parent = drop cuts that coincide with parent edges
 function ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero", filter_parent=true) =
     (is_undef(face_pts2d) || is_undef(poly_faces_idx) || is_undef(poly_verts_local)) ? [] :
     let(
@@ -1411,31 +1474,62 @@ function ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_ver
     )
     out;
 
-/**
- * Function: Derive exact foreign intrusion records for the current face plane.
- * Params: face_pts2d (target face loop), face_idx (target face index), poly_faces_idx/poly_verts_local (full poly in target face-local coordinates), eps (tolerance), mode (foreign face triangulation fill rule), filter_parent (drop cuts that coincide with parent edges)
- * Returns: `[[record_kind, target_face_idx, foreign_kind, foreign_idx, seg2d_local, cut_dihed, confidence], ...]`
- * Limitations/Gotchas: currently only reports exact foreign face-plane crossings; clearance/envelope candidates belong to a later API layer
- */
+// Function: ps_face_foreign_intrusion_records()
+// Usage:
+//   result = ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent);
+// Description:
+//   Derive exact foreign intrusion records for the current face plane.
+//   .
+//   - Returns: `[[record_kind, target_face_idx, foreign_kind, foreign_idx, seg2d_local, cut_dihed, confidence], ...]`
+//   .
+//   - Limitations/Gotchas: currently only reports exact foreign face-plane crossings; clearance/envelope candidates belong to a later API layer
+// Arguments:
+//   face_pts2d = target face loop
+//   face_idx = target face index
+//   poly_faces_idx = full poly in target face-local coordinates
+//   poly_verts_local = full poly in target face-local coordinates
+//   eps = tolerance
+//   mode = foreign face triangulation fill rule
+//   filter_parent = drop cuts that coincide with parent edges
 function ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero", filter_parent=true) =
     [
         for (e = ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent))
             _ps_intrusion_record("face_plane_cut", face_idx, "face", e[1], e[0], e[2], "exact")
     ];
 
-/**
- * Function: Return only the 2D cut segments from `ps_face_geom_cut_entries(...)`.
- * Params: face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent
- * Returns: `[seg2d, ...]`
- */
+// Function: ps_face_geom_cut_segments()
+// Usage:
+//   result = ps_face_geom_cut_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent);
+// Description:
+//   Return only the 2D cut segments from `ps_face_geom_cut_entries(...)`.
+//   .
+//   - Returns: `[seg2d, ...]`
+// Arguments:
+//   face_pts2d =
+//   face_idx =
+//   poly_faces_idx =
+//   poly_verts_local =
+//   eps =
+//   mode =
+//   filter_parent =
 function ps_face_geom_cut_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero", filter_parent=true) =
     [for (e = ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent)) e[0]];
 
-/**
- * Function: Split the current face by geometry cuts and keep only the cells visible from local `+Z`.
- * Params: face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent
- * Returns: `[[cell_pts2d, cell_pts3d_local, cell_edge_ids, cell_edge_kinds], ...]`
- */
+// Function: ps_face_visible_segments()
+// Usage:
+//   result = ps_face_visible_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent);
+// Description:
+//   Split the current face by geometry cuts and keep only the cells visible from local `+Z`.
+//   .
+//   - Returns: `[[cell_pts2d, cell_pts3d_local, cell_edge_ids, cell_edge_kinds], ...]`
+// Arguments:
+//   face_pts2d =
+//   face_idx =
+//   poly_faces_idx =
+//   poly_verts_local =
+//   eps =
+//   mode =
+//   filter_parent =
 function ps_face_visible_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero", filter_parent=true) =
     let(
         base_segs = ps_face_segments([for (p = face_pts2d) [p[0], p[1], 0]], mode, eps),
@@ -1472,12 +1566,20 @@ function _ps_face_cut_split_cells(face_pts2d, face_idx, poly_faces_idx, poly_ver
 function _ps_scl_cut_edge_count(cell) =
     len([for (kind = cell[3]) if (kind == "cut") 1]);
 
-/**
- * Function: Build ordered seam-clearance loop records for a face.
- * Params: face_ctx (face-local context), mode/eps/filter_parent (foreign cut controls)
- * Returns: seam-clearance loop records for hidden cut-cell loops
- * Limitations/Gotchas: emits closed cell loops derived from geometry cuts; individual seam-segment placement records are not grouped here
- */
+// Function: ps_face_seam_clearance_loops()
+// Usage:
+//   result = ps_face_seam_clearance_loops(face_ctx, mode, eps, filter_parent);
+// Description:
+//   Build ordered seam-clearance loop records for a face.
+//   .
+//   - Returns: seam-clearance loop records for hidden cut-cell loops
+//   .
+//   - Limitations/Gotchas: emits closed cell loops derived from geometry cuts; individual seam-segment placement records are not grouped here
+// Arguments:
+//   face_ctx = face-local context
+//   mode = foreign cut controls
+//   eps = foreign cut controls
+//   filter_parent = foreign cut controls
 function ps_face_seam_clearance_loops(
     face_ctx,
     mode="nonzero",
@@ -1569,12 +1671,24 @@ function _ps_scl_shell(loop, z0, z1, clearance=0, max_slope_offset=undef, eps=1e
         eps
     );
 
-/**
- * Function: Build seam-clearance loop shells for a face.
- * Params: face_ctx (face-local context), z0/z1 (cap Z planes), clearance (outward loop offset), mode/eps/filter_parent (foreign cut controls), max_slope_offset (optional max extra slope offset)
- * Returns: list of `ps_loop_shell` records
- * Limitations/Gotchas: one shell per hidden ordered cut-cell loop; this is loop-region clearance, not per-segment corridor geometry
- */
+// Function: ps_face_seam_clearance_shells()
+// Usage:
+//   result = ps_face_seam_clearance_shells(face_ctx, z0, z1, clearance, mode, eps, filter_parent, max_slope_offset);
+// Description:
+//   Build seam-clearance loop shells for a face.
+//   .
+//   - Returns: list of `ps_loop_shell` records
+//   .
+//   - Limitations/Gotchas: one shell per hidden ordered cut-cell loop; this is loop-region clearance, not per-segment corridor geometry
+// Arguments:
+//   face_ctx = face-local context
+//   z0 = cap Z planes
+//   z1 = cap Z planes
+//   clearance = outward loop offset
+//   mode = foreign cut controls
+//   eps = foreign cut controls
+//   filter_parent = foreign cut controls
+//   max_slope_offset = optional max extra slope offset
 function ps_face_seam_clearance_shells(
     face_ctx,
     z0,
@@ -1600,11 +1714,17 @@ function ps_face_seam_clearance_shells(
                 shell
     ];
 
-/**
- * Module: Iterate seam-clearance loops for the current placed face.
- * Params: mode/eps/filter_parent (foreign cut controls)
- * Returns: none; exposes `$ps_seam_clearance_loop_*` metadata
- */
+// Module: place_on_face_seam_clearance_loops()
+// Usage:
+//   place_on_face_seam_clearance_loops(mode, eps, filter_parent);
+// Description:
+//   Iterate seam-clearance loops for the current placed face.
+//   .
+//   - Returns: none; exposes `$ps_seam_clearance_loop_*` metadata
+// Arguments:
+//   mode = foreign cut controls
+//   eps = foreign cut controls
+//   filter_parent = foreign cut controls
 module place_on_face_seam_clearance_loops(mode="nonzero", eps=1e-8, filter_parent=true) {
     assert(!is_undef($ps_face_local_context), "place_on_face_seam_clearance_loops: requires place_on_faces context ($ps_face_local_context)");
     loops = ps_face_seam_clearance_loops($ps_face_local_context, mode, eps, filter_parent);
@@ -1624,11 +1744,21 @@ module place_on_face_seam_clearance_loops(mode="nonzero", eps=1e-8, filter_paren
     }
 }
 
-/**
- * Module: Iterate seam-clearance shells for the current placed face.
- * Params: z0/z1/clearance/mode/eps/filter_parent/max_slope_offset (see `ps_face_seam_clearance_shells`)
- * Returns: none; exposes `$ps_loop_shell_record` and `$ps_seam_clearance_shell_*` metadata
- */
+// Module: place_on_face_seam_clearance_shells()
+// Usage:
+//   place_on_face_seam_clearance_shells(z0, z1, clearance, mode, eps, filter_parent, max_slope_offset);
+// Description:
+//   Iterate seam-clearance shells for the current placed face.
+//   .
+//   - Returns: none; exposes `$ps_loop_shell_record` and `$ps_seam_clearance_shell_*` metadata
+// Arguments:
+//   z0 = see `ps_face_seam_clearance_shells`
+//   z1 = see `ps_face_seam_clearance_shells`
+//   clearance = see `ps_face_seam_clearance_shells`
+//   mode = see `ps_face_seam_clearance_shells`
+//   eps = see `ps_face_seam_clearance_shells`
+//   filter_parent = see `ps_face_seam_clearance_shells`
+//   max_slope_offset = see `ps_face_seam_clearance_shells`
 module place_on_face_seam_clearance_shells(z0, z1, clearance=0, mode="nonzero", eps=1e-8, filter_parent=true, max_slope_offset=undef) {
     assert(!is_undef($ps_face_local_context), "place_on_face_seam_clearance_shells: requires place_on_faces context ($ps_face_local_context)");
     shells = ps_face_seam_clearance_shells($ps_face_local_context, z0, z1, clearance, mode, eps, filter_parent, max_slope_offset);
@@ -1645,11 +1775,22 @@ module place_on_face_seam_clearance_shells(z0, z1, clearance=0, mode="nonzero", 
     }
 }
 
-/**
- * Module: Render seam-clearance shells for the current placed face.
- * Params: z0/z1/clearance/mode/eps/filter_parent/max_slope_offset (see `ps_face_seam_clearance_shells`), convexity (OpenSCAD hint)
- * Returns: none
- */
+// Module: ps_face_seam_clearance_volume()
+// Usage:
+//   ps_face_seam_clearance_volume(z0, z1, clearance, mode, eps, filter_parent, max_slope_offset, convexity);
+// Description:
+//   Render seam-clearance shells for the current placed face.
+//   .
+//   - Returns: none
+// Arguments:
+//   z0 = see `ps_face_seam_clearance_shells`
+//   z1 = see `ps_face_seam_clearance_shells`
+//   clearance = see `ps_face_seam_clearance_shells`
+//   mode = see `ps_face_seam_clearance_shells`
+//   eps = see `ps_face_seam_clearance_shells`
+//   filter_parent = see `ps_face_seam_clearance_shells`
+//   max_slope_offset = see `ps_face_seam_clearance_shells`
+//   convexity = OpenSCAD hint
 module ps_face_seam_clearance_volume(z0, z1, clearance=0, mode="nonzero", eps=1e-8, filter_parent=true, max_slope_offset=undef, convexity=6) {
     assert(!is_undef($ps_face_local_context), "ps_face_seam_clearance_volume: requires place_on_faces context ($ps_face_local_context)");
     shells = ps_face_seam_clearance_shells($ps_face_local_context, z0, z1, clearance, mode, eps, filter_parent, max_slope_offset);
@@ -1658,11 +1799,17 @@ module ps_face_seam_clearance_volume(z0, z1, clearance=0, mode="nonzero", eps=1e
         ps_loop_shell(shell, convexity);
 }
 
-/**
- * Module: Iterate geometry-derived cut segments for the current placed face.
- * Params: mode (cutter triangulation fill rule), eps (tolerance), filter_parent (drop cuts that coincide with parent edges)
- * Returns: none; exposes `$ps_face_cut_*` metadata and calls children once per cut segment
- */
+// Module: place_on_face_geom_cut_segments()
+// Usage:
+//   place_on_face_geom_cut_segments(mode, eps, filter_parent);
+// Description:
+//   Iterate geometry-derived cut segments for the current placed face.
+//   .
+//   - Returns: none; exposes `$ps_face_cut_*` metadata and calls children once per cut segment
+// Arguments:
+//   mode = cutter triangulation fill rule
+//   eps = tolerance
+//   filter_parent = drop cuts that coincide with parent edges
 module place_on_face_geom_cut_segments(mode="nonzero", eps=1e-8, filter_parent=true) {
     assert(!is_undef($ps_face_pts2d), "place_on_face_geom_cut_segments: requires place_on_faces context ($ps_face_pts2d)");
     assert(!is_undef($ps_face_idx), "place_on_face_geom_cut_segments: requires place_on_faces context ($ps_face_idx)");
@@ -1678,12 +1825,19 @@ module place_on_face_geom_cut_segments(mode="nonzero", eps=1e-8, filter_parent=t
     }
 }
 
-/**
- * Module: Iterate exact foreign intrusion records for the current placed face.
- * Params: mode (foreign face triangulation fill rule), eps (tolerance), filter_parent (drop cuts that coincide with parent edges)
- * Returns: none; exposes `$ps_intrusion_*` metadata and calls children once per intrusion record
- * Limitations/Gotchas: currently reports only `"face_plane_cut"` records; no clearance/envelope candidates are generated here
- */
+// Module: place_on_face_foreign_intrusions()
+// Usage:
+//   place_on_face_foreign_intrusions(mode, eps, filter_parent);
+// Description:
+//   Iterate exact foreign intrusion records for the current placed face.
+//   .
+//   - Returns: none; exposes `$ps_intrusion_*` metadata and calls children once per intrusion record
+//   .
+//   - Limitations/Gotchas: currently reports only `"face_plane_cut"` records; no clearance/envelope candidates are generated here
+// Arguments:
+//   mode = foreign face triangulation fill rule
+//   eps = tolerance
+//   filter_parent = drop cuts that coincide with parent edges
 module place_on_face_foreign_intrusions(mode="nonzero", eps=1e-8, filter_parent=true) {
     assert(!is_undef($ps_face_pts2d), "place_on_face_foreign_intrusions: requires place_on_faces context ($ps_face_pts2d)");
     assert(!is_undef($ps_face_idx), "place_on_face_foreign_intrusions: requires place_on_faces context ($ps_face_idx)");
@@ -1883,12 +2037,23 @@ function _ps_face_seam_segment_sites_from_context(
     )
     concat(boundary_out, foreign_out);
 
-/**
- * Function: Build edge-like placement sites for current-face seam segments from a face-local context.
- * Params: face_ctx (face-local context), mode/eps (segmentation controls), boundary_kind (boundary span kind filter), include_boundary/include_foreign/filter_parent (source controls)
- * Returns: seam site records for `place_on_face_seam_segments(...)`
- * Limitations/Gotchas: context-first public entry point
- */
+// Function: ps_face_seam_segment_sites()
+// Usage:
+//   result = ps_face_seam_segment_sites(face_ctx, mode, eps, boundary_kind, include_boundary, include_foreign, filter_parent);
+// Description:
+//   Build edge-like placement sites for current-face seam segments from a face-local context.
+//   .
+//   - Returns: seam site records for `place_on_face_seam_segments(...)`
+//   .
+//   - Limitations/Gotchas: context-first public entry point
+// Arguments:
+//   face_ctx = face-local context
+//   mode = segmentation controls
+//   eps = segmentation controls
+//   boundary_kind = boundary span kind filter
+//   include_boundary = source controls
+//   include_foreign = source controls
+//   filter_parent = source controls
 function ps_face_seam_segment_sites(
     face_ctx,
     mode="nonzero",
@@ -1915,12 +2080,25 @@ function _ps_seg_optional_idx_selected(idx, indices) =
             ? _ps_list_contains(indices, idx)
             : idx == indices;
 
-/**
- * Module: Place children on edge-like seam segments for the current placed face.
- * Params: mode/eps (segmentation controls), coords (`"element"` or `"parent"`), boundary_kind (boundary span kind filter), include_boundary/include_foreign/filter_parent (source controls), foreign_indices (optional accepted foreign element id or ids), support_only (visit only classified printable support candidates)
- * Returns: none; exposes `$ps_seam_*` metadata and edge-compatible `$ps_edge_*` aliases
- * Limitations/Gotchas: requires `place_on_faces(...)`; printable support classification is conservative and only promotes simple-face exact cuts plus non-source generated cuts
- */
+// Module: place_on_face_seam_segments()
+// Usage:
+//   place_on_face_seam_segments(mode, eps, coords, boundary_kind, include_boundary, include_foreign, filter_parent, foreign_indices, support_only);
+// Description:
+//   Place children on edge-like seam segments for the current placed face.
+//   .
+//   - Returns: none; exposes `$ps_seam_*` metadata and edge-compatible `$ps_edge_*` aliases
+//   .
+//   - Limitations/Gotchas: requires `place_on_faces(...)`; printable support classification is conservative and only promotes simple-face exact cuts plus non-source generated cuts
+// Arguments:
+//   mode = segmentation controls
+//   eps = segmentation controls
+//   coords = `"element"` or `"parent"`
+//   boundary_kind = boundary span kind filter
+//   include_boundary = source controls
+//   include_foreign = source controls
+//   filter_parent = source controls
+//   foreign_indices = optional accepted foreign element id or ids
+//   support_only = visit only classified printable support candidates
 module place_on_face_seam_segments(
     mode="nonzero",
     eps=1e-8,
@@ -1993,11 +2171,17 @@ module place_on_face_seam_segments(
     }
 }
 
-/**
- * Module: Iterate the retained visible cells for the current placed face.
- * Params: mode (cell/cutter fill rule), eps (tolerance), filter_parent (drop cuts that coincide with parent edges)
- * Returns: none; exposes `$ps_vis_seg_*` metadata and calls children once per visible cell
- */
+// Module: place_on_face_visible_segments()
+// Usage:
+//   place_on_face_visible_segments(mode, eps, filter_parent);
+// Description:
+//   Iterate the retained visible cells for the current placed face.
+//   .
+//   - Returns: none; exposes `$ps_vis_seg_*` metadata and calls children once per visible cell
+// Arguments:
+//   mode = cell/cutter fill rule
+//   eps = tolerance
+//   filter_parent = drop cuts that coincide with parent edges
 module place_on_face_visible_segments(mode="nonzero", eps=1e-8, filter_parent=true) {
     assert(!is_undef($ps_face_pts2d), "place_on_face_visible_segments: requires place_on_faces context ($ps_face_pts2d)");
     assert(!is_undef($ps_face_idx), "place_on_face_visible_segments: requires place_on_faces context ($ps_face_idx)");

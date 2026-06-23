@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/core/solvers.scad
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Solver helpers
 // Parameter solvers for mixed-face transforms.
@@ -39,6 +40,16 @@ function _ps_map_edge_c(face_len, adj_len, c_by_pair, default_c=0) =
     )
     (len(idxs) == 0) ? default_c : c_by_pair[idxs[0]][2];
 
+// Function: solve_truncate_corner_t()
+// Usage:
+//   result = solve_truncate_corner_t(verts, face, k);
+// Description:
+//   Estimate a truncation fraction for one face corner from local edge
+//   geometry.
+// Arguments:
+//   verts = vertex list
+//   face = face index loop
+//   k = corner position within `face`
 // Compute per-corner truncation estimate t = 1/(2+r),
 // where r = |B-C| / mean(|V-B|,|V-C|) for face corner (...B,V,C...).
 function solve_truncate_corner_t(verts, face, k) =
@@ -62,11 +73,17 @@ function solve_truncate_corner_t(verts, face, k) =
     )
     t;
 
-// Return a “best guess” truncation t if user passes t=undef.
-// - If the poly is locally uniform, returns the mean corner t.
-// - Otherwise returns fallback (default 0.2).
-//
-// tol is an absolute tolerance on (t_max - t_min).
+// Function: solve_truncate_default_t()
+// Usage:
+//   result = solve_truncate_default_t(poly, tol=1e-3, fallback=0.2);
+// Description:
+//   Return a best-guess truncation fraction when the caller leaves `t=undef`.
+//   If the poly is locally uniform, this returns the mean corner estimate;
+//   otherwise it returns `fallback`.
+// Arguments:
+//   poly = source poly descriptor
+//   tol = absolute tolerance on `(t_max - t_min)`
+//   fallback = fallback value for non-uniform inputs
 function solve_truncate_default_t(poly, tol = 1e-3, fallback = 0.2) =
     let(
         verts = poly_verts(poly),
@@ -108,7 +125,18 @@ function _ps_cantitruncate_edge_ids_of_pair(faces0, edges, edge_faces, n0, n1) =
             if (ok && alo == lo && ahi == hi) ei
     ];
 
-// Convert cantitruncate family maps into profile rows for poly_cantitruncate().
+// Function: ps_cantitruncate_profile_rows()
+// Usage:
+//   result = ps_cantitruncate_profile_rows(poly, c_by_size, default_c=0,
+//       c_edge_by_pair=undef);
+// Description:
+//   Convert cantitruncate family maps into profile rows for
+//   `poly_cantitruncate()`.
+// Arguments:
+//   poly = source poly descriptor
+//   c_by_size = face-family cantellation map
+//   default_c = fallback cantellation value
+//   c_edge_by_pair = optional edge-family cantellation map
 function ps_cantitruncate_profile_rows(poly, c_by_size, default_c=0, c_edge_by_pair=undef) =
     let(
         verts = poly_verts(poly),
@@ -139,7 +167,16 @@ function ps_cantitruncate_profile_rows(poly, c_by_size, default_c=0, c_edge_by_p
     )
     concat(face_rows, edge_rows);
 
-// Solve per-face-family c values by matching dominant family to trig solution.
+// Function: solve_cantitruncate_dominant()
+// Usage:
+//   result = solve_cantitruncate_dominant(poly, dominant_size, edge_idx=undef);
+// Description:
+//   Solve cantitruncate parameters by matching the dominant face family to the
+//   trig-based solution.
+// Arguments:
+//   poly = source poly descriptor
+//   dominant_size = dominant face arity
+//   edge_idx = optional reference edge index
 function solve_cantitruncate_dominant(poly, dominant_size, edge_idx=undef) =
     let(
         verts = poly_verts(poly),
@@ -162,7 +199,16 @@ function solve_cantitruncate_dominant(poly, dominant_size, edge_idx=undef) =
     )
     [t, c_by_size];
 
-// Solve per-face-family c values and per-edge-family overrides.
+// Function: solve_cantitruncate_dominant_edges()
+// Usage:
+//   result = solve_cantitruncate_dominant_edges(poly, dominant_size, edge_idx=undef);
+// Description:
+//   Solve dominant-family cantitruncate parameters and derive per-edge-family
+//   overrides.
+// Arguments:
+//   poly = source poly descriptor
+//   dominant_size = dominant face arity
+//   edge_idx = optional reference edge index
 function solve_cantitruncate_dominant_edges(poly, dominant_size, edge_idx=undef) =
     let(
         sol = solve_cantitruncate_dominant(poly, dominant_size, edge_idx),
@@ -180,10 +226,18 @@ function solve_cantitruncate_dominant_edges(poly, dominant_size, edge_idx=undef)
     )
     [t, c_by_size, c_edge_by_pair];
 
-// Solve dominant-edge cantitruncate and return profile rows for poly_cantitruncate().
-// Includes a global vertex t row so callers can use:
-//   poly_cantitruncate(poly, t=0, c=0, profile=rows)
-// without carrying a separate tuple.
+// Function: solve_cantitruncate_dominant_edges_profile_rows()
+// Usage:
+//   result = solve_cantitruncate_dominant_edges_profile_rows(poly,
+//       dominant_size, edge_idx=undef, default_c=0);
+// Description:
+//   Solve dominant-edge cantitruncate parameters and return ready-to-use
+//   profile rows, including a global vertex `t` row.
+// Arguments:
+//   poly = source poly descriptor
+//   dominant_size = dominant face arity
+//   edge_idx = optional reference edge index
+//   default_c = fallback cantellation value
 function solve_cantitruncate_dominant_edges_profile_rows(poly, dominant_size, edge_idx=undef, default_c=0) =
     let(
         sol = solve_cantitruncate_dominant_edges(poly, dominant_size, edge_idx),
@@ -194,8 +248,15 @@ function solve_cantitruncate_dominant_edges_profile_rows(poly, dominant_size, ed
         rows
     );
 
-// Trig-based solver for regular bases (one edge type).
-// Uses face interior angle and dihedral to compute t and c directly.
+// Function: solve_cantitruncate_trig()
+// Usage:
+//   result = solve_cantitruncate_trig(poly, face_idx=0, edge_idx=undef);
+// Description:
+//   Solve cantitruncate parameters trigonometrically for regular-base cases.
+// Arguments:
+//   poly = source poly descriptor
+//   face_idx = reference face index
+//   edge_idx = optional reference edge index
 function solve_cantitruncate_trig(poly, face_idx=0, edge_idx=undef) =
     let(
         verts = poly_verts(poly),

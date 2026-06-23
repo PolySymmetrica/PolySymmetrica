@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/core/segments_data.scad
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Segment data records
 // Shared record accessors for boundary spans, intrusions, seam-clearance loops,
@@ -50,170 +51,265 @@ function _ps_boundary_span_site(
         kind
     ];
 
-/**
- * Function: Return the boundary span site index.
- * Params: site (boundary span site record)
- * Returns: source boundary span site index
- */
+// Function: ps_boundary_span_site_idx()
+// Usage:
+//   result = ps_boundary_span_site_idx(site);
+// Description:
+//   Return the boundary span site index.
+//   .
+//   - Returns: source boundary span site index
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_idx(site) = site[0];
 
-/**
- * Function: Return the boundary span site center.
- * Params: site (boundary span site record)
- * Returns: span center in current face-local coordinates
- */
+// Function: ps_boundary_span_site_center_local()
+// Usage:
+//   result = ps_boundary_span_site_center_local(site);
+// Description:
+//   Return the boundary span site center.
+//   .
+//   - Returns: span center in current face-local coordinates
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_center_local(site) =
     ps_placement_frame_center(ps_boundary_span_site_frame(site));
 
-/**
- * Function: Return the boundary span site local X axis.
- * Params: site (boundary span site record)
- * Returns: span-local X axis in current face-local coordinates
- */
+// Function: ps_boundary_span_site_ex_local()
+// Usage:
+//   result = ps_boundary_span_site_ex_local(site);
+// Description:
+//   Return the boundary span site local X axis.
+//   .
+//   - Returns: span-local X axis in current face-local coordinates
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_ex_local(site) =
     ps_placement_frame_ex(ps_boundary_span_site_frame(site));
 
-/**
- * Function: Return the boundary span site local Y axis.
- * Params: site (boundary span site record)
- * Returns: span-local Y axis in current face-local coordinates
- */
+// Function: ps_boundary_span_site_ey_local()
+// Usage:
+//   result = ps_boundary_span_site_ey_local(site);
+// Description:
+//   Return the boundary span site local Y axis.
+//   .
+//   - Returns: span-local Y axis in current face-local coordinates
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_ey_local(site) =
     ps_placement_frame_ey(ps_boundary_span_site_frame(site));
 
-/**
- * Function: Return the boundary span site local Z axis.
- * Params: site (boundary span site record)
- * Returns: span-local Z axis in current face-local coordinates
- */
+// Function: ps_boundary_span_site_ez_local()
+// Usage:
+//   result = ps_boundary_span_site_ez_local(site);
+// Description:
+//   Return the boundary span site local Z axis.
+//   .
+//   - Returns: span-local Z axis in current face-local coordinates
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_ez_local(site) =
     ps_placement_frame_ez(ps_boundary_span_site_frame(site));
 
-/**
- * Function: Return the boundary span placement frame.
- * Params: site (boundary span site record)
- * Returns: placement frame `[center, ex, ey, ez]` in current face-local coordinates
- */
+// Function: ps_boundary_span_site_frame()
+// Usage:
+//   result = ps_boundary_span_site_frame(site);
+// Description:
+//   Return the boundary span placement frame.
+//   .
+//   - Returns: placement frame `[center, ex, ey, ez]` in current face-local coordinates
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_frame(site) = site[1];
 
-/**
- * Function: Return the boundary span length.
- * Params: site (boundary span site record)
- * Returns: span length in current face-local units
- */
+// Function: ps_boundary_span_site_len()
+// Usage:
+//   result = ps_boundary_span_site_len(site);
+// Description:
+//   Return the boundary span length.
+//   .
+//   - Returns: span length in current face-local units
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_len(site) = site[2];
 
-/**
- * Function: Return the boundary span 2D segment.
- * Params: site (boundary span site record)
- * Returns: oriented `[[x0,y0],[x1,y1]]` segment in current face-local XY coordinates
- */
+// Function: ps_boundary_span_site_segment2d_local()
+// Usage:
+//   result = ps_boundary_span_site_segment2d_local(site);
+// Description:
+//   Return the boundary span 2D segment.
+//   .
+//   - Returns: oriented `[[x0,y0],[x1,y1]]` segment in current face-local XY coordinates
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_segment2d_local(site) = site[3];
 
-/**
- * Function: Return the boundary loop index containing this span.
- * Params: site (boundary span site record)
- * Returns: boundary loop index
- */
+// Function: ps_boundary_span_site_loop_idx()
+// Usage:
+//   result = ps_boundary_span_site_loop_idx(site);
+// Description:
+//   Return the boundary loop index containing this span.
+//   .
+//   - Returns: boundary loop index
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_loop_idx(site) = site[4];
 
-/**
- * Function: Return the source edge index for this span.
- * Params: site (boundary span site record)
- * Returns: original current-face edge index, or `undef`
- */
+// Function: ps_boundary_span_site_source_edge_idx()
+// Usage:
+//   result = ps_boundary_span_site_source_edge_idx(site);
+// Description:
+//   Return the source edge index for this span.
+//   .
+//   - Returns: original current-face edge index, or `undef`
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_source_edge_idx(site) = site[5];
 
-/**
- * Function: Return the oriented source-edge start parameter.
- * Params: site (boundary span site record)
- * Returns: source-edge parameter at the span start
- */
+// Function: ps_boundary_span_site_source_t0()
+// Usage:
+//   result = ps_boundary_span_site_source_t0(site);
+// Description:
+//   Return the oriented source-edge start parameter.
+//   .
+//   - Returns: source-edge parameter at the span start
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_source_t0(site) = site[6];
 
-/**
- * Function: Return the oriented source-edge end parameter.
- * Params: site (boundary span site record)
- * Returns: source-edge parameter at the span end
- */
+// Function: ps_boundary_span_site_source_t1()
+// Usage:
+//   result = ps_boundary_span_site_source_t1(site);
+// Description:
+//   Return the oriented source-edge end parameter.
+//   .
+//   - Returns: source-edge parameter at the span end
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_source_t1(site) = site[7];
 
-/**
- * Function: Return the raw arrangement span kind.
- * Params: site (boundary span site record)
- * Returns: raw lineage kind such as `"source"`
- */
+// Function: ps_boundary_span_site_raw_kind()
+// Usage:
+//   result = ps_boundary_span_site_raw_kind(site);
+// Description:
+//   Return the raw arrangement span kind.
+//   .
+//   - Returns: raw lineage kind such as `"source"`
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_raw_kind(site) = site[8];
 
-/**
- * Function: Return the filled cell index beside this boundary span.
- * Params: site (boundary span site record)
- * Returns: filled cell index, or `undef`
- */
+// Function: ps_boundary_span_site_filled_cell_idx()
+// Usage:
+//   result = ps_boundary_span_site_filled_cell_idx(site);
+// Description:
+//   Return the filled cell index beside this boundary span.
+//   .
+//   - Returns: filled cell index, or `undef`
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_filled_cell_idx(site) = site[9];
 
-/**
- * Function: Return the non-filled/opposite cell index beside this boundary span.
- * Params: site (boundary span site record)
- * Returns: opposite cell index, or `undef`
- */
+// Function: ps_boundary_span_site_other_cell_idx()
+// Usage:
+//   result = ps_boundary_span_site_other_cell_idx(site);
+// Description:
+//   Return the non-filled/opposite cell index beside this boundary span.
+//   .
+//   - Returns: opposite cell index, or `undef`
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_other_cell_idx(site) = site[10];
 
-/**
- * Function: Return the adjacent source face index.
- * Params: site (boundary span site record)
- * Returns: adjacent face index inherited from the source edge, or `undef`
- */
+// Function: ps_boundary_span_site_adj_face_idx()
+// Usage:
+//   result = ps_boundary_span_site_adj_face_idx(site);
+// Description:
+//   Return the adjacent source face index.
+//   .
+//   - Returns: adjacent face index inherited from the source edge, or `undef`
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_adj_face_idx(site) = site[11];
 
-/**
- * Function: Return the source-edge dihedral metadata.
- * Params: site (boundary span site record)
- * Returns: dihedral inherited from the source edge, or `undef`
- */
+// Function: ps_boundary_span_site_dihedral()
+// Usage:
+//   result = ps_boundary_span_site_dihedral(site);
+// Description:
+//   Return the source-edge dihedral metadata.
+//   .
+//   - Returns: dihedral inherited from the source edge, or `undef`
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_dihedral(site) = site[12];
 
-/**
- * Function: Return the adjacent face normal in current face-local coordinates.
- * Params: site (boundary span site record)
- * Returns: adjacent-face normal, or `undef`
- */
+// Function: ps_boundary_span_site_adj_face_normal_local()
+// Usage:
+//   result = ps_boundary_span_site_adj_face_normal_local(site);
+// Description:
+//   Return the adjacent face normal in current face-local coordinates.
+//   .
+//   - Returns: adjacent-face normal, or `undef`
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_adj_face_normal_local(site) = site[13];
 
-/**
- * Function: Return which side of the oriented span is filled.
- * Params: site (boundary span site record)
- * Returns: `+1` for left, `-1` for right, or `0` for degenerate/ambiguous spans
- */
+// Function: ps_boundary_span_site_filled_side()
+// Usage:
+//   result = ps_boundary_span_site_filled_side(site);
+// Description:
+//   Return which side of the oriented span is filled.
+//   .
+//   - Returns: `+1` for left, `-1` for right, or `0` for degenerate/ambiguous spans
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_filled_side(site) = site[14];
 
-/**
- * Function: Return adjacent-face direction in span-local coordinates.
- * Params: site (boundary span site record)
- * Returns: adjacent face plane direction in `[x,y,z]` span-local coordinates, or `undef`
- */
+// Function: ps_boundary_span_site_adj_face_dir_span_local()
+// Usage:
+//   result = ps_boundary_span_site_adj_face_dir_span_local(site);
+// Description:
+//   Return adjacent-face direction in span-local coordinates.
+//   .
+//   - Returns: adjacent face plane direction in `[x,y,z]` span-local coordinates, or `undef`
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_adj_face_dir_span_local(site) = site[15];
 
-/**
- * Function: Return the public boundary span lineage kind.
- * Params: site (boundary span site record)
- * Returns: `"source_edge"`, `"source_partial"`, or `"generated_cut"`
- */
+// Function: ps_boundary_span_site_kind()
+// Usage:
+//   result = ps_boundary_span_site_kind(site);
+// Description:
+//   Return the public boundary span lineage kind.
+//   .
+//   - Returns: `"source_edge"`, `"source_partial"`, or `"generated_cut"`
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_kind(site) = site[16];
 
-/**
- * Function: Test whether a boundary span site is generated/split rather than a full source edge.
- * Params: site (boundary span site record)
- * Returns: true when the public kind is not `"source_edge"`
- */
+// Function: ps_boundary_span_site_is_generated()
+// Usage:
+//   result = ps_boundary_span_site_is_generated(site);
+// Description:
+//   Test whether a boundary span site is generated/split rather than a full source edge.
+//   .
+//   - Returns: true when the public kind is not `"source_edge"`
+// Arguments:
+//   site = boundary span site record
 function ps_boundary_span_site_is_generated(site) =
     ps_boundary_span_site_kind(site) != "source_edge";
 
-/**
- * Function: Build a description string for a boundary span site.
- * Params: site (boundary span site record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
- * Returns: description string
- */
+// Function: ps_boundary_span_site_describe_str()
+// Usage:
+//   result = ps_boundary_span_site_describe_str(site, detail, kvpair_to_str, field_sep);
+// Description:
+//   Build a description string for a boundary span site.
+//   .
+//   - Returns: description string
+// Arguments:
+//   site = boundary span site record
+//   detail = detail level
+//   kvpair_to_str = optional key/value formatter
+//   field_sep = field separator
 function ps_boundary_span_site_describe_str(site, detail=0, kvpair_to_str=undef, field_sep=", ") =
     ps_describe_record_str(
         "BoundarySpanSite",
@@ -242,11 +338,18 @@ function ps_boundary_span_site_describe_str(site, detail=0, kvpair_to_str=undef,
         field_sep
     );
 
-/**
- * Module: Echo a boundary span site description.
- * Params: site (boundary span site record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
- * Returns: none
- */
+// Module: ps_boundary_span_site_describe()
+// Usage:
+//   ps_boundary_span_site_describe(site, detail, kvpair_to_str, field_sep);
+// Description:
+//   Echo a boundary span site description.
+//   .
+//   - Returns: none
+// Arguments:
+//   site = boundary span site record
+//   detail = detail level
+//   kvpair_to_str = optional key/value formatter
+//   field_sep = field separator
 module ps_boundary_span_site_describe(site, detail=0, kvpair_to_str=undef, field_sep=", ") {
     echo(ps_boundary_span_site_describe_str(site, detail, kvpair_to_str, field_sep));
 }
@@ -254,60 +357,95 @@ module ps_boundary_span_site_describe(site, detail=0, kvpair_to_str=undef, field
 function _ps_intrusion_record(kind, target_face_idx, foreign_kind, foreign_idx, seg2d_local, dihedral, confidence) =
     [kind, target_face_idx, foreign_kind, foreign_idx, seg2d_local, dihedral, confidence];
 
-/**
- * Function: Get the record kind from a foreign intrusion record.
- * Params: record (from `ps_face_foreign_intrusion_records(...)`)
- * Returns: record kind string, currently `"face_plane_cut"`
- */
+// Function: ps_intrusion_kind()
+// Usage:
+//   result = ps_intrusion_kind(record);
+// Description:
+//   Get the record kind from a foreign intrusion record.
+//   .
+//   - Returns: record kind string, currently `"face_plane_cut"`
+// Arguments:
+//   record = from `ps_face_foreign_intrusion_records(...)`
 function ps_intrusion_kind(record) = record[0];
 
-/**
- * Function: Get the target face index from a foreign intrusion record.
- * Params: record (from `ps_face_foreign_intrusion_records(...)`)
- * Returns: target face index
- */
+// Function: ps_intrusion_target_face_idx()
+// Usage:
+//   result = ps_intrusion_target_face_idx(record);
+// Description:
+//   Get the target face index from a foreign intrusion record.
+//   .
+//   - Returns: target face index
+// Arguments:
+//   record = from `ps_face_foreign_intrusion_records(...)`
 function ps_intrusion_target_face_idx(record) = record[1];
 
-/**
- * Function: Get the foreign element kind from a foreign intrusion record.
- * Params: record (from `ps_face_foreign_intrusion_records(...)`)
- * Returns: foreign element kind string, currently `"face"`
- */
+// Function: ps_intrusion_foreign_kind()
+// Usage:
+//   result = ps_intrusion_foreign_kind(record);
+// Description:
+//   Get the foreign element kind from a foreign intrusion record.
+//   .
+//   - Returns: foreign element kind string, currently `"face"`
+// Arguments:
+//   record = from `ps_face_foreign_intrusion_records(...)`
 function ps_intrusion_foreign_kind(record) = record[2];
 
-/**
- * Function: Get the foreign element index from a foreign intrusion record.
- * Params: record (from `ps_face_foreign_intrusion_records(...)`)
- * Returns: foreign element index
- */
+// Function: ps_intrusion_foreign_idx()
+// Usage:
+//   result = ps_intrusion_foreign_idx(record);
+// Description:
+//   Get the foreign element index from a foreign intrusion record.
+//   .
+//   - Returns: foreign element index
+// Arguments:
+//   record = from `ps_face_foreign_intrusion_records(...)`
 function ps_intrusion_foreign_idx(record) = record[3];
 
-/**
- * Function: Get the target-local 2D intrusion segment from a foreign intrusion record.
- * Params: record (from `ps_face_foreign_intrusion_records(...)`)
- * Returns: `seg2d` in target face-local coordinates
- */
+// Function: ps_intrusion_segment2d_local()
+// Usage:
+//   result = ps_intrusion_segment2d_local(record);
+// Description:
+//   Get the target-local 2D intrusion segment from a foreign intrusion record.
+//   .
+//   - Returns: `seg2d` in target face-local coordinates
+// Arguments:
+//   record = from `ps_face_foreign_intrusion_records(...)`
 function ps_intrusion_segment2d_local(record) = record[4];
 
-/**
- * Function: Get the face-plane cut dihedral from a foreign intrusion record.
- * Params: record (from `ps_face_foreign_intrusion_records(...)`)
- * Returns: cut dihedral angle
- */
+// Function: ps_intrusion_dihedral()
+// Usage:
+//   result = ps_intrusion_dihedral(record);
+// Description:
+//   Get the face-plane cut dihedral from a foreign intrusion record.
+//   .
+//   - Returns: cut dihedral angle
+// Arguments:
+//   record = from `ps_face_foreign_intrusion_records(...)`
 function ps_intrusion_dihedral(record) = record[5];
 
-/**
- * Function: Get the confidence/classification from a foreign intrusion record.
- * Params: record (from `ps_face_foreign_intrusion_records(...)`)
- * Returns: confidence string, currently `"exact"`
- */
+// Function: ps_intrusion_confidence()
+// Usage:
+//   result = ps_intrusion_confidence(record);
+// Description:
+//   Get the confidence/classification from a foreign intrusion record.
+//   .
+//   - Returns: confidence string, currently `"exact"`
+// Arguments:
+//   record = from `ps_face_foreign_intrusion_records(...)`
 function ps_intrusion_confidence(record) = record[6];
 
-/**
- * Function: Build a description string for a foreign intrusion record.
- * Params: record (foreign intrusion record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
- * Returns: description string
- */
+// Function: ps_intrusion_describe_str()
+// Usage:
+//   result = ps_intrusion_describe_str(record, detail, kvpair_to_str, field_sep);
+// Description:
+//   Build a description string for a foreign intrusion record.
+//   .
+//   - Returns: description string
+// Arguments:
+//   record = foreign intrusion record
+//   detail = detail level
+//   kvpair_to_str = optional key/value formatter
+//   field_sep = field separator
 function ps_intrusion_describe_str(record, detail=0, kvpair_to_str=undef, field_sep=", ") =
     ps_describe_record_str(
         "Intrusion",
@@ -326,11 +464,18 @@ function ps_intrusion_describe_str(record, detail=0, kvpair_to_str=undef, field_
         field_sep
     );
 
-/**
- * Module: Echo a foreign intrusion description.
- * Params: record (foreign intrusion record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
- * Returns: none
- */
+// Module: ps_intrusion_describe()
+// Usage:
+//   ps_intrusion_describe(record, detail, kvpair_to_str, field_sep);
+// Description:
+//   Echo a foreign intrusion description.
+//   .
+//   - Returns: none
+// Arguments:
+//   record = foreign intrusion record
+//   detail = detail level
+//   kvpair_to_str = optional key/value formatter
+//   field_sep = field separator
 module ps_intrusion_describe(record, detail=0, kvpair_to_str=undef, field_sep=", ") {
     echo(ps_intrusion_describe_str(record, detail, kvpair_to_str, field_sep));
 }
@@ -350,60 +495,92 @@ function _ps_scl_record(idx, source_cell_idx, cell, cut_entries) =
         ]
     ];
 
-/**
- * Function: Get seam-clearance loop kind.
- * Params: loop (from `ps_face_seam_clearance_loops(...)`)
- * Returns: record kind string
- */
+// Function: ps_seam_clearance_loop_kind()
+// Usage:
+//   result = ps_seam_clearance_loop_kind(loop);
+// Description:
+//   Get seam-clearance loop kind.
+//   .
+//   - Returns: record kind string
+// Arguments:
+//   loop = from `ps_face_seam_clearance_loops(...)`
 function ps_seam_clearance_loop_kind(loop) = loop[0];
 
-/**
- * Function: Get seam-clearance loop index.
- * Params: loop (from `ps_face_seam_clearance_loops(...)`)
- * Returns: zero-based loop index
- */
+// Function: ps_seam_clearance_loop_idx()
+// Usage:
+//   result = ps_seam_clearance_loop_idx(loop);
+// Description:
+//   Get seam-clearance loop index.
+//   .
+//   - Returns: zero-based loop index
+// Arguments:
+//   loop = from `ps_face_seam_clearance_loops(...)`
 function ps_seam_clearance_loop_idx(loop) = loop[1];
 
-/**
- * Function: Get seam-clearance loop points.
- * Params: loop (from `ps_face_seam_clearance_loops(...)`)
- * Returns: ordered 2D loop points in current face-local coordinates
- */
+// Function: ps_seam_clearance_loop_pts2d()
+// Usage:
+//   result = ps_seam_clearance_loop_pts2d(loop);
+// Description:
+//   Get seam-clearance loop points.
+//   .
+//   - Returns: ordered 2D loop points in current face-local coordinates
+// Arguments:
+//   loop = from `ps_face_seam_clearance_loops(...)`
 function ps_seam_clearance_loop_pts2d(loop) = loop[2];
 
-/**
- * Function: Get source edge ids for seam-clearance loop edges.
- * Params: loop (from `ps_face_seam_clearance_loops(...)`)
- * Returns: edge/source ids from the split-cell loop
- */
+// Function: ps_seam_clearance_loop_edge_ids()
+// Usage:
+//   result = ps_seam_clearance_loop_edge_ids(loop);
+// Description:
+//   Get source edge ids for seam-clearance loop edges.
+//   .
+//   - Returns: edge/source ids from the split-cell loop
+// Arguments:
+//   loop = from `ps_face_seam_clearance_loops(...)`
 function ps_seam_clearance_loop_edge_ids(loop) = loop[3];
 
-/**
- * Function: Get edge kind labels for seam-clearance loop edges.
- * Params: loop (from `ps_face_seam_clearance_loops(...)`)
- * Returns: edge kind labels such as `"parent"` and `"cut"`
- */
+// Function: ps_seam_clearance_loop_edge_kinds()
+// Usage:
+//   result = ps_seam_clearance_loop_edge_kinds(loop);
+// Description:
+//   Get edge kind labels for seam-clearance loop edges.
+//   .
+//   - Returns: edge kind labels such as `"parent"` and `"cut"`
+// Arguments:
+//   loop = from `ps_face_seam_clearance_loops(...)`
 function ps_seam_clearance_loop_edge_kinds(loop) = loop[4];
 
-/**
- * Function: Get source split-cell index for a seam-clearance loop.
- * Params: loop (from `ps_face_seam_clearance_loops(...)`)
- * Returns: source cell index before seam-clearance filtering
- */
+// Function: ps_seam_clearance_loop_source_cell_idx()
+// Usage:
+//   result = ps_seam_clearance_loop_source_cell_idx(loop);
+// Description:
+//   Get source split-cell index for a seam-clearance loop.
+//   .
+//   - Returns: source cell index before seam-clearance filtering
+// Arguments:
+//   loop = from `ps_face_seam_clearance_loops(...)`
 function ps_seam_clearance_loop_source_cell_idx(loop) = loop[5];
 
-/**
- * Function: Get signed area for a seam-clearance loop.
- * Params: loop (from `ps_face_seam_clearance_loops(...)`)
- * Returns: signed 2D area
- */
+// Function: ps_seam_clearance_loop_area()
+// Usage:
+//   result = ps_seam_clearance_loop_area(loop);
+// Description:
+//   Get signed area for a seam-clearance loop.
+//   .
+//   - Returns: signed 2D area
+// Arguments:
+//   loop = from `ps_face_seam_clearance_loops(...)`
 function ps_seam_clearance_loop_area(loop) = loop[6];
 
-/**
- * Function: Get cut dihedral metadata for seam-clearance loop edges.
- * Params: loop (from `ps_face_seam_clearance_loops(...)`)
- * Returns: per-edge dihedral angle for cut-derived edges, otherwise `undef`
- */
+// Function: ps_seam_clearance_loop_edge_dihedrals()
+// Usage:
+//   result = ps_seam_clearance_loop_edge_dihedrals(loop);
+// Description:
+//   Get cut dihedral metadata for seam-clearance loop edges.
+//   .
+//   - Returns: per-edge dihedral angle for cut-derived edges, otherwise `undef`
+// Arguments:
+//   loop = from `ps_face_seam_clearance_loops(...)`
 function ps_seam_clearance_loop_edge_dihedrals(loop) = loop[7];
 
 function _ps_face_seam_segment_site(
@@ -450,159 +627,250 @@ function _ps_face_seam_segment_site(
     )
     [site_idx, frame, len_d, edge_pts_local, seg2d, seam_source, source_kind, foreign_kind, foreign_idx, dihedral, confidence, record, n1, support_kind, support_reason, current_normal_seam_local];
 
-/**
- * Function: Get seam site index.
- * Params: site (seam segment site record)
- * Returns: zero-based seam site index
- */
+// Function: ps_seam_site_idx()
+// Usage:
+//   result = ps_seam_site_idx(site);
+// Description:
+//   Get seam site index.
+//   .
+//   - Returns: zero-based seam site index
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_idx(site) = site[0];
 
-/**
- * Function: Get seam center in target face-local coordinates.
- * Params: site (seam segment site record)
- * Returns: seam midpoint in target face-local coordinates
- */
+// Function: ps_seam_site_center_local()
+// Usage:
+//   result = ps_seam_site_center_local(site);
+// Description:
+//   Get seam center in target face-local coordinates.
+//   .
+//   - Returns: seam midpoint in target face-local coordinates
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_center_local(site) = ps_placement_frame_center(ps_seam_site_frame(site));
 
-/**
- * Function: Get seam-local X axis in target face-local coordinates.
- * Params: site (seam segment site record)
- * Returns: unit X axis along the seam segment
- */
+// Function: ps_seam_site_ex_local()
+// Usage:
+//   result = ps_seam_site_ex_local(site);
+// Description:
+//   Get seam-local X axis in target face-local coordinates.
+//   .
+//   - Returns: unit X axis along the seam segment
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_ex_local(site) = ps_placement_frame_ex(ps_seam_site_frame(site));
 
-/**
- * Function: Get seam-local Y axis in target face-local coordinates.
- * Params: site (seam segment site record)
- * Returns: unit Y axis completing the seam frame
- */
+// Function: ps_seam_site_ey_local()
+// Usage:
+//   result = ps_seam_site_ey_local(site);
+// Description:
+//   Get seam-local Y axis in target face-local coordinates.
+//   .
+//   - Returns: unit Y axis completing the seam frame
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_ey_local(site) = ps_placement_frame_ey(ps_seam_site_frame(site));
 
-/**
- * Function: Get seam-local Z axis in target face-local coordinates.
- * Params: site (seam segment site record)
- * Returns: unit Z axis following the face-normal bisector/radial fallback
- */
+// Function: ps_seam_site_ez_local()
+// Usage:
+//   result = ps_seam_site_ez_local(site);
+// Description:
+//   Get seam-local Z axis in target face-local coordinates.
+//   .
+//   - Returns: unit Z axis following the face-normal bisector/radial fallback
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_ez_local(site) = ps_placement_frame_ez(ps_seam_site_frame(site));
 
-/**
- * Function: Get seam segment length.
- * Params: site (seam segment site record)
- * Returns: seam length in target face-local units
- */
+// Function: ps_seam_site_len()
+// Usage:
+//   result = ps_seam_site_len(site);
+// Description:
+//   Get seam segment length.
+//   .
+//   - Returns: seam length in target face-local units
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_len(site) = site[2];
 
-/**
- * Function: Get seam endpoints in seam-local coordinates.
- * Params: site (seam segment site record)
- * Returns: edge-like endpoint pair `[[ -len/2, 0, 0 ], [ len/2, 0, 0 ]]`
- */
+// Function: ps_seam_site_edge_pts_local()
+// Usage:
+//   result = ps_seam_site_edge_pts_local(site);
+// Description:
+//   Get seam endpoints in seam-local coordinates.
+//   .
+//   - Returns: edge-like endpoint pair `[[ -len/2, 0, 0 ], [ len/2, 0, 0 ]]`
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_edge_pts_local(site) = site[3];
 
-/**
- * Function: Get source seam segment in target face-local 2D.
- * Params: site (seam segment site record)
- * Returns: `seg2d` endpoints in target face-local XY
- */
+// Function: ps_seam_site_segment2d_local()
+// Usage:
+//   result = ps_seam_site_segment2d_local(site);
+// Description:
+//   Get source seam segment in target face-local 2D.
+//   .
+//   - Returns: `seg2d` endpoints in target face-local XY
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_segment2d_local(site) = site[4];
 
-/**
- * Function: Get seam source family.
- * Params: site (seam segment site record)
- * Returns: `"boundary"` or `"foreign"`
- */
+// Function: ps_seam_site_source()
+// Usage:
+//   result = ps_seam_site_source(site);
+// Description:
+//   Get seam source family.
+//   .
+//   - Returns: `"boundary"` or `"foreign"`
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_source(site) = site[5];
 
-/**
- * Function: Get source kind within the seam source family.
- * Params: site (seam segment site record)
- * Returns: boundary span kind or intrusion kind string
- */
+// Function: ps_seam_site_source_kind()
+// Usage:
+//   result = ps_seam_site_source_kind(site);
+// Description:
+//   Get source kind within the seam source family.
+//   .
+//   - Returns: boundary span kind or intrusion kind string
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_source_kind(site) = site[6];
 
-/**
- * Function: Get foreign source kind for foreign-linked seams.
- * Params: site (seam segment site record)
- * Returns: `"face"` for current exact cuts, or `undef`
- */
+// Function: ps_seam_site_foreign_kind()
+// Usage:
+//   result = ps_seam_site_foreign_kind(site);
+// Description:
+//   Get foreign source kind for foreign-linked seams.
+//   .
+//   - Returns: `"face"` for current exact cuts, or `undef`
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_foreign_kind(site) = site[7];
 
-/**
- * Function: Get foreign source index for foreign-linked seams.
- * Params: site (seam segment site record)
- * Returns: foreign face index, or `undef`
- */
+// Function: ps_seam_site_foreign_idx()
+// Usage:
+//   result = ps_seam_site_foreign_idx(site);
+// Description:
+//   Get foreign source index for foreign-linked seams.
+//   .
+//   - Returns: foreign face index, or `undef`
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_foreign_idx(site) = site[8];
 
-/**
- * Function: Get seam dihedral metadata.
- * Params: site (seam segment site record)
- * Returns: dihedral angle when known, otherwise `undef`
- */
+// Function: ps_seam_site_dihedral()
+// Usage:
+//   result = ps_seam_site_dihedral(site);
+// Description:
+//   Get seam dihedral metadata.
+//   .
+//   - Returns: dihedral angle when known, otherwise `undef`
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_dihedral(site) = site[9];
 
-/**
- * Function: Get seam confidence metadata.
- * Params: site (seam segment site record)
- * Returns: confidence string such as `"exact"`
- */
+// Function: ps_seam_site_confidence()
+// Usage:
+//   result = ps_seam_site_confidence(site);
+// Description:
+//   Get seam confidence metadata.
+//   .
+//   - Returns: confidence string such as `"exact"`
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_confidence(site) = site[10];
 
-/**
- * Function: Get source record used to build the seam site.
- * Params: site (seam segment site record)
- * Returns: boundary span site or intrusion record
- */
+// Function: ps_seam_site_record()
+// Usage:
+//   result = ps_seam_site_record(site);
+// Description:
+//   Get source record used to build the seam site.
+//   .
+//   - Returns: boundary span site or intrusion record
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_record(site) = site[11];
 
-/**
- * Function: Get foreign normal in target face-local coordinates.
- * Params: site (seam segment site record)
- * Returns: unit foreign normal, or `undef`
- */
+// Function: ps_seam_site_foreign_normal_local()
+// Usage:
+//   result = ps_seam_site_foreign_normal_local(site);
+// Description:
+//   Get foreign normal in target face-local coordinates.
+//   .
+//   - Returns: unit foreign normal, or `undef`
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_foreign_normal_local(site) = site[12];
 
-/**
- * Function: Get printable support classification.
- * Params: site (seam segment site record)
- * Returns: support kind string, or `"none"`
- */
+// Function: ps_seam_site_support_kind()
+// Usage:
+//   result = ps_seam_site_support_kind(site);
+// Description:
+//   Get printable support classification.
+//   .
+//   - Returns: support kind string, or `"none"`
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_support_kind(site) = site[13];
 
-/**
- * Function: Get printable support classification reason.
- * Params: site (seam segment site record)
- * Returns: reason string explaining support classification
- */
+// Function: ps_seam_site_support_reason()
+// Usage:
+//   result = ps_seam_site_support_reason(site);
+// Description:
+//   Get printable support classification reason.
+//   .
+//   - Returns: reason string explaining support classification
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_support_reason(site) = site[14];
 
-/**
- * Function: Get current face normal in seam-local coordinates.
- * Params: site (seam segment site record)
- * Returns: current target face normal expressed in the seam frame
- */
+// Function: ps_seam_site_current_normal_seam_local()
+// Usage:
+//   result = ps_seam_site_current_normal_seam_local(site);
+// Description:
+//   Get current face normal in seam-local coordinates.
+//   .
+//   - Returns: current target face normal expressed in the seam frame
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_current_normal_seam_local(site) = site[15];
 
-/**
- * Function: Get placement frame from a seam segment site.
- * Params: site (seam segment site record)
- * Returns: placement frame `[center, ex, ey, ez]` in target face-local coordinates
- */
+// Function: ps_seam_site_frame()
+// Usage:
+//   result = ps_seam_site_frame(site);
+// Description:
+//   Get placement frame from a seam segment site.
+//   .
+//   - Returns: placement frame `[center, ex, ey, ez]` in target face-local coordinates
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_frame(site) =
     site[1];
 
-/**
- * Function: Test whether a seam site is a printable support candidate.
- * Params: site (seam segment site record)
- * Returns: true when support kind is not `"none"`
- */
+// Function: ps_seam_site_is_support_candidate()
+// Usage:
+//   result = ps_seam_site_is_support_candidate(site);
+// Description:
+//   Test whether a seam site is a printable support candidate.
+//   .
+//   - Returns: true when support kind is not `"none"`
+// Arguments:
+//   site = seam segment site record
 function ps_seam_site_is_support_candidate(site) = ps_seam_site_support_kind(site) != "none";
 
-/**
- * Function: Build a description string for a seam segment site.
- * Params: site (seam segment site record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
- * Returns: description string
- */
+// Function: ps_seam_site_describe_str()
+// Usage:
+//   result = ps_seam_site_describe_str(site, detail, kvpair_to_str, field_sep);
+// Description:
+//   Build a description string for a seam segment site.
+//   .
+//   - Returns: description string
+// Arguments:
+//   site = seam segment site record
+//   detail = detail level
+//   kvpair_to_str = optional key/value formatter
+//   field_sep = field separator
 function ps_seam_site_describe_str(site, detail=0, kvpair_to_str=undef, field_sep=", ") =
     ps_describe_record_str(
         "SeamSite",
@@ -635,11 +903,18 @@ function ps_seam_site_describe_str(site, detail=0, kvpair_to_str=undef, field_se
         field_sep
     );
 
-/**
- * Module: Echo a seam-site description.
- * Params: site (seam segment site record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
- * Returns: none
- */
+// Module: ps_seam_site_describe()
+// Usage:
+//   ps_seam_site_describe(site, detail, kvpair_to_str, field_sep);
+// Description:
+//   Echo a seam-site description.
+//   .
+//   - Returns: none
+// Arguments:
+//   site = seam segment site record
+//   detail = detail level
+//   kvpair_to_str = optional key/value formatter
+//   field_sep = field separator
 module ps_seam_site_describe(site, detail=0, kvpair_to_str=undef, field_sep=", ") {
     echo(ps_seam_site_describe_str(site, detail, kvpair_to_str, field_sep));
 }

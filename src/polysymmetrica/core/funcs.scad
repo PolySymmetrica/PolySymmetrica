@@ -4,49 +4,79 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/core/funcs.scad
 ///////////////////////////////////////
 // ---- Poly descriptor API ----
-/**
- * Function: Return the vertex list from a poly descriptor.
- * Params: poly (`[verts, faces, e_over_ir]`)
- * Returns: vertex list
- */
+// Function: poly_verts()
+// Usage:
+//   result = poly_verts(poly);
+// Description:
+//   Return the vertex list from a poly descriptor.
+//   .
+//   - Returns: vertex list
+// Arguments:
+//   poly = `[verts, faces, e_over_ir]`
 function poly_verts(poly)      = poly[0];
 
-/**
- * Function: Return the face index loops from a poly descriptor.
- * Params: poly (`[verts, faces, e_over_ir]`)
- * Returns: face list
- */
+// Function: poly_faces()
+// Usage:
+//   result = poly_faces(poly);
+// Description:
+//   Return the face index loops from a poly descriptor.
+//   .
+//   - Returns: face list
+// Arguments:
+//   poly = `[verts, faces, e_over_ir]`
 function poly_faces(poly)      = poly[1];
 
-/**
- * Function: Return descriptor scale ratio `edge / inter-radius`.
- * Params: poly (`[verts, faces, e_over_ir]`)
- * Returns: positive scalar ratio
- */
+// Function: poly_e_over_ir()
+// Usage:
+//   result = poly_e_over_ir(poly);
+// Description:
+//   Return descriptor scale ratio `edge / inter-radius`.
+//   .
+//   - Returns: positive scalar ratio
+// Arguments:
+//   poly = `[verts, faces, e_over_ir]`
 function poly_e_over_ir(poly)  = poly[2];
 
-/**
- * Function: Derive unique undirected edges from a poly descriptor.
- * Params: poly (`[verts, faces, e_over_ir]`)
- * Returns: edge list `[[a,b], ...]`; O(face-edge-count)
- */
+// Function: poly_edges()
+// Usage:
+//   result = poly_edges(poly);
+// Description:
+//   Derive unique undirected edges from a poly descriptor.
+//   .
+//   - Returns: edge list `[[a,b], ...]`; O(face-edge-count)
+// Arguments:
+//   poly = `[verts, faces, e_over_ir]`
 function poly_edges(poly)      = _ps_edges_from_faces(poly_faces(poly));
 
-/**
- * Function: Clamp a scalar to a closed interval.
- * Params: x (value), lo (lower bound), hi (upper bound)
- * Returns: `min(max(x, lo), hi)`
- */
+// Function: ps_clamp()
+// Usage:
+//   result = ps_clamp(x, lo, hi);
+// Description:
+//   Clamp a scalar to a closed interval.
+//   .
+//   - Returns: `min(max(x, lo), hi)`
+// Arguments:
+//   x = value
+//   lo = lower bound
+//   hi = upper bound
 function ps_clamp(x, lo, hi) = min(max(x, lo), hi);
 
-/**
- * Function: Build a normalized poly descriptor from vertices and faces.
- * Params: verts (3D vertex list), faces (face index loops), e_over_ir (optional scale ratio)
- * Returns: `[centered_verts, faces, e_over_ir]`
- * Limitations/Gotchas: recenters by mean edge-midpoint center and computes default scale from minimum edge-midradius
- */
+// Function: poly_make()
+// Usage:
+//   result = poly_make(verts, faces, e_over_ir);
+// Description:
+//   Build a normalized poly descriptor from vertices and faces.
+//   .
+//   - Returns: `[centered_verts, faces, e_over_ir]`
+//   .
+//   - Limitations/Gotchas: recenters by mean edge-midpoint center and computes default scale from minimum edge-midradius
+// Arguments:
+//   verts = 3D vertex list
+//   faces = face index loops
+//   e_over_ir = optional scale ratio
 function poly_make(verts, faces, e_over_ir=undef) =
     let(
         // Validation
@@ -80,12 +110,17 @@ function poly_make(verts, faces, e_over_ir=undef) =
     )
     [verts_centered, faces, computed_e_over_ir];
 
-/**
- * Function: Make adjacent face windings consistent across shared edges.
- * Params: poly (poly descriptor)
- * Returns: poly descriptor with original vertices/scale and fixed face order
- * Limitations/Gotchas: fixes topological consistency only; it does not prove outward orientation
- */
+// Function: poly_fix_winding()
+// Usage:
+//   result = poly_fix_winding(poly);
+// Description:
+//   Make adjacent face windings consistent across shared edges.
+//   .
+//   - Returns: poly descriptor with original vertices/scale and fixed face order
+//   .
+//   - Limitations/Gotchas: fixes topological consistency only; it does not prove outward orientation
+// Arguments:
+//   poly = poly descriptor
 function poly_fix_winding(poly) =
     let(
         verts = poly_verts(poly),
@@ -96,11 +131,16 @@ function poly_fix_winding(poly) =
 
 ///////////////////////////////////////
 // ---- Basic validation helpers ----
-/**
- * Function: Validate all face loops against a vertex list.
- * Params: verts (vertex list), faces (face index loops)
- * Returns: `true` when every face has at least 3 valid vertex indices
- */
+// Function: ps_faces_valid()
+// Usage:
+//   result = ps_faces_valid(verts, faces);
+// Description:
+//   Validate all face loops against a vertex list.
+//   .
+//   - Returns: `true` when every face has at least 3 valid vertex indices
+// Arguments:
+//   verts = vertex list
+//   faces = face index loops
 function ps_faces_valid(verts, faces) =
     len([
         for (f = faces)
@@ -108,19 +148,30 @@ function ps_faces_valid(verts, faces) =
                 1
     ]) == len(faces);
 
-/**
- * Function: Check whether every index in a face is within `[0, max_idx)`.
- * Params: face (index list), max_idx (exclusive upper bound)
- * Returns: boolean
- */
+// Function: ps_indices_in_range()
+// Usage:
+//   result = ps_indices_in_range(face, max_idx);
+// Description:
+//   Check whether every index in a face is within `[0, max_idx)`.
+//   .
+//   - Returns: boolean
+// Arguments:
+//   face = index list
+//   max_idx = exclusive upper bound
 function ps_indices_in_range(face, max_idx) =
     len([for (vi = face) if (vi >= 0 && vi < max_idx) 1]) == len(face);
 
-/**
- * Function: Join a list of strings with a separator.
- * Params: parts (string list), sep (separator), i (recursion index)
- * Returns: joined string
- */
+// Function: ps_join_strs()
+// Usage:
+//   result = ps_join_strs(parts, sep, i);
+// Description:
+//   Join a list of strings with a separator.
+//   .
+//   - Returns: joined string
+// Arguments:
+//   parts = string list
+//   sep = separator
+//   i = recursion index
 function ps_join_strs(parts, sep="", i=0) =
     (i >= len(parts)) ? "" :
     (i == len(parts)-1) ? parts[i] :
@@ -128,21 +179,35 @@ function ps_join_strs(parts, sep="", i=0) =
 
 function _ps_describe_default_kvpair_str(k, v) = str(k, "=", v);
 
-/**
- * Function: Format one key/value pair for a describe helper.
- * Params: k (key), v (value), kvpair_to_str (optional function `(k, v) -> string`)
- * Returns: formatted key/value string
- */
+// Function: ps_describe_kvpair_str()
+// Usage:
+//   result = ps_describe_kvpair_str(k, v, kvpair_to_str);
+// Description:
+//   Format one key/value pair for a describe helper.
+//   .
+//   - Returns: formatted key/value string
+// Arguments:
+//   k = key
+//   v = value
+//   kvpair_to_str = optional function `(k, v) -> string`
 function ps_describe_kvpair_str(k, v, kvpair_to_str=undef) =
     is_undef(kvpair_to_str)
         ? _ps_describe_default_kvpair_str(k, v)
         : kvpair_to_str(k, v);
 
-/**
- * Function: Build a standard `Name(k=v, ...)` record description string.
- * Params: name (record type label), base_parts (summary field strings), detail (detail level), detail_parts (optional extra field strings), field_sep (field separator)
- * Returns: description string
- */
+// Function: ps_describe_record_str()
+// Usage:
+//   result = ps_describe_record_str(name, base_parts, detail, detail_parts, field_sep);
+// Description:
+//   Build a standard `Name(k=v, ...)` record description string.
+//   .
+//   - Returns: description string
+// Arguments:
+//   name = record type label
+//   base_parts = summary field strings
+//   detail = detail level
+//   detail_parts = optional extra field strings
+//   field_sep = field separator
 function ps_describe_record_str(name, base_parts, detail=0, detail_parts=undef, field_sep=", ") =
     str(
         name,
@@ -158,11 +223,15 @@ function ps_describe_record_str(name, base_parts, detail=0, detail_parts=undef, 
 
 function _ps_describe_count(xs) = is_undef(xs) ? undef : len(xs);
 
-/**
- * Function: Build successive pairs from a circular list.
- * Params: list (item list)
- * Returns: `[[list[i], list[i+1]], ... , [last, first]]`, or `[]` for lists shorter than 2
- */
+// Function: ps_cyclic_pairs()
+// Usage:
+//   result = ps_cyclic_pairs(list);
+// Description:
+//   Build successive pairs from a circular list.
+//   .
+//   - Returns: `[[list[i], list[i+1]], ... , [last, first]]`, or `[]` for lists shorter than 2
+// Arguments:
+//   list = item list
 function ps_cyclic_pairs(list) =
     let(n = len(list))
     (n < 2) ? [] :
@@ -384,53 +453,86 @@ function _ps_index_of(list, v) =
 
 ///////////////////////////////////////
 // ---- Vector math ----
-/**
- * Function: Add two vectors.
- * Params: a,b (vectors)
- * Returns: `a + b`
- */
+// Function: v_add()
+// Usage:
+//   result = v_add(a, b);
+// Description:
+//   Add two vectors.
+//   .
+//   - Returns: `a + b`
+// Arguments:
+//   a =
+//   b = vectors
 function v_add(a, b)   = a + b;
 
-/**
- * Function: Subtract two vectors.
- * Params: a,b (vectors)
- * Returns: `a - b`
- */
+// Function: v_sub()
+// Usage:
+//   result = v_sub(a, b);
+// Description:
+//   Subtract two vectors.
+//   .
+//   - Returns: `a - b`
+// Arguments:
+//   a =
+//   b = vectors
 function v_sub(a, b)   = a - b;
 
-/**
- * Function: Scale a vector.
- * Params: a (vector), k (scalar)
- * Returns: `a * k`
- */
+// Function: v_scale()
+// Usage:
+//   result = v_scale(a, k);
+// Description:
+//   Scale a vector.
+//   .
+//   - Returns: `a * k`
+// Arguments:
+//   a = vector
+//   k = scalar
 function v_scale(a, k) = a * k;             // scalar multiplication
 
-/**
- * Function: Dot product.
- * Params: a,b (vectors)
- * Returns: scalar dot product
- */
+// Function: v_dot()
+// Usage:
+//   result = v_dot(a, b);
+// Description:
+//   Dot product.
+//   .
+//   - Returns: scalar dot product
+// Arguments:
+//   a =
+//   b = vectors
 function v_dot(a, b)   = a * b;             // dot product
 
-/**
- * Function: Cross product.
- * Params: a,b (3D vectors)
- * Returns: `cross(a,b)`
- */
+// Function: v_cross()
+// Usage:
+//   result = v_cross(a, b);
+// Description:
+//   Cross product.
+//   .
+//   - Returns: `cross(a,b)`
+// Arguments:
+//   a =
+//   b = 3D vectors
 function v_cross(a, b) = cross(a, b);       // OpenSCAD built-in
 
-/**
- * Function: Vector length.
- * Params: a (vector)
- * Returns: Euclidean norm
- */
+// Function: v_len()
+// Usage:
+//   result = v_len(a);
+// Description:
+//   Vector length.
+//   .
+//   - Returns: Euclidean norm
+// Arguments:
+//   a = vector
 function v_len(a)      = norm(a);           // built-in length
 
-/**
- * Function: Normalize a vector.
- * Params: a (vector)
- * Returns: unit vector, or zero-like vector when input length is zero
- */
+// Function: v_norm()
+// Usage:
+//   result = v_norm(a);
+// Description:
+//   Normalize a vector.
+//   .
+//   - Returns: unit vector, or zero-like vector when input length is zero
+// Arguments:
+//   a = vector
 function v_norm(a)     = let(L = norm(a)) (L == 0 ? [0,0,0] : a / L);
 
 /**
@@ -443,62 +545,94 @@ function _ps_ordered_pair(a, b) = (a < b) ? [a,b] : [b,a];
 
 ///////////////////////////////////////
 // ---- Edge/list primitives ----
-/**
- * Function: Test equality of ordered edge records.
- * Params: e1,e2 (`[a,b]`)
- * Returns: boolean
- */
+// Function: ps_edge_equal()
+// Usage:
+//   result = ps_edge_equal(e1, e2);
+// Description:
+//   Test equality of ordered edge records.
+//   .
+//   - Returns: boolean
+// Arguments:
+//   e1 =
+//   e2 = `[a,b]`
 function ps_edge_equal(e1, e2) = (e1[0] == e2[0] && e1[1] == e2[1]);
 
-/**
- * Function: Sum scalar list entries recursively.
- * Params: a (number list), i (start index)
- * Returns: scalar sum from `i` to end
- */
+// Function: ps_sum()
+// Usage:
+//   result = ps_sum(a, i);
+// Description:
+//   Sum scalar list entries recursively.
+//   .
+//   - Returns: scalar sum from `i` to end
+// Arguments:
+//   a = number list
+//   i = start index
 function ps_sum(a, i = 0) =
     i >= len(a) ? 0 : a[i] + ps_sum(a, i + 1);
 
-/**
- * Function: Sum a list of equal-dimension vectors.
- * Params: list (vector list)
- * Returns: component-wise vector sum; `[]` for empty input
- */
+// Function: v_sum()
+// Usage:
+//   result = v_sum(list);
+// Description:
+//   Sum a list of equal-dimension vectors.
+//   .
+//   - Returns: component-wise vector sum; `[]` for empty input
+// Arguments:
+//   list = vector list
 function v_sum(list) =
     (len(list) == 0) ? [] :
     let(n = len(list[0]))
     [ for (i = [0:1:n-1]) ps_sum([for (v = list) v[i]]) ];
 
-/**
- * Function: Compute the simple centroid of a 2D point list.
- * Params: points (2D point list)
- * Returns: centroid `[x, y]`, or `[0, 0]` for an empty list
- */
+// Function: ps_centroid2d()
+// Usage:
+//   result = ps_centroid2d(points);
+// Description:
+//   Compute the simple centroid of a 2D point list.
+//   .
+//   - Returns: centroid `[x, y]`, or `[0, 0]` for an empty list
+// Arguments:
+//   points = 2D point list
 function ps_centroid2d(points) =
     (len(points) == 0) ? [0, 0] :
     v_scale(v_sum(points), 1 / len(points));
 
-/**
- * Function: Compute the midpoint of a 2D segment.
- * Params: seg2d (`[[x0,y0],[x1,y1]]`)
- * Returns: midpoint `[x, y]`
- */
+// Function: ps_segment_midpoint2d()
+// Usage:
+//   result = ps_segment_midpoint2d(seg2d);
+// Description:
+//   Compute the midpoint of a 2D segment.
+//   .
+//   - Returns: midpoint `[x, y]`
+// Arguments:
+//   seg2d = `[[x0,y0],[x1,y1]]`
 function ps_segment_midpoint2d(seg2d) =
     [(seg2d[0][0] + seg2d[1][0]) / 2, (seg2d[0][1] + seg2d[1][1]) / 2];
 
-/**
- * Function: Project points to the XY plane.
- * Params: points (2D/3D/ND point list)
- * Returns: `[[x, y], ...]`
- */
+// Function: ps_xy()
+// Usage:
+//   result = ps_xy(points);
+// Description:
+//   Project points to the XY plane.
+//   .
+//   - Returns: `[[x, y], ...]`
+// Arguments:
+//   points = 2D/3D/ND point list
 function ps_xy(points) =
     [for (p = points) [p[0], p[1]]];
 
 // Rotate vector v around axis by ang (degrees).
-/**
- * Function: Rotate a vector around an axis.
- * Params: v (3D vector), axis (3D axis vector), ang (degrees)
- * Returns: rotated vector
- */
+// Function: ps_rot_axis()
+// Usage:
+//   result = ps_rot_axis(v, axis, ang);
+// Description:
+//   Rotate a vector around an axis.
+//   .
+//   - Returns: rotated vector
+// Arguments:
+//   v = 3D vector
+//   axis = 3D axis vector
+//   ang = degrees
 function ps_rot_axis(v, axis, ang) =
     let(
         a = v_norm(axis),
@@ -511,12 +645,19 @@ function ps_rot_axis(v, axis, ang) =
     v_add(v_add(term1, term2), term3);
 
 
-/**
- * Function: Find an undirected edge in an edge list.
- * Params: edges (canonical edge list), a,b (edge endpoints)
- * Returns: edge index
- * Limitations/Gotchas: assumes the edge exists
- */
+// Function: ps_find_edge_index()
+// Usage:
+//   result = ps_find_edge_index(edges, a, b);
+// Description:
+//   Find an undirected edge in an edge list.
+//   .
+//   - Returns: edge index
+//   .
+//   - Limitations/Gotchas: assumes the edge exists
+// Arguments:
+//   edges = canonical edge list
+//   a =
+//   b = edge endpoints
 function ps_find_edge_index(edges, a, b) =
     let(
         e = _ps_ordered_pair(a, b),
@@ -524,11 +665,17 @@ function ps_find_edge_index(edges, a, b) =
     )
     idxs[0];   // assume the edge exists
 
-/**
- * Function: Compare points with tolerance.
- * Params: p,q (points), eps (distance tolerance)
- * Returns: boolean
- */
+// Function: ps_point_eq()
+// Usage:
+//   result = ps_point_eq(p, q, eps);
+// Description:
+//   Compare points with tolerance.
+//   .
+//   - Returns: boolean
+// Arguments:
+//   p =
+//   q = points
+//   eps = distance tolerance
 function ps_point_eq(p,q,eps) = norm(p-q) <= eps;
 
 /**
@@ -750,39 +897,60 @@ function _ps_face_edge_offsets(faces) =
 
 ///////////////////////////////////////
 // ---- Polygon helpers ----
-/**
- * Function: Compute regular polygon edge length from radius.
- * Params: n_vertex (vertex count), rad (circumradius)
- * Returns: edge length
- */
+// Function: ps_calc_edge()
+// Usage:
+//   result = ps_calc_edge(n_vertex, rad);
+// Description:
+//   Compute regular polygon edge length from radius.
+//   .
+//   - Returns: edge length
+// Arguments:
+//   n_vertex = vertex count
+//   rad = circumradius
 function ps_calc_edge(n_vertex, rad) = 2 * rad * sin(180 / n_vertex);
 
-/**
- * Function: Compute regular polygon circumradius from edge length.
- * Params: n_vertex (vertex count), edge_len (edge length)
- * Returns: radius scalar
- */
+// Function: ps_calc_radius()
+// Usage:
+//   result = ps_calc_radius(n_vertex, edge_len);
+// Description:
+//   Compute regular polygon circumradius from edge length.
+//   .
+//   - Returns: radius scalar
+// Arguments:
+//   n_vertex = vertex count
+//   edge_len = edge length
 function ps_calc_radius(n_vertex, edge_len) = edge_len / (2 * sin(180 / n_vertex));
 
 
 ///////////////////////////////////////
 // ---- Geometry helpers ----
-/**
- * Function: Compute mean vertex centroid for one face.
- * Params: verts (3D vertex list), f (face index loop)
- * Returns: 3D centroid, or `[0,0,0]` for empty face
- */
+// Function: ps_face_centroid()
+// Usage:
+//   result = ps_face_centroid(verts, f);
+// Description:
+//   Compute mean vertex centroid for one face.
+//   .
+//   - Returns: 3D centroid, or `[0,0,0]` for empty face
+// Arguments:
+//   verts = 3D vertex list
+//   f = face index loop
 function ps_face_centroid(verts, f) =
     len(f) == 0
         ? [0,0,0]
         : v_scale(v_sum([for (vid = f) verts[vid]]), 1 / len(f));
 
-/**
- * Function: Compute topological face normal using OpenSCAD LHR winding.
- * Params: verts (3D vertex list), f (face index loop)
- * Returns: unit normal direction
- * Limitations/Gotchas: uses first three vertices; use `ps_face_frame_normal(...)` for non-planar placement frames
- */
+// Function: ps_face_normal()
+// Usage:
+//   result = ps_face_normal(verts, f);
+// Description:
+//   Compute topological face normal using OpenSCAD LHR winding.
+//   .
+//   - Returns: unit normal direction
+//   .
+//   - Limitations/Gotchas: uses first three vertices; use `ps_face_frame_normal(...)` for non-planar placement frames
+// Arguments:
+//   verts = 3D vertex list
+//   f = face index loop
 function ps_face_normal(verts, f) =
     // OpenSCAD expects LHR (clockwise from outside), so flip cross product.
     v_norm(v_cross(
@@ -790,12 +958,19 @@ function ps_face_normal(verts, f) =
         verts[f[1]] - verts[f[0]]
     ));
 
-/**
- * Function: Compute placement frame normal for a face.
- * Params: verts (3D vertex list), f (face index loop), eps (degeneracy tolerance)
- * Returns: unit normal direction aligned with `ps_face_normal(...)`
- * Limitations/Gotchas: uses Newell-style best-fit normal for non-planar faces
- */
+// Function: ps_face_frame_normal()
+// Usage:
+//   result = ps_face_frame_normal(verts, f, eps);
+// Description:
+//   Compute placement frame normal for a face.
+//   .
+//   - Returns: unit normal direction aligned with `ps_face_normal(...)`
+//   .
+//   - Limitations/Gotchas: uses Newell-style best-fit normal for non-planar faces
+// Arguments:
+//   verts = 3D vertex list
+//   f = face index loop
+//   eps = degeneracy tolerance
 function ps_face_frame_normal(verts, f, eps=1e-12) =
     let(
         n = len(f),
@@ -871,11 +1046,16 @@ function _ps_faces_max_planarity_err(verts, faces, eps=1e-12) =
     (len(faces) == 0) ? 0 : max([for (f = faces) _ps_face_planarity_err(verts, f, eps)]);
 
 
-/**
- * Function: Return one neighbor vertex of a vertex.
- * Params: poly (poly descriptor), vi (vertex index)
- * Returns: first adjacent vertex found in face traversal
- */
+// Function: poly_vertex_neighbor()
+// Usage:
+//   result = poly_vertex_neighbor(poly, vi);
+// Description:
+//   Return one neighbor vertex of a vertex.
+//   .
+//   - Returns: first adjacent vertex found in face traversal
+// Arguments:
+//   poly = poly descriptor
+//   vi = vertex index
 function poly_vertex_neighbor(poly, vi) =
     let(
         faces = poly_faces(poly),
@@ -919,11 +1099,16 @@ function _ps_edges_from_faces(faces) =
     uniq_edges;
 
 
-/**
- * Function: Map each edge to incident faces.
- * Params: faces (face list), edges (canonical edge list)
- * Returns: `[[face_idx, ...], ...]` matching `edges`
- */
+// Function: ps_edge_faces_table()
+// Usage:
+//   result = ps_edge_faces_table(faces, edges);
+// Description:
+//   Map each edge to incident faces.
+//   .
+//   - Returns: `[[face_idx, ...], ...]` matching `edges`
+// Arguments:
+//   faces = face list
+//   edges = canonical edge list
 function ps_edge_faces_table(faces, edges) =
     [
         for (ei = [0 : len(edges)-1])
@@ -934,11 +1119,17 @@ function ps_edge_faces_table(faces, edges) =
             ]
     ];
 
-/**
- * Function: Test whether a face contains an undirected edge.
- * Params: f (face index loop), a,b (edge endpoints)
- * Returns: boolean
- */
+// Function: ps_face_has_edge()
+// Usage:
+//   result = ps_face_has_edge(f, a, b);
+// Description:
+//   Test whether a face contains an undirected edge.
+//   .
+//   - Returns: boolean
+// Arguments:
+//   f = face index loop
+//   a =
+//   b = edge endpoints
 function ps_face_has_edge(f, a, b) =
     len([
         for (k = [0 : len(f)-1])
@@ -949,11 +1140,16 @@ function ps_face_has_edge(f, a, b) =
             if ((x==a && y==b) || (x==b && y==a)) 1
     ]) > 0;
 
-/**
- * Function: Find faces incident to a vertex.
- * Params: poly (poly descriptor), vi (vertex index)
- * Returns: unordered face-index list
- */
+// Function: ps_vertex_incident_faces()
+// Usage:
+//   result = ps_vertex_incident_faces(poly, vi);
+// Description:
+//   Find faces incident to a vertex.
+//   .
+//   - Returns: unordered face-index list
+// Arguments:
+//   poly = poly descriptor
+//   vi = vertex index
 function ps_vertex_incident_faces(poly, vi) =
     let(faces = poly_faces(poly))
     [
@@ -1000,12 +1196,20 @@ function _ps_faces_around_vertex_rec(v, f_cur, f_prev, f_start, faces, edges, ed
         ? concat(acc, [f_cur])
         : _ps_faces_around_vertex_rec(v, next, f_cur, f_start, faces, edges, edge_faces, concat(acc, [f_cur]));
 
-/**
- * Function: Return incident faces around a vertex in cyclic order.
- * Params: poly (poly descriptor), v (vertex index), edges (edge list), edge_faces (edge-face table)
- * Returns: ordered face-index list
- * Limitations/Gotchas: assumes manifold vertex neighborhood
- */
+// Function: ps_faces_around_vertex()
+// Usage:
+//   result = ps_faces_around_vertex(poly, v, edges, edge_faces);
+// Description:
+//   Return incident faces around a vertex in cyclic order.
+//   .
+//   - Returns: ordered face-index list
+//   .
+//   - Limitations/Gotchas: assumes manifold vertex neighborhood
+// Arguments:
+//   poly = poly descriptor
+//   v = vertex index
+//   edges = edge list
+//   edge_faces = edge-face table
 function ps_faces_around_vertex(poly, v, edges, edge_faces) =
     let(
         faces = poly_faces(poly),
@@ -1017,11 +1221,17 @@ function ps_faces_around_vertex(poly, v, edges, edge_faces) =
 
 ///////////////////////////////////////
 // ---- Frame/placement helpers ----
-/**
- * Function: Compute scaled face center for placement.
- * Params: poly (poly descriptor), fi (face index), scale (scale factor)
- * Returns: 3D center point
- */
+// Function: poly_face_center()
+// Usage:
+//   result = poly_face_center(poly, fi, scale);
+// Description:
+//   Compute scaled face center for placement.
+//   .
+//   - Returns: 3D center point
+// Arguments:
+//   poly = poly descriptor
+//   fi = face index
+//   scale = scale factor
 function poly_face_center(poly, fi, scale) =
     let(
         f   = poly_faces(poly)[fi],
@@ -1037,12 +1247,19 @@ function poly_face_center(poly, fi, scale) =
     ];
 
 
-/**
- * Function: Compute local face-frame X axis for placement.
- * Params: poly (poly descriptor), fi (face index), scale (scale factor)
- * Returns: unit 3D X-axis vector in world/poly coordinates
- * Limitations/Gotchas: candidate axis is projected into the face plane to remain orthonormal for non-planar faces
- */
+// Function: poly_face_ex()
+// Usage:
+//   result = poly_face_ex(poly, fi, scale);
+// Description:
+//   Compute local face-frame X axis for placement.
+//   .
+//   - Returns: unit 3D X-axis vector in world/poly coordinates
+//   .
+//   - Limitations/Gotchas: candidate axis is projected into the face plane to remain orthonormal for non-planar faces
+// Arguments:
+//   poly = poly descriptor
+//   fi = face index
+//   scale = scale factor
 function poly_face_ex(poly, fi, scale) =
     let(f      = poly_faces(poly)[fi],
         vs     = poly_verts(poly),
@@ -1060,11 +1277,17 @@ function poly_face_ex(poly, fi, scale) =
         : v_norm(ex_fallback);   // local +X points towards face vertex order
 
 
-/**
- * Function: Compute local face-frame Y axis for placement.
- * Params: poly (poly descriptor), fi (face index), scale (scale factor)
- * Returns: unit 3D Y-axis vector
- */
+// Function: poly_face_ey()
+// Usage:
+//   result = poly_face_ey(poly, fi, scale);
+// Description:
+//   Compute local face-frame Y axis for placement.
+//   .
+//   - Returns: unit 3D Y-axis vector
+// Arguments:
+//   poly = poly descriptor
+//   fi = face index
+//   scale = scale factor
 function poly_face_ey(poly, fi, scale) =
     v_cross(
         poly_face_ez(poly, fi, scale),
@@ -1072,11 +1295,17 @@ function poly_face_ey(poly, fi, scale) =
     );
 
 
-/**
- * Function: Compute local face-frame Z axis for placement.
- * Params: poly (poly descriptor), fi (face index), scale (scale factor)
- * Returns: unit 3D Z-axis vector
- */
+// Function: poly_face_ez()
+// Usage:
+//   result = poly_face_ez(poly, fi, scale);
+// Description:
+//   Compute local face-frame Z axis for placement.
+//   .
+//   - Returns: unit 3D Z-axis vector
+// Arguments:
+//   poly = poly descriptor
+//   fi = face index
+//   scale = scale factor
 function poly_face_ez(poly, fi, scale) =
     let(f  = poly_faces(poly)[fi],
         vs = poly_verts(poly),
@@ -1085,11 +1314,18 @@ function poly_face_ez(poly, fi, scale) =
     ps_face_frame_normal(vs_scaled, f);
 
 
-/**
- * Function: Build a 4x4 transform matrix from frame axes and center.
- * Params: center (translation), ex/ey/ez (basis vectors)
- * Returns: OpenSCAD `multmatrix`-compatible matrix
- */
+// Function: ps_frame_matrix()
+// Usage:
+//   result = ps_frame_matrix(center, ex, ey, ez);
+// Description:
+//   Build a 4x4 transform matrix from frame axes and center.
+//   .
+//   - Returns: OpenSCAD `multmatrix`-compatible matrix
+// Arguments:
+//   center = translation
+//   ex = basis vectors
+//   ey = basis vectors
+//   ez = basis vectors
 function ps_frame_matrix(center, ex, ey, ez) = [
     [ex[0], ey[0], ez[0], center[0]],
     [ex[1], ey[1], ez[1], center[1]],
@@ -1097,47 +1333,75 @@ function ps_frame_matrix(center, ex, ey, ez) = [
     [0,      0,     0,     1]
 ];
 
-/**
- * Function: Build a semantic placement-frame record.
- * Params: center (origin in parent coordinates), ex/ey/ez (orthonormal axes in parent coordinates)
- * Returns: placement frame `[center, ex, ey, ez]`
- * Limitations: stores axes as supplied; callers remain responsible for orthonormal frame construction
- */
+// Function: ps_placement_frame()
+// Usage:
+//   result = ps_placement_frame(center, ex, ey, ez);
+// Description:
+//   Build a semantic placement-frame record.
+//   .
+//   - Returns: placement frame `[center, ex, ey, ez]`
+//   .
+//   - Limitations/Gotchas: stores axes as supplied; callers remain responsible for orthonormal frame construction
+// Arguments:
+//   center = origin in parent coordinates
+//   ex = orthonormal axes in parent coordinates
+//   ey = orthonormal axes in parent coordinates
+//   ez = orthonormal axes in parent coordinates
 function ps_placement_frame(center, ex, ey, ez) = [center, ex, ey, ez];
 
-/**
- * Function: Get center from a placement-frame record.
- * Params: frame (placement frame)
- * Returns: origin in parent coordinates
- */
+// Function: ps_placement_frame_center()
+// Usage:
+//   result = ps_placement_frame_center(frame);
+// Description:
+//   Get center from a placement-frame record.
+//   .
+//   - Returns: origin in parent coordinates
+// Arguments:
+//   frame = placement frame
 function ps_placement_frame_center(frame) = frame[0];
 
-/**
- * Function: Get local X axis from a placement-frame record.
- * Params: frame (placement frame)
- * Returns: unit X axis in parent coordinates
- */
+// Function: ps_placement_frame_ex()
+// Usage:
+//   result = ps_placement_frame_ex(frame);
+// Description:
+//   Get local X axis from a placement-frame record.
+//   .
+//   - Returns: unit X axis in parent coordinates
+// Arguments:
+//   frame = placement frame
 function ps_placement_frame_ex(frame) = frame[1];
 
-/**
- * Function: Get local Y axis from a placement-frame record.
- * Params: frame (placement frame)
- * Returns: unit Y axis in parent coordinates
- */
+// Function: ps_placement_frame_ey()
+// Usage:
+//   result = ps_placement_frame_ey(frame);
+// Description:
+//   Get local Y axis from a placement-frame record.
+//   .
+//   - Returns: unit Y axis in parent coordinates
+// Arguments:
+//   frame = placement frame
 function ps_placement_frame_ey(frame) = frame[2];
 
-/**
- * Function: Get local Z axis from a placement-frame record.
- * Params: frame (placement frame)
- * Returns: unit Z axis in parent coordinates
- */
+// Function: ps_placement_frame_ez()
+// Usage:
+//   result = ps_placement_frame_ez(frame);
+// Description:
+//   Get local Z axis from a placement-frame record.
+//   .
+//   - Returns: unit Z axis in parent coordinates
+// Arguments:
+//   frame = placement frame
 function ps_placement_frame_ez(frame) = frame[3];
 
-/**
- * Function: Convert a placement-frame record to an OpenSCAD transform matrix.
- * Params: frame (placement frame)
- * Returns: matrix compatible with `multmatrix(...)`
- */
+// Function: ps_placement_frame_matrix()
+// Usage:
+//   result = ps_placement_frame_matrix(frame);
+// Description:
+//   Convert a placement-frame record to an OpenSCAD transform matrix.
+//   .
+//   - Returns: matrix compatible with `multmatrix(...)`
+// Arguments:
+//   frame = placement frame
 function ps_placement_frame_matrix(frame) =
     ps_frame_matrix(
         ps_placement_frame_center(frame),
@@ -1146,11 +1410,18 @@ function ps_placement_frame_matrix(frame) =
         ps_placement_frame_ez(frame)
     );
 
-/**
- * Function: Build a description string for a placement frame.
- * Params: frame (placement frame), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
- * Returns: description string
- */
+// Function: ps_placement_frame_describe_str()
+// Usage:
+//   result = ps_placement_frame_describe_str(frame, detail, kvpair_to_str, field_sep);
+// Description:
+//   Build a description string for a placement frame.
+//   .
+//   - Returns: description string
+// Arguments:
+//   frame = placement frame
+//   detail = detail level
+//   kvpair_to_str = optional key/value formatter
+//   field_sep = field separator
 function ps_placement_frame_describe_str(frame, detail=0, kvpair_to_str=undef, field_sep=", ") =
     ps_describe_record_str(
         "PlacementFrame",
@@ -1165,20 +1436,33 @@ function ps_placement_frame_describe_str(frame, detail=0, kvpair_to_str=undef, f
         field_sep
     );
 
-/**
- * Module: Echo a placement frame description.
- * Params: frame (placement frame), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
- * Returns: none
- */
+// Module: ps_placement_frame_describe()
+// Usage:
+//   ps_placement_frame_describe(frame, detail, kvpair_to_str, field_sep);
+// Description:
+//   Echo a placement frame description.
+//   .
+//   - Returns: none
+// Arguments:
+//   frame = placement frame
+//   detail = detail level
+//   kvpair_to_str = optional key/value formatter
+//   field_sep = field separator
 module ps_placement_frame_describe(frame, detail=0, kvpair_to_str=undef, field_sep=", ") {
     echo(ps_placement_frame_describe_str(frame, detail, kvpair_to_str, field_sep));
 }
 
-/**
- * Function: Build a target-local poly context record.
- * Params: poly_faces_idx (poly face index loops), poly_verts_local (poly vertices in target-local coordinates), poly_center_local (optional poly center in target-local coordinates)
- * Returns: target-local poly context `[poly_faces_idx, poly_verts_local, poly_center_local]`
- */
+// Function: ps_target_local_poly_context()
+// Usage:
+//   result = ps_target_local_poly_context(poly_faces_idx, poly_verts_local, poly_center_local);
+// Description:
+//   Build a target-local poly context record.
+//   .
+//   - Returns: target-local poly context `[poly_faces_idx, poly_verts_local, poly_center_local]`
+// Arguments:
+//   poly_faces_idx = poly face index loops
+//   poly_verts_local = poly vertices in target-local coordinates
+//   poly_center_local = optional poly center in target-local coordinates
 function ps_target_local_poly_context(poly_faces_idx, poly_verts_local, poly_center_local=undef) =
     [
         poly_faces_idx,
@@ -1186,32 +1470,51 @@ function ps_target_local_poly_context(poly_faces_idx, poly_verts_local, poly_cen
         is_undef(poly_center_local) ? [0, 0, 0] : poly_center_local
     ];
 
-/**
- * Function: Get face index loops from a target-local poly context.
- * Params: ctx (target-local poly context)
- * Returns: poly face index loops
- */
+// Function: ps_target_local_poly_context_faces_idx()
+// Usage:
+//   result = ps_target_local_poly_context_faces_idx(ctx);
+// Description:
+//   Get face index loops from a target-local poly context.
+//   .
+//   - Returns: poly face index loops
+// Arguments:
+//   ctx = target-local poly context
 function ps_target_local_poly_context_faces_idx(ctx) = ctx[0];
 
-/**
- * Function: Get local vertices from a target-local poly context.
- * Params: ctx (target-local poly context)
- * Returns: poly vertices in target-local coordinates
- */
+// Function: ps_target_local_poly_context_verts_local()
+// Usage:
+//   result = ps_target_local_poly_context_verts_local(ctx);
+// Description:
+//   Get local vertices from a target-local poly context.
+//   .
+//   - Returns: poly vertices in target-local coordinates
+// Arguments:
+//   ctx = target-local poly context
 function ps_target_local_poly_context_verts_local(ctx) = ctx[1];
 
-/**
- * Function: Get local poly center from a target-local poly context.
- * Params: ctx (target-local poly context)
- * Returns: poly center in target-local coordinates
- */
+// Function: ps_target_local_poly_context_center_local()
+// Usage:
+//   result = ps_target_local_poly_context_center_local(ctx);
+// Description:
+//   Get local poly center from a target-local poly context.
+//   .
+//   - Returns: poly center in target-local coordinates
+// Arguments:
+//   ctx = target-local poly context
 function ps_target_local_poly_context_center_local(ctx) = ctx[2];
 
-/**
- * Function: Build a description string for a target-local poly context.
- * Params: ctx (target-local poly context), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
- * Returns: description string
- */
+// Function: ps_target_local_poly_context_describe_str()
+// Usage:
+//   result = ps_target_local_poly_context_describe_str(ctx, detail, kvpair_to_str, field_sep);
+// Description:
+//   Build a description string for a target-local poly context.
+//   .
+//   - Returns: description string
+// Arguments:
+//   ctx = target-local poly context
+//   detail = detail level
+//   kvpair_to_str = optional key/value formatter
+//   field_sep = field separator
 function ps_target_local_poly_context_describe_str(ctx, detail=0, kvpair_to_str=undef, field_sep=", ") =
     ps_describe_record_str(
         "TargetLocalPolyContext",
@@ -1228,20 +1531,38 @@ function ps_target_local_poly_context_describe_str(ctx, detail=0, kvpair_to_str=
         field_sep
     );
 
-/**
- * Module: Echo a target-local poly context description.
- * Params: ctx (target-local poly context), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
- * Returns: none
- */
+// Module: ps_target_local_poly_context_describe()
+// Usage:
+//   ps_target_local_poly_context_describe(ctx, detail, kvpair_to_str, field_sep);
+// Description:
+//   Echo a target-local poly context description.
+//   .
+//   - Returns: none
+// Arguments:
+//   ctx = target-local poly context
+//   detail = detail level
+//   kvpair_to_str = optional key/value formatter
+//   field_sep = field separator
 module ps_target_local_poly_context_describe(ctx, detail=0, kvpair_to_str=undef, field_sep=", ") {
     echo(ps_target_local_poly_context_describe_str(ctx, detail, kvpair_to_str, field_sep));
 }
 
-/**
- * Function: Build a face-local context record for nested face operations.
- * Params: face_pts3d_local (face vertices in target face-local 3D), face_pts2d (face vertices in target face-local XY), face_idx (source face index), poly_faces_idx/poly_verts_local (target-local poly topology/vertices), face_neighbors_idx (optional adjacent face ids), face_dihedrals (optional edge dihedrals), poly_center_local (optional poly center in target-local coordinates)
- * Returns: face-local context `[face_pts3d_local, face_pts2d, face_idx, target_ctx, face_neighbors_idx, face_dihedrals]`
- */
+// Function: ps_face_local_context()
+// Usage:
+//   result = ps_face_local_context(face_pts3d_local, face_pts2d, face_idx, poly_faces_idx, poly_verts_local, face_neighbors_idx, face_dihedrals, poly_center_local);
+// Description:
+//   Build a face-local context record for nested face operations.
+//   .
+//   - Returns: face-local context `[face_pts3d_local, face_pts2d, face_idx, target_ctx, face_neighbors_idx, face_dihedrals]`
+// Arguments:
+//   face_pts3d_local = face vertices in target face-local 3D
+//   face_pts2d = face vertices in target face-local XY
+//   face_idx = source face index
+//   poly_faces_idx = target-local poly topology/vertices
+//   poly_verts_local = target-local poly topology/vertices
+//   face_neighbors_idx = optional adjacent face ids
+//   face_dihedrals = optional edge dihedrals
+//   poly_center_local = optional poly center in target-local coordinates
 function ps_face_local_context(
     face_pts3d_local,
     face_pts2d,
@@ -1261,77 +1582,120 @@ function ps_face_local_context(
         face_dihedrals
     ];
 
-/**
- * Function: Get face-local 3D vertices from a face-local context.
- * Params: ctx (face-local context)
- * Returns: face vertices in target face-local 3D
- */
+// Function: ps_face_local_context_pts3d_local()
+// Usage:
+//   result = ps_face_local_context_pts3d_local(ctx);
+// Description:
+//   Get face-local 3D vertices from a face-local context.
+//   .
+//   - Returns: face vertices in target face-local 3D
+// Arguments:
+//   ctx = face-local context
 function ps_face_local_context_pts3d_local(ctx) = ctx[0];
 
-/**
- * Function: Get face-local 2D vertices from a face-local context.
- * Params: ctx (face-local context)
- * Returns: face vertices in target face-local XY
- */
+// Function: ps_face_local_context_pts2d()
+// Usage:
+//   result = ps_face_local_context_pts2d(ctx);
+// Description:
+//   Get face-local 2D vertices from a face-local context.
+//   .
+//   - Returns: face vertices in target face-local XY
+// Arguments:
+//   ctx = face-local context
 function ps_face_local_context_pts2d(ctx) = ctx[1];
 
-/**
- * Function: Get source face index from a face-local context.
- * Params: ctx (face-local context)
- * Returns: source face index
- */
+// Function: ps_face_local_context_idx()
+// Usage:
+//   result = ps_face_local_context_idx(ctx);
+// Description:
+//   Get source face index from a face-local context.
+//   .
+//   - Returns: source face index
+// Arguments:
+//   ctx = face-local context
 function ps_face_local_context_idx(ctx) = ctx[2];
 
-/**
- * Function: Get target-local poly context from a face-local context.
- * Params: ctx (face-local context)
- * Returns: nested target-local poly context
- */
+// Function: ps_face_local_context_target_local_poly_context()
+// Usage:
+//   result = ps_face_local_context_target_local_poly_context(ctx);
+// Description:
+//   Get target-local poly context from a face-local context.
+//   .
+//   - Returns: nested target-local poly context
+// Arguments:
+//   ctx = face-local context
 function ps_face_local_context_target_local_poly_context(ctx) = ctx[3];
 
-/**
- * Function: Get target-local face index loops from a face-local context.
- * Params: ctx (face-local context)
- * Returns: poly face index loops
- */
+// Function: ps_face_local_context_poly_faces_idx()
+// Usage:
+//   result = ps_face_local_context_poly_faces_idx(ctx);
+// Description:
+//   Get target-local face index loops from a face-local context.
+//   .
+//   - Returns: poly face index loops
+// Arguments:
+//   ctx = face-local context
 function ps_face_local_context_poly_faces_idx(ctx) =
     ps_target_local_poly_context_faces_idx(ps_face_local_context_target_local_poly_context(ctx));
 
-/**
- * Function: Get target-local vertices from a face-local context.
- * Params: ctx (face-local context)
- * Returns: poly vertices in target-local coordinates
- */
+// Function: ps_face_local_context_poly_verts_local()
+// Usage:
+//   result = ps_face_local_context_poly_verts_local(ctx);
+// Description:
+//   Get target-local vertices from a face-local context.
+//   .
+//   - Returns: poly vertices in target-local coordinates
+// Arguments:
+//   ctx = face-local context
 function ps_face_local_context_poly_verts_local(ctx) =
     ps_target_local_poly_context_verts_local(ps_face_local_context_target_local_poly_context(ctx));
 
-/**
- * Function: Get target-local poly center from a face-local context.
- * Params: ctx (face-local context)
- * Returns: poly center in target-local coordinates
- */
+// Function: ps_face_local_context_poly_center_local()
+// Usage:
+//   result = ps_face_local_context_poly_center_local(ctx);
+// Description:
+//   Get target-local poly center from a face-local context.
+//   .
+//   - Returns: poly center in target-local coordinates
+// Arguments:
+//   ctx = face-local context
 function ps_face_local_context_poly_center_local(ctx) =
     ps_target_local_poly_context_center_local(ps_face_local_context_target_local_poly_context(ctx));
 
-/**
- * Function: Get neighboring face indices from a face-local context.
- * Params: ctx (face-local context)
- * Returns: adjacent face index per source face edge, or `undef`
- */
+// Function: ps_face_local_context_neighbors_idx()
+// Usage:
+//   result = ps_face_local_context_neighbors_idx(ctx);
+// Description:
+//   Get neighboring face indices from a face-local context.
+//   .
+//   - Returns: adjacent face index per source face edge, or `undef`
+// Arguments:
+//   ctx = face-local context
 function ps_face_local_context_neighbors_idx(ctx) = ctx[4];
 
-/**
- * Function: Get edge dihedrals from a face-local context.
- * Params: ctx (face-local context)
- * Returns: dihedral metadata per source face edge, or `undef`
- */
+// Function: ps_face_local_context_dihedrals()
+// Usage:
+//   result = ps_face_local_context_dihedrals(ctx);
+// Description:
+//   Get edge dihedrals from a face-local context.
+//   .
+//   - Returns: dihedral metadata per source face edge, or `undef`
+// Arguments:
+//   ctx = face-local context
 function ps_face_local_context_dihedrals(ctx) = ctx[5];
 
-/**
- * Function: Build a description string for a face-local context.
- * Params: ctx (face-local context), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
- * Returns: description string
- */
+// Function: ps_face_local_context_describe_str()
+// Usage:
+//   result = ps_face_local_context_describe_str(ctx, detail, kvpair_to_str, field_sep);
+// Description:
+//   Build a description string for a face-local context.
+//   .
+//   - Returns: description string
+// Arguments:
+//   ctx = face-local context
+//   detail = detail level
+//   kvpair_to_str = optional key/value formatter
+//   field_sep = field separator
 function ps_face_local_context_describe_str(ctx, detail=0, kvpair_to_str=undef, field_sep=", ") =
     ps_describe_record_str(
         "FaceLocalContext",
@@ -1352,22 +1716,35 @@ function ps_face_local_context_describe_str(ctx, detail=0, kvpair_to_str=undef, 
         field_sep
     );
 
-/**
- * Module: Echo a face-local context description.
- * Params: ctx (face-local context), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
- * Returns: none
- */
+// Module: ps_face_local_context_describe()
+// Usage:
+//   ps_face_local_context_describe(ctx, detail, kvpair_to_str, field_sep);
+// Description:
+//   Echo a face-local context description.
+//   .
+//   - Returns: none
+// Arguments:
+//   ctx = face-local context
+//   detail = detail level
+//   kvpair_to_str = optional key/value formatter
+//   field_sep = field separator
 module ps_face_local_context_describe(ctx, detail=0, kvpair_to_str=undef, field_sep=", ") {
     echo(ps_face_local_context_describe_str(ctx, detail, kvpair_to_str, field_sep));
 }
 
 
-/**
- * Function: Orient one face so its normal points away from origin.
- * Params: verts (3D vertex list), f (face index loop)
- * Returns: original or reversed face loop
- * Limitations/Gotchas: origin-relative heuristic; appropriate for centered radial polyhedra
- */
+// Function: ps_orient_face_outward()
+// Usage:
+//   result = ps_orient_face_outward(verts, f);
+// Description:
+//   Orient one face so its normal points away from origin.
+//   .
+//   - Returns: original or reversed face loop
+//   .
+//   - Limitations/Gotchas: origin-relative heuristic; appropriate for centered radial polyhedra
+// Arguments:
+//   verts = 3D vertex list
+//   f = face index loop
 function ps_orient_face_outward(verts, f) =
     let(
         c = ps_face_centroid(verts, f),
@@ -1377,10 +1754,15 @@ function ps_orient_face_outward(verts, f) =
         ? f
         : _ps_reverse(f);  // reversed
 
-/**
- * Function: Orient all faces so normals point away from origin.
- * Params: verts (3D vertex list), faces (face list)
- * Returns: oriented face list
- */
+// Function: ps_orient_all_faces_outward()
+// Usage:
+//   result = ps_orient_all_faces_outward(verts, faces);
+// Description:
+//   Orient all faces so normals point away from origin.
+//   .
+//   - Returns: oriented face list
+// Arguments:
+//   verts = 3D vertex list
+//   faces = face list
 function ps_orient_all_faces_outward(verts, faces) =
     [ for (f = faces) ps_orient_face_outward(verts, f) ];

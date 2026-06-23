@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/core/classify.scad
 use <funcs.scad>
 
 // Polyhedral element classification by families (faces / edges / vertices).
@@ -728,11 +729,19 @@ function _ps_classification_family_describe_str(label, idx, fam, detail, kvpair_
     )
     ps_join_strs(fields, field_sep);
 
-/**
- * Function: Build a formatted string for a classification tuple.
- * Params: cls (classification tuple), detail (describe detail), kvpair_to_str (optional function), field_sep (string), section_sep (string)
- * Returns: formatted string
- */
+// Function: ps_classification_describe_str()
+// Usage:
+//   result = ps_classification_describe_str(cls, detail, kvpair_to_str, field_sep, section_sep);
+// Description:
+//   Build a formatted string for a classification tuple.
+//   .
+//   - Returns: formatted string
+// Arguments:
+//   cls = classification tuple
+//   detail = describe detail
+//   kvpair_to_str = optional function
+//   field_sep = string
+//   section_sep = string
 function ps_classification_describe_str(cls, detail=1, kvpair_to_str=undef, field_sep=", ", section_sep="\n") =
     let(
         face_fams = ps_classify_face_families(cls),
@@ -756,10 +765,17 @@ function ps_classification_describe_str(cls, detail=1, kvpair_to_str=undef, fiel
         ? header
         : str(header, section_sep, ps_join_strs(rows, section_sep));
 
-/**
- * Module: Echo a formatted description of a classification tuple.
- * Params: cls (classification tuple), detail (describe detail), kvpair_to_str (optional function), field_sep (string), section_sep (string)
- */
+// Module: ps_classification_describe()
+// Usage:
+//   ps_classification_describe(cls, detail, kvpair_to_str, field_sep, section_sep);
+// Description:
+//   Echo a formatted description of a classification tuple.
+// Arguments:
+//   cls = classification tuple
+//   detail = describe detail
+//   kvpair_to_str = optional function
+//   field_sep = string
+//   section_sep = string
 module ps_classification_describe(cls, detail=1, kvpair_to_str=undef, field_sep=", ", section_sep="\n") {
     echo(ps_classification_describe_str(cls, detail, kvpair_to_str, field_sep, section_sep));
 }
