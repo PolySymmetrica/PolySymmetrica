@@ -67,6 +67,10 @@ jobs:
             src/polysymmetrica/core/*.scad \
             src/polysymmetrica/models/*.scad
 
+      - name: Build API preview tree
+        run: |
+          PATH="$HOME/.local/bin:$PATH" scripts/build_api_reference.sh
+
       - name: Run visual regressions
         run: |
           mkdir -p target/regression-tests
