@@ -5,7 +5,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 SCRATCH_ROOT="${API_SCRATCH_ROOT:-${REPO_ROOT}/target/docs-api}"
-CONVERTED_ROOT="${API_CONVERTED_ROOT:-${REPO_ROOT}/target/docsgen-src}"
 DOCS_OUT="${API_DOCS_OUT:-${REPO_ROOT}/target/docsgen-out}"
 
 usage() {
@@ -19,7 +18,6 @@ trees (`core/` and `models/`) under:
 
 Environment:
   API_SCRATCH_ROOT    Override the publish-style preview root.
-  API_CONVERTED_ROOT  Override the scratch docsgen source tree.
   API_DOCS_OUT        Override the docsgen markdown output tree.
 EOF
 }
@@ -32,12 +30,21 @@ fi
 mkdir -p "${SCRATCH_ROOT}"
 mkdir -p "${DOCS_OUT}"
 
-"${REPO_ROOT}/scripts/convert_docsgen.py" \
-    --run-docsgen \
-    --output-root "${CONVERTED_ROOT}" \
-    --docs-out "${DOCS_OUT}" \
-    src/polysymmetrica/core \
-    src/polysymmetrica/models >/dev/null
+if command -v openscad-docsgen >/dev/null 2>&1; then
+    DOCSGEN_BIN="openscad-docsgen"
+elif [[ -x "${HOME}/.local/bin/openscad-docsgen" ]]; then
+    DOCSGEN_BIN="${HOME}/.local/bin/openscad-docsgen"
+else
+    echo "openscad-docsgen not found in PATH or ~/.local/bin" >&2
+    exit 1
+fi
+
+rm -rf "${DOCS_OUT}/src/polysymmetrica/core" "${DOCS_OUT}/src/polysymmetrica/models"
+
+"${DOCSGEN_BIN}" -q -n -m -r \
+    -D "${DOCS_OUT}" \
+    src/polysymmetrica/core/*.scad \
+    src/polysymmetrica/models/*.scad >/dev/null
 
 rm -rf "${SCRATCH_ROOT}/core" "${SCRATCH_ROOT}/models"
 mkdir -p "${SCRATCH_ROOT}/core" "${SCRATCH_ROOT}/models"
@@ -45,20 +52,16 @@ mkdir -p "${SCRATCH_ROOT}/core" "${SCRATCH_ROOT}/models"
 copy_generated_markdown() {
     local section="$1"
     local output_dir="$2"
-    local -a docsgen_candidates=("${DOCS_OUT}/polysymmetrica/${section}"/*.md)
-    local -a converted_candidates=("${CONVERTED_ROOT}/polysymmetrica/${section}"/*.md)
+    local -a docsgen_candidates
 
     shopt -s nullglob
-    docsgen_candidates=("${DOCS_OUT}/polysymmetrica/${section}"/*.md)
-    converted_candidates=("${CONVERTED_ROOT}/polysymmetrica/${section}"/*.md)
+    docsgen_candidates=("${DOCS_OUT}/src/polysymmetrica/${section}"/*.md)
     shopt -u nullglob
 
     if ((${#docsgen_candidates[@]} > 0)); then
         cp "${docsgen_candidates[@]}" "${output_dir}/"
-    elif ((${#converted_candidates[@]} > 0)); then
-        cp "${converted_candidates[@]}" "${output_dir}/"
     else
-        echo "No generated markdown found for ${section} in ${DOCS_OUT} or ${CONVERTED_ROOT}" >&2
+        echo "No generated markdown found for ${section} in ${DOCS_OUT}" >&2
         exit 1
     fi
 }
