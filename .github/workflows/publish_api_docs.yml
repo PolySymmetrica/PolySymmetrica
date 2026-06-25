@@ -2,7 +2,7 @@ name: Publish API Docs
 
 on:
   push:
-    branches: [ "main", "191-docs-generate-and-organize-docsgen-api-reference" ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 permissions:
