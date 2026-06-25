@@ -39,6 +39,8 @@ Published reference:
 
 - `.github/workflows/publish_api_docs.yml` builds the same generated tree on
   pushes to `main` and manual dispatches;
+- the current `main` API reference is published under `/dev/` so later tagged
+  releases can live beside it under versioned paths;
 - the workflow renders the generated Markdown with GitHub Pages/Jekyll;
 - the workflow's `github-pages` environment records the published URL.
 
@@ -60,6 +62,8 @@ Design choices for this phase:
 - keep generated markdown out of the repository for now;
 - publish the generated reference through GitHub Pages rather than committing
   generated Markdown;
+- reserve `/dev/` for the current `main` API reference and leave room for
+  future immutable release paths;
 - publish `core/` and `models/` first;
 - keep `examples/` out of the generated reference for now, even though their
   comments use the same line-comment style.
