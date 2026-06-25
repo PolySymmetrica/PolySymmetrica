@@ -3,19 +3,19 @@
 // SPDX-License-Identifier: MIT
 
 use <polysymmetrica/core/placement.scad>
-use <polysymmetrica/models/platonics_all.scad>
+use <polysymmetrica/models/archimedians_all.scad>
 
-p = hexahedron();
-ir = 22;
+p = cuboctahedron();
+ir = 20;
 
 strut_d = 2.0;
 wall_thk = 2.0;
 model_gap = 70;
-face_colors = ["mediumseagreen", "seagreen", "lightseagreen", "mediumaquamarine"];
+face_colors = ["tomato", "gold", "dodgerblue", "mediumseagreen", "orchid", "darkorange"];
 
-// For the canonical cube, inter-radius is the radius to each edge midpoint.
-// The cube half-height is therefore inter_radius / sqrt(2).
-cube_half_height = ir / sqrt(2);
+// The cuboctahedron is already a more interesting printable than a cube, while
+// still having broad lower faces and short overhangs in this orientation.
+model_lift = ir + strut_d / 2;
 
 module frame_strut() {
     color("dimgray")
@@ -35,12 +35,12 @@ module inward_face_plate() {
 }
 
 // Example 1: a simple edge frame. Many printable polyhedron models start here.
-translate([-model_gap / 2, 0, cube_half_height + strut_d / 2])
+translate([-model_gap / 2, 0, model_lift])
     place_on_edges(p, inter_radius = ir)
         frame_strut();
 
 // Example 2: a face-only shell. Each face's outer surface stays on the original
 // face plane while the thickness grows inward.
-translate([model_gap / 2, 0, cube_half_height])
+translate([model_gap / 2, 0, model_lift])
     place_on_faces(p, inter_radius = ir)
         inward_face_plate();

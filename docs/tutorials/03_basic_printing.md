@@ -3,15 +3,16 @@
 Placement is enough to make useful first prints. This tutorial keeps to two
 support-light patterns: an edge-only frame and a face-only shell.
 
-![A simple cube frame and face-only shell generated with placement](../images/generated/tutorial_03_basic_printing.png)
+![A simple cuboctahedron frame and face-only shell generated with placement](../images/generated/tutorial_03_basic_printing.png)
 
 Source: [`docs/examples/tutorial_03_basic_printing.scad`](../examples/tutorial_03_basic_printing.scad)
 
-The example uses a cube because it has a clear build-plate orientation:
+The example uses a cuboctahedron: it is still simple, but more representative
+of the polyhedra people use this library for than another cube.
 
 ```scad
-p = hexahedron();
-ir = 22;
+p = cuboctahedron();
+ir = 20;
 ```
 
 ## Edge Frame
@@ -31,14 +32,14 @@ module frame_strut() {
         }
 }
 
-translate([-model_gap / 2, 0, cube_half_height + strut_d / 2])
+translate([-model_gap / 2, 0, model_lift])
     place_on_edges(p, inter_radius = ir)
         frame_strut();
 ```
 
 That pattern is the simplest printable polyhedron: a connected edge graph with
-thickened struts. The Z translation puts the lowest rounded struts on the build
-plate.
+thickened struts. The Z translation puts the rounded lower struts on the build
+plate for this orientation.
 
 ## Face Shell
 
@@ -48,20 +49,20 @@ a floating decoration, extrude it inward:
 
 ```scad
 module inward_face_plate() {
-    color("mediumseagreen")
+    color(face_colors[$ps_face_idx % len(face_colors)])
         translate([0, 0, -wall_thk])
             linear_extrude(height = wall_thk)
                 polygon(points = $ps_face_pts2d);
 }
 
-translate([model_gap / 2, 0, cube_half_height])
+translate([model_gap / 2, 0, model_lift])
     place_on_faces(p, inter_radius = ir)
         inward_face_plate();
 ```
 
 The outer face remains at the original polyhedron surface, and the wall
-thickness grows toward the interior. For a cube, this gives a straightforward
-face-only shell.
+thickness grows toward the interior. For the cuboctahedron, this gives a
+straightforward face-only shell with both square and triangular panels.
 
 ## Vertex Placement
 
