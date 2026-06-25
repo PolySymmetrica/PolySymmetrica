@@ -1,23 +1,24 @@
 # Basic Printing
 
-Placement is enough to make a first printable object. Start with a simple frame:
-edge struts join the vertices, vertex bosses strengthen the corners, and small
-polygon plates show where face pieces could sit.
+Placement is enough to make useful first prints. This tutorial keeps to two
+support-light patterns: an edge-only frame and a face-only shell.
 
-![A truncated cube printable starter with edge struts, vertex bosses, and simple face plates](../images/generated/tutorial_03_basic_printing.png)
+![A simple cube frame and face-only shell generated with placement](../images/generated/tutorial_03_basic_printing.png)
 
 Source: [`docs/examples/tutorial_03_basic_printing.scad`](../examples/tutorial_03_basic_printing.scad)
 
-The example uses a truncated cube:
+The example uses a cube because it has a clear build-plate orientation:
 
 ```scad
-p = poly_truncate(hexahedron());
-ir = 34;
+p = hexahedron();
+ir = 22;
 ```
 
-The frame strut is ordinary OpenSCAD geometry. `place_on_edges(...)` supplies
-an edge-local frame where X runs along the current edge, so `$ps_edge_len` gives
-the strut length:
+## Edge Frame
+
+The frame version uses only `place_on_edges(...)`. Each child module receives an
+edge-local frame where X runs along the current edge, so `$ps_edge_len` gives the
+right strut length:
 
 ```scad
 module frame_strut() {
@@ -30,34 +31,47 @@ module frame_strut() {
         }
 }
 
-place_on_edges(p, inter_radius = ir)
-    frame_strut();
+translate([-model_gap / 2, 0, cube_half_height + strut_d / 2])
+    place_on_edges(p, inter_radius = ir)
+        frame_strut();
 ```
 
-The same pattern adds vertex bosses:
+That pattern is the simplest printable polyhedron: a connected edge graph with
+thickened struts. The Z translation puts the lowest rounded struts on the build
+plate.
+
+## Face Shell
+
+The face version uses only `place_on_faces(...)`. A face-local polygon at `z=0`
+lies on the original face plane. To make the plate part of the solid rather than
+a floating decoration, extrude it inward:
 
 ```scad
-place_on_vertices(p, inter_radius = ir)
-    vertex_boss();
-```
-
-Face plates can start as plain scaled polygons:
-
-```scad
-module simple_face_plate() {
-    color("mediumseagreen", 0.72)
-        translate([0, 0, 0.35])
-            linear_extrude(height = plate_thk)
-                polygon(points = $ps_face_pts2d * plate_scale);
+module inward_face_plate() {
+    color("mediumseagreen")
+        translate([0, 0, -wall_thk])
+            linear_extrude(height = wall_thk)
+                polygon(points = $ps_face_pts2d);
 }
 
-place_on_faces(p, inter_radius = ir)
-    simple_face_plate();
+translate([model_gap / 2, 0, cube_half_height])
+    place_on_faces(p, inter_radius = ir)
+        inward_face_plate();
 ```
 
-This is deliberately basic. It does not add sockets, clearances, print
-tolerances, or separate print-bed layout. Those are later steps once the shape,
-scale, and part breakdown are clear.
+The outer face remains at the original polyhedron surface, and the wall
+thickness grows toward the interior. For a cube, this gives a straightforward
+face-only shell.
 
-For family-specific sizing and transform parameters, continue with
-[profile rows](../guides/profile.md).
+## Vertex Placement
+
+Blanket vertex decoration is often a poor first printing pattern. A sphere or
+boss on every vertex can lift the model off the bed or create unsupported
+underside geometry.
+
+Use `place_on_vertices(...)` later when the vertex operation is selective or
+subtractive: for example, adding feet only to build-plate vertices, drilling
+registration holes, or trimming corners from an already printable solid.
+
+This tutorial deliberately stops before sockets, clearances, separate print-bed
+layout, and tolerance tuning. Those belong in a later printing guide.

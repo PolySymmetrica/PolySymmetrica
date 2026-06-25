@@ -3,16 +3,19 @@
 // SPDX-License-Identifier: MIT
 
 use <polysymmetrica/core/placement.scad>
-use <polysymmetrica/core/truncation.scad>
 use <polysymmetrica/models/platonics_all.scad>
 
-p = poly_truncate(hexahedron());
-ir = 34;
+p = hexahedron();
+ir = 22;
 
-strut_d = 1.8;
-vertex_d = 3.2;
-plate_thk = 0.8;
-plate_scale = 0.68;
+strut_d = 2.0;
+wall_thk = 2.0;
+model_gap = 70;
+face_colors = ["mediumseagreen", "seagreen", "lightseagreen", "mediumaquamarine"];
+
+// For the canonical cube, inter-radius is the radius to each edge midpoint.
+// The cube half-height is therefore inter_radius / sqrt(2).
+cube_half_height = ir / sqrt(2);
 
 module frame_strut() {
     color("dimgray")
@@ -24,23 +27,20 @@ module frame_strut() {
         }
 }
 
-module vertex_boss() {
-    color("gold")
-        sphere(d = vertex_d, $fn = 20);
+module inward_face_plate() {
+    color(face_colors[$ps_face_idx % len(face_colors)])
+        translate([0, 0, -wall_thk])
+            linear_extrude(height = wall_thk)
+                polygon(points = $ps_face_pts2d);
 }
 
-module simple_face_plate() {
-    color("mediumseagreen", 0.72)
-        translate([0, 0, 0.35])
-            linear_extrude(height = plate_thk)
-                polygon(points = $ps_face_pts2d * plate_scale);
-}
+// Example 1: a simple edge frame. Many printable polyhedron models start here.
+translate([-model_gap / 2, 0, cube_half_height + strut_d / 2])
+    place_on_edges(p, inter_radius = ir)
+        frame_strut();
 
-place_on_edges(p, inter_radius = ir)
-    frame_strut();
-
-place_on_vertices(p, inter_radius = ir)
-    vertex_boss();
-
-place_on_faces(p, inter_radius = ir)
-    simple_face_plate();
+// Example 2: a face-only shell. Each face's outer surface stays on the original
+// face plane while the thickness grows inward.
+translate([model_gap / 2, 0, cube_half_height])
+    place_on_faces(p, inter_radius = ir)
+        inward_face_plate();
