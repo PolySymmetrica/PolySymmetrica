@@ -29,6 +29,14 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
     exit 0
 fi
 
+case "${API_LINK_EXT}" in
+    md|html) ;;
+    *)
+        echo "API_LINK_EXT must be 'md' or 'html'" >&2
+        exit 1
+        ;;
+esac
+
 mkdir -p "${SCRATCH_ROOT}"
 mkdir -p "${DOCS_OUT}"
 
@@ -76,10 +84,6 @@ api_link() {
     case "${API_LINK_EXT}" in
         md) printf '%s' "${path}" ;;
         html) printf '%s' "${path%.md}.html" ;;
-        *)
-            echo "API_LINK_EXT must be 'md' or 'html'" >&2
-            exit 1
-            ;;
     esac
 }
 
