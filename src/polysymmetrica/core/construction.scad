@@ -5,6 +5,7 @@
  */
 
 // LibFile: polysymmetrica/core/construction.scad
+
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Construction helpers
 // Topological construction primitives for open/capped mesh workflows.

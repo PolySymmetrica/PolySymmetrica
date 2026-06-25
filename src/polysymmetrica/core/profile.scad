@@ -5,6 +5,7 @@
  */
 
 // LibFile: polysymmetrica/core/profile.scad
+
 // Shared parameter override helpers for transform operators.
 //
 // INPUT FORMAT (`profile`)

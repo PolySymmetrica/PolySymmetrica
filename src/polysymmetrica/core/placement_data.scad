@@ -5,6 +5,7 @@
  */
 
 // LibFile: polysymmetrica/core/placement_data.scad
+
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Placement data records
 // Shared record accessors for placement sites and proxy replay/group metadata.

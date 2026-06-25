@@ -5,6 +5,7 @@
  */
 
 // LibFile: polysymmetrica/core/face_regions.scad
+
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Face-region volume helpers
 // Builds positive face-local volumes from filled face boundary spans.

@@ -5,6 +5,7 @@
  */
 
 // LibFile: polysymmetrica/core/segments_data.scad
+
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Segment data records
 // Shared record accessors for boundary spans, intrusions, seam-clearance loops,

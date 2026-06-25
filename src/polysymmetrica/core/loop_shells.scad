@@ -5,6 +5,7 @@
  */
 
 // LibFile: polysymmetrica/core/loop_shells.scad
+
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Generic projected loop shell helpers
 // Builds closed polyhedron records from corresponding bottom/top 2D loops.

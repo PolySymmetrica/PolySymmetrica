@@ -5,6 +5,7 @@
  */
 
 // LibFile: polysymmetrica/core/solvers.scad
+
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Solver helpers
 // Parameter solvers for mixed-face transforms.

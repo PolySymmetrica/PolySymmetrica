@@ -5,6 +5,7 @@
  */
 
 // LibFile: polysymmetrica/core/validate.scad
+
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Polyhedral Geometry Engine
 // Validation helpers (structural + geometric)

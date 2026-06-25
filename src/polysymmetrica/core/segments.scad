@@ -5,6 +5,7 @@
  */
 
 // LibFile: polysymmetrica/core/segments.scad
+
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Face segmentation helpers
 // Extracts simple face segments from possibly self-intersecting face loops.

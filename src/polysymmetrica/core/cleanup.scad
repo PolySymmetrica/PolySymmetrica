@@ -5,6 +5,7 @@
  */
 
 // LibFile: polysymmetrica/core/cleanup.scad
+
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Polyhedral Geometry Engine
 // Structural mesh cleanup helpers.
