@@ -7,6 +7,7 @@ Start with:
 
 1. [Models](01_models.md)
 2. [Placement](02_placement.md)
+3. [Basic printing](03_basic_printing.md)
 
 Later lessons will cover classification, transforms, prisms and antiprisms,
-construction helpers, and printable frame/face workflows.
+construction helpers, and more advanced frame/face workflows.
