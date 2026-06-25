@@ -1,0 +1,52 @@
+name: Publish API Docs
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish API reference
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install docsgen
+        run: |
+          python3 -m pip install --user openscad-docsgen
+
+      - name: Build API reference markdown
+        run: |
+          PATH="$HOME/.local/bin:$PATH" API_LINK_EXT=html scripts/build_api_reference.sh
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build Pages site
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./target/docs-api
+          destination: ./target/docs-api-site
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./target/docs-api-site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
