@@ -1,0 +1,65 @@
+name: Publish API Docs
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish API reference
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}dev/
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install docsgen
+        run: |
+          python3 -m pip install --user openscad-docsgen
+
+      - name: Build API reference markdown
+        run: |
+          mkdir -p target/pages
+          PATH="$HOME/.local/bin:$PATH" \
+            API_SCRATCH_ROOT=target/pages/dev \
+            API_LINK_EXT=html \
+            scripts/build_api_reference.sh
+          cat > target/pages/_config.yml <<'EOF'
+          title: PolySymmetrica Documentation
+          markdown: kramdown
+          EOF
+          cat > target/pages/index.md <<'EOF'
+          # PolySymmetrica Documentation
+
+          - [Development API reference](dev/index.html)
+          EOF
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+
+      - name: Build Pages site
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./target/pages
+          destination: ./target/pages-site
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ./target/pages-site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
