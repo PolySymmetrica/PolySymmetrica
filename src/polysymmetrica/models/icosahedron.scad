@@ -4,12 +4,19 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/models/icosahedron.scad
+
 use <../core/funcs.scad>
 use <../core/placement.scad>
 
 phi = (1 + sqrt(5)) / 2;
 
 // ---- Canonical Icosahedron: edge length = 2 ----
+// Function: icosahedron()
+// Usage:
+//   result = icosahedron();
+// Description:
+//   Return the canonical icosahedron as a normalized poly descriptor.
 function icosahedron() = let(unit_edge = 2) poly_make(
     // verts (index 0)
     [

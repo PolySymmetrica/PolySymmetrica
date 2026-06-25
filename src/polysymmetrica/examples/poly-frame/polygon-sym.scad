@@ -6,9 +6,11 @@
 
 use <../../core/funcs.scad>
 
-/**
-Applies polygonal symmetry to the supplied children in the X-Y plane. The child objects are repeated to create an instance per vertex and rotating each so their X-axis points along the edge.
-*/
+// Module: apply_polygon_sym()
+// Usage:
+//   apply_polygon_sym(n_vertex, polygon_rad);
+// Description:
+//   Applies polygonal symmetry to the supplied children in the X-Y plane. The child objects are repeated to create an instance per vertex and rotating each so their X-axis points along the edge.
 module apply_polygon_sym(n_vertex, polygon_rad) {
     rot_angle = 360 / n_vertex;
     turn_angle = 90 + rot_angle / 2;

@@ -11,9 +11,7 @@ use <../../models/platonics_all.scad>
 use <util_demo.scad>
 
 
-/**
-Demonstrates extended cantellations with extreme values of 't'.
-*/
+// Demonstrates extended cantellations with extreme values of 't'.
 for (   p = with_index([ undef, 
                 tetrahedron(), hexahedron(), octahedron(), dodecahedron(), icosahedron() 
             ], -1),

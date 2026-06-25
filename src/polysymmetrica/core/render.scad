@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/core/render.scad
 use <funcs.scad>
 use <placement.scad>
 use <segments.scad>
@@ -110,11 +111,17 @@ function _ps_render_tri_mesh(verts, faces, eps=1e-8) =
     )
     [uniq_pts, tri_faces];
 
-// Return [points, faces] suitable for OpenSCAD polyhedron().
-// triangulate:
-// - "auto" (default): triangulate only when a face is non-planar/concave/self-intersecting
-// - "always"/true: always triangulate
-// - "raw"/false: pass original faces through unchanged
+// Function: ps_render_mesh()
+// Usage:
+//   result = ps_render_mesh(poly, inter_radius=1, triangulate="auto", eps=1e-8);
+// Description:
+//   Convert a poly descriptor into `[points, faces]` suitable for OpenSCAD
+//   `polyhedron()`. Triangulation can be automatic, forced, or disabled.
+// Arguments:
+//   poly = source poly descriptor
+//   inter_radius = rendered inter-radius scale
+//   triangulate = `"auto"`, `"always"`/`true`, or `"raw"`/`false`
+//   eps = triangulation tolerance
 function ps_render_mesh(poly, inter_radius = 1, triangulate = "auto", eps=1e-8) =
     let(
         k = inter_radius * poly_e_over_ir(poly),
@@ -128,6 +135,16 @@ function ps_render_mesh(poly, inter_radius = 1, triangulate = "auto", eps=1e-8) 
     )
     need_tri ? _ps_render_tri_mesh(verts, faces, eps) : [verts, faces];
 
+// Module: poly_render()
+// Usage:
+//   poly_render(poly, inter_radius=1, triangulate="auto", eps=1e-8);
+// Description:
+//   Render a poly descriptor directly with OpenSCAD `polyhedron()`.
+// Arguments:
+//   poly = source poly descriptor
+//   inter_radius = rendered inter-radius scale
+//   triangulate = triangulation mode passed to `ps_render_mesh()`
+//   eps = triangulation tolerance
 module poly_render(poly, inter_radius = 1, triangulate = "auto", eps=1e-8) {
     let(
         mesh = ps_render_mesh(poly, inter_radius, triangulate, eps)
@@ -138,7 +155,15 @@ module poly_render(poly, inter_radius = 1, triangulate = "auto", eps=1e-8) {
     );
 }
 
-
+// Module: poly_describe()
+// Usage:
+//   poly_describe(poly, name=undef, detail=1);
+// Description:
+//   Echo a readable structural summary of a poly descriptor.
+// Arguments:
+//   poly = source poly descriptor
+//   name = optional label to print
+//   detail = verbosity level for per-face, per-vertex, and per-edge details
 module poly_describe(poly, name = undef, detail = 1) {
     echo ("==========", is_undef(name)? "Polyhedron" : name, "============");
     verts = poly_verts(poly);

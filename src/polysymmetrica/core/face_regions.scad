@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/core/face_regions.scad
+
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Face-region volume helpers
 // Builds positive face-local volumes from filled face boundary spans.
@@ -12,19 +14,33 @@ use <funcs.scad>
 use <loop_shells.scad>
 use <segments.scad>
 
-/**
- * Function: Signed 2D triangle orientation.
- * Params: a/b/c (2D points)
- * Returns: positive for left turn, negative for right turn, zero for colinear
- */
+// Function: _ps_fr_orient2()
+// Usage:
+//   result = _ps_fr_orient2(a, b, c);
+// Description:
+//   Signed 2D triangle orientation.
+//   .
+//   - Returns: positive for left turn, negative for right turn, zero for colinear
+// Arguments:
+//   a = 2D points
+//   b = 2D points
+//   c = 2D points
 function _ps_fr_orient2(a, b, c) =
     (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
 
-/**
- * Function: Intersect 2D lines represented as `n dot p = d`.
- * Params: n0/d0, n1/d1 (line equations), eps (parallel tolerance)
- * Returns: 2D intersection point, or `undef` for near-parallel lines
- */
+// Function: _ps_fr_line2_intersect()
+// Usage:
+//   result = _ps_fr_line2_intersect(n0, d0, n1, d1, eps);
+// Description:
+//   Intersect 2D lines represented as `n dot p = d`.
+//   .
+//   - Returns: 2D intersection point, or `undef` for near-parallel lines
+// Arguments:
+//   n0 =
+//   d0 =
+//   n1 = line equations
+//   d1 = line equations
+//   eps = parallel tolerance
 function _ps_fr_line2_intersect(n0, d0, n1, d1, eps=1e-12) =
     let(det = n0[0]*n1[1] - n0[1]*n1[0])
     (abs(det) < eps) ? undef
@@ -33,19 +49,29 @@ function _ps_fr_line2_intersect(n0, d0, n1, d1, eps=1e-12) =
         (n0[0]*d1 - d0*n1[0]) / det
     ];
 
-/**
- * Function: Build a left-hand normal for a 2D point+direction line.
- * Params: line (`[point2d, dir2d, ...]`)
- * Returns: 2D normal vector
- */
+// Function: _ps_fr_line_normal()
+// Usage:
+//   result = _ps_fr_line_normal(line);
+// Description:
+//   Build a left-hand normal for a 2D point+direction line.
+//   .
+//   - Returns: 2D normal vector
+// Arguments:
+//   line = `[point2d, dir2d, ...]`
 function _ps_fr_line_normal(line) =
     [-line[1][1], line[1][0]];
 
-/**
- * Function: Intersect two 2D point+direction lines.
- * Params: line0/line1 (`[point2d, dir2d, ...]`), eps (parallel tolerance)
- * Returns: 2D intersection point, or `undef` for near-parallel lines
- */
+// Function: _ps_fr_line_intersection()
+// Usage:
+//   result = _ps_fr_line_intersection(line0, line1, eps);
+// Description:
+//   Intersect two 2D point+direction lines.
+//   .
+//   - Returns: 2D intersection point, or `undef` for near-parallel lines
+// Arguments:
+//   line0 = `[point2d, dir2d, ...]`
+//   line1 = `[point2d, dir2d, ...]`
+//   eps = parallel tolerance
 function _ps_fr_line_intersection(line0, line1, eps=1e-9) =
     let(
         n0 = _ps_fr_line_normal(line0),
@@ -55,11 +81,17 @@ function _ps_fr_line_intersection(line0, line1, eps=1e-9) =
     )
     _ps_fr_line2_intersect(n0, d0, n1, d1, eps);
 
-/**
- * Function: Reconstruct a boundary-span point on its source edge.
- * Params: face_pts3d_local (source face loop), site (boundary-span site), t (source-edge parameter)
- * Returns: face-local 3D point, or `undef` when source edge metadata is missing
- */
+// Function: _ps_fr_span_source_point()
+// Usage:
+//   result = _ps_fr_span_source_point(face_pts3d_local, site, t);
+// Description:
+//   Reconstruct a boundary-span point on its source edge.
+//   .
+//   - Returns: face-local 3D point, or `undef` when source edge metadata is missing
+// Arguments:
+//   face_pts3d_local = source face loop
+//   site = boundary-span site
+//   t = source-edge parameter
 function _ps_fr_span_source_point(face_pts3d_local, site, t) =
     let(
         source_edge_idx = ps_boundary_span_site_source_edge_idx(site),
@@ -69,11 +101,16 @@ function _ps_fr_span_source_point(face_pts3d_local, site, t) =
     )
     (is_undef(a) || is_undef(b)) ? undef : a + (b - a) * t;
 
-/**
- * Function: Reconstruct the source-edge 3D segment for one boundary-span site.
- * Params: face_pts3d_local (source face loop), site (boundary-span site)
- * Returns: `[p0, p1]` in face-local 3D, falling back to the planar span when source data is absent
- */
+// Function: _ps_fr_span_seg3d()
+// Usage:
+//   result = _ps_fr_span_seg3d(face_pts3d_local, site);
+// Description:
+//   Reconstruct the source-edge 3D segment for one boundary-span site.
+//   .
+//   - Returns: `[p0, p1]` in face-local 3D, falling back to the planar span when source data is absent
+// Arguments:
+//   face_pts3d_local = source face loop
+//   site = boundary-span site
 function _ps_fr_span_seg3d(face_pts3d_local, site) =
     let(
         p0 = _ps_fr_span_source_point(face_pts3d_local, site, ps_boundary_span_site_source_t0(site)),
@@ -84,27 +121,41 @@ function _ps_fr_span_seg3d(face_pts3d_local, site) =
         ? [[seg2d[0][0], seg2d[0][1], 0], [seg2d[1][0], seg2d[1][1], 0]]
         : [p0, p1];
 
-/**
- * Function: Return the current-face in-plane ray out of the filled side of a span.
- * Params: site (boundary-span site)
- * Returns: span-local unit ray `[0,+/-1,0]` pointing outside the filled region
- */
+// Function: _ps_fr_span_exterior_ray()
+// Usage:
+//   result = _ps_fr_span_exterior_ray(site);
+// Description:
+//   Return the current-face in-plane ray out of the filled side of a span.
+//   .
+//   - Returns: span-local unit ray `[0,+/-1,0]` pointing outside the filled region
+// Arguments:
+//   site = boundary-span site
 function _ps_fr_span_exterior_ray(site) =
     [0, (ps_boundary_span_site_filled_side(site) < 0) ? 1 : -1, 0];
 
-/**
- * Function: Return the current-face in-plane ray into the filled side of a span.
- * Params: site (boundary-span site)
- * Returns: span-local unit ray `[0,+/-1,0]` pointing inside the filled region
- */
+// Function: _ps_fr_span_filled_ray()
+// Usage:
+//   result = _ps_fr_span_filled_ray(site);
+// Description:
+//   Return the current-face in-plane ray into the filled side of a span.
+//   .
+//   - Returns: span-local unit ray `[0,+/-1,0]` pointing inside the filled region
+// Arguments:
+//   site = boundary-span site
 function _ps_fr_span_filled_ray(site) =
     [0, (ps_boundary_span_site_filled_side(site) < 0) ? -1 : 1, 0];
 
-/**
- * Function: Compute integer winding number of a 2D loop around a point.
- * Params: pt (2D point), poly (2D loop), eps (orientation tolerance)
- * Returns: integer winding number
- */
+// Function: _ps_fr_winding_number()
+// Usage:
+//   result = _ps_fr_winding_number(pt, poly, eps);
+// Description:
+//   Compute integer winding number of a 2D loop around a point.
+//   .
+//   - Returns: integer winding number
+// Arguments:
+//   pt = 2D point
+//   poly = 2D loop
+//   eps = orientation tolerance
 function _ps_fr_winding_number(pt, poly, eps=1e-9) =
     let(
         x = pt[0],
@@ -124,11 +175,17 @@ function _ps_fr_winding_number(pt, poly, eps=1e-9) =
             0
     ]);
 
-/**
- * Function: Build winding signs for arrangement cells under the source face loop.
- * Params: face_pts3d_local (source face loop), cells (face arrangement cells), eps (tolerance)
- * Returns: list of cell winding signs (`+1`, `-1`, or `0`)
- */
+// Function: _ps_fr_cell_winding_signs()
+// Usage:
+//   result = _ps_fr_cell_winding_signs(face_pts3d_local, cells, eps);
+// Description:
+//   Build winding signs for arrangement cells under the source face loop.
+//   .
+//   - Returns: list of cell winding signs (`+1`, `-1`, or `0`)
+// Arguments:
+//   face_pts3d_local = source face loop
+//   cells = face arrangement cells
+//   eps = tolerance
 function _ps_fr_cell_winding_signs(face_pts3d_local, cells, eps=1e-8) =
     let(face_pts2d = ps_xy(face_pts3d_local))
     [
@@ -140,11 +197,17 @@ function _ps_fr_cell_winding_signs(face_pts3d_local, cells, eps=1e-8) =
             (wn > 0) ? 1 : (wn < 0) ? -1 : 0
     ];
 
-/**
- * Function: Select the face-plane ray used by anti-interference projection.
- * Params: site (boundary-span site), input_sign (source face signed-area sign), cell_winding_signs (per-arrangement-cell winding signs)
- * Returns: exterior ray for same-winding cells, filled ray for opposite-winding cells
- */
+// Function: _ps_fr_span_face_plane_ray()
+// Usage:
+//   result = _ps_fr_span_face_plane_ray(site, input_sign, cell_winding_signs);
+// Description:
+//   Select the face-plane ray used by anti-interference projection.
+//   .
+//   - Returns: exterior ray for same-winding cells, filled ray for opposite-winding cells
+// Arguments:
+//   site = boundary-span site
+//   input_sign = source face signed-area sign
+//   cell_winding_signs = per-arrangement-cell winding signs
 function _ps_fr_span_face_plane_ray(site, input_sign, cell_winding_signs) =
     let(
         cell_idx = ps_boundary_span_site_filled_cell_idx(site),
@@ -156,11 +219,17 @@ function _ps_fr_span_face_plane_ray(site, input_sign, cell_winding_signs) =
     )
     same_winding ? _ps_fr_span_exterior_ray(site) : _ps_fr_span_filled_ray(site);
 
-/**
- * Function: Classify one boundary span's filled cell relative to the source face winding.
- * Params: site (boundary-span site), input_sign (source face signed-area sign), cell_winding_signs (per-arrangement-cell winding signs)
- * Returns: `+1` for same- or zero-winding/top-exposed cells, `-1` for opposite-winding/bottom-exposed cells
- */
+// Function: _ps_fr_span_exposure_sign()
+// Usage:
+//   result = _ps_fr_span_exposure_sign(site, input_sign, cell_winding_signs);
+// Description:
+//   Classify one boundary span's filled cell relative to the source face winding.
+//   .
+//   - Returns: `+1` for same- or zero-winding/top-exposed cells, `-1` for opposite-winding/bottom-exposed cells
+// Arguments:
+//   site = boundary-span site
+//   input_sign = source face signed-area sign
+//   cell_winding_signs = per-arrangement-cell winding signs
 function _ps_fr_span_exposure_sign(site, input_sign, cell_winding_signs) =
     let(
         cell_idx = ps_boundary_span_site_filled_cell_idx(site),
@@ -171,11 +240,17 @@ function _ps_fr_span_exposure_sign(site, input_sign, cell_winding_signs) =
     )
     (cell_sign == 0 || cell_sign == input_sign) ? 1 : -1;
 
-/**
- * Function: Classify a boundary loop's filled region exposure relative to the source face winding.
- * Params: loop_sites (sites for one boundary loop), input_sign (source face signed-area sign), cell_winding_signs (per-arrangement-cell winding signs)
- * Returns: `+1` for same- or zero-winding/top-exposed loops, `-1` for opposite-winding/bottom-exposed loops
- */
+// Function: _ps_fr_loop_exposure_sign()
+// Usage:
+//   result = _ps_fr_loop_exposure_sign(loop_sites, input_sign, cell_winding_signs);
+// Description:
+//   Classify a boundary loop's filled region exposure relative to the source face winding.
+//   .
+//   - Returns: `+1` for same- or zero-winding/top-exposed loops, `-1` for opposite-winding/bottom-exposed loops
+// Arguments:
+//   loop_sites = sites for one boundary loop
+//   input_sign = source face signed-area sign
+//   cell_winding_signs = per-arrangement-cell winding signs
 function _ps_fr_loop_exposure_sign(loop_sites, input_sign, cell_winding_signs) =
     let(
         signs = [for (site = loop_sites) _ps_fr_span_exposure_sign(site, input_sign, cell_winding_signs)],
@@ -186,11 +261,18 @@ function _ps_fr_loop_exposure_sign(loop_sites, input_sign, cell_winding_signs) =
     )
     first;
 
-/**
- * Function: Build the anti-interference bisector direction in span-local coords.
- * Params: site (boundary-span site), input_sign (source face signed-area sign), cell_winding_signs (per-arrangement-cell winding signs), eps (zero-length tolerance)
- * Returns: span-local unit direction between the selected face-plane ray and adjacent-face +Z branch
- */
+// Function: _ps_fr_span_bisector_dir_span_local()
+// Usage:
+//   result = _ps_fr_span_bisector_dir_span_local(site, input_sign, cell_winding_signs, eps);
+// Description:
+//   Build the anti-interference bisector direction in span-local coords.
+//   .
+//   - Returns: span-local unit direction between the selected face-plane ray and adjacent-face +Z branch
+// Arguments:
+//   site = boundary-span site
+//   input_sign = source face signed-area sign
+//   cell_winding_signs = per-arrangement-cell winding signs
+//   eps = zero-length tolerance
 function _ps_fr_span_bisector_dir_span_local(site, input_sign, cell_winding_signs, eps=1e-8) =
     let(
         face_ray = _ps_fr_span_face_plane_ray(site, input_sign, cell_winding_signs),
@@ -200,29 +282,48 @@ function _ps_fr_span_bisector_dir_span_local(site, input_sign, cell_winding_sign
     )
     (norm(raw) <= eps) ? [0, 0, 1] : v_norm(raw);
 
-/**
- * Function: Transform a span-local vector into current face-local coordinates.
- * Params: site (boundary-span site), v_span (span-local vector)
- * Returns: face-local vector
- */
+// Function: _ps_fr_span_to_face_local()
+// Usage:
+//   result = _ps_fr_span_to_face_local(site, v_span);
+// Description:
+//   Transform a span-local vector into current face-local coordinates.
+//   .
+//   - Returns: face-local vector
+// Arguments:
+//   site = boundary-span site
+//   v_span = span-local vector
 function _ps_fr_span_to_face_local(site, v_span) =
     ps_boundary_span_site_ex_local(site) * v_span[0]
         + ps_boundary_span_site_ey_local(site) * v_span[1]
         + ps_boundary_span_site_ez_local(site) * v_span[2];
 
-/**
- * Function: Build the anti-interference bisector direction in face-local coords.
- * Params: site (boundary-span site), input_sign (source face signed-area sign), cell_winding_signs (per-arrangement-cell winding signs), eps (zero-length tolerance)
- * Returns: face-local unit direction
- */
+// Function: _ps_fr_span_bisector_dir_local()
+// Usage:
+//   result = _ps_fr_span_bisector_dir_local(site, input_sign, cell_winding_signs, eps);
+// Description:
+//   Build the anti-interference bisector direction in face-local coords.
+//   .
+//   - Returns: face-local unit direction
+// Arguments:
+//   site = boundary-span site
+//   input_sign = source face signed-area sign
+//   cell_winding_signs = per-arrangement-cell winding signs
+//   eps = zero-length tolerance
 function _ps_fr_span_bisector_dir_local(site, input_sign, cell_winding_signs, eps=1e-8) =
     v_norm(_ps_fr_span_to_face_local(site, _ps_fr_span_bisector_dir_span_local(site, input_sign, cell_winding_signs, eps)));
 
-/**
- * Function: Compute scalar projection distance needed to reach a target Z plane.
- * Params: dz (target minus source Z), dir_z (projection direction Z), max_project (optional cap), eps (near-flat tolerance)
- * Returns: scalar offset along the projection direction
- */
+// Function: _ps_fr_project_offset()
+// Usage:
+//   result = _ps_fr_project_offset(dz, dir_z, max_project, eps);
+// Description:
+//   Compute scalar projection distance needed to reach a target Z plane.
+//   .
+//   - Returns: scalar offset along the projection direction
+// Arguments:
+//   dz = target minus source Z
+//   dir_z = projection direction Z
+//   max_project = optional cap
+//   eps = near-flat tolerance
 function _ps_fr_project_offset(dz, dir_z, max_project=undef, eps=1e-8) =
     let(
         _ok = assert(
@@ -239,22 +340,37 @@ function _ps_fr_project_offset(dz, dir_z, max_project=undef, eps=1e-8) =
         )
         is_undef(cap) ? raw : ps_clamp(raw, -cap, cap);
 
-/**
- * Function: Report whether a projection offset would be capped.
- * Params: dz (target minus source Z), dir_z (projection direction Z), max_project (optional cap), eps (near-flat tolerance)
- * Returns: boolean
- */
+// Function: _ps_fr_project_was_capped()
+// Usage:
+//   result = _ps_fr_project_was_capped(dz, dir_z, max_project, eps);
+// Description:
+//   Report whether a projection offset would be capped.
+//   .
+//   - Returns: boolean
+// Arguments:
+//   dz = target minus source Z
+//   dir_z = projection direction Z
+//   max_project = optional cap
+//   eps = near-flat tolerance
 function _ps_fr_project_was_capped(dz, dir_z, max_project=undef, eps=1e-8) =
     is_undef(max_project) ? false :
     (abs(dz) <= eps) ? false :
     (abs(dir_z) <= eps) ? true :
     abs(dz / dir_z) > abs(max_project) + eps;
 
-/**
- * Function: Convert requested boundary clearance to a face-plane line shift.
- * Params: site (boundary-span site), dir (anti-interference projection direction), boundary_inset (requested clearance), boundary_inset_mode (`"side"` or `"face"`), eps (tolerance)
- * Returns: face-plane offset to apply toward the filled side
- */
+// Function: _ps_fr_boundary_inset_face_offset()
+// Usage:
+//   result = _ps_fr_boundary_inset_face_offset(site, dir, boundary_inset, boundary_inset_mode, eps);
+// Description:
+//   Convert requested boundary clearance to a face-plane line shift.
+//   .
+//   - Returns: face-plane offset to apply toward the filled side
+// Arguments:
+//   site = boundary-span site
+//   dir = anti-interference projection direction
+//   boundary_inset = requested clearance
+//   boundary_inset_mode = `"side"` or `"face"`
+//   eps = tolerance
 function _ps_fr_boundary_inset_face_offset(site, dir, boundary_inset=0, boundary_inset_mode="side", eps=1e-8) =
     let(
         _mode = assert(
@@ -273,11 +389,23 @@ function _ps_fr_boundary_inset_face_offset(site, dir, boundary_inset=0, boundary
     )
     (denom <= eps) ? boundary_inset : boundary_inset / denom;
 
-/**
- * Function: Project one boundary span to a target Z plane as a 2D line.
- * Params: face_pts3d_local (source face loop), site (boundary-span site), z (target face-local Z), input_sign/cell_winding_signs (anti-interference direction context), max_project (optional cap), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`), eps (tolerance)
- * Returns: `[point2d, dir2d, was_capped, span_idx, source_edge_idx]`
- */
+// Function: _ps_fr_project_span_line()
+// Usage:
+//   result = _ps_fr_project_span_line(face_pts3d_local, site, z, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps);
+// Description:
+//   Project one boundary span to a target Z plane as a 2D line.
+//   .
+//   - Returns: `[point2d, dir2d, was_capped, span_idx, source_edge_idx]`
+// Arguments:
+//   face_pts3d_local = source face loop
+//   site = boundary-span site
+//   z = target face-local Z
+//   input_sign = anti-interference direction context
+//   cell_winding_signs = anti-interference direction context
+//   max_project = optional cap
+//   boundary_inset = positive shift toward filled side
+//   boundary_inset_mode = `"side"` or `"face"`
+//   eps = tolerance
 function _ps_fr_project_span_line(face_pts3d_local, site, z, input_sign, cell_winding_signs, max_project=undef, boundary_inset=0, boundary_inset_mode="side", eps=1e-8) =
     let(
         seg3d = _ps_fr_span_seg3d(face_pts3d_local, site),
@@ -302,11 +430,16 @@ function _ps_fr_project_span_line(face_pts3d_local, site, z, input_sign, cell_wi
         ps_boundary_span_site_source_edge_idx(site)
     ];
 
-/**
- * Function: Convert a circular list of projected boundary lines into loop vertices.
- * Params: lines (projected line records), eps (parallel tolerance)
- * Returns: 2D loop from intersections of adjacent lines
- */
+// Function: _ps_fr_projected_loop()
+// Usage:
+//   result = _ps_fr_projected_loop(lines, eps);
+// Description:
+//   Convert a circular list of projected boundary lines into loop vertices.
+//   .
+//   - Returns: 2D loop from intersections of adjacent lines
+// Arguments:
+//   lines = projected line records
+//   eps = parallel tolerance
 function _ps_fr_projected_loop(lines, eps=1e-8) =
     let(n = len(lines))
     (n < 3) ? [] :
@@ -316,11 +449,17 @@ function _ps_fr_projected_loop(lines, eps=1e-8) =
             is_undef(hit) ? lines[i][0] : hit
     ];
 
-/**
- * Function: Collect distinct loop ids from boundary-span sites preserving first-seen order.
- * Params: sites (boundary-span site records), i/acc (recursion state)
- * Returns: list of loop ids
- */
+// Function: _ps_fr_unique_loop_ids()
+// Usage:
+//   result = _ps_fr_unique_loop_ids(sites, i, acc);
+// Description:
+//   Collect distinct loop ids from boundary-span sites preserving first-seen order.
+//   .
+//   - Returns: list of loop ids
+// Arguments:
+//   sites = boundary-span site records
+//   i = recursion state
+//   acc = recursion state
 function _ps_fr_unique_loop_ids(sites, i=0, acc=[]) =
     (i >= len(sites)) ? acc :
     let(loop_idx = ps_boundary_span_site_loop_idx(sites[i]))
@@ -330,19 +469,31 @@ function _ps_fr_unique_loop_ids(sites, i=0, acc=[]) =
         _ps_list_contains(acc, loop_idx) ? acc : concat(acc, [loop_idx])
     );
 
-/**
- * Function: Filter boundary-span sites to one boundary loop.
- * Params: sites (boundary-span site records), loop_idx (target loop id)
- * Returns: site records for that loop, in source boundary order
- */
+// Function: _ps_fr_sites_for_loop()
+// Usage:
+//   result = _ps_fr_sites_for_loop(sites, loop_idx);
+// Description:
+//   Filter boundary-span sites to one boundary loop.
+//   .
+//   - Returns: site records for that loop, in source boundary order
+// Arguments:
+//   sites = boundary-span site records
+//   loop_idx = target loop id
 function _ps_fr_sites_for_loop(sites, loop_idx) =
     [for (site = sites) if (ps_boundary_span_site_loop_idx(site) == loop_idx) site];
 
-/**
- * Function: Triangulate one projected cap loop into indexed polyhedron faces.
- * Params: loop2d (cap loop), offset (point-index offset), target_area_sign (desired triangle orientation), eps (tolerance)
- * Returns: list of triangle index faces
- */
+// Function: _ps_fr_cap_faces()
+// Usage:
+//   result = _ps_fr_cap_faces(loop2d, offset, target_area_sign, eps);
+// Description:
+//   Triangulate one projected cap loop into indexed polyhedron faces.
+//   .
+//   - Returns: list of triangle index faces
+// Arguments:
+//   loop2d = cap loop
+//   offset = point-index offset
+//   target_area_sign = desired triangle orientation
+//   eps = tolerance
 function _ps_fr_cap_faces(loop2d, offset, target_area_sign, eps=1e-8) =
     [
         for (t = _ps_seg_triangulate_simple_poly_idx(loop2d, eps))
@@ -353,11 +504,16 @@ function _ps_fr_cap_faces(loop2d, offset, target_area_sign, eps=1e-8) =
             [for (idx = oriented) idx + offset]
     ];
 
-/**
- * Function: Build side quad faces joining bottom and top loops.
- * Params: n (loop arity), loop_area_sign (bottom-loop signed area sign)
- * Returns: list of quad index faces
- */
+// Function: _ps_fr_side_faces()
+// Usage:
+//   result = _ps_fr_side_faces(n, loop_area_sign);
+// Description:
+//   Build side quad faces joining bottom and top loops.
+//   .
+//   - Returns: list of quad index faces
+// Arguments:
+//   n = loop arity
+//   loop_area_sign = bottom-loop signed area sign
 function _ps_fr_side_faces(n, loop_area_sign) =
     [
         for (i = [0:1:n-1])
@@ -367,11 +523,25 @@ function _ps_fr_side_faces(n, loop_area_sign) =
                 : [i, j, n + j, n + i]
     ];
 
-/**
- * Function: Build one face-region loop shell record for one boundary loop.
- * Params: face_pts3d_local (source face loop), loop_sites (sites for one boundary loop), loop_idx (loop id), z0/z1 (target Z planes), input_sign (source loop winding sign), cell_winding_signs (per-cell winding signs), max_project (optional cap), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`), eps (tolerance)
- * Returns: `ps_loop_shell` record
- */
+// Function: _ps_fr_loop_shell()
+// Usage:
+//   result = _ps_fr_loop_shell(face_pts3d_local, loop_sites, loop_idx, z0, z1, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps);
+// Description:
+//   Build one face-region loop shell record for one boundary loop.
+//   .
+//   - Returns: `ps_loop_shell` record
+// Arguments:
+//   face_pts3d_local = source face loop
+//   loop_sites = sites for one boundary loop
+//   loop_idx = loop id
+//   z0 = target Z planes
+//   z1 = target Z planes
+//   input_sign = source loop winding sign
+//   cell_winding_signs = per-cell winding signs
+//   max_project = optional cap
+//   boundary_inset = positive shift toward filled side
+//   boundary_inset_mode = `"side"` or `"face"`
+//   eps = tolerance
 function _ps_fr_loop_shell(face_pts3d_local, loop_sites, loop_idx, z0, z1, input_sign, cell_winding_signs, max_project=undef, boundary_inset=0, boundary_inset_mode="side", eps=1e-8) =
     let(
         lines0 = [for (site = loop_sites) _ps_fr_project_span_line(face_pts3d_local, site, z0, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps)],
@@ -381,12 +551,24 @@ function _ps_fr_loop_shell(face_pts3d_local, loop_sites, loop_idx, z0, z1, input
     )
     ps_loop_shell_from_projected_lines(lines0, lines1, z0, z1, "face_region", loop_idx, lineage, exposure_sign, eps);
 
-/**
- * Function: Build positive face-region loop shells from a face-local context.
- * Params: face_ctx (face-local context), z0/z1 (target local Z planes), mode (`"nonzero"`, `"evenodd"`, or `"all"`), max_project (optional projection-distance cap), eps (geometric tolerance), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`)
- * Returns: list of `ps_loop_shell` records
- * Limitations/Gotchas: emits one shell per filled boundary loop; holes/proxy punch-through volumes are intentionally outside this first primitive
- */
+// Function: _ps_face_region_loop_shells_from_context()
+// Usage:
+//   result = _ps_face_region_loop_shells_from_context(face_ctx, z0, z1, mode, max_project, eps, boundary_inset, boundary_inset_mode);
+// Description:
+//   Build positive face-region loop shells from a face-local context.
+//   .
+//   - Returns: list of `ps_loop_shell` records
+//   .
+//   - Limitations/Gotchas: emits one shell per filled boundary loop; holes/proxy punch-through volumes are intentionally outside this first primitive
+// Arguments:
+//   face_ctx = face-local context
+//   z0 = target local Z planes
+//   z1 = target local Z planes
+//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
+//   max_project = optional projection-distance cap
+//   eps = geometric tolerance
+//   boundary_inset = positive shift toward filled side
+//   boundary_inset_mode = `"side"` or `"face"`
 function _ps_face_region_loop_shells_from_context(
     face_ctx,
     z0,
@@ -421,12 +603,29 @@ function _ps_face_region_loop_shells_from_context(
         boundary_inset_mode
     );
 
-/**
- * Function: Build positive face-region loop shells for one face.
- * Params: face_pts3d_local (current face loop in face-local 3D), face_idx (current face index), poly_faces_idx/poly_verts_local (full poly in current face-local coordinates), face_neighbors_idx/face_dihedrals (current face-edge metadata), z0/z1 (target local Z planes), mode (`"nonzero"`, `"evenodd"`, or `"all"`), max_project (optional projection-distance cap), eps (geometric tolerance), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`)
- * Returns: list of `ps_loop_shell` records
- * Limitations/Gotchas: emits one shell per filled boundary loop; holes/proxy punch-through volumes are intentionally outside this first primitive
- */
+// Function: _ps_face_region_loop_shells_from_fields()
+// Usage:
+//   result = _ps_face_region_loop_shells_from_fields(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local, face_neighbors_idx, face_dihedrals, z0, z1, mode, max_project, eps, boundary_inset, boundary_inset_mode);
+// Description:
+//   Build positive face-region loop shells for one face.
+//   .
+//   - Returns: list of `ps_loop_shell` records
+//   .
+//   - Limitations/Gotchas: emits one shell per filled boundary loop; holes/proxy punch-through volumes are intentionally outside this first primitive
+// Arguments:
+//   face_pts3d_local = current face loop in face-local 3D
+//   face_idx = current face index
+//   poly_faces_idx = full poly in current face-local coordinates
+//   poly_verts_local = full poly in current face-local coordinates
+//   face_neighbors_idx = current face-edge metadata
+//   face_dihedrals = current face-edge metadata
+//   z0 = target local Z planes
+//   z1 = target local Z planes
+//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
+//   max_project = optional projection-distance cap
+//   eps = geometric tolerance
+//   boundary_inset = positive shift toward filled side
+//   boundary_inset_mode = `"side"` or `"face"`
 function _ps_face_region_loop_shells_from_fields(
     face_pts3d_local,
     face_idx,
@@ -471,12 +670,24 @@ function _ps_face_region_loop_shells_from_fields(
                 shell
     ];
 
-/**
- * Function: Build positive face-region loop shells from a face-local context.
- * Params: face_ctx (face-local context), z0/z1 (target local Z planes), mode (`"nonzero"`, `"evenodd"`, or `"all"`), max_project (optional projection-distance cap), eps (geometric tolerance), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`)
- * Returns: list of `ps_loop_shell` records
- * Limitations/Gotchas: context-first public entry point
- */
+// Function: ps_face_region_loop_shells()
+// Usage:
+//   result = ps_face_region_loop_shells(face_ctx, z0, z1, mode, max_project, eps, boundary_inset, boundary_inset_mode);
+// Description:
+//   Build positive face-region loop shells from a face-local context.
+//   .
+//   - Returns: list of `ps_loop_shell` records
+//   .
+//   - Limitations/Gotchas: context-first public entry point
+// Arguments:
+//   face_ctx = face-local context
+//   z0 = target local Z planes
+//   z1 = target local Z planes
+//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
+//   max_project = optional projection-distance cap
+//   eps = geometric tolerance
+//   boundary_inset = positive shift toward filled side
+//   boundary_inset_mode = `"side"` or `"face"`
 function ps_face_region_loop_shells(
     face_ctx,
     z0,
@@ -498,12 +709,24 @@ function ps_face_region_loop_shells(
         boundary_inset_mode
     );
 
-/**
- * Module: Emit the current face's positive face-region loop volume.
- * Params: z0/z1 (target local Z planes), mode (`"nonzero"`, `"evenodd"`, or `"all"`), max_project (optional projection-distance cap), eps (geometric tolerance), convexity (OpenSCAD polyhedron convexity hint), boundary_inset (positive shift toward filled side), boundary_inset_mode (`"side"` or `"face"`)
- * Returns: none; intended for use inside `place_on_faces(...)`, usually inside `intersection()`
- * Limitations/Gotchas: this is only the boundary-span volume primitive; it does not yet subtract or union proxy punch-through voids
- */
+// Module: ps_face_region_loop_volume()
+// Usage:
+//   ps_face_region_loop_volume(z0, z1, mode, max_project, eps, convexity, boundary_inset, boundary_inset_mode);
+// Description:
+//   Emit the current face's positive face-region loop volume.
+//   .
+//   - Returns: none; intended for use inside `place_on_faces(...)`, usually inside `intersection()`
+//   .
+//   - Limitations/Gotchas: this is only the boundary-span volume primitive; it does not yet subtract or union proxy punch-through voids
+// Arguments:
+//   z0 = target local Z planes
+//   z1 = target local Z planes
+//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
+//   max_project = optional projection-distance cap
+//   eps = geometric tolerance
+//   convexity = OpenSCAD polyhedron convexity hint
+//   boundary_inset = positive shift toward filled side
+//   boundary_inset_mode = `"side"` or `"face"`
 module ps_face_region_loop_volume(z0, z1, mode="nonzero", max_project=undef, eps=1e-8, convexity=6, boundary_inset=0, boundary_inset_mode="side") {
     assert(!is_undef($ps_face_pts3d_local), "ps_face_region_loop_volume: requires place_on_faces context ($ps_face_pts3d_local)");
     assert(!is_undef($ps_face_idx), "ps_face_region_loop_volume: requires place_on_faces context ($ps_face_idx)");

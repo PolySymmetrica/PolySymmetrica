@@ -4,10 +4,17 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/models/tetrahedron.scad
+
 use <../core/funcs.scad>
 use <../core/placement.scad>
 
 // ---- Canonical Tetrahedron (edge length = 2*sqrt(2)) ----
+// Function: tetrahedron()
+// Usage:
+//   result = tetrahedron();
+// Description:
+//   Return the canonical tetrahedron as a normalized poly descriptor.
 function tetrahedron() = let(unit_edge = 2 * sqrt(2)) poly_make(
     // verts (index 0)
     [

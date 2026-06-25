@@ -25,11 +25,15 @@ FACES = poly_faces(P);
 STAR_FACE_IDX = 1;
 SIDE_FACE_IDX = 8;
 
-/**
- * Function: Pick a strongly differentiated named color for cell visualization.
- * Params: i (cell index)
- * Returns: a named color string
- */
+// Function: cell_color()
+// Usage:
+//   result = cell_color(i);
+// Description:
+//   Pick a strongly differentiated named color for cell visualization.
+//   .
+//   - Returns: a named color string
+// Arguments:
+//   i = cell index
 function cell_color(i) =
     (i % 6 == 0) ? "tomato" :
     (i % 6 == 1) ? "gold" :
@@ -38,32 +42,46 @@ function cell_color(i) =
     (i % 6 == 4) ? "orchid" :
     "darkorange";
 
-/**
- * Module: Draw a world-space label below one panel.
- * Params: s (label string)
- * Returns: none
- */
+// Module: draw_panel_label()
+// Usage:
+//   draw_panel_label(s);
+// Description:
+//   Draw a world-space label below one panel.
+//   .
+//   - Returns: none
+// Arguments:
+//   s = label string
 module draw_panel_label(s) {
     translate([0, -55, -34])
         linear_extrude(height = TXT_H)
             text(s, size = TXT_S, halign = "center", valign = "center");
 }
 
-/**
- * Module: Draw a thin local face fill from a point loop.
- * Params: pts2d (2D polygon loop), color_name (named color)
- * Returns: none
- */
+// Module: draw_polygon()
+// Usage:
+//   draw_polygon(pts2d);
+// Description:
+//   Draw a thin local face fill from a point loop.
+//   .
+//   - Returns: none
+// Arguments:
+//   pts2d = 2D polygon loop
+//   color_name = named color
 module draw_polygon(pts2d) {
     linear_extrude(height = FACE_THK, center = true)
         polygon(points = pts2d);
 }
 
-/**
- * Module: Draw a stroked local 2D segment as a thin extruded ribbon.
- * Params: seg2d (2D segment), r (stroke radius)
- * Returns: none
- */
+// Module: draw_local_segment_stroke()
+// Usage:
+//   draw_local_segment_stroke(seg2d, r);
+// Description:
+//   Draw a stroked local 2D segment as a thin extruded ribbon.
+//   .
+//   - Returns: none
+// Arguments:
+//   seg2d = 2D segment
+//   r = stroke radius
 module draw_local_segment_stroke(seg2d, r = LINE_R) {
     linear_extrude(height = FACE_THK * 0.8, center = true)
         hull() {
@@ -74,11 +92,16 @@ module draw_local_segment_stroke(seg2d, r = LINE_R) {
         translate(seg2d[1]) cylinder(r=0.2, h=6);
 }
 
-/**
- * Module: Draw a light poly wireframe context for the demo poly.
- * Params: poly (poly descriptor), ir (placement scale)
- * Returns: none
- */
+// Module: draw_wireframe()
+// Usage:
+//   draw_wireframe(poly, ir);
+// Description:
+//   Draw a light poly wireframe context for the demo poly.
+//   .
+//   - Returns: none
+// Arguments:
+//   poly = poly descriptor
+//   ir = placement scale
 module draw_wireframe(poly, ir = IR) {
     color("silver")
         place_on_edges(poly, ir)
@@ -89,11 +112,16 @@ module draw_wireframe(poly, ir = IR) {
             sphere(1.2, $fn = 12);
 }
 
-/**
- * Module: Show `ps_polygon(...)` on the star face with specified fill rule.
- * Params: mode (`"evenodd"` or `"nonzero"`), label_s (panel label)
- * Returns: none
- */
+// Module: draw_panel_ps_polygon()
+// Usage:
+//   draw_panel_ps_polygon(mode, label_s);
+// Description:
+//   Show `ps_polygon(...)` on the star face with specified fill rule.
+//   .
+//   - Returns: none
+// Arguments:
+//   mode = `"evenodd"` or `"nonzero"`
+//   label_s = panel label
 module draw_panel_ps_polygon(mode, label_s) {
     draw_wireframe(P, IR);
     
@@ -107,11 +135,15 @@ module draw_panel_ps_polygon(mode, label_s) {
     draw_panel_label(label_s);
 }
 
-/**
- * Module: Show `place_on_face_segments(...)` on the star face.
- * Params: none
- * Returns: none
- */
+// Module: draw_panel_face_segments()
+// Usage:
+//   draw_panel_face_segments();
+// Description:
+//   Show `place_on_face_segments(...)` on the star face.
+//   .
+//   - Returns: none
+// Arguments:
+//   none =
 module draw_panel_face_segments() {
     draw_wireframe(P, IR);
     
@@ -140,11 +172,15 @@ module draw_panel_face_segments() {
     draw_panel_label("place_on_face_segments");
 }
 
-/**
- * Module: Show `place_on_face_geom_cut_segments(...)` on one side face.
- * Params: none
- * Returns: none
- */
+// Module: draw_panel_geom_cuts()
+// Usage:
+//   draw_panel_geom_cuts();
+// Description:
+//   Show `place_on_face_geom_cut_segments(...)` on one side face.
+//   .
+//   - Returns: none
+// Arguments:
+//   none =
 module draw_panel_geom_cuts() {
     draw_wireframe(P, IR);
     
@@ -177,11 +213,15 @@ module draw_panel_geom_cuts() {
     draw_panel_label("place_on_face_geom_cut_segments");
 }
 
-/**
- * Module: Show `place_on_face_visible_segments(...)` on one side face.
- * Params: none
- * Returns: none
- */
+// Module: draw_panel_visible_segments()
+// Usage:
+//   draw_panel_visible_segments();
+// Description:
+//   Show `place_on_face_visible_segments(...)` on one side face.
+//   .
+//   - Returns: none
+// Arguments:
+//   none =
 module draw_panel_visible_segments() {
     draw_wireframe(P, IR);
     

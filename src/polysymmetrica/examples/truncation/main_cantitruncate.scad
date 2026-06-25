@@ -10,9 +10,7 @@ use <../../core/render.scad>
 use <../../models/platonics_all.scad>
 use <util_demo.scad>
 
-/**
-Demonstrates cantitruncation (two-parameter). Try varying t (face shift) and c (edge/vertex expansion).
-*/
+// Demonstrates cantitruncation (two-parameter). Try varying t (face shift) and c (edge/vertex expansion).
 
 for (p = with_index([
             undef, // adds text to show 't' value

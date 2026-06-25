@@ -11,9 +11,7 @@ use <../../core/render.scad>
 use <../../models/platonics_all.scad>
 use <../truncation/util_demo.scad>
 
-/**
-Quick snub demo (snub cube + snub dodecahedron).
-*/
+// Quick snub demo (snub cube + snub dodecahedron).
 
 spacing = 100;
 

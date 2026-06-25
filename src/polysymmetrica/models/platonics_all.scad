@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-/**
-This is a handy utility file to pull in all 5 Platonic solid definitions, including named functions for dodecahedron and hexahedron (cube).
-*/
+// LibFile: polysymmetrica/models/platonics_all.scad
+//   Convenience includes and collection helpers for the five Platonic solids.
 
 include <tetrahedron.scad>
 include <octahedron.scad>
@@ -15,10 +14,12 @@ include <icosahedron.scad>
 include <hexahedron.scad>
 include <dodecahedron.scad>
 
-/**
-Return all Platonic solids as [[name, fn], ...],
-where fn is a zero-arg function returning the poly.
-*/
+// Function: platonics_all()
+// Usage:
+//   result = platonics_all();
+// Description:
+//   Return the Platonic solid registry as `[[name, fn], ...]`, where `fn` is a
+//   zero-argument function returning the corresponding poly descriptor.
 function platonics_all() = [
     ["tetrahedron", function() tetrahedron()],
     ["hexahedron", function() hexahedron()],

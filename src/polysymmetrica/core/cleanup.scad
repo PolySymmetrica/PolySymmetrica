@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/core/cleanup.scad
+
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Polyhedral Geometry Engine
 // Structural mesh cleanup helpers.
@@ -12,7 +14,7 @@
 //              triangulate_nonplanar=false, merge_vertices=true,
 //              remove_unreferenced=true, return_report=false)
 //
-// Notes:
+// Notes.
 // - This is a structural normalizer, not a full topology repair tool.
 // - It does not resolve self-intersections or non-manifold surgery.
 // - It is useful after parameterized transforms that can produce coincident
@@ -69,11 +71,24 @@ function _ps_compact_unreferenced(verts, faces) =
     )
     [verts_new, faces_new];
 
-// Returns cleaned poly, or [cleaned_poly, report] when return_report=true.
-// report tuple:
-// [faces_in, faces_out, faces_dropped, faces_triangulated,
-//  verts_in, verts_out, verts_merged, verts_unreferenced_removed,
-//  max_planarity_before, max_planarity_after]
+// Function: poly_cleanup()
+// Usage:
+//   result = poly_cleanup(poly, eps=1e-8, fix_winding=true, drop_degenerate=true,
+//       triangulate_nonplanar=false, merge_vertices=true,
+//       remove_unreferenced=true, return_report=false);
+// Description:
+//   Structurally normalize a poly descriptor after transforms or topology edits.
+//   This removes trivial degeneracies, can merge coincident vertices, can
+//   triangulate non-planar faces, and can optionally re-run winding cleanup.
+// Arguments:
+//   poly = source poly descriptor
+//   eps = linear cleanup tolerance
+//   fix_winding = whether to normalize face winding after cleanup
+//   drop_degenerate = whether to remove degenerate faces
+//   triangulate_nonplanar = whether to fan-triangulate non-planar faces
+//   merge_vertices = whether to merge coincident vertices within `eps`
+//   remove_unreferenced = whether to drop vertices no longer used by any face
+//   return_report = whether to return `[cleaned_poly, report]`
 function poly_cleanup(
     poly,
     eps=1e-8,

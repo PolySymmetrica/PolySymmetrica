@@ -37,22 +37,31 @@ STAR_FACE_IDX = 0;
 ANTI_POLY = poly_truncate(tetrahedron(), t = -0.5);
 ANTI_FACE_IDX = 0;
 
-/**
- * Module: Draw a world-space panel label.
- * Params: s (label string)
- * Returns: none
- */
+// Module: draw_panel_label()
+// Usage:
+//   draw_panel_label(s);
+// Description:
+//   Draw a world-space panel label.
+//   .
+//   - Returns: none
+// Arguments:
+//   s = label string
 module draw_panel_label(s) {
     translate([0, -54, -22])
         linear_extrude(height = TXT_H)
             text(s, size = TXT_S, halign = "center", valign = "center");
 }
 
-/**
- * Module: Draw a light poly edge/vertex context.
- * Params: poly (poly descriptor), ir (placement scale)
- * Returns: none
- */
+// Module: draw_wireframe()
+// Usage:
+//   draw_wireframe(poly, ir);
+// Description:
+//   Draw a light poly edge/vertex context.
+//   .
+//   - Returns: none
+// Arguments:
+//   poly = poly descriptor
+//   ir = placement scale
 module draw_wireframe(poly, ir = IR) {
     color("silver")
         place_on_edges(poly, ir)
@@ -63,11 +72,17 @@ module draw_wireframe(poly, ir = IR) {
             sphere(1.05, $fn = 12);
 }
 
-/**
- * Module: Draw the selected face fill, boundary spans, and generated volume.
- * Params: poly (poly descriptor), face_idx (target face index), label_s (panel label)
- * Returns: none
- */
+// Module: draw_volume_panel()
+// Usage:
+//   draw_volume_panel(poly, face_idx, label_s);
+// Description:
+//   Draw the selected face fill, boundary spans, and generated volume.
+//   .
+//   - Returns: none
+// Arguments:
+//   poly = poly descriptor
+//   face_idx = target face index
+//   label_s = panel label
 module draw_volume_panel(poly, face_idx, label_s) {
     draw_wireframe(poly, IR);
 

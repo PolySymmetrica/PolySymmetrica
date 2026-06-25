@@ -39,11 +39,15 @@ MAX_PROJECT = 45;
 
 P = poly_antiprism(7, 3, angle = 15);
 
-/**
- * Function: Pick a stable, readable named color.
- * Params: i (index)
- * Returns: named color string
- */
+// Function: example_color()
+// Usage:
+//   result = example_color(i);
+// Description:
+//   Pick a stable, readable named color.
+//   .
+//   - Returns: named color string
+// Arguments:
+//   i = index
 function example_color(i) =
     (i % 8 == 0) ? "tomato" :
     (i % 8 == 1) ? "deepskyblue" :
@@ -54,41 +58,62 @@ function example_color(i) =
     (i % 8 == 6) ? "turquoise" :
     "sienna";
 
-/**
- * Function: Compute a unit 2D direction from one point to another.
- * Params: a/b (2D points)
- * Returns: unit direction, or `[1,0]` for a degenerate segment
- */
+// Function: unit2d()
+// Usage:
+//   result = unit2d(a, b);
+// Description:
+//   Compute a unit 2D direction from one point to another.
+//   .
+//   - Returns: unit direction, or `[1,0]` for a degenerate segment
+// Arguments:
+//   a = 2D points
+//   b = 2D points
 function unit2d(a, b) =
     let(d = [b[0] - a[0], b[1] - a[1]])
     (norm(d) <= 1e-9) ? [1, 0] : d / norm(d);
 
-/**
- * Module: Draw text in the current local XY plane.
- * Params: s (text), size (font size), z (local Z)
- * Returns: none
- */
+// Module: draw_text2d()
+// Usage:
+//   draw_text2d(s, size, z);
+// Description:
+//   Draw text in the current local XY plane.
+//   .
+//   - Returns: none
+// Arguments:
+//   s = text
+//   size = font size
+//   z = local Z
 module draw_text2d(s, size = TXT_S, z = 0) {
     translate([0, 0, z])
         linear_extrude(height = TXT_H)
             text(s, size = size, halign = "center", valign = "center");
 }
 
-/**
- * Module: Draw a world-space panel label.
- * Params: s (label text)
- * Returns: none
- */
+// Module: draw_panel_label()
+// Usage:
+//   draw_panel_label(s);
+// Description:
+//   Draw a world-space panel label.
+//   .
+//   - Returns: none
+// Arguments:
+//   s = label text
 module draw_panel_label(s) {
     translate([0, PANEL_LABEL_Y, -18])
         draw_text2d(s, size = TXT_S + 0.4);
 }
 
-/**
- * Module: Draw a local 2D segment as an extruded rounded ribbon.
- * Params: seg2d (2D segment), r (ribbon radius), z (local Z offset)
- * Returns: none
- */
+// Module: draw_segment_stroke()
+// Usage:
+//   draw_segment_stroke(seg2d, r, z);
+// Description:
+//   Draw a local 2D segment as an extruded rounded ribbon.
+//   .
+//   - Returns: none
+// Arguments:
+//   seg2d = 2D segment
+//   r = ribbon radius
+//   z = local Z offset
 module draw_segment_stroke(seg2d, r = LINE_R, z = 0) {
     translate([0, 0, z])
         linear_extrude(height = FACE_THK, center = true)
@@ -98,22 +123,31 @@ module draw_segment_stroke(seg2d, r = LINE_R, z = 0) {
             }
 }
 
-/**
- * Module: Draw a local 2D polygon loop as a thin face fill.
- * Params: pts2d (2D polygon loop), z (local Z offset)
- * Returns: none
- */
+// Module: draw_polygon_fill()
+// Usage:
+//   draw_polygon_fill(pts2d, z);
+// Description:
+//   Draw a local 2D polygon loop as a thin face fill.
+//   .
+//   - Returns: none
+// Arguments:
+//   pts2d = 2D polygon loop
+//   z = local Z offset
 module draw_polygon_fill(pts2d, z = 0) {
     translate([0, 0, z])
         linear_extrude(height = FACE_THK, center = true)
             polygon(points = pts2d);
 }
 
-/**
- * Module: Draw labels for the original source edges of the selected face.
- * Params: pts2d (source face loop)
- * Returns: none
- */
+// Module: draw_source_edge_labels()
+// Usage:
+//   draw_source_edge_labels(pts2d, source_edge_idx);
+// Description:
+//   Draw labels for the original source edges of the selected face.
+//   .
+//   - Returns: none
+// Arguments:
+//   pts2d = source face loop
 module draw_source_edge_labels(pts2d, source_edge_idx = undef) {
     centre = ps_centroid2d(pts2d);
     for (ei = [0:1:len(pts2d)-1]) {
@@ -129,11 +163,16 @@ module draw_source_edge_labels(pts2d, source_edge_idx = undef) {
     }
 }
 
-/**
- * Module: Draw global poly context with face and edge labels.
- * Params: poly (poly descriptor), face_idx (selected face)
- * Returns: none
- */
+// Module: draw_poly_context()
+// Usage:
+//   draw_poly_context(poly, face_idx);
+// Description:
+//   Draw global poly context with face and edge labels.
+//   .
+//   - Returns: none
+// Arguments:
+//   poly = poly descriptor
+//   face_idx = selected face
 module draw_poly_context(poly, face_idx) {
     color("silver")
         place_on_edges(poly, IR)
@@ -162,11 +201,19 @@ module draw_poly_context(poly, face_idx) {
     }
 }
 
-/**
- * Module: Echo summary counts for the target face once during render.
- * Params: label_s (case label), face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local
- * Returns: none
- */
+// Module: echo_target_summary()
+// Usage:
+//   echo_target_summary(label_s, face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local);
+// Description:
+//   Echo summary counts for the target face once during render.
+//   .
+//   - Returns: none
+// Arguments:
+//   label_s = case label
+//   face_pts3d_local =
+//   face_idx =
+//   poly_faces_idx =
+//   poly_verts_local =
 module echo_target_summary(label_s, face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local) {
     arr = ps_face_arrangement(face_pts3d_local);
     bm = ps_face_boundary_model(face_pts3d_local, MODE);
@@ -201,11 +248,18 @@ module echo_target_summary(label_s, face_pts3d_local, face_idx, poly_faces_idx, 
     ));
 }
 
-/**
- * Module: Draw arrangement nodes, spans, and source-edge labels for the target face.
- * Params: poly (poly descriptor), face_idx (target face), source_edge_idx (optional highlighted source edge), label_s (panel label)
- * Returns: none
- */
+// Module: draw_arrangement_panel()
+// Usage:
+//   draw_arrangement_panel(poly, face_idx, source_edge_idx, label_s);
+// Description:
+//   Draw arrangement nodes, spans, and source-edge labels for the target face.
+//   .
+//   - Returns: none
+// Arguments:
+//   poly = poly descriptor
+//   face_idx = target face
+//   source_edge_idx = optional highlighted source edge
+//   label_s = panel label
 module draw_arrangement_panel(poly, face_idx, source_edge_idx, label_s) {
     place_on_faces(poly, IR) {
         if ($ps_face_idx == face_idx) {
@@ -240,11 +294,18 @@ module draw_arrangement_panel(poly, face_idx, source_edge_idx, label_s) {
     draw_panel_label(str(label_s, " arrangement"));
 }
 
-/**
- * Module: Draw nonzero filled boundary loops and source-edge lineage.
- * Params: poly (poly descriptor), face_idx (target face), source_edge_idx (optional highlighted source edge), label_s (panel label)
- * Returns: none
- */
+// Module: draw_boundary_panel()
+// Usage:
+//   draw_boundary_panel(poly, face_idx, source_edge_idx, label_s);
+// Description:
+//   Draw nonzero filled boundary loops and source-edge lineage.
+//   .
+//   - Returns: none
+// Arguments:
+//   poly = poly descriptor
+//   face_idx = target face
+//   source_edge_idx = optional highlighted source edge
+//   label_s = panel label
 module draw_boundary_panel(poly, face_idx, source_edge_idx, label_s) {
     place_on_faces(poly, IR) {
         if ($ps_face_idx == face_idx) {
@@ -281,11 +342,18 @@ module draw_boundary_panel(poly, face_idx, source_edge_idx, label_s) {
     draw_panel_label(str(label_s, " boundary"));
 }
 
-/**
- * Module: Draw geometry cuts from other faces and the retained visible cells.
- * Params: poly (poly descriptor), face_idx (target face), source_edge_idx (optional highlighted source edge), label_s (panel label)
- * Returns: none
- */
+// Module: draw_cut_visibility_panel()
+// Usage:
+//   draw_cut_visibility_panel(poly, face_idx, source_edge_idx, label_s);
+// Description:
+//   Draw geometry cuts from other faces and the retained visible cells.
+//   .
+//   - Returns: none
+// Arguments:
+//   poly = poly descriptor
+//   face_idx = target face
+//   source_edge_idx = optional highlighted source edge
+//   label_s = panel label
 module draw_cut_visibility_panel(poly, face_idx, source_edge_idx, label_s) {
     place_on_faces(poly, IR) {
         if ($ps_face_idx == face_idx) {
@@ -332,11 +400,18 @@ module draw_cut_visibility_panel(poly, face_idx, source_edge_idx, label_s) {
     draw_panel_label(str(label_s, " cuts"));
 }
 
-/**
- * Module: Draw dihedral-aware boundary spans and positive anti-interference volume.
- * Params: poly (poly descriptor), face_idx (target face), source_edge_idx (optional highlighted source edge), label_s (panel label)
- * Returns: none
- */
+// Module: draw_volume_panel()
+// Usage:
+//   draw_volume_panel(poly, face_idx, source_edge_idx, label_s);
+// Description:
+//   Draw dihedral-aware boundary spans and positive anti-interference volume.
+//   .
+//   - Returns: none
+// Arguments:
+//   poly = poly descriptor
+//   face_idx = target face
+//   source_edge_idx = optional highlighted source edge
+//   label_s = panel label
 module draw_volume_panel(poly, face_idx, source_edge_idx, label_s) {
     place_on_faces(poly, IR) {
         if ($ps_face_idx == face_idx) {
@@ -375,11 +450,15 @@ module draw_volume_panel(poly, face_idx, source_edge_idx, label_s) {
     draw_panel_label(str(label_s, " volume"));
 }
 
-/**
- * Module: Draw a simple closed proxy body for one replayed foreign face.
- * Params: none; uses `$ps_proxy_*` from `place_on_face_foreign_proxy_sites(...)`
- * Returns: none
- */
+// Module: draw_face_proxy_body()
+// Usage:
+//   draw_face_proxy_body();
+// Description:
+//   Draw a simple closed proxy body for one replayed foreign face.
+//   .
+//   - Returns: none
+// Arguments:
+//   none; uses `$ps_proxy_*` from `place_on_face_foreign_proxy_sites(...)` =
 module draw_face_proxy_body() {
     color(example_color($ps_proxy_idx), 0.30)
         linear_extrude(height = FACE_THK * 4, center = true)
@@ -390,11 +469,18 @@ module draw_face_proxy_body() {
             draw_text2d(str("p", $ps_proxy_idx, "/f", $ps_proxy_source_idx), size = 1.0);
 }
 
-/**
- * Module: Draw exact foreign face proxy replay in the target face-local context.
- * Params: poly (poly descriptor), face_idx (target face), source_edge_idx (optional highlighted source edge), label_s (panel label)
- * Returns: none
- */
+// Module: draw_foreign_replay_panel()
+// Usage:
+//   draw_foreign_replay_panel(poly, face_idx, source_edge_idx, label_s);
+// Description:
+//   Draw exact foreign face proxy replay in the target face-local context.
+//   .
+//   - Returns: none
+// Arguments:
+//   poly = poly descriptor
+//   face_idx = target face
+//   source_edge_idx = optional highlighted source edge
+//   label_s = panel label
 module draw_foreign_replay_panel(poly, face_idx, source_edge_idx, label_s) {
     place_on_faces(poly, IR) {
         if ($ps_face_idx == face_idx) {

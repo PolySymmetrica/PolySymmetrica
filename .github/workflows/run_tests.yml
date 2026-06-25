@@ -55,6 +55,22 @@ jobs:
           parallel --colsep '\t' --line-buffer --tagstring '{1}' \
             '{2} -o {3} src/tests/run_all.scad'
 
+      - name: Install docsgen
+        run: |
+          python3 -m pip install --user openscad-docsgen
+
+      - name: Check API docs build
+        run: |
+          mkdir -p target/docsgen-check
+          ~/.local/bin/openscad-docsgen -q -n -m -r \
+            -D target/docsgen-check \
+            src/polysymmetrica/core/*.scad \
+            src/polysymmetrica/models/*.scad
+
+      - name: Build API preview tree
+        run: |
+          PATH="$HOME/.local/bin:$PATH" scripts/build_api_reference.sh
+
       - name: Run visual regressions
         run: |
           mkdir -p target/regression-tests

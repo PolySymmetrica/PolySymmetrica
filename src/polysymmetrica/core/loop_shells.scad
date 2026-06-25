@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/core/loop_shells.scad
+
 // ---------------------------------------------------------------------------
 // PolySymmetrica - Generic projected loop shell helpers
 // Builds closed polyhedron records from corresponding bottom/top 2D loops.
@@ -108,11 +110,16 @@ function _ps_ls_line_intersection(line0, line1, eps=1e-9) =
         (n0[0] * d1 - d0 * n1[0]) / det
     ];
 
-/**
- * Function: Convert a circular list of projected boundary lines into loop vertices.
- * Params: lines (`[[point2d, dir2d, ...], ...]`), eps (parallel tolerance)
- * Returns: 2D loop from intersections of adjacent lines
- */
+// Function: ps_loop_shell_projected_loop()
+// Usage:
+//   result = ps_loop_shell_projected_loop(lines, eps);
+// Description:
+//   Convert a circular list of projected boundary lines into loop vertices.
+//   .
+//   - Returns: 2D loop from intersections of adjacent lines
+// Arguments:
+//   lines = `[[point2d, dir2d, ...], ...]`
+//   eps = parallel tolerance
 function ps_loop_shell_projected_loop(lines, eps=1e-8) =
     let(n = len(lines))
     (n < 3) ? [] :
@@ -141,11 +148,24 @@ function _ps_ls_side_faces(n, loop_area_sign) =
                 : [i, j, n + j, n + i]
     ];
 
-/**
- * Function: Build a generic projected loop shell record from cap loops.
- * Params: bottom_loop2d/top_loop2d (corresponding simple 2D loops), z0/z1 (cap Z planes), source_kind/source_idx/lineage (caller-owned metadata), capped_count/exposure_sign (optional metadata), eps (tolerance)
- * Returns: `ps_loop_shell` record
- */
+// Function: ps_loop_shell_from_loops()
+// Usage:
+//   result = ps_loop_shell_from_loops(bottom_loop2d, top_loop2d, z0, z1, source_kind, source_idx, lineage, capped_count, exposure_sign, eps);
+// Description:
+//   Build a generic projected loop shell record from cap loops.
+//   .
+//   - Returns: `ps_loop_shell` record
+// Arguments:
+//   bottom_loop2d = corresponding simple 2D loops
+//   top_loop2d = corresponding simple 2D loops
+//   z0 = cap Z planes
+//   z1 = cap Z planes
+//   source_kind = caller-owned metadata
+//   source_idx = caller-owned metadata
+//   lineage = caller-owned metadata
+//   capped_count = optional metadata
+//   exposure_sign = optional metadata
+//   eps = tolerance
 function ps_loop_shell_from_loops(
     bottom_loop2d,
     top_loop2d,
@@ -193,11 +213,23 @@ function ps_loop_shell_from_loops(
         exposure_sign
     ];
 
-/**
- * Function: Build a generic projected loop shell record from projected line loops.
- * Params: bottom_lines/top_lines (`[[point2d, dir2d, was_capped, ...], ...]`), z0/z1, source_kind/source_idx/lineage, exposure_sign, eps
- * Returns: `ps_loop_shell` record
- */
+// Function: ps_loop_shell_from_projected_lines()
+// Usage:
+//   result = ps_loop_shell_from_projected_lines(bottom_lines, top_lines, z0, z1, source_kind, source_idx, lineage, exposure_sign, eps);
+// Description:
+//   Build a generic projected loop shell record from projected line loops.
+//   .
+//   - Returns: `ps_loop_shell` record
+// Arguments:
+//   bottom_lines = `[[point2d, dir2d, was_capped, ...], ...]`
+//   top_lines = `[[point2d, dir2d, was_capped, ...], ...]`
+//   z0 =
+//   z1 =
+//   source_kind =
+//   source_idx =
+//   lineage =
+//   exposure_sign =
+//   eps =
 function ps_loop_shell_from_projected_lines(
     bottom_lines,
     top_lines,
@@ -219,88 +251,139 @@ function ps_loop_shell_from_projected_lines(
     )
     ps_loop_shell_from_loops(bottom, top, z0, z1, source_kind, source_idx, lineage, capped_count, exposure_sign, eps);
 
-/**
- * Function: Get loop-shell polyhedron points.
- * Params: shell (`ps_loop_shell` record)
- * Returns: point list
- */
+// Function: ps_loop_shell_points()
+// Usage:
+//   result = ps_loop_shell_points(shell);
+// Description:
+//   Get loop-shell polyhedron points.
+//   .
+//   - Returns: point list
+// Arguments:
+//   shell = `ps_loop_shell` record
 function ps_loop_shell_points(shell) = shell[1];
 
-/**
- * Function: Get loop-shell polyhedron faces.
- * Params: shell (`ps_loop_shell` record)
- * Returns: face index list
- */
+// Function: ps_loop_shell_faces()
+// Usage:
+//   result = ps_loop_shell_faces(shell);
+// Description:
+//   Get loop-shell polyhedron faces.
+//   .
+//   - Returns: face index list
+// Arguments:
+//   shell = `ps_loop_shell` record
 function ps_loop_shell_faces(shell) = shell[2];
 
-/**
- * Function: Get bottom cap loop in local XY.
- * Params: shell (`ps_loop_shell` record)
- * Returns: 2D loop at `z0`
- */
+// Function: ps_loop_shell_bottom_loop2d()
+// Usage:
+//   result = ps_loop_shell_bottom_loop2d(shell);
+// Description:
+//   Get bottom cap loop in local XY.
+//   .
+//   - Returns: 2D loop at `z0`
+// Arguments:
+//   shell = `ps_loop_shell` record
 function ps_loop_shell_bottom_loop2d(shell) = shell[3];
 
-/**
- * Function: Get top cap loop in local XY.
- * Params: shell (`ps_loop_shell` record)
- * Returns: 2D loop at `z1`
- */
+// Function: ps_loop_shell_top_loop2d()
+// Usage:
+//   result = ps_loop_shell_top_loop2d(shell);
+// Description:
+//   Get top cap loop in local XY.
+//   .
+//   - Returns: 2D loop at `z1`
+// Arguments:
+//   shell = `ps_loop_shell` record
 function ps_loop_shell_top_loop2d(shell) = shell[4];
 
-/**
- * Function: Get bottom Z.
- * Params: shell (`ps_loop_shell` record)
- * Returns: `z0`
- */
+// Function: ps_loop_shell_z0()
+// Usage:
+//   result = ps_loop_shell_z0(shell);
+// Description:
+//   Get bottom Z.
+//   .
+//   - Returns: `z0`
+// Arguments:
+//   shell = `ps_loop_shell` record
 function ps_loop_shell_z0(shell) = shell[5];
 
-/**
- * Function: Get top Z.
- * Params: shell (`ps_loop_shell` record)
- * Returns: `z1`
- */
+// Function: ps_loop_shell_z1()
+// Usage:
+//   result = ps_loop_shell_z1(shell);
+// Description:
+//   Get top Z.
+//   .
+//   - Returns: `z1`
+// Arguments:
+//   shell = `ps_loop_shell` record
 function ps_loop_shell_z1(shell) = shell[6];
 
-/**
- * Function: Get caller-owned source kind.
- * Params: shell (`ps_loop_shell` record)
- * Returns: source kind string
- */
+// Function: ps_loop_shell_source_kind()
+// Usage:
+//   result = ps_loop_shell_source_kind(shell);
+// Description:
+//   Get caller-owned source kind.
+//   .
+//   - Returns: source kind string
+// Arguments:
+//   shell = `ps_loop_shell` record
 function ps_loop_shell_source_kind(shell) = shell[7];
 
-/**
- * Function: Get caller-owned source index.
- * Params: shell (`ps_loop_shell` record)
- * Returns: source index
- */
+// Function: ps_loop_shell_source_idx()
+// Usage:
+//   result = ps_loop_shell_source_idx(shell);
+// Description:
+//   Get caller-owned source index.
+//   .
+//   - Returns: source index
+// Arguments:
+//   shell = `ps_loop_shell` record
 function ps_loop_shell_source_idx(shell) = shell[8];
 
-/**
- * Function: Get caller-owned lineage metadata.
- * Params: shell (`ps_loop_shell` record)
- * Returns: lineage value
- */
+// Function: ps_loop_shell_lineage()
+// Usage:
+//   result = ps_loop_shell_lineage(shell);
+// Description:
+//   Get caller-owned lineage metadata.
+//   .
+//   - Returns: lineage value
+// Arguments:
+//   shell = `ps_loop_shell` record
 function ps_loop_shell_lineage(shell) = shell[9];
 
-/**
- * Function: Get capped projection count.
- * Params: shell (`ps_loop_shell` record)
- * Returns: capped projection count
- */
+// Function: ps_loop_shell_capped_count()
+// Usage:
+//   result = ps_loop_shell_capped_count(shell);
+// Description:
+//   Get capped projection count.
+//   .
+//   - Returns: capped projection count
+// Arguments:
+//   shell = `ps_loop_shell` record
 function ps_loop_shell_capped_count(shell) = shell[10];
 
-/**
- * Function: Get optional exposure sign.
- * Params: shell (`ps_loop_shell` record)
- * Returns: exposure sign, or `undef`
- */
+// Function: ps_loop_shell_exposure_sign()
+// Usage:
+//   result = ps_loop_shell_exposure_sign(shell);
+// Description:
+//   Get optional exposure sign.
+//   .
+//   - Returns: exposure sign, or `undef`
+// Arguments:
+//   shell = `ps_loop_shell` record
 function ps_loop_shell_exposure_sign(shell) = shell[11];
 
-/**
- * Function: Build a description string for a loop shell record.
- * Params: shell (loop shell record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
- * Returns: description string
- */
+// Function: ps_loop_shell_describe_str()
+// Usage:
+//   result = ps_loop_shell_describe_str(shell, detail, kvpair_to_str, field_sep);
+// Description:
+//   Build a description string for a loop shell record.
+//   .
+//   - Returns: description string
+// Arguments:
+//   shell = loop shell record
+//   detail = detail level
+//   kvpair_to_str = optional key/value formatter
+//   field_sep = field separator
 function ps_loop_shell_describe_str(shell, detail=0, kvpair_to_str=undef, field_sep=", ") =
     ps_describe_record_str(
         "LoopShell",
@@ -323,20 +406,32 @@ function ps_loop_shell_describe_str(shell, detail=0, kvpair_to_str=undef, field_
         field_sep
     );
 
-/**
- * Module: Echo a loop-shell description.
- * Params: shell (loop shell record), detail (detail level), kvpair_to_str (optional key/value formatter), field_sep (field separator)
- * Returns: none
- */
+// Module: ps_loop_shell_describe()
+// Usage:
+//   ps_loop_shell_describe(shell, detail, kvpair_to_str, field_sep);
+// Description:
+//   Echo a loop-shell description.
+//   .
+//   - Returns: none
+// Arguments:
+//   shell = loop shell record
+//   detail = detail level
+//   kvpair_to_str = optional key/value formatter
+//   field_sep = field separator
 module ps_loop_shell_describe(shell, detail=0, kvpair_to_str=undef, field_sep=", ") {
     echo(ps_loop_shell_describe_str(shell, detail, kvpair_to_str, field_sep));
 }
 
-/**
- * Module: Emit a generic loop-shell polyhedron.
- * Params: shell (`ps_loop_shell` record), convexity (OpenSCAD hint)
- * Returns: none
- */
+// Module: ps_loop_shell()
+// Usage:
+//   ps_loop_shell(shell, convexity);
+// Description:
+//   Emit a generic loop-shell polyhedron.
+//   .
+//   - Returns: none
+// Arguments:
+//   shell = `ps_loop_shell` record
+//   convexity = OpenSCAD hint
 module ps_loop_shell(shell, convexity=6) {
     assert(shell[0] == "loop_shell", "ps_loop_shell: bad shell kind");
     polyhedron(

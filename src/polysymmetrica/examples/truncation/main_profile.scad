@@ -9,13 +9,11 @@ use <../../core/truncation.scad>
 use <../../models/platonics_all.scad>
 use <util_demo.scad>
 
-/**
-Showcase selective profile on tetrahedron and cube.
-
-Pattern used throughout:
-- set scalar controls to 0 (or near-0) so unaffected elements stay unchanged
-- selectively override only chosen face/vertex ids
-*/
+// Showcase selective profile on tetrahedron and cube.
+//
+// Pattern used throughout:
+// - set scalar controls to 0 (or near-0) so unaffected elements stay unchanged
+// - selectively override only chosen face/vertex ids
 
 spacing_x = 150;
 spacing_y = 125;

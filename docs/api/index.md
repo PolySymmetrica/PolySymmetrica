@@ -7,6 +7,10 @@ For now, the generated markdown is treated as a build artifact instead of a
 checked-in documentation tree. That keeps the source of truth in `src/` while
 the published-docs path settles down.
 
+The build now runs `openscad-docsgen` directly over the source files in
+`core/` and `models/`; it no longer depends on the temporary comment-conversion
+path for those directories.
+
 Current scope:
 
 - `src/polysymmetrica/core/`

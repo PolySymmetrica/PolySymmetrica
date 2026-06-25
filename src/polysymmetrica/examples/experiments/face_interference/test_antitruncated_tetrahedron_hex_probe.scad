@@ -38,11 +38,15 @@ DIH_RAY_LEN = 8;
 
 P = poly_truncate(tetrahedron(), t = -0.5);
 
-/**
- * Function: Pick a stable, readable named color.
- * Params: i (index)
- * Returns: named color string
- */
+// Function: example_color()
+// Usage:
+//   result = example_color(i);
+// Description:
+//   Pick a stable, readable named color.
+//   .
+//   - Returns: named color string
+// Arguments:
+//   i = index
 function example_color(i) =
     (i % 8 == 0) ? "tomato" :
     (i % 8 == 1) ? "deepskyblue" :
@@ -53,41 +57,62 @@ function example_color(i) =
     (i % 8 == 6) ? "turquoise" :
     "sienna";
 
-/**
- * Function: Compute a unit 2D direction from one point to another.
- * Params: a/b (2D points)
- * Returns: unit direction, or `[1,0]` for a degenerate segment
- */
+// Function: unit2d()
+// Usage:
+//   result = unit2d(a, b);
+// Description:
+//   Compute a unit 2D direction from one point to another.
+//   .
+//   - Returns: unit direction, or `[1,0]` for a degenerate segment
+// Arguments:
+//   a = 2D points
+//   b = 2D points
 function unit2d(a, b) =
     let(d = [b[0] - a[0], b[1] - a[1]])
     (norm(d) <= 1e-9) ? [1, 0] : d / norm(d);
 
-/**
- * Module: Draw text in the current local XY plane.
- * Params: s (text), size (font size), z (local Z)
- * Returns: none
- */
+// Module: draw_text2d()
+// Usage:
+//   draw_text2d(s, size, z);
+// Description:
+//   Draw text in the current local XY plane.
+//   .
+//   - Returns: none
+// Arguments:
+//   s = text
+//   size = font size
+//   z = local Z
 module draw_text2d(s, size = TXT_S, z = 0) {
     translate([0, 0, z])
         linear_extrude(height = TXT_H)
             text(s, size = size, halign = "center", valign = "center");
 }
 
-/**
- * Module: Draw a world-space panel label.
- * Params: s (label text)
- * Returns: none
- */
+// Module: draw_panel_label()
+// Usage:
+//   draw_panel_label(s);
+// Description:
+//   Draw a world-space panel label.
+//   .
+//   - Returns: none
+// Arguments:
+//   s = label text
 module draw_panel_label(s) {
     translate([0, PANEL_LABEL_Y, -18])
         draw_text2d(s, size = TXT_S + 0.35);
 }
 
-/**
- * Module: Draw a local 2D segment as an extruded rounded ribbon.
- * Params: seg2d (2D segment), r (ribbon radius), z (local Z offset)
- * Returns: none
- */
+// Module: draw_segment_stroke()
+// Usage:
+//   draw_segment_stroke(seg2d, r, z);
+// Description:
+//   Draw a local 2D segment as an extruded rounded ribbon.
+//   .
+//   - Returns: none
+// Arguments:
+//   seg2d = 2D segment
+//   r = ribbon radius
+//   z = local Z offset
 module draw_segment_stroke(seg2d, r = LINE_R, z = 0) {
     translate([0, 0, z])
         linear_extrude(height = FACE_THK, center = true)
@@ -97,22 +122,33 @@ module draw_segment_stroke(seg2d, r = LINE_R, z = 0) {
             }
 }
 
-/**
- * Module: Draw a local 2D polygon loop as a thin face fill.
- * Params: pts2d (2D polygon loop), z (local Z offset)
- * Returns: none
- */
+// Module: draw_polygon_fill()
+// Usage:
+//   draw_polygon_fill(pts2d, z);
+// Description:
+//   Draw a local 2D polygon loop as a thin face fill.
+//   .
+//   - Returns: none
+// Arguments:
+//   pts2d = 2D polygon loop
+//   z = local Z offset
 module draw_polygon_fill(pts2d, z = 0) {
     translate([0, 0, z])
         linear_extrude(height = FACE_THK, center = true)
             polygon(points = pts2d);
 }
 
-/**
- * Module: Draw a 3D direction marker in the current local coordinate system.
- * Params: dir (3D direction), len (marker length), r (marker radius)
- * Returns: none
- */
+// Module: draw_direction3d()
+// Usage:
+//   draw_direction3d(dir, len, r);
+// Description:
+//   Draw a 3D direction marker in the current local coordinate system.
+//   .
+//   - Returns: none
+// Arguments:
+//   dir = 3D direction
+//   len = marker length
+//   r = marker radius
 module draw_direction3d(dir, len = DIH_RAY_LEN, r = 0.36) {
     if (!is_undef(dir) && norm(dir) > 1e-9) {
         d = v_norm(dir);
@@ -129,11 +165,15 @@ module draw_direction3d(dir, len = DIH_RAY_LEN, r = 0.36) {
     }
 }
 
-/**
- * Module: Draw labels for the selected face's original source edges.
- * Params: pts2d (source face loop)
- * Returns: none
- */
+// Module: draw_source_edge_labels()
+// Usage:
+//   draw_source_edge_labels(pts2d);
+// Description:
+//   Draw labels for the selected face's original source edges.
+//   .
+//   - Returns: none
+// Arguments:
+//   pts2d = source face loop
 module draw_source_edge_labels(pts2d) {
     centre = ps_centroid2d(pts2d);
     for (ei = [0:1:len(pts2d)-1]) {
@@ -149,11 +189,18 @@ module draw_source_edge_labels(pts2d) {
     }
 }
 
-/**
- * Module: Echo summary counts for the antitet hex face.
- * Params: face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local
- * Returns: none
- */
+// Module: echo_hex_summary()
+// Usage:
+//   echo_hex_summary(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local);
+// Description:
+//   Echo summary counts for the antitet hex face.
+//   .
+//   - Returns: none
+// Arguments:
+//   face_pts3d_local =
+//   face_idx =
+//   poly_faces_idx =
+//   poly_verts_local =
 module echo_hex_summary(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local) {
     arr = ps_face_arrangement(face_pts3d_local);
     bm = ps_face_boundary_model(face_pts3d_local, MODE);
@@ -178,11 +225,15 @@ module echo_hex_summary(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_l
     ));
 }
 
-/**
- * Module: Draw global context for the antitruncated tetrahedron.
- * Params: none
- * Returns: none
- */
+// Module: draw_context_panel()
+// Usage:
+//   draw_context_panel();
+// Description:
+//   Draw global context for the antitruncated tetrahedron.
+//   .
+//   - Returns: none
+// Arguments:
+//   none =
 module draw_context_panel() {
     poly_render(P, IR);
 
@@ -208,11 +259,15 @@ module draw_context_panel() {
     draw_panel_label("anti-tet context");
 }
 
-/**
- * Module: Draw arrangement spans and crossing nodes for the hex face.
- * Params: none
- * Returns: none
- */
+// Module: draw_arrangement_panel()
+// Usage:
+//   draw_arrangement_panel();
+// Description:
+//   Draw arrangement spans and crossing nodes for the hex face.
+//   .
+//   - Returns: none
+// Arguments:
+//   none =
 module draw_arrangement_panel() {
     place_on_faces(P, IR) {
         if ($ps_face_idx == HEX_FACE_IDX) {
@@ -247,11 +302,15 @@ module draw_arrangement_panel() {
     draw_panel_label("arrangement");
 }
 
-/**
- * Module: Draw filled boundary source-edge groups in parent face coordinates.
- * Params: none
- * Returns: none
- */
+// Module: draw_source_edges_panel()
+// Usage:
+//   draw_source_edges_panel();
+// Description:
+//   Draw filled boundary source-edge groups in parent face coordinates.
+//   .
+//   - Returns: none
+// Arguments:
+//   none =
 module draw_source_edges_panel() {
     place_on_faces(P, IR) {
         if ($ps_face_idx == HEX_FACE_IDX) {
@@ -294,11 +353,15 @@ module draw_source_edges_panel() {
     draw_panel_label("source edges");
 }
 
-/**
- * Module: Draw boundary-span frames and adjacent-face direction markers.
- * Params: none
- * Returns: none
- */
+// Module: draw_boundary_span_panel()
+// Usage:
+//   draw_boundary_span_panel();
+// Description:
+//   Draw boundary-span frames and adjacent-face direction markers.
+//   .
+//   - Returns: none
+// Arguments:
+//   none =
 module draw_boundary_span_panel() {
     place_on_faces(P, IR) {
         if ($ps_face_idx == HEX_FACE_IDX) {
@@ -334,11 +397,15 @@ module draw_boundary_span_panel() {
     draw_panel_label("span directions");
 }
 
-/**
- * Module: Draw the positive anti-interference volume derived from the filled boundary.
- * Params: none
- * Returns: none
- */
+// Module: draw_volume_panel()
+// Usage:
+//   draw_volume_panel();
+// Description:
+//   Draw the positive anti-interference volume derived from the filled boundary.
+//   .
+//   - Returns: none
+// Arguments:
+//   none =
 module draw_volume_panel() {
     place_on_faces(P, IR) {
         if ($ps_face_idx == HEX_FACE_IDX) {

@@ -4,10 +4,17 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/models/octahedron.scad
+
 use <../core/funcs.scad>
 use <../core/placement.scad>
 
 // ---- Canonical Octahedron (edge length = sqrt(2)) ----
+// Function: octahedron()
+// Usage:
+//   result = octahedron();
+// Description:
+//   Return the canonical octahedron as a normalized poly descriptor.
 function octahedron() = let(unit_edge = sqrt(2)) poly_make(
     // verts (index 0)
     [

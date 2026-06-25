@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/core/prisms.scad
 use <funcs.scad>
 
 function _ps_prism_height(edge, height, height_scale) =
@@ -19,14 +20,17 @@ function _ps_antiprism_height(n, p, edge, angle, eps=1e-12) =
     )
     (h2 <= 0) ? 0 : sqrt(h2);
 
-// Regular/star/compound prism with {n,p} caps.
-//
-// - n: number of sides (n >= 3)
-// - p: polygon step (1 <= p < n, p != n/2). p=1 => regular prism.
-//      p > n/2 gives retrograde winding; non-coprime n,p gives a compound.
-// - edge: target edge length
-// - height: explicit prism height (undef => regular default height=edge)
-// - height_scale: multiplier applied to the chosen base height
+// Function: poly_prism()
+// Usage:
+//   result = poly_prism(n=3, p=1, edge=1, height=undef, height_scale=1);
+// Description:
+//   Build a regular, star, or compound prism with `{n,p}` caps.
+// Arguments:
+//   n = cap side count
+//   p = polygon step; `p=1` gives a regular prism
+//   edge = target edge length
+//   height = explicit prism height
+//   height_scale = multiplier applied to the chosen height
 function poly_prism(n=3, p=1, edge=1, height=undef, height_scale=1) =
     let(
         np = _ps_validate_np(n, p, "poly_prism", allow_compound=true),
@@ -62,16 +66,20 @@ function poly_prism(n=3, p=1, edge=1, height=undef, height_scale=1) =
     )
     poly_make(verts, faces, e_over_ir);
 
-// Regular/star/compound antiprism with {n,p} caps and 2n side triangles.
-//
-// - n: number of sides (n >= 3)
-// - p: polygon step (1 <= p < n, p != n/2). p=1 => regular antiprism.
-//      p > n/2 gives retrograde winding; non-coprime n,p gives a compound.
-// - edge: target edge length
-// - angle: additive twist offset in degrees relative to exact {n,p} antiprism twist
-//          angle=0 => exact regular/star antiprism
-// - height: explicit antiprism height (undef => solved from edge + twist)
-// - height_scale: multiplier applied to chosen base height
+// Function: poly_antiprism()
+// Usage:
+//   result = poly_antiprism(n=3, p=1, edge=1, angle=0, height=undef,
+//       height_scale=1);
+// Description:
+//   Build a regular, star, or compound antiprism with `{n,p}` caps and `2n`
+//   side triangles.
+// Arguments:
+//   n = cap side count
+//   p = polygon step; `p=1` gives a regular antiprism
+//   edge = target edge length
+//   angle = additive twist offset in degrees
+//   height = explicit antiprism height
+//   height_scale = multiplier applied to the chosen height
 function poly_antiprism(n=3, p=1, edge=1, angle=0, height=undef, height_scale=1) =
     let(
         np = _ps_validate_np(n, p, "poly_antiprism", allow_compound=true),

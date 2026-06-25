@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
+// LibFile: polysymmetrica/core/profile.scad
+
 // Shared parameter override helpers for transform operators.
 //
 // INPUT FORMAT (`profile`)
@@ -12,12 +14,12 @@
 // ("face" | "vert" | "edge"), a selector scope, and one or more key/value
 // pairs.
 //
-// Row schemas:
+// Row schemas.
 //   ["face"|"vert"|"edge", "all", ["key", value], ...]
 //   ["face"|"vert"|"edge", "family", family_id, ["key", value], ...]
 //   ["face"|"vert"|"edge", "id", id_or_ids, ["key", value], ...]
 //
-// Where:
+// Where.
 // - `id_or_ids` may be a single index or a list of indices.
 // - keys are operator-defined (examples: "df", "angle", "c", "de", "t").
 //
@@ -43,7 +45,7 @@
 // `ps_profile_compile_specs(...)` returns a list of dense arrays, one per spec,
 // in the same order as `specs`.
 //
-// Example:
+// Example.
 // face_fid = [0, 1, 1, 0];
 // face_df = ps_profile_compile_key(rows, "face", "df", 4, face_fid);
 // // => [undef, 0.04, 0.04, undef]
@@ -117,6 +119,18 @@ function _ps_profile_row_get(row, key) =
     )
     (len(vals2) == 0) ? undef : vals2[len(vals2)-1];
 
+// Function: ps_profile_get()
+// Usage:
+//   result = ps_profile_get(profile, kind, key, element_id=undef, family_id=undef);
+// Description:
+//   Resolve one override value from a profile using fixed precedence
+//   `id > family > all`, with later rows winning inside the same scope.
+// Arguments:
+//   profile = profile row list
+//   kind = `"face"`, `"vert"`, or `"edge"`
+//   key = operator-defined parameter key
+//   element_id = element index for `"id"` lookups
+//   family_id = family id for `"family"` lookups
 function ps_profile_get(profile, kind, key, element_id=undef, family_id=undef) =
     let(
         rows = is_undef(profile) ? [] : profile,
@@ -134,13 +148,38 @@ function ps_profile_get(profile, kind, key, element_id=undef, family_id=undef) =
         : !is_undef(v_family) ? v_family
         : v_all;
 
+// Function: ps_profile_count_kind()
+// Usage:
+//   result = ps_profile_count_kind(profile, kind);
+// Description:
+//   Count profile rows for one element kind.
+// Arguments:
+//   profile = profile row list
+//   kind = `"face"`, `"vert"`, or `"edge"`
 function ps_profile_count_kind(profile, kind) =
     is_undef(profile) ? 0
         : len([for (row = profile) if (_ps_profile_row_kind(row) == kind) 1]);
 
+// Function: ps_profile_row_count()
+// Usage:
+//   result = ps_profile_row_count(profile);
+// Description:
+//   Count the total number of profile rows.
+// Arguments:
+//   profile = profile row list
 function ps_profile_row_count(profile) =
     is_undef(profile) ? 0 : len(profile);
 
+// Function: ps_profile_has_scope()
+// Usage:
+//   result = ps_profile_has_scope(profile, kind, scope);
+// Description:
+//   Determine whether a profile contains at least one row for the supplied kind
+//   and scope.
+// Arguments:
+//   profile = profile row list
+//   kind = `"face"`, `"vert"`, or `"edge"`
+//   scope = `"all"`, `"family"`, or `"id"`
 function ps_profile_has_scope(profile, kind, scope) =
     is_undef(profile) ? false
         : (len([
@@ -148,11 +187,28 @@ function ps_profile_has_scope(profile, kind, scope) =
                 if (_ps_profile_row_kind(row) == kind && _ps_profile_row_scope(row) == scope) 1
         ]) > 0);
 
+// Function: ps_profile_uses_family()
+// Usage:
+//   result = ps_profile_uses_family(profile, kind);
+// Description:
+//   Convenience test for whether a profile uses family-scoped rows for one kind.
+// Arguments:
+//   profile = profile row list
+//   kind = `"face"`, `"vert"`, or `"edge"`
 function ps_profile_uses_family(profile, kind) =
     ps_profile_has_scope(profile, kind, "family");
 
-// Compile one kind/key into a dense lookup array, optionally using a parallel
-// family-id array for family-scoped matches.
+// Function: ps_profile_compile_key()
+// Usage:
+//   result = ps_profile_compile_key(profile, kind, key, count, family_ids=undef);
+// Description:
+//   Compile one `kind`/`key` profile view into a dense lookup array.
+// Arguments:
+//   profile = profile row list
+//   kind = `"face"`, `"vert"`, or `"edge"`
+//   key = operator-defined parameter key
+//   count = output array length
+//   family_ids = optional parallel family-id array for family-scoped lookups
 function ps_profile_compile_key(profile, kind, key, count, family_ids=undef) =
     [for (idx = [0:1:max(0, count-1)])
         ps_profile_get(
@@ -165,9 +221,18 @@ function ps_profile_compile_key(profile, kind, key, count, family_ids=undef) =
     ];
 
 // Compile multiple specs into dense lookup arrays.
-// Spec row format:
+// Spec row format.
 //   [kind, key, count]
 //   [kind, key, count, family_ids]
+// Function: ps_profile_compile_specs()
+// Usage:
+//   result = ps_profile_compile_specs(profile, specs);
+// Description:
+//   Compile multiple profile specs into dense lookup arrays in spec order.
+// Arguments:
+//   profile = profile row list
+//   specs = compile spec rows `[kind, key, count]` or
+//       `[kind, key, count, family_ids]`
 function ps_profile_compile_specs(profile, specs) =
     [for (spec = specs)
         ps_profile_compile_key(
@@ -179,9 +244,24 @@ function ps_profile_compile_specs(profile, specs) =
         )
     ];
 
+// Function: ps_compiled_param_get()
+// Usage:
+//   result = ps_compiled_param_get(arr, idx);
+// Description:
+//   Safely read one compiled parameter entry with bounds checking.
+// Arguments:
+//   arr = compiled parameter array
+//   idx = element index
 function ps_compiled_param_get(arr, idx) =
     (is_undef(arr) || idx < 0 || idx >= len(arr)) ? undef : arr[idx];
 
+// Module: ps_profile_print()
+// Usage:
+//   ps_profile_print(profile);
+// Description:
+//   Echo a normalized interpretation of a profile for debugging.
+// Arguments:
+//   profile = profile row list
 module ps_profile_print(profile) {
     rows = is_undef(profile) ? [] : profile;
     echo(str("profile: rows=", len(rows)));
