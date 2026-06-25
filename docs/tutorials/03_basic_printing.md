@@ -7,8 +7,8 @@ support-light patterns: an edge-only frame and a face-only shell.
 
 Source: [`docs/examples/tutorial_03_basic_printing.scad`](../examples/tutorial_03_basic_printing.scad)
 
-The example uses a cuboctahedron: it is still simple, but more representative
-of the polyhedra people use this library for than another cube.
+The example uses a cuboctahedron, which gives both square and triangular faces
+while keeping the geometry easy to inspect.
 
 ```scad
 p = cuboctahedron();
@@ -44,8 +44,8 @@ plate for this orientation.
 ## Face Shell
 
 The face version uses only `place_on_faces(...)`. A face-local polygon at `z=0`
-lies on the original face plane. To make the plate part of the solid rather than
-a floating decoration, extrude it inward:
+lies on the original face plane. Extruding inward turns each placed polygon into
+part of a connected shell:
 
 ```scad
 module inward_face_plate() {
@@ -74,5 +74,5 @@ Use `place_on_vertices(...)` later when the vertex operation is selective or
 subtractive: for example, adding feet only to build-plate vertices, drilling
 registration holes, or trimming corners from an already printable solid.
 
-This tutorial deliberately stops before sockets, clearances, separate print-bed
-layout, and tolerance tuning. Those belong in a later printing guide.
+Sockets, clearances, separate print-bed layout, and tolerance tuning build on
+these same placement patterns and are covered in later printing material.
