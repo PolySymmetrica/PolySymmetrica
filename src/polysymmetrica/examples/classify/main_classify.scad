@@ -15,14 +15,14 @@ use <../truncation/util_demo.scad>
 // Classification demo: shows face/edge/vertex family counts for a few shapes.
 //
 // Quick usage:
-// // Topology only
-// // poly_classify(p, detail=0);
-// // One-pass neighbour refinement
-// // poly_classify(p, detail=1);
-// // Iterated refinement with radius=2
-// // poly_classify(p, detail=2, radius=2);
-// // Include geometry (avg edge length) in keys
-// // poly_classify(p, detail=1, include_geom=true);
+//   Topology only:
+//     poly_classify(p, detail=0);
+//   One-pass neighbour refinement:
+//     poly_classify(p, detail=1);
+//   Iterated refinement with radius=2:
+//     poly_classify(p, detail=2, radius=2);
+//   Include geometry (avg edge length) in keys:
+//     poly_classify(p, detail=1, include_geom=true);
 
 spacing = 120;
 
