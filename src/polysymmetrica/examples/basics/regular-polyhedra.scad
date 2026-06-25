@@ -8,9 +8,7 @@ use <../../core/placement.scad>
 use <../../models/platonics_all.scad>
 
 
-/**
-Demonstrates the place_on_faces(), place_on_vertices(), place_on_edges() modules for the five regular polyhedra.
-*/
+// Demonstrates the place_on_faces(), place_on_vertices(), place_on_edges() modules for the five regular polyhedra.
 
 DISPLAY_OFFSET_PLACE_ON_FACES_EXAMPLE = -100; // set to 0 to overlay face examples onto vertex example
 DISPLAY_OFFSET_PLACE_ON_EDGES_EXAMPLE = 100; // set to 0 to overlay edge examples onto vertex example

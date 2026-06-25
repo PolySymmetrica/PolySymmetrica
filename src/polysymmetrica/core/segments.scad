@@ -550,30 +550,48 @@ function _ps_seg_boundary_span_filled_side(seg2d, filled_cell, eps=1e-9) =
     )
     (orient > eps) ? 1 : (orient < -eps) ? -1 : 0;
 
-/**
- * Function: Test whether a source-edge parameter range covers the whole parent edge.
- * Params: t0/t1 (source-edge parameters), eps (tolerance)
- * Returns: true when the range is effectively `[0, 1]` in either direction
- */
+// Function: _ps_seg_source_span_is_full()
+// Usage:
+//   result = _ps_seg_source_span_is_full(t0, t1, eps);
+// Description:
+//   Test whether a source-edge parameter range covers the whole parent edge.
+//   .
+//   - Returns: true when the range is effectively `[0, 1]` in either direction
+// Arguments:
+//   t0 = source-edge parameters
+//   t1 = source-edge parameters
+//   eps = tolerance
 function _ps_seg_source_span_is_full(t0, t1, eps=1e-8) =
     is_undef(t0) || is_undef(t1) ? false :
     abs(min(t0, t1)) <= eps && abs(max(t0, t1) - 1) <= eps;
 
-/**
- * Function: Convert raw arrangement span kind into public boundary-span lineage.
- * Params: raw_kind (`"source"` or future generated tags), source_t0/source_t1 (source-edge range), eps (tolerance)
- * Returns: `"source_edge"`, `"source_partial"`, or `"generated_cut"`
- */
+// Function: _ps_seg_boundary_span_public_kind()
+// Usage:
+//   result = _ps_seg_boundary_span_public_kind(raw_kind, source_t0, source_t1, eps);
+// Description:
+//   Convert raw arrangement span kind into public boundary-span lineage.
+//   .
+//   - Returns: `"source_edge"`, `"source_partial"`, or `"generated_cut"`
+// Arguments:
+//   raw_kind = `"source"` or future generated tags
+//   source_t0 = source-edge range
+//   source_t1 = source-edge range
+//   eps = tolerance
 function _ps_seg_boundary_span_public_kind(raw_kind, source_t0, source_t1, eps=1e-8) =
     (raw_kind == "source")
         ? (_ps_seg_source_span_is_full(source_t0, source_t1, eps) ? "source_edge" : "source_partial")
         : "generated_cut";
 
-/**
- * Function: Test whether a public boundary-span kind passes a user-facing filter.
- * Params: public_kind (`"source_edge"`, `"source_partial"`, or `"generated_cut"`), kind (`"all"`, `"source"`, `"source_edge"`, `"source_partial"`, `"generated"`, or `"generated_cut"`)
- * Returns: boolean
- */
+// Function: _ps_seg_boundary_span_kind_matches()
+// Usage:
+//   result = _ps_seg_boundary_span_kind_matches(public_kind, kind);
+// Description:
+//   Test whether a public boundary-span kind passes a user-facing filter.
+//   .
+//   - Returns: boolean
+// Arguments:
+//   public_kind = `"source_edge"`, `"source_partial"`, or `"generated_cut"`
+//   kind = `"all"`, `"source"`, `"source_edge"`, `"source_partial"`, `"generated"`, or `"generated_cut"`
 function _ps_seg_boundary_span_kind_matches(public_kind, kind="all") =
     let(
         _valid = assert(
@@ -587,12 +605,24 @@ function _ps_seg_boundary_span_kind_matches(public_kind, kind="all") =
     (kind == "generated") ? (public_kind != "source_edge") :
     public_kind == kind;
 
-/**
- * Function: Build internal dihedral-aware boundary-span site records for the current face.
- * Params: face_pts3d_local (loop in face-local 3D), face_idx (current face index), poly_faces_idx/poly_verts_local (full poly in current face-local coordinates), face_neighbors_idx/face_dihedrals (current face-edge metadata), mode (`"nonzero"`, `"evenodd"`, or `"all"`), eps (geometric tolerance)
- * Returns: list of boundary-span site records `[span_idx, frame, span_len, seg2d, loop_idx, source_edge_idx, source_t0, source_t1, raw_kind, filled_cell_idx, other_cell_idx, adj_face_idx, dihedral, adj_face_normal_local, filled_side, adj_face_dir_span_local, public_kind]`
- * Limitations/Gotchas: internal helper for `place_on_face_boundary_spans(...)`; `filled_side` is `+1` when the filled region lies on the left side of `seg2d`, `-1` on the right, and `0` only for degenerate/ambiguous cases
- */
+// Function: _ps_face_boundary_span_sites()
+// Usage:
+//   result = _ps_face_boundary_span_sites(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local, face_neighbors_idx, face_dihedrals, mode, eps);
+// Description:
+//   Build internal dihedral-aware boundary-span site records for the current face.
+//   .
+//   - Returns: list of boundary-span site records `[span_idx, frame, span_len, seg2d, loop_idx, source_edge_idx, source_t0, source_t1, raw_kind, filled_cell_idx, other_cell_idx, adj_face_idx, dihedral, adj_face_normal_local, filled_side, adj_face_dir_span_local, public_kind]`
+//   .
+//   - Limitations/Gotchas: internal helper for `place_on_face_boundary_spans(...)`; `filled_side` is `+1` when the filled region lies on the left side of `seg2d`, `-1` on the right, and `0` only for degenerate/ambiguous cases
+// Arguments:
+//   face_pts3d_local = loop in face-local 3D
+//   face_idx = current face index
+//   poly_faces_idx = full poly in current face-local coordinates
+//   poly_verts_local = full poly in current face-local coordinates
+//   face_neighbors_idx = current face-edge metadata
+//   face_dihedrals = current face-edge metadata
+//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
+//   eps = geometric tolerance
 function _ps_face_boundary_span_sites(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local, face_neighbors_idx, face_dihedrals, mode="nonzero", eps=1e-8) =
     let(
         arr = ps_face_arrangement(face_pts3d_local, eps),
@@ -886,11 +916,16 @@ function ps_face_segments(face_pts3d_local, mode="nonzero", eps=1e-8) =
         ? [[ps_xy(face_pts3d_local), face_pts3d_local, [for (i = [0:1:n-1]) i], [for (_i = [0:1:n-1]) "parent"]]]
         : filtered;
 
-/**
- * Function: Return the first nonzero side marker from a list.
- * Params: sides (list of signed side values), i (scan index)
- * Returns: first nonzero value, or `0` if all values are zero
- */
+// Function: _ps_seg_first_nonzero_side()
+// Usage:
+//   result = _ps_seg_first_nonzero_side(sides, i);
+// Description:
+//   Return the first nonzero side marker from a list.
+//   .
+//   - Returns: first nonzero value, or `0` if all values are zero
+// Arguments:
+//   sides = list of signed side values
+//   i = scan index
 function _ps_seg_first_nonzero_side(sides, i=0) =
     (i >= len(sides)) ? 0 :
     (sides[i] != 0) ? sides[i] :
@@ -1862,11 +1897,17 @@ module place_on_face_foreign_intrusions(mode="nonzero", eps=1e-8, filter_parent=
     }
 }
 
-/**
- * Function: Project one indexed face into its own best-fit local frame.
- * Params: verts_local (poly vertices in current parent-local coords), face (face index loop), eps (tolerance)
- * Returns: face points in that face's own local 3D frame
- */
+// Function: _ps_seg_face_own_frame_pts3d()
+// Usage:
+//   result = _ps_seg_face_own_frame_pts3d(verts_local, face, eps);
+// Description:
+//   Project one indexed face into its own best-fit local frame.
+//   .
+//   - Returns: face points in that face's own local 3D frame
+// Arguments:
+//   verts_local = poly vertices in current parent-local coords
+//   face = face index loop
+//   eps = tolerance
 function _ps_seg_face_own_frame_pts3d(verts_local, face, eps=1e-8) =
     let(
         center = ps_face_centroid(verts_local, face),
@@ -1888,40 +1929,66 @@ function _ps_seg_face_own_frame_pts3d(verts_local, face, eps=1e-8) =
                 [v_dot(p, ex), v_dot(p, ey), v_dot(p, ez)]
     ];
 
-/**
- * Function: Test whether a projected face loop has no self-crossings.
- * Params: face_pts3d_local (face-local loop), eps (tolerance)
- * Returns: true when the loop has no arrangement crossings
- */
+// Function: _ps_seg_face_loop_is_simple()
+// Usage:
+//   result = _ps_seg_face_loop_is_simple(face_pts3d_local, eps);
+// Description:
+//   Test whether a projected face loop has no self-crossings.
+//   .
+//   - Returns: true when the loop has no arrangement crossings
+// Arguments:
+//   face_pts3d_local = face-local loop
+//   eps = tolerance
 function _ps_seg_face_loop_is_simple(face_pts3d_local, eps=1e-8) =
     len(ps_face_arrangement(face_pts3d_local, eps)[1]) == 0;
 
-/**
- * Function: Test whether an indexed face is simple in its own local frame.
- * Params: poly_verts_local/poly_faces_idx (poly in current parent-local coords), face_idx (face id), eps (tolerance)
- * Returns: true when the face loop has no self-crossings
- */
+// Function: _ps_seg_indexed_face_is_simple()
+// Usage:
+//   result = _ps_seg_indexed_face_is_simple(poly_verts_local, poly_faces_idx, face_idx, eps);
+// Description:
+//   Test whether an indexed face is simple in its own local frame.
+//   .
+//   - Returns: true when the face loop has no self-crossings
+// Arguments:
+//   poly_verts_local = poly in current parent-local coords
+//   poly_faces_idx = poly in current parent-local coords
+//   face_idx = face id
+//   eps = tolerance
 function _ps_seg_indexed_face_is_simple(poly_verts_local, poly_faces_idx, face_idx, eps=1e-8) =
     _ps_seg_face_loop_is_simple(
         _ps_seg_face_own_frame_pts3d(poly_verts_local, poly_faces_idx[face_idx], eps),
         eps
     );
 
-/**
- * Function: Classify an exact foreign seam as a printable support kind.
- * Params: target_simple/foreign_simple (loop simplicity flags), foreign_kind (source element kind), confidence (record confidence)
- * Returns: support kind string, or `"none"`
- */
+// Function: _ps_seg_foreign_support_kind()
+// Usage:
+//   result = _ps_seg_foreign_support_kind(target_simple, foreign_simple, foreign_kind, confidence);
+// Description:
+//   Classify an exact foreign seam as a printable support kind.
+//   .
+//   - Returns: support kind string, or `"none"`
+// Arguments:
+//   target_simple = loop simplicity flags
+//   foreign_simple = loop simplicity flags
+//   foreign_kind = source element kind
+//   confidence = record confidence
 function _ps_seg_foreign_support_kind(target_simple, foreign_simple, foreign_kind, confidence) =
     foreign_kind == "face" && confidence == "exact" && target_simple && foreign_simple
         ? "foreign_simple_face_cut"
         : "none";
 
-/**
- * Function: Explain the foreign support classification decision.
- * Params: target_simple/foreign_simple (loop simplicity flags), foreign_kind (source element kind), confidence (record confidence)
- * Returns: reason string
- */
+// Function: _ps_seg_foreign_support_reason()
+// Usage:
+//   result = _ps_seg_foreign_support_reason(target_simple, foreign_simple, foreign_kind, confidence);
+// Description:
+//   Explain the foreign support classification decision.
+//   .
+//   - Returns: reason string
+// Arguments:
+//   target_simple = loop simplicity flags
+//   foreign_simple = loop simplicity flags
+//   foreign_kind = source element kind
+//   confidence = record confidence
 function _ps_seg_foreign_support_reason(target_simple, foreign_simple, foreign_kind, confidence) =
     foreign_kind != "face"
         ? "foreign_not_face"
@@ -1933,27 +2000,45 @@ function _ps_seg_foreign_support_reason(target_simple, foreign_simple, foreign_k
         ? "foreign_self_crossing"
         : "simple_face_cut";
 
-/**
- * Function: Classify a boundary seam as a printable support kind.
- * Params: source_kind (boundary span public lineage)
- * Returns: support kind string, or `"none"`
- */
+// Function: _ps_seg_boundary_support_kind()
+// Usage:
+//   result = _ps_seg_boundary_support_kind(source_kind);
+// Description:
+//   Classify a boundary seam as a printable support kind.
+//   .
+//   - Returns: support kind string, or `"none"`
+// Arguments:
+//   source_kind = boundary span public lineage
 function _ps_seg_boundary_support_kind(source_kind) =
     source_kind == "generated_cut" ? "generated_cut" : "none";
 
-/**
- * Function: Explain the boundary support classification decision.
- * Params: source_kind (boundary span public lineage)
- * Returns: reason string
- */
+// Function: _ps_seg_boundary_support_reason()
+// Usage:
+//   result = _ps_seg_boundary_support_reason(source_kind);
+// Description:
+//   Explain the boundary support classification decision.
+//   .
+//   - Returns: reason string
+// Arguments:
+//   source_kind = boundary span public lineage
 function _ps_seg_boundary_support_reason(source_kind) =
     source_kind == "generated_cut" ? "generated_cut" : "not_generated_cut";
 
-/**
- * Function: Build edge-like placement sites for current-face seam segments from a face-local context.
- * Params: face_ctx (face-local context), mode/eps (segmentation controls), boundary_kind (boundary span kind filter), include_boundary/include_foreign/filter_parent (source controls)
- * Returns: seam site records for `place_on_face_seam_segments(...)`
- */
+// Function: _ps_face_seam_segment_sites_from_context()
+// Usage:
+//   result = _ps_face_seam_segment_sites_from_context(face_ctx, mode, eps, boundary_kind, include_boundary, include_foreign, filter_parent);
+// Description:
+//   Build edge-like placement sites for current-face seam segments from a face-local context.
+//   .
+//   - Returns: seam site records for `place_on_face_seam_segments(...)`
+// Arguments:
+//   face_ctx = face-local context
+//   mode = segmentation controls
+//   eps = segmentation controls
+//   boundary_kind = boundary span kind filter
+//   include_boundary = source controls
+//   include_foreign = source controls
+//   filter_parent = source controls
 function _ps_face_seam_segment_sites_from_context(
     face_ctx,
     mode="nonzero",

@@ -12,10 +12,8 @@ use <../../models/archimedians_all.scad>
 
 use <util_demo.scad>
 
-/**
-Showcase default transforms (truncate, rectify, chamfer, cantellate, cantitruncate)
-applied to the 5 platonics plus cuboctahedron and icosidodecahedron.
-*/
+// Showcase default transforms (truncate, rectify, chamfer, cantellate, cantitruncate)
+// applied to the 5 platonics plus cuboctahedron and icosidodecahedron.
 
 shapes = concat(
     platonics_all(),

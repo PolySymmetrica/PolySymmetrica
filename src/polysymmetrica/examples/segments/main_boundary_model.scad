@@ -45,11 +45,15 @@ ANTI_FACE_IDX = 0;
 DODECA_POLY = dodecahedron();
 DODECA_FACE_IDX = 0;
 
-/**
- * Function: Pick a readable named color for one boundary loop.
- * Params: i (loop index)
- * Returns: a named color string
- */
+// Function: boundary_loop_color()
+// Usage:
+//   result = boundary_loop_color(i);
+// Description:
+//   Pick a readable named color for one boundary loop.
+//   .
+//   - Returns: a named color string
+// Arguments:
+//   i = loop index
 function boundary_loop_color(i) =
     (i % 6 == 0) ? "tomato" :
     (i % 6 == 1) ? "deepskyblue" :
@@ -58,11 +62,15 @@ function boundary_loop_color(i) =
     (i % 6 == 4) ? "orchid" :
     "darkorange";
 
-/**
- * Function: Pick a readable named color for one source edge.
- * Params: i (source edge index)
- * Returns: a named color string
- */
+// Function: source_edge_color()
+// Usage:
+//   result = source_edge_color(i);
+// Description:
+//   Pick a readable named color for one source edge.
+//   .
+//   - Returns: a named color string
+// Arguments:
+//   i = source edge index
 function source_edge_color(i) =
     (i % 8 == 0) ? "tomato" :
     (i % 8 == 1) ? "deepskyblue" :
@@ -73,33 +81,45 @@ function source_edge_color(i) =
     (i % 8 == 6) ? "turquoise" :
     "sienna";
 
-/**
- * Function: Pick a readable named color for one public boundary-span kind.
- * Params: kind (`"source_edge"`, `"source_partial"`, or `"generated_cut"`)
- * Returns: a named color string
- */
+// Function: boundary_span_kind_color()
+// Usage:
+//   result = boundary_span_kind_color(kind);
+// Description:
+//   Pick a readable named color for one public boundary-span kind.
+//   .
+//   - Returns: a named color string
+// Arguments:
+//   kind = `"source_edge"`, `"source_partial"`, or `"generated_cut"`
 function boundary_span_kind_color(kind) =
     (kind == "source_edge") ? "gainsboro" :
     (kind == "source_partial") ? "darkorange" :
     (kind == "generated_cut") ? "magenta" :
     "white";
 
-/**
- * Module: Draw a world-space label below one panel.
- * Params: s (label string)
- * Returns: none
- */
+// Module: draw_panel_label()
+// Usage:
+//   draw_panel_label(s);
+// Description:
+//   Draw a world-space label below one panel.
+//   .
+//   - Returns: none
+// Arguments:
+//   s = label string
 module draw_panel_label(s) {
     translate([0, -58, -34])
         linear_extrude(height = TXT_H)
             text(s, size = TXT_S, halign = "center", valign = "center");
 }
 
-/**
- * Module: Draw a world-space label for one row of panels.
- * Params: s (row label string)
- * Returns: none
- */
+// Module: draw_row_label()
+// Usage:
+//   draw_row_label(s);
+// Description:
+//   Draw a world-space label for one row of panels.
+//   .
+//   - Returns: none
+// Arguments:
+//   s = row label string
 module draw_row_label(s) {
     translate([ROW_LABEL_X, 0, -34])
         rotate([0, 0, 90])
@@ -107,21 +127,30 @@ module draw_row_label(s) {
                 text(s, size = TXT_S + 0.4, halign = "center", valign = "center");
 }
 
-/**
- * Module: Draw a thin local face fill from a point loop.
- * Params: pts2d (2D polygon loop)
- * Returns: none
- */
+// Module: draw_polygon()
+// Usage:
+//   draw_polygon(pts2d);
+// Description:
+//   Draw a thin local face fill from a point loop.
+//   .
+//   - Returns: none
+// Arguments:
+//   pts2d = 2D polygon loop
 module draw_polygon(pts2d) {
     linear_extrude(height = FACE_THK, center = true)
         polygon(points = pts2d);
 }
 
-/**
- * Module: Draw a stroked local 2D segment as a thin extruded ribbon.
- * Params: seg2d (2D segment), r (stroke radius)
- * Returns: none
- */
+// Module: draw_local_segment_stroke()
+// Usage:
+//   draw_local_segment_stroke(seg2d, r);
+// Description:
+//   Draw a stroked local 2D segment as a thin extruded ribbon.
+//   .
+//   - Returns: none
+// Arguments:
+//   seg2d = 2D segment
+//   r = stroke radius
 module draw_local_segment_stroke(seg2d, r = LINE_R) {
     linear_extrude(height = FACE_THK * 0.9, center = true)
         hull() {
@@ -130,11 +159,16 @@ module draw_local_segment_stroke(seg2d, r = LINE_R) {
         }
 }
 
-/**
- * Module: Draw a local span-side marker in the current boundary-span frame.
- * Params: filled_side (`+1` or `-1`), len (marker length)
- * Returns: none
- */
+// Module: draw_span_side_marker()
+// Usage:
+//   draw_span_side_marker(filled_side, len);
+// Description:
+//   Draw a local span-side marker in the current boundary-span frame.
+//   .
+//   - Returns: none
+// Arguments:
+//   filled_side = `+1` or `-1`
+//   len = marker length
 module draw_span_side_marker(filled_side, len = SPAN_ARROW_LEN) {
     dir = (filled_side >= 0) ? 1 : -1;
 
@@ -148,11 +182,15 @@ module draw_span_side_marker(filled_side, len = SPAN_ARROW_LEN) {
         }
 }
 
-/**
- * Module: Draw the adjacent-face plane direction in the current span frame.
- * Params: dir_span_local (adjacent-face direction `[x,y,z]` in span-local coords)
- * Returns: none
- */
+// Module: draw_dihedral_direction()
+// Usage:
+//   draw_dihedral_direction(dir_span_local);
+// Description:
+//   Draw the adjacent-face plane direction in the current span frame.
+//   .
+//   - Returns: none
+// Arguments:
+//   dir_span_local = adjacent-face direction `[x,y,z]` in span-local coords
 module draw_dihedral_direction(dir_span_local) {
     dir = v_norm(dir_span_local);
     axis = [-dir[1], dir[0], 0];
@@ -169,11 +207,15 @@ module draw_dihedral_direction(dir_span_local) {
                 }
 }
 
-/**
- * Module: Draw source-edge labels on the selected face.
- * Params: pts2d (face loop in local 2D)
- * Returns: none
- */
+// Module: draw_source_edge_labels()
+// Usage:
+//   draw_source_edge_labels(pts2d);
+// Description:
+//   Draw source-edge labels on the selected face.
+//   .
+//   - Returns: none
+// Arguments:
+//   pts2d = face loop in local 2D
 module draw_source_edge_labels(pts2d) {
     for (ei = [0:1:len(pts2d)-1]) {
         seg2d = [pts2d[ei], pts2d[(ei+1)%len(pts2d)]];
@@ -188,11 +230,16 @@ module draw_source_edge_labels(pts2d) {
     }
 }
 
-/**
- * Module: Draw a light poly wireframe context for the demo poly.
- * Params: poly (poly descriptor), ir (placement scale)
- * Returns: none
- */
+// Module: draw_wireframe()
+// Usage:
+//   draw_wireframe(poly, ir, show_face_labels);
+// Description:
+//   Draw a light poly wireframe context for the demo poly.
+//   .
+//   - Returns: none
+// Arguments:
+//   poly = poly descriptor
+//   ir = placement scale
 module draw_wireframe(poly, ir = IR, show_face_labels = false) {
     color("silver")
         place_on_edges(poly, ir)
@@ -210,11 +257,18 @@ module draw_wireframe(poly, ir = IR, show_face_labels = false) {
                         text(str("f", $ps_face_idx), size = 1.9, halign = "center", valign = "center");
 }
 
-/**
- * Module: Draw one boundary-model panel for one selected face.
- * Params: poly (poly descriptor), face_idx (target face index), mode (`"nonzero"` or `"evenodd"`), label_s (panel label)
- * Returns: none
- */
+// Module: draw_panel_boundary_model()
+// Usage:
+//   draw_panel_boundary_model(poly, face_idx, mode, label_s);
+// Description:
+//   Draw one boundary-model panel for one selected face.
+//   .
+//   - Returns: none
+// Arguments:
+//   poly = poly descriptor
+//   face_idx = target face index
+//   mode = `"nonzero"` or `"evenodd"`
+//   label_s = panel label
 module draw_panel_boundary_model(poly, face_idx, mode, label_s) {
     draw_wireframe(poly, IR);
 
@@ -262,11 +316,18 @@ module draw_panel_boundary_model(poly, face_idx, mode, label_s) {
     draw_panel_label(label_s);
 }
 
-/**
- * Module: Draw one span-site panel for one selected face.
- * Params: poly (poly descriptor), face_idx (target face index), mode (`"nonzero"` or `"evenodd"`), label_s (panel label)
- * Returns: none
- */
+// Module: draw_panel_boundary_spans()
+// Usage:
+//   draw_panel_boundary_spans(poly, face_idx, mode, label_s);
+// Description:
+//   Draw one span-site panel for one selected face.
+//   .
+//   - Returns: none
+// Arguments:
+//   poly = poly descriptor
+//   face_idx = target face index
+//   mode = `"nonzero"` or `"evenodd"`
+//   label_s = panel label
 module draw_panel_boundary_spans(poly, face_idx, mode, label_s) {
     draw_wireframe(poly, IR, true);
 
@@ -321,11 +382,18 @@ module draw_panel_boundary_spans(poly, face_idx, mode, label_s) {
     draw_panel_label(label_s);
 }
 
-/**
- * Module: Draw only generated/split seam candidates for one selected face.
- * Params: poly (poly descriptor), face_idx (target face index), mode (`"nonzero"` or `"evenodd"`), label_s (panel label)
- * Returns: none
- */
+// Module: draw_panel_generated_seams()
+// Usage:
+//   draw_panel_generated_seams(poly, face_idx, mode, label_s);
+// Description:
+//   Draw only generated/split seam candidates for one selected face.
+//   .
+//   - Returns: none
+// Arguments:
+//   poly = poly descriptor
+//   face_idx = target face index
+//   mode = `"nonzero"` or `"evenodd"`
+//   label_s = panel label
 module draw_panel_generated_seams(poly, face_idx, mode, label_s) {
     draw_wireframe(poly, IR, true);
 
@@ -361,11 +429,18 @@ module draw_panel_generated_seams(poly, face_idx, mode, label_s) {
     draw_panel_label(label_s);
 }
 
-/**
- * Module: Draw one source-edge grouped boundary panel for one selected face.
- * Params: poly (poly descriptor), face_idx (target face index), mode (`"nonzero"` or `"evenodd"`), label_s (panel label)
- * Returns: none
- */
+// Module: draw_panel_boundary_source_edges()
+// Usage:
+//   draw_panel_boundary_source_edges(poly, face_idx, mode, label_s);
+// Description:
+//   Draw one source-edge grouped boundary panel for one selected face.
+//   .
+//   - Returns: none
+// Arguments:
+//   poly = poly descriptor
+//   face_idx = target face index
+//   mode = `"nonzero"` or `"evenodd"`
+//   label_s = panel label
 module draw_panel_boundary_source_edges(poly, face_idx, mode, label_s) {
     draw_wireframe(poly, IR, true);
 
@@ -438,11 +513,18 @@ module draw_panel_boundary_source_edges(poly, face_idx, mode, label_s) {
     draw_panel_label(label_s);
 }
 
-/**
- * Module: Draw the four boundary-model panels for one selected face.
- * Params: poly (poly descriptor), face_idx (target face index), row_s (row label), y (row offset)
- * Returns: none
- */
+// Module: draw_boundary_row()
+// Usage:
+//   draw_boundary_row(poly, face_idx, row_s, y);
+// Description:
+//   Draw the four boundary-model panels for one selected face.
+//   .
+//   - Returns: none
+// Arguments:
+//   poly = poly descriptor
+//   face_idx = target face index
+//   row_s = row label
+//   y = row offset
 module draw_boundary_row(poly, face_idx, row_s, y) {
     translate([0, y, 0])
         draw_row_label(row_s);

@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
 """
-Rewrite structured public API Javadoc blocks into docsgen-native line comments.
+Rewrite Javadoc-style `/** ... */` blocks into docsgen-friendly line comments.
 
-This intentionally handles only already-structured blocks such as:
-  /**
-   * Function: ...
-   * Params: ...
-   * Returns: ...
-   */
-
-It leaves freeform prose blocks untouched.
+When a block sits directly on a function or module declaration, emit a docsgen
+`// Function:` or `// Module:` block. Otherwise, rewrite the Javadoc as plain
+`//` prose so the source tree no longer mixes comment syntaxes.
 """
 
 from __future__ import annotations
@@ -90,7 +85,43 @@ def extract_block_lines(block_text: str) -> list[str]:
     return lines
 
 
-def parse_structured_block(block_text: str) -> dict[str, list[str]] | None:
+FIELD_ALIASES = {
+    "arguments": "Params",
+    "args": "Params",
+    "limitations": "Limitations/Gotchas",
+    "gotchas": "Limitations/Gotchas",
+    "limitations/gotchas": "Limitations/Gotchas",
+    "notes": "Notes",
+    "note": "Notes",
+    "example": "Examples",
+    "examples": "Examples",
+    "quick usage": "Usage",
+}
+
+RECOGNIZED_FIELDS = {
+    "Function",
+    "Module",
+    "Params",
+    "Returns",
+    "Limitations/Gotchas",
+    "Notes",
+    "Examples",
+    "Usage",
+    "Description",
+    "Approach",
+    "Purpose",
+}
+
+
+def normalize_field_name(key: str) -> str:
+    stripped = key.strip()
+    lowered = stripped.lower()
+    if lowered in FIELD_ALIASES:
+        return FIELD_ALIASES[lowered]
+    return stripped
+
+
+def parse_block(block_text: str) -> dict[str, list[str]]:
     fields: dict[str, list[str]] = {}
     current_key: str | None = None
     for line in extract_block_lines(block_text):
@@ -98,22 +129,26 @@ def parse_structured_block(block_text: str) -> dict[str, list[str]] | None:
             if current_key:
                 fields.setdefault(current_key, []).append("")
             continue
-        match = re.match(r"^(Function|Module|Params|Returns|Limitations/Gotchas|Limitations):\s*(.*)$", line)
+        match = re.match(r"^([A-Za-z][A-Za-z0-9 /-]*):\s*(.*)$", line)
         if match:
-            key = match.group(1)
-            if key == "Limitations":
-                key = "Limitations/Gotchas"
-            current_key = key
-            fields.setdefault(key, []).append(match.group(2).strip())
-        elif current_key:
-            fields.setdefault(current_key, []).append(line)
+            key = normalize_field_name(match.group(1))
+            if key in RECOGNIZED_FIELDS:
+                current_key = key
+                fields.setdefault(key, []).append(match.group(2).strip())
+                continue
+            current_key = "Preamble"
+            fields.setdefault(current_key, []).append(line.strip())
+        elif current_key and current_key not in ("Function", "Module"):
+            fields.setdefault(current_key, []).append(line.strip())
         else:
-            return None
-    return fields if ("Function" in fields or "Module" in fields) else None
+            current_key = "Preamble"
+            fields.setdefault(current_key, []).append(line.strip())
+    return fields
 
 
 def extract_declaration(source_text: str, start_index: int) -> tuple[str, str, list[str]] | None:
     tail = source_text[start_index:]
+    tail = re.sub(r"^(?:\s|//[^\n]*\n)*", "", tail)
     match = re.match(r"\s*(function|module)\s+([A-Za-z0-9_]+)\s*\(", tail)
     if not match:
         return None
@@ -140,7 +175,7 @@ def extract_declaration(source_text: str, start_index: int) -> tuple[str, str, l
     return kind, name, params
 
 
-def parse_param_items(params_text: str) -> list[tuple[str, str]]:
+def parse_param_items_from_text(params_text: str) -> list[tuple[str, str]]:
     items: list[tuple[str, str]] = []
     for item in split_top_level(params_text):
         match = re.match(r"^(.+?)\s*\((.*)\)$", item)
@@ -156,12 +191,96 @@ def parse_param_items(params_text: str) -> list[tuple[str, str]]:
     return items
 
 
+def clean_bullet_prefix(text: str) -> str:
+    stripped = text.strip()
+    return re.sub(r"^[-*]\s*", "", stripped)
+
+
+def parse_param_items(params_lines: list[str]) -> list[tuple[str, str]]:
+    compacted = compact_lines(params_lines)
+    if not compacted:
+        return []
+
+    bulletish = any(line.lstrip().startswith(("-", "*", "`")) for line in compacted)
+    if not bulletish and len(compacted) == 1:
+        return parse_param_items_from_text(compacted[0])
+
+    items: list[tuple[str, str]] = []
+    for line in compacted:
+        item = clean_bullet_prefix(line)
+        match = re.match(r"^`?([A-Za-z0-9_/$]+(?:\s*/\s*[A-Za-z0-9_/$]+)*)`?\s*:\s*(.*)$", item)
+        if match:
+            names = [part.strip() for part in re.split(r"\s*/\s*", match.group(1)) if part.strip()]
+            desc = match.group(2).strip()
+            for name in names:
+                items.append((name, desc))
+            continue
+
+        legacy = parse_param_items_from_text(item)
+        if legacy:
+            items.extend(legacy)
+        else:
+            items.append((item, ""))
+    return items
+
+
+def compact_lines(lines: list[str]) -> list[str]:
+    compacted: list[str] = []
+    pending_blank = False
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            pending_blank = len(compacted) > 0
+            continue
+        if pending_blank:
+            compacted.append("")
+            pending_blank = False
+        compacted.append(stripped)
+    return compacted
+
+
+def join_for_sentence(lines: list[str]) -> str:
+    return " ".join(line for line in compact_lines(lines) if line)
+
+
+def format_plain_comment(block_text: str, indent: str) -> str:
+    lines = extract_block_lines(block_text)
+    rendered: list[str] = []
+    for line in lines:
+        if line:
+            rendered.append(f"{indent}// {line}")
+        else:
+            rendered.append(f"{indent}//")
+    return "\n".join(rendered)
+
+
+def format_docsgen_text_block(label: str, lines: list[str], prefix: str = "//   ") -> list[str]:
+    compacted = [clean_bullet_prefix(line) for line in compact_lines(lines)]
+    if not compacted:
+        return []
+
+    rendered = [f"//   - {label}: {compacted[0]}"]
+    for line in compacted[1:]:
+        if line:
+            rendered.append(f"{prefix}  {line}")
+        else:
+            rendered.append("//   .")
+    return rendered
+
+
 def render_docsgen_block(fields: dict[str, list[str]], decl: tuple[str, str, list[str]] | None) -> str:
-    kind = "Module" if "Module" in fields else "Function"
-    summary = " ".join(part for part in fields[kind] if part).strip()
-    decl_kind, decl_name, decl_params = decl if decl else (kind.lower(), "", [])
-    if decl_kind != kind.lower():
+    decl_kind, decl_name, decl_params = decl if decl else ("", "", [])
+    if not decl_kind:
         return ""
+
+    kind = "Module" if decl_kind == "module" else "Function"
+    explicit_kind = "Module" if "Module" in fields else ("Function" if "Function" in fields else None)
+    if explicit_kind and explicit_kind != kind:
+        return ""
+
+    summary = join_for_sentence(fields.get(explicit_kind or "Preamble", []))
+    if not summary:
+        summary = f"{decl_name}."
 
     lines: list[str] = [f"// {kind}: {decl_name}()"]
     lines.append("// Usage:")
@@ -173,17 +292,23 @@ def render_docsgen_block(fields: dict[str, list[str]], decl: tuple[str, str, lis
     lines.append("// Description:")
     lines.append(f"//   {summary}")
 
-    returns = " ".join(part for part in fields.get("Returns", []) if part).strip()
-    if returns:
+    extra_description_keys = [
+        "Description",
+        "Returns",
+        "Limitations/Gotchas",
+        "Notes",
+        "Usage",
+        "Examples",
+        "Approach",
+        "Purpose",
+    ]
+    for key in extra_description_keys:
+        if key not in fields:
+            continue
         lines.append("//   .")
-        lines.append(f"//   - Returns: {returns}")
+        lines.extend(format_docsgen_text_block(key, fields[key]))
 
-    for limitation in [part.strip() for part in fields.get('Limitations/Gotchas', []) if part.strip()]:
-        lines.append("//   .")
-        lines.append(f"//   - Limitations/Gotchas: {limitation}")
-
-    params = " ".join(part for part in fields.get("Params", []) if part).strip()
-    param_items = parse_param_items(params) if params else []
+    param_items = parse_param_items(fields.get("Params", []))
     if param_items:
         lines.append("// Arguments:")
         for name, desc in param_items:
@@ -200,18 +325,18 @@ def rewrite_source(path: Path) -> bool:
 
     for match in re.finditer(r"/\*\*(.*?)\*/", source_text, flags=re.DOTALL):
         block_text = match.group(0)
-        fields = parse_structured_block(block_text)
+        fields = parse_block(block_text)
         decl = extract_declaration(source_text, match.end())
+        line_start = source_text.rfind("\n", 0, match.start()) + 1
+        indent = re.match(r"[ \t]*", source_text[line_start:match.start()]).group(0)
         pieces.append(source_text[last:match.start()])
-        if fields and decl and not decl[1].startswith("_ps_"):
-            rendered = render_docsgen_block(fields, decl)
-            if rendered:
-                pieces.append(rendered)
-                changed = True
-            else:
-                pieces.append(block_text)
+        rendered = render_docsgen_block(fields, decl) if decl else ""
+        if rendered:
+            pieces.append("\n".join(f"{indent}{line}" if line else indent for line in rendered.splitlines()))
+            changed = True
         else:
-            pieces.append(block_text)
+            pieces.append(format_plain_comment(block_text, indent))
+            changed = True
         last = match.end()
 
     pieces.append(source_text[last:])

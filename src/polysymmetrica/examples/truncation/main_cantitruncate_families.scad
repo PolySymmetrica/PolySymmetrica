@@ -10,10 +10,8 @@ use <../../core/render.scad>
 use <../../models/platonics_all.scad>
 use <util_demo.scad>
 
-/**
-Cantitruncate with per-face-family c values (dominant family).
-Example on cuboctahedron (rectified octahedron).
-*/
+// Cantitruncate with per-face-family c values (dominant family).
+// Example on cuboctahedron (rectified octahedron).
 
 base = poly_rectify(octahedron());
 

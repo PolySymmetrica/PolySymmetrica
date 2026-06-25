@@ -239,19 +239,29 @@ function ps_cyclic_pairs(list) =
 
 ///////////////////////////////////////
 // ---- Winding/orientation helpers (private) ----
-/**
- * Function: Return directed cyclic edges from a face loop.
- * Params: f (face index loop)
- * Returns: `[[a,b], ...]`
- */
+// Function: _ps_face_edges_dir()
+// Usage:
+//   result = _ps_face_edges_dir(f);
+// Description:
+//   Return directed cyclic edges from a face loop.
+//   .
+//   - Returns: `[[a,b], ...]`
+// Arguments:
+//   f = face index loop
 function _ps_face_edges_dir(f) =
     ps_cyclic_pairs(f);
 
-/**
- * Function: Determine whether a directed edge appears in a face.
- * Params: f (face index loop), a,b (edge endpoints)
- * Returns: `1` for `a->b`, `-1` for `b->a`, `0` when absent
- */
+// Function: _ps_face_edge_dir()
+// Usage:
+//   result = _ps_face_edge_dir(f, a, b);
+// Description:
+//   Determine whether a directed edge appears in a face.
+//   .
+//   - Returns: `1` for `a->b`, `-1` for `b->a`, `0` when absent
+// Arguments:
+//   f = face index loop
+//   a =
+//   b = edge endpoints
 function _ps_face_edge_dir(f, a, b) =
     let(
         n = len(f),
@@ -263,133 +273,204 @@ function _ps_face_edge_dir(f, a, b) =
     )
     (max(vals) == 1) ? 1 : (min(vals) == -1) ? -1 : 0;
 
-/**
- * Function: Find faces adjacent to an edge, excluding one face.
- * Params: faces (face list), a,b (edge endpoints), fi (face to exclude)
- * Returns: face indices containing undirected edge `{a,b}`
- */
+// Function: _ps_adjacent_faces_for_edge()
+// Usage:
+//   result = _ps_adjacent_faces_for_edge(faces, a, b, fi);
+// Description:
+//   Find faces adjacent to an edge, excluding one face.
+//   .
+//   - Returns: face indices containing undirected edge `{a,b}`
+// Arguments:
+//   faces = face list
+//   a =
+//   b = edge endpoints
+//   fi = face to exclude
 function _ps_adjacent_faces_for_edge(faces, a, b, fi) =
     [
         for (fj = [0:1:len(faces)-1])
             if (fj != fi && _ps_face_edge_dir(faces[fj], a, b) != 0) fj
     ];
 
-/**
- * Function: Replace one list element.
- * Params: list (input list), idx (target index), val (replacement value)
- * Returns: copy of `list` with `list[idx] = val`
- */
+// Function: _ps_list_set()
+// Usage:
+//   result = _ps_list_set(list, idx, val);
+// Description:
+//   Replace one list element.
+//   .
+//   - Returns: copy of `list` with `list[idx] = val`
+// Arguments:
+//   list = input list
+//   idx = target index
+//   val = replacement value
 function _ps_list_set(list, idx, val) =
     [ for (i = [0:1:len(list)-1]) (i == idx) ? val : list[i] ];
 
-/**
- * Function: Find the first undefined element in a list.
- * Params: list (input list)
- * Returns: first index with `is_undef(...)`, or `-1`
- */
+// Function: _ps_index_of_undef()
+// Usage:
+//   result = _ps_index_of_undef(list);
+// Description:
+//   Find the first undefined element in a list.
+//   .
+//   - Returns: first index with `is_undef(...)`, or `-1`
+// Arguments:
+//   list = input list
 function _ps_index_of_undef(list) =
     let(idx = [for (i = [0:1:len(list)-1]) if (is_undef(list[i])) i])
     (len(idx) == 0) ? -1 : idx[0];
 
-/**
- * Function: Reverse a list.
- * Params: list (input list)
- * Returns: reversed list
- */
+// Function: _ps_reverse()
+// Usage:
+//   result = _ps_reverse(list);
+// Description:
+//   Reverse a list.
+//   .
+//   - Returns: reversed list
+// Arguments:
+//   list = input list
 function _ps_reverse(list) =
     [ for (i = [len(list)-1 : -1 : 0]) list[i] ];
 
-/**
- * Function: Build identity index map.
- * Params: n (size)
- * Returns: `[0, 1, ..., n-1]`
- */
+// Function: _ps_identity_map()
+// Usage:
+//   result = _ps_identity_map(n);
+// Description:
+//   Build identity index map.
+//   .
+//   - Returns: `[0, 1, ..., n-1]`
+// Arguments:
+//   n = size
 function _ps_identity_map(n) =
     [for (i = [0:1:n-1]) i];
 
-/**
- * Function: Count distinct values in a list.
- * Params: list (input list)
- * Returns: number of first occurrences
- */
+// Function: _ps_distinct_count()
+// Usage:
+//   result = _ps_distinct_count(list);
+// Description:
+//   Count distinct values in a list.
+//   .
+//   - Returns: number of first occurrences
+// Arguments:
+//   list = input list
 function _ps_distinct_count(list) =
     len([for (i = [0:1:len(list)-1]) if (_ps_index_of(list, list[i]) == i) 1]);
 
-/**
- * Function: Remove adjacent duplicate vertex ids from a cyclic face.
- * Params: f (face index loop)
- * Returns: face loop without adjacent repeats
- */
+// Function: _ps_face_strip_adjacent_dups()
+// Usage:
+//   result = _ps_face_strip_adjacent_dups(f);
+// Description:
+//   Remove adjacent duplicate vertex ids from a cyclic face.
+//   .
+//   - Returns: face loop without adjacent repeats
+// Arguments:
+//   f = face index loop
 function _ps_face_strip_adjacent_dups(f) =
     let(n = len(f))
     (n == 0) ? [] :
     [for (i = [0:1:n-1]) if (f[i] != f[(i-1+n)%n]) f[i]];
 
-/**
- * Function: Remove duplicated closing vertex from a face loop.
- * Params: f (face index loop)
- * Returns: `f` without final element when `last == first`
- */
+// Function: _ps_face_trim_closing_dup()
+// Usage:
+//   result = _ps_face_trim_closing_dup(f);
+// Description:
+//   Remove duplicated closing vertex from a face loop.
+//   .
+//   - Returns: `f` without final element when `last == first`
+// Arguments:
+//   f = face index loop
 function _ps_face_trim_closing_dup(f) =
     (len(f) >= 2 && f[0] == f[len(f)-1]) ? [for (i = [0:1:len(f)-2]) f[i]] : f;
 
-/**
- * Function: Normalize one face loop by removing trivial duplicate vertices.
- * Params: f (face index loop)
- * Returns: cleaned face loop
- */
+// Function: _ps_face_clean_cycle()
+// Usage:
+//   result = _ps_face_clean_cycle(f);
+// Description:
+//   Normalize one face loop by removing trivial duplicate vertices.
+//   .
+//   - Returns: cleaned face loop
+// Arguments:
+//   f = face index loop
 function _ps_face_clean_cycle(f) =
     _ps_face_trim_closing_dup(_ps_face_strip_adjacent_dups(f));
 
-/**
- * Function: Clean every face loop in a face list.
- * Params: faces (face list)
- * Returns: cleaned face list
- */
+// Function: _ps_faces_clean_cycles()
+// Usage:
+//   result = _ps_faces_clean_cycles(faces);
+// Description:
+//   Clean every face loop in a face list.
+//   .
+//   - Returns: cleaned face list
+// Arguments:
+//   faces = face list
 function _ps_faces_clean_cycles(faces) =
     [for (f = faces) _ps_face_clean_cycle(f)];
 
-/**
- * Function: Remap all vertex ids in face loops.
- * Params: faces (face list), old_to_new (index map)
- * Returns: remapped face list
- */
+// Function: _ps_faces_remap()
+// Usage:
+//   result = _ps_faces_remap(faces, old_to_new);
+// Description:
+//   Remap all vertex ids in face loops.
+//   .
+//   - Returns: remapped face list
+// Arguments:
+//   faces = face list
+//   old_to_new = index map
 function _ps_faces_remap(faces, old_to_new) =
     [for (f = faces) [for (vi = f) old_to_new[vi]]];
 
-/**
- * Function: Look up a pending neighbor face assignment.
- * Params: neighbors (`[[idx, value], ...]`), idx (face index)
- * Returns: assigned value or `undef`
- */
+// Function: _ps_neighbor_face()
+// Usage:
+//   result = _ps_neighbor_face(neighbors, idx);
+// Description:
+//   Look up a pending neighbor face assignment.
+//   .
+//   - Returns: assigned value or `undef`
+// Arguments:
+//   neighbors = `[[idx, value], ...]`
+//   idx = face index
 function _ps_neighbor_face(neighbors, idx) =
     let(hit = [for (p = neighbors) if (p[0] == idx) p[1]])
     (len(hit) == 0) ? undef : hit[0];
 
-/**
- * Function: Apply pending neighbor face assignments into a fixed-face list.
- * Params: fixed (possibly-undef face list), neighbors (`[[idx, face], ...]`)
- * Returns: updated fixed list
- */
+// Function: _ps_apply_neighbors()
+// Usage:
+//   result = _ps_apply_neighbors(fixed, neighbors);
+// Description:
+//   Apply pending neighbor face assignments into a fixed-face list.
+//   .
+//   - Returns: updated fixed list
+// Arguments:
+//   fixed = possibly-undef face list
+//   neighbors = `[[idx, face], ...]`
 function _ps_apply_neighbors(fixed, neighbors) =
     [
         for (i = [0:1:len(fixed)-1])
             is_undef(fixed[i]) ? _ps_neighbor_face(neighbors, i) : fixed[i]
     ];
 
-/**
- * Function: Extract newly assigned face indices.
- * Params: fixed (previous fixed list), neighbors (`[[idx, face], ...]`)
- * Returns: indices whose previous value was `undef`
- */
+// Function: _ps_new_neighbor_indices()
+// Usage:
+//   result = _ps_new_neighbor_indices(fixed, neighbors);
+// Description:
+//   Extract newly assigned face indices.
+//   .
+//   - Returns: indices whose previous value was `undef`
+// Arguments:
+//   fixed = previous fixed list
+//   neighbors = `[[idx, face], ...]`
 function _ps_new_neighbor_indices(fixed, neighbors) =
     [ for (p = neighbors) if (is_undef(fixed[p[0]])) p[0] ];
 
-/**
- * Function: Breadth-first face-winding propagation over connected faces.
- * Params: faces (source face list), fixed (assigned oriented faces), queue (face indices)
- * Returns: fixed face list for the connected component reachable from queue
- */
+// Function: _ps_fix_winding_queue()
+// Usage:
+//   result = _ps_fix_winding_queue(faces, fixed, queue);
+// Description:
+//   Breadth-first face-winding propagation over connected faces.
+//   .
+//   - Returns: fixed face list for the connected component reachable from queue
+// Arguments:
+//   faces = source face list
+//   fixed = assigned oriented faces
+//   queue = face indices
 function _ps_fix_winding_queue(faces, fixed, queue) =
     (len(queue) == 0) ? fixed :
     let(
@@ -416,11 +497,16 @@ function _ps_fix_winding_queue(faces, fixed, queue) =
     )
     _ps_fix_winding_queue(faces, updated, new_queue);
 
-/**
- * Function: Fix winding across all connected face components.
- * Params: faces (face list), fixed (optional in-progress oriented faces)
- * Returns: oriented face list with each shared edge opposite-directed
- */
+// Function: _ps_fix_winding_all()
+// Usage:
+//   result = _ps_fix_winding_all(faces, fixed);
+// Description:
+//   Fix winding across all connected face components.
+//   .
+//   - Returns: oriented face list with each shared edge opposite-directed
+// Arguments:
+//   faces = face list
+//   fixed = optional in-progress oriented faces
 function _ps_fix_winding_all(faces, fixed=undef) =
     let(
         init = is_undef(fixed) ? [for (i = [0:1:len(faces)-1]) undef] : fixed,
@@ -434,19 +520,29 @@ function _ps_fix_winding_all(faces, fixed=undef) =
 
 ///////////////////////////////////////
 // ---- List helpers (private) ----
-/**
- * Function: Test whether a list contains a value.
- * Params: list (input list), v (value)
- * Returns: boolean
- */
+// Function: _ps_list_contains()
+// Usage:
+//   result = _ps_list_contains(list, v);
+// Description:
+//   Test whether a list contains a value.
+//   .
+//   - Returns: boolean
+// Arguments:
+//   list = input list
+//   v = value
 function _ps_list_contains(list, v) =
     len(search(v, list)) > 0;
 
-/**
- * Function: Find first index of a value.
- * Params: list (input list), v (value)
- * Returns: first index, or `-1`
- */
+// Function: _ps_index_of()
+// Usage:
+//   result = _ps_index_of(list, v);
+// Description:
+//   Find first index of a value.
+//   .
+//   - Returns: first index, or `-1`
+// Arguments:
+//   list = input list
+//   v = value
 function _ps_index_of(list, v) =
     let(idx = search(v, list))
     (len(idx) == 0) ? -1 : idx[0];
@@ -535,11 +631,16 @@ function v_len(a)      = norm(a);           // built-in length
 //   a = vector
 function v_norm(a)     = let(L = norm(a)) (L == 0 ? [0,0,0] : a / L);
 
-/**
- * Function: Sort two endpoint indices into canonical undirected-edge order.
- * Params: a,b (indices)
- * Returns: `[min,max]`
- */
+// Function: _ps_ordered_pair()
+// Usage:
+//   result = _ps_ordered_pair(a, b);
+// Description:
+//   Sort two endpoint indices into canonical undirected-edge order.
+//   .
+//   - Returns: `[min,max]`
+// Arguments:
+//   a =
+//   b = indices
 function _ps_ordered_pair(a, b) = (a < b) ? [a,b] : [b,a];
 
 
@@ -678,31 +779,48 @@ function ps_find_edge_index(edges, a, b) =
 //   eps = distance tolerance
 function ps_point_eq(p,q,eps) = norm(p-q) <= eps;
 
-/**
- * Function: Minimum scalar in a list.
- * Params: list (number list), i (scan index), cur (current minimum)
- * Returns: minimum value, or `undef` for empty input
- */
+// Function: _ps_list_min()
+// Usage:
+//   result = _ps_list_min(list, i, cur);
+// Description:
+//   Minimum scalar in a list.
+//   .
+//   - Returns: minimum value, or `undef` for empty input
+// Arguments:
+//   list = number list
+//   i = scan index
+//   cur = current minimum
 function _ps_list_min(list, i=0, cur=undef) =
     (i >= len(list)) ? cur :
     let(v = list[i])
     _ps_list_min(list, i+1, is_undef(cur) ? v : (v < cur ? v : cur));
 
-/**
- * Function: Remove the first matching value from a list.
- * Params: list (input list), v (value), i (scan index)
- * Returns: list with first occurrence removed
- */
+// Function: _ps_remove_first()
+// Usage:
+//   result = _ps_remove_first(list, v, i);
+// Description:
+//   Remove the first matching value from a list.
+//   .
+//   - Returns: list with first occurrence removed
+// Arguments:
+//   list = input list
+//   v = value
+//   i = scan index
 function _ps_remove_first(list, v, i=0) =
     (i >= len(list)) ? [] :
     (list[i] == v) ? [for (j = [i+1:1:len(list)-1]) list[j]]
                   : concat([list[i]], _ps_remove_first(list, v, i+1));
 
-/**
- * Function: Sort a scalar list by selection recursion.
- * Params: list (input list), acc (accumulator)
- * Returns: ascending sorted list
- */
+// Function: _ps_sort()
+// Usage:
+//   result = _ps_sort(list, acc);
+// Description:
+//   Sort a scalar list by selection recursion.
+//   .
+//   - Returns: ascending sorted list
+// Arguments:
+//   list = input list
+//   acc = accumulator
 function _ps_sort(list, acc=[]) =
     (len(list) == 0) ? acc :
     let(mn = _ps_list_min(list))
@@ -710,22 +828,35 @@ function _ps_sort(list, acc=[]) =
 
 ///////////////////////////////////////
 // ---- Polygon/polygram helpers ----
-/**
- * Function: Compute Euclidean gcd for integer-like values.
- * Params: a,b (numbers)
- * Returns: non-negative integer gcd after rounding
- */
+// Function: _ps_gcd()
+// Usage:
+//   result = _ps_gcd(a, b);
+// Description:
+//   Compute Euclidean gcd for integer-like values.
+//   .
+//   - Returns: non-negative integer gcd after rounding
+// Arguments:
+//   a =
+//   b = numbers
 function _ps_gcd(a, b) =
     let(ai = abs(round(a)), bi = abs(round(b)))
     (bi == 0) ? ai : _ps_gcd(bi, ai % bi);
 
-/**
- * Function: Validate Schläfli-like polygon/polygram parameters.
- * Params: n (vertex count), p (step), who (caller label), allow_compound (bool)
- * Returns: rounded `[n, p]`
- * Limitations/Gotchas: non-coprime `n,p` describes a compound with multiple cycles,
- * and must be explicitly allowed by the caller
- */
+// Function: _ps_validate_np()
+// Usage:
+//   result = _ps_validate_np(n, p, who, allow_compound);
+// Description:
+//   Validate Schläfli-like polygon/polygram parameters.
+//   .
+//   - Returns: rounded `[n, p]`
+//   .
+//   - Limitations/Gotchas: non-coprime `n,p` describes a compound with multiple cycles,
+//     and must be explicitly allowed by the caller
+// Arguments:
+//   n = vertex count
+//   p = step
+//   who = caller label
+//   allow_compound = bool
 function _ps_validate_np(n, p, who, allow_compound=false) =
     let(
         n_i = round(n),
@@ -739,44 +870,70 @@ function _ps_validate_np(n, p, who, allow_compound=false) =
     )
     [n_i, p_i];
 
-/**
- * Function: Circumradius for regular/star polygon `{n,p}`.
- * Params: n (vertex count), p (step), edge (chord length)
- * Returns: radius scalar
- */
+// Function: _ps_polygram_radius()
+// Usage:
+//   result = _ps_polygram_radius(n, p, edge);
+// Description:
+//   Circumradius for regular/star polygon `{n,p}`.
+//   .
+//   - Returns: radius scalar
+// Arguments:
+//   n = vertex count
+//   p = step
+//   edge = chord length
 function _ps_polygram_radius(n, p, edge) =
     edge / (2 * sin(180 * p / n));
 
-/**
- * Function: Signed representative of a polygram step.
- * Params: n (vertex count), p (step)
- * Returns: `p` for forward steps, or `p-n` for retrograde steps
- */
+// Function: _ps_polygram_signed_step()
+// Usage:
+//   result = _ps_polygram_signed_step(n, p);
+// Description:
+//   Signed representative of a polygram step.
+//   .
+//   - Returns: `p` for forward steps, or `p-n` for retrograde steps
+// Arguments:
+//   n = vertex count
+//   p = step
 function _ps_polygram_signed_step(n, p) =
     (2 * p > n) ? (p - n) : p;
 
-/**
- * Function: Circumradius for regular polygon `{n,1}`.
- * Params: n (vertex count), edge (edge length)
- * Returns: radius scalar
- */
+// Function: _ps_ngon_radius()
+// Usage:
+//   result = _ps_ngon_radius(n, edge);
+// Description:
+//   Circumradius for regular polygon `{n,1}`.
+//   .
+//   - Returns: radius scalar
+// Arguments:
+//   n = vertex count
+//   edge = edge length
 function _ps_ngon_radius(n, edge) =
     _ps_polygram_radius(n, 1, edge);
 
-/**
- * Function: Vertex order for the first cycle of polygram `{n,p}`.
- * Params: n (vertex count), p (step)
- * Returns: index cycle `[(k*p)%n, ...]`; length is `n/gcd(n,p)`
- */
+// Function: _ps_polygram_cycle()
+// Usage:
+//   result = _ps_polygram_cycle(n, p);
+// Description:
+//   Vertex order for the first cycle of polygram `{n,p}`.
+//   .
+//   - Returns: index cycle `[(k*p)%n, ...]`; length is `n/gcd(n,p)`
+// Arguments:
+//   n = vertex count
+//   p = step
 function _ps_polygram_cycle(n, p) =
     let(cycle_len = n / _ps_gcd(n, p))
     [for (k = [0:1:cycle_len-1]) (k * p) % n];
 
-/**
- * Function: Vertex orders for all cycles of polygram `{n,p}`.
- * Params: n (vertex count), p (step)
- * Returns: list of index cycles; non-coprime `n,p` returns a compound
- */
+// Function: _ps_polygram_cycles()
+// Usage:
+//   result = _ps_polygram_cycles(n, p);
+// Description:
+//   Vertex orders for all cycles of polygram `{n,p}`.
+//   .
+//   - Returns: list of index cycles; non-coprime `n,p` returns a compound
+// Arguments:
+//   n = vertex count
+//   p = step
 function _ps_polygram_cycles(n, p) =
     let(
         g = _ps_gcd(n, p),
@@ -787,19 +944,31 @@ function _ps_polygram_cycles(n, p) =
             [for (k = [0:1:cycle_len-1]) (start + k * p) % n]
     ];
 
-/**
- * Function: Generate a regular support ring at fixed Z.
- * Params: n (vertex count), radius (ring radius), z (Z coordinate), phase (degrees)
- * Returns: 3D point ring
- */
+// Function: _ps_ngon_ring()
+// Usage:
+//   result = _ps_ngon_ring(n, radius, z, phase);
+// Description:
+//   Generate a regular support ring at fixed Z.
+//   .
+//   - Returns: 3D point ring
+// Arguments:
+//   n = vertex count
+//   radius = ring radius
+//   z = Z coordinate
+//   phase = degrees
 function _ps_ngon_ring(n, radius, z, phase=0) =
     [for (k = [0:1:n-1]) [radius * cos(360 * k / n + phase), radius * sin(360 * k / n + phase), z]];
 
-/**
- * Function: Compute mean edge-midpoint center for a mesh.
- * Params: verts (3D vertices), faces (face loops)
- * Returns: center point
- */
+// Function: _ps_poly_mid_center()
+// Usage:
+//   result = _ps_poly_mid_center(verts, faces);
+// Description:
+//   Compute mean edge-midpoint center for a mesh.
+//   .
+//   - Returns: center point
+// Arguments:
+//   verts = 3D vertices
+//   faces = face loops
 function _ps_poly_mid_center(verts, faces) =
     let(
         edges = _ps_edges_from_faces(faces),
@@ -808,11 +977,16 @@ function _ps_poly_mid_center(verts, faces) =
     )
     v_scale(v_sum(mids), 1 / len(mids));
 
-/**
- * Function: Compute inter-radius from minimum centered edge-midpoint radius.
- * Params: verts (3D vertices), faces (face loops)
- * Returns: positive inter-radius
- */
+// Function: _ps_poly_ir()
+// Usage:
+//   result = _ps_poly_ir(verts, faces);
+// Description:
+//   Compute inter-radius from minimum centered edge-midpoint radius.
+//   .
+//   - Returns: positive inter-radius
+// Arguments:
+//   verts = 3D vertices
+//   faces = face loops
 function _ps_poly_ir(verts, faces) =
     let(
         edges = _ps_edges_from_faces(faces),
@@ -825,21 +999,31 @@ function _ps_poly_ir(verts, faces) =
 
 ///////////////////////////////////////
 // ---- Linear algebra helpers ----
-/**
- * Function: Determinant of a 3x3 matrix.
- * Params: m (3x3 matrix)
- * Returns: determinant scalar
- */
+// Function: _ps_det3()
+// Usage:
+//   result = _ps_det3(m);
+// Description:
+//   Determinant of a 3x3 matrix.
+//   .
+//   - Returns: determinant scalar
+// Arguments:
+//   m = 3x3 matrix
 function _ps_det3(m) =
     m[0][0]*(m[1][1]*m[2][2] - m[1][2]*m[2][1]) -
     m[0][1]*(m[1][0]*m[2][2] - m[1][2]*m[2][0]) +
     m[0][2]*(m[1][0]*m[2][1] - m[1][1]*m[2][0]);
 
-/**
- * Function: Replace one column in a 3x3 matrix.
- * Params: m (3x3 matrix), col (column index 0..2), b (replacement column)
- * Returns: updated 3x3 matrix
- */
+// Function: _ps_replace_col()
+// Usage:
+//   result = _ps_replace_col(m, col, b);
+// Description:
+//   Replace one column in a 3x3 matrix.
+//   .
+//   - Returns: updated 3x3 matrix
+// Arguments:
+//   m = 3x3 matrix
+//   col = column index 0..2
+//   b = replacement column
 function _ps_replace_col(m, col, b) =
     [
         [ col == 0 ? b[0] : m[0][0], col == 1 ? b[0] : m[0][1], col == 2 ? b[0] : m[0][2] ],
@@ -847,11 +1031,17 @@ function _ps_replace_col(m, col, b) =
         [ col == 0 ? b[2] : m[2][0], col == 1 ? b[2] : m[2][1], col == 2 ? b[2] : m[2][2] ]
     ];
 
-/**
- * Function: Solve a 3x3 linear system with Cramer's rule.
- * Params: m (3x3 matrix), b (right-hand vector), eps (singularity tolerance)
- * Returns: solution `[x0,x1,x2]`, or `undef` for near-singular systems
- */
+// Function: _ps_solve3()
+// Usage:
+//   result = _ps_solve3(m, b, eps);
+// Description:
+//   Solve a 3x3 linear system with Cramer's rule.
+//   .
+//   - Returns: solution `[x0,x1,x2]`, or `undef` for near-singular systems
+// Arguments:
+//   m = 3x3 matrix
+//   b = right-hand vector
+//   eps = singularity tolerance
 function _ps_solve3(m, b, eps=1e-12) =
     let(det = _ps_det3(m))
     (abs(det) < eps) ? undef
@@ -863,11 +1053,16 @@ function _ps_solve3(m, b, eps=1e-12) =
 
 ///////////////////////////////////////
 // ---- Prefix offsets / face offsets ----
-/**
- * Function: Build prefix offsets from a count list.
- * Params: counts (non-negative counts), acc (offset accumulator)
- * Returns: offsets such as `[0, c0, c0+c1, ...]` when seeded with `[0]`
- */
+// Function: _ps_prefix_offsets()
+// Usage:
+//   result = _ps_prefix_offsets(counts, acc);
+// Description:
+//   Build prefix offsets from a count list.
+//   .
+//   - Returns: offsets such as `[0, c0, c0+c1, ...]` when seeded with `[0]`
+// Arguments:
+//   counts = non-negative counts
+//   acc = offset accumulator
 function _ps_prefix_offsets(counts, acc=[]) =
     (len(counts) == 0) ? acc :
     let(last = (len(acc) == 0) ? 0 : acc[len(acc)-1])
@@ -876,20 +1071,28 @@ function _ps_prefix_offsets(counts, acc=[]) =
         concat(acc, [last + counts[0]])
     );
 
-/**
- * Function: Prefix offsets for concatenated face vertices.
- * Params: faces (face list)
- * Returns: offsets by face
- */
+// Function: _ps_face_offsets()
+// Usage:
+//   result = _ps_face_offsets(faces);
+// Description:
+//   Prefix offsets for concatenated face vertices.
+//   .
+//   - Returns: offsets by face
+// Arguments:
+//   faces = face list
 function _ps_face_offsets(faces) =
     let(counts = [for (f = faces) len(f)])
     _ps_prefix_offsets(counts, [0]);
 
-/**
- * Function: Prefix offsets for concatenated directed face edges.
- * Params: faces (face list)
- * Returns: offsets by face, counting two directed half-edges per edge
- */
+// Function: _ps_face_edge_offsets()
+// Usage:
+//   result = _ps_face_edge_offsets(faces);
+// Description:
+//   Prefix offsets for concatenated directed face edges.
+//   .
+//   - Returns: offsets by face, counting two directed half-edges per edge
+// Arguments:
+//   faces = face list
 function _ps_face_edge_offsets(faces) =
     let(counts = [for (f = faces) 2 * len(f)])
     _ps_prefix_offsets(counts, [0]);
@@ -1008,12 +1211,18 @@ function ps_face_frame_normal(verts, f, eps=1e-12) =
     )
     v_norm(n_aligned);
 
-/**
- * Function: Compute face area magnitude by triangle fan.
- * Params: verts (3D vertex list), f (face index loop)
- * Returns: non-negative area
- * Limitations/Gotchas: intended for planar faces
- */
+// Function: _ps_face_area_mag()
+// Usage:
+//   result = _ps_face_area_mag(verts, f);
+// Description:
+//   Compute face area magnitude by triangle fan.
+//   .
+//   - Returns: non-negative area
+//   .
+//   - Limitations/Gotchas: intended for planar faces
+// Arguments:
+//   verts = 3D vertex list
+//   f = face index loop
 function _ps_face_area_mag(verts, f) =
     (len(f) < 3) ? 0 :
     ps_sum([
@@ -1021,11 +1230,17 @@ function _ps_face_area_mag(verts, f) =
             norm(v_cross(verts[f[i]] - verts[f[0]], verts[f[i+1]] - verts[f[0]])) / 2
     ]);
 
-/**
- * Function: Compute maximum vertex deviation from a face plane.
- * Params: verts (3D vertex list), f (face index loop), eps (normal tolerance)
- * Returns: maximum absolute signed-distance error
- */
+// Function: _ps_face_planarity_err()
+// Usage:
+//   result = _ps_face_planarity_err(verts, f, eps);
+// Description:
+//   Compute maximum vertex deviation from a face plane.
+//   .
+//   - Returns: maximum absolute signed-distance error
+// Arguments:
+//   verts = 3D vertex list
+//   f = face index loop
+//   eps = normal tolerance
 function _ps_face_planarity_err(verts, f, eps=1e-12) =
     (len(f) < 3) ? 0 :
     let(
@@ -1037,11 +1252,17 @@ function _ps_face_planarity_err(verts, f, eps=1e-12) =
     )
     (len(errs) == 0) ? 0 : max(errs);
 
-/**
- * Function: Compute maximum planarity error over a face list.
- * Params: verts (3D vertex list), faces (face list), eps (normal tolerance)
- * Returns: maximum face planarity error
- */
+// Function: _ps_faces_max_planarity_err()
+// Usage:
+//   result = _ps_faces_max_planarity_err(verts, faces, eps);
+// Description:
+//   Compute maximum planarity error over a face list.
+//   .
+//   - Returns: maximum face planarity error
+// Arguments:
+//   verts = 3D vertex list
+//   faces = face list
+//   eps = normal tolerance
 function _ps_faces_max_planarity_err(verts, faces, eps=1e-12) =
     (len(faces) == 0) ? 0 : max([for (f = faces) _ps_face_planarity_err(verts, f, eps)]);
 
@@ -1070,11 +1291,15 @@ function poly_vertex_neighbor(poly, vi) =
 
 ///////////////////////////////////////
 // ---- Topology helpers ----
-/**
- * Function: Build unique undirected edges from a face list.
- * Params: faces (face index loops)
- * Returns: canonical edge list `[[min,max], ...]`
- */
+// Function: _ps_edges_from_faces()
+// Usage:
+//   result = _ps_edges_from_faces(faces);
+// Description:
+//   Build unique undirected edges from a face list.
+//   .
+//   - Returns: canonical edge list `[[min,max], ...]`
+// Arguments:
+//   faces = face index loops
 function _ps_edges_from_faces(faces) =
     let(
         raw_edges = [
@@ -1158,12 +1383,22 @@ function ps_vertex_incident_faces(poly, vi) =
             if (len([for (k = [0 : len(f)-1]) if (f[k] == vi) 1]) > 0) fi
     ];
 
-/**
- * Function: Pick next incident face around a vertex.
- * Params: v (vertex index), f_cur (current face), f_prev (previous face), faces/edges/edge_faces (topology tables)
- * Returns: next face index in the local fan
- * Limitations/Gotchas: assumes manifold local topology
- */
+// Function: _ps_next_face_around_vertex()
+// Usage:
+//   result = _ps_next_face_around_vertex(v, f_cur, f_prev, faces, edges, edge_faces);
+// Description:
+//   Pick next incident face around a vertex.
+//   .
+//   - Returns: next face index in the local fan
+//   .
+//   - Limitations/Gotchas: assumes manifold local topology
+// Arguments:
+//   v = vertex index
+//   f_cur = current face
+//   f_prev = previous face
+//   faces = topology tables
+//   edges = topology tables
+//   edge_faces = topology tables
 function _ps_next_face_around_vertex(v, f_cur, f_prev, faces, edges, edge_faces) =
     let(
         f = faces[f_cur],
@@ -1185,11 +1420,22 @@ function _ps_next_face_around_vertex(v, f_cur, f_prev, faces, edges, edge_faces)
     )
     filtered[0];
 
-/**
- * Function: Recursively traverse incident faces around a vertex.
- * Params: v (vertex index), f_cur/f_prev/f_start (face indices), faces/edges/edge_faces (topology tables), acc (accumulator)
- * Returns: cyclically ordered face-index list
- */
+// Function: _ps_faces_around_vertex_rec()
+// Usage:
+//   result = _ps_faces_around_vertex_rec(v, f_cur, f_prev, f_start, faces, edges, edge_faces, acc);
+// Description:
+//   Recursively traverse incident faces around a vertex.
+//   .
+//   - Returns: cyclically ordered face-index list
+// Arguments:
+//   v = vertex index
+//   f_cur = face indices
+//   f_prev = face indices
+//   f_start = face indices
+//   faces = topology tables
+//   edges = topology tables
+//   edge_faces = topology tables
+//   acc = accumulator
 function _ps_faces_around_vertex_rec(v, f_cur, f_prev, f_start, faces, edges, edge_faces, acc = []) =
     let(next = _ps_next_face_around_vertex(v, f_cur, f_prev, faces, edges, edge_faces))
     (next == f_start)

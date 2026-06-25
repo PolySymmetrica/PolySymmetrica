@@ -72,18 +72,11 @@ SEAM_SUPPORT_T = EDGE_T;
 
 
 
-/**
-* Generate skeletal frame:
-    show_faces = undef;
-
-* Generate single face, eg face#8:
-    show_faces = [8];
-    and place '!'
-
-* Generate multiple faces, eg face#0,#9, and #23:
-    show_faces = [0, 9, 23];
-    and place '!'
-*/
+// Module: model_1()
+// Usage:
+//   model_1(show_faces, clear_airspace);
+// Description:
+//   Generate skeletal frame: show_faces = undef; Generate single face, eg face#8: show_faces = [8]; and place '!' Generate multiple faces, eg face#0,#9, and #23: show_faces = [0, 9, 23]; and place '!'
 module model_1(show_faces = undef, clear_airspace = true) {
     difference() {
         union() {

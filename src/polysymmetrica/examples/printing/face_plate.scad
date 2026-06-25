@@ -26,11 +26,21 @@ FACE_PLATE_CLEAR_HEIGHT = 10;
 // Diameter for generated seam support bars (mm).
 FACE_PLATE_SEAM_SUPPORT_T = 2.2;
 
-/**
- * Module: Emit one raised pillow loop.
- * Params: pts (2D loop), top_z (face top plane), pillow_min_rad/inset/ramp/thk (pillow sizing), eps (tolerance)
- * Returns: none
- */
+// Module: _face_plate_pillow_loop()
+// Usage:
+//   _face_plate_pillow_loop(pts, top_z, pillow_min_rad, pillow_inset, pillow_ramp, pillow_thk, eps);
+// Description:
+//   Emit one raised pillow loop.
+//   .
+//   - Returns: none
+// Arguments:
+//   pts = 2D loop
+//   top_z = face top plane
+//   pillow_min_rad = pillow sizing
+//   inset = pillow sizing
+//   ramp = pillow sizing
+//   thk = pillow sizing
+//   eps = tolerance
 module _face_plate_pillow_loop(pts, top_z, pillow_min_rad, pillow_inset, pillow_ramp, pillow_thk, eps) {
     loop_centroid = [
         ps_sum([for (p = pts) p[0]]) / len(pts),
@@ -51,11 +61,17 @@ module _face_plate_pillow_loop(pts, top_z, pillow_min_rad, pillow_inset, pillow_
     }
 }
 
-/**
- * Module: Emit an inset ring from a 2D loop.
- * Params: pts (2D loop), width (ring width), eps (tolerance)
- * Returns: none
- */
+// Module: _face_plate_loop_ring()
+// Usage:
+//   _face_plate_loop_ring(pts, width, eps);
+// Description:
+//   Emit an inset ring from a 2D loop.
+//   .
+//   - Returns: none
+// Arguments:
+//   pts = 2D loop
+//   width = ring width
+//   eps = tolerance
 module _face_plate_loop_ring(pts, width, eps) {
     assert(width > 0, "_face_plate_loop_ring: width must be > 0");
 
@@ -66,11 +82,18 @@ module _face_plate_loop_ring(pts, width, eps) {
     }
 }
 
-/**
- * Function: Compute a seam-frame support centerline offset tangent to the current face underside.
- * Params: current_n_seam_local (current face normal in seam element coords), top_z (current underside plane), support_t (bar diameter), eps (degeneracy tolerance)
- * Returns: 3D offset in seam element coords
- */
+// Function: _face_plate_seam_support_offset()
+// Usage:
+//   result = _face_plate_seam_support_offset(current_n_seam_local, top_z, support_t, eps);
+// Description:
+//   Compute a seam-frame support centerline offset tangent to the current face underside.
+//   .
+//   - Returns: 3D offset in seam element coords
+// Arguments:
+//   current_n_seam_local = current face normal in seam element coords
+//   top_z = current underside plane
+//   support_t = bar diameter
+//   eps = degeneracy tolerance
 function _face_plate_seam_support_offset(current_n_seam_local, top_z, support_t, eps=1e-8) =
     let(
         q = top_z - support_t / 2,
@@ -80,11 +103,18 @@ function _face_plate_seam_support_offset(current_n_seam_local, top_z, support_t,
     )
     abs(n[2]) > eps ? [0, 0, q / n[2]] : n * q;
 
-/**
- * Module: Emit one rounded support bar in the current seam element frame.
- * Params: support_t (bar diameter), top_z (current underside plane), extend (extra length at each end), eps (tolerance)
- * Returns: none
- */
+// Module: _face_plate_seam_support_bar()
+// Usage:
+//   _face_plate_seam_support_bar(support_t, top_z, extend, eps);
+// Description:
+//   Emit one rounded support bar in the current seam element frame.
+//   .
+//   - Returns: none
+// Arguments:
+//   support_t = bar diameter
+//   top_z = current underside plane
+//   extend = extra length at each end
+//   eps = tolerance
 module _face_plate_seam_support_bar(support_t, top_z, extend, eps) {
     off = _face_plate_seam_support_offset($ps_seam_current_normal_seam_local, top_z, support_t, eps);
 
@@ -96,12 +126,27 @@ module _face_plate_seam_support_bar(support_t, top_z, extend, eps) {
     }
 }
 
-/**
- * Module: Emit printable support bars on classified face seam candidates.
- * Params: support_t (bar diameter), top_z (current face underside plane), extend (extra length at each seam end), mode/eps (seam analysis controls), boundary_kind/include_boundary/include_foreign/filter_parent/foreign_indices/support_only (seam candidate controls)
- * Returns: none
- * Limitations/Gotchas: example helper for `place_on_faces(...)`; real candidate semantics come from `place_on_face_seam_segments(...)`
- */
+// Module: face_seam_supports()
+// Usage:
+//   face_seam_supports(support_t, top_z, extend, mode, eps, boundary_kind, include_boundary, include_foreign, filter_parent, foreign_indices, support_only);
+// Description:
+//   Emit printable support bars on classified face seam candidates.
+//   .
+//   - Returns: none
+//   .
+//   - Limitations/Gotchas: example helper for `place_on_faces(...)`; real candidate semantics come from `place_on_face_seam_segments(...)`
+// Arguments:
+//   support_t = bar diameter
+//   top_z = current face underside plane
+//   extend = extra length at each seam end
+//   mode = seam analysis controls
+//   eps = seam analysis controls
+//   boundary_kind = seam candidate controls
+//   include_boundary = seam candidate controls
+//   include_foreign = seam candidate controls
+//   filter_parent = seam candidate controls
+//   foreign_indices = seam candidate controls
+//   support_only = seam candidate controls
 module face_seam_supports(
     support_t = FACE_PLATE_SEAM_SUPPORT_T,
     top_z = undef,
@@ -136,12 +181,29 @@ module face_seam_supports(
     }
 }
 
-/**
- * Module: Emit a face plate clipped by the current face's anti-interference volume.
- * Params: face_thk (structural plate thickness, excluding pillow), face_ctx (face-local context; defaults from `place_on_faces`), clear_space (emit clearance cutter), top_thk (full-footprint structural top skin), pillow_* (raised optional pillow sizing), base_z (bottom Z; defaults to `-face_thk` so the structural top sits on the source face plane), clear_height (clearance height), mode/max_project/boundary_inset/boundary_inset_mode/eps/convexity (anti-interference controls)
- * Returns: none
- * Limitations/Gotchas: pillow is emitted only on top-exposed shell regions; clear-space cutter follows each region's exposed side
- */
+// Module: face_plate()
+// Usage:
+//   face_plate(face_thk, face_ctx, clear_space, top_thk, pillow_min_rad, pillow_inset, pillow_ramp, pillow_thk, base_z, clear_height, mode, max_project, boundary_inset, boundary_inset_mode, eps, convexity);
+// Description:
+//   Emit a face plate clipped by the current face's anti-interference volume.
+//   .
+//   - Returns: none
+//   .
+//   - Limitations/Gotchas: pillow is emitted only on top-exposed shell regions; clear-space cutter follows each region's exposed side
+// Arguments:
+//   face_thk = structural plate thickness, excluding pillow
+//   face_ctx = face-local context; defaults from `place_on_faces`
+//   clear_space = emit clearance cutter
+//   top_thk = full-footprint structural top skin
+//   pillow_* = raised optional pillow sizing
+//   base_z = bottom Z; defaults to `-face_thk` so the structural top sits on the source face plane
+//   clear_height = clearance height
+//   mode = anti-interference controls
+//   max_project = anti-interference controls
+//   boundary_inset = anti-interference controls
+//   boundary_inset_mode = anti-interference controls
+//   eps = anti-interference controls
+//   convexity = anti-interference controls
 module face_plate(face_thk,
     face_ctx = $ps_face_local_context,
     clear_space=false,
@@ -235,12 +297,27 @@ module face_plate(face_thk,
             }
 }
 
-/**
- * Module: Emit frame mounting shelves behind each face-region shell.
- * Params: face_thk (matching structural face thickness), mount_thk (shelf thickness), mount_width (inset ring width), face_ctx/base_z/top_thk/mode/max_project/boundary_inset/boundary_inset_mode/eps (matching `face_plate` controls)
- * Returns: none
- * Limitations/Gotchas: shelves are emitted on the side opposite each region's exposed side
- */
+// Module: face_mounting_plate()
+// Usage:
+//   face_mounting_plate(face_thk, mount_thk, mount_width, face_ctx, base_z, top_thk, mode, max_project, boundary_inset, boundary_inset_mode, eps);
+// Description:
+//   Emit frame mounting shelves behind each face-region shell.
+//   .
+//   - Returns: none
+//   .
+//   - Limitations/Gotchas: shelves are emitted on the side opposite each region's exposed side
+// Arguments:
+//   face_thk = matching structural face thickness
+//   mount_thk = shelf thickness
+//   mount_width = inset ring width
+//   face_ctx = matching `face_plate` controls
+//   base_z = matching `face_plate` controls
+//   top_thk = matching `face_plate` controls
+//   mode = matching `face_plate` controls
+//   max_project = matching `face_plate` controls
+//   boundary_inset = matching `face_plate` controls
+//   boundary_inset_mode = matching `face_plate` controls
+//   eps = matching `face_plate` controls
 module face_mounting_plate(
     face_thk,
     mount_thk,

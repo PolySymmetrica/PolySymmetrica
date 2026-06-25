@@ -12,9 +12,7 @@ use <../../models/platonics_all.scad>
 
 use <util_demo.scad>
 
-/**
-Demonstrates chamfering.
-*/
+// Demonstrates chamfering.
 for (   p = with_index([
             undef, // adds text to show 't' value
             tetrahedron(), hexahedron(), octahedron(), dodecahedron(), icosahedron(),
