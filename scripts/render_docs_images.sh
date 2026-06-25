@@ -8,7 +8,7 @@ IMG_SIZE="${IMG_SIZE:-1280,960}"
 
 usage() {
     cat <<EOF
-Usage: $0 [all|first_taste|tutorial_01_models|tutorial_02_placement|tutorial_03_basic_printing]
+Usage: $0 [all|first_taste|tutorial_01_models|tutorial_02_placement|tutorial_03_basic_printing|tutorial_04_classification]
 
 Environment:
   OPENSCAD_BIN  OpenSCAD command to use (default: openscad-nightly)
@@ -88,12 +88,24 @@ render_tutorial_03_basic_printing() {
         --render=true
 }
 
+render_tutorial_04_classification() {
+    render_one \
+        tutorial_04_classification \
+        "${REPO_ROOT}/docs/examples/tutorial_04_classification.scad" \
+        "${REPO_ROOT}/docs/images/generated/tutorial_04_classification.png" \
+        --projection=o \
+        --autocenter \
+        --viewall \
+        --render=true
+}
+
 case "${1:-all}" in
     all)
         render_first_taste
         render_tutorial_01_models
         render_tutorial_02_placement
         render_tutorial_03_basic_printing
+        render_tutorial_04_classification
         ;;
     first_taste)
         render_first_taste
@@ -106,6 +118,9 @@ case "${1:-all}" in
         ;;
     tutorial_03_basic_printing)
         render_tutorial_03_basic_printing
+        ;;
+    tutorial_04_classification)
+        render_tutorial_04_classification
         ;;
     *)
         echo "Unknown docs image target: $1" >&2
