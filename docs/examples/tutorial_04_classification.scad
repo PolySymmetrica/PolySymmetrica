@@ -12,7 +12,7 @@ cls = poly_classify(p);
 ir = 24;
 wall_thk = 2.0;
 model_lift = ir + wall_thk;
-face_family_colors = ["red", "red", "blue"];
+face_family_colors = ["red", "palegoldenrod", "blue"];
 
 module face_plate() {
     translate([0, 0, -wall_thk])
