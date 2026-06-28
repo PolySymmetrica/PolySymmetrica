@@ -11,7 +11,9 @@ Start with:
 4. [Placement metadata](04_placement_metadata.md)
 5. [Boolean print patterns](05_boolean_patterns.md)
 6. [Transforms](06_transforms.md)
+7. [Prisms and antiprisms](07_prisms_antiprisms.md)
 8. [Classification](08_classification.md)
+9. [Profiles](09_profiles.md)
+10. [Construction helpers](10_construction.md)
 
-Next planned lessons cover regular prisms and antiprisms, profiles,
-construction helpers, and more advanced frame/face workflows.
+More advanced frame/face workflows will build on these introductory tutorials.

@@ -1,5 +1,7 @@
 # Models
 
+[Prev: Tutorial index](index.md) | [Index](index.md) | [Next: Placement](02_placement.md)
+
 PolySymmetrica starts with a polyhedron descriptor. Most examples get one from a
 model constructor such as `tetrahedron()`, `octahedron()`, or `dodecahedron()`.
 
@@ -44,4 +46,4 @@ The important habit is to keep the descriptor separate from the geometry you
 place on it. Once the descriptor changes, the same child modules can be replayed
 on a different solid.
 
-Next: [Placement](02_placement.md).
+[Prev: Tutorial index](index.md) | [Index](index.md) | [Next: Placement](02_placement.md)

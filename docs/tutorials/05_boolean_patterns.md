@@ -1,5 +1,7 @@
 # Boolean Print Patterns
 
+[Prev: Placement metadata](04_placement_metadata.md) | [Index](index.md) | [Next: Transforms](06_transforms.md)
+
 Placement works naturally with OpenSCAD booleans. The child module can be a
 solid part, a cutter, or a volume that clips another piece of geometry.
 
@@ -61,4 +63,4 @@ This is the beginner version of anti-interference: use the generated volume as
 a practical cutter that keeps each face's print geometry inside its own local
 space. Later printing material covers the lower-level face-region model.
 
-Next: [Transforms](06_transforms.md).
+[Prev: Placement metadata](04_placement_metadata.md) | [Index](index.md) | [Next: Transforms](06_transforms.md)

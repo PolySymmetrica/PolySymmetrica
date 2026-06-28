@@ -1,5 +1,7 @@
 # Transforms
 
+[Prev: Boolean print patterns](05_boolean_patterns.md) | [Index](index.md) | [Next: Prisms and antiprisms](07_prisms_antiprisms.md)
+
 Transforms take an existing polyhedron descriptor and return a new descriptor.
 The placement and printing modules from earlier chapters can then be reused on
 the transformed result.
@@ -51,4 +53,4 @@ The deployed API docs are the catalogue view:
 Transform defaults work well for regular examples. Later chapters show how
 classification and profiles give finer control over mixed-family models.
 
-Next: [Classification](08_classification.md).
+[Prev: Boolean print patterns](05_boolean_patterns.md) | [Index](index.md) | [Next: Prisms and antiprisms](07_prisms_antiprisms.md)

@@ -1,5 +1,7 @@
 # Basic Printing
 
+[Prev: Placement](02_placement.md) | [Index](index.md) | [Next: Placement metadata](04_placement_metadata.md)
+
 Placement is enough to make useful first prints. This tutorial keeps to two
 support-light patterns: an edge-only frame and a face-only shell.
 
@@ -77,4 +79,4 @@ registration holes, or trimming corners from an already printable solid.
 Sockets, clearances, separate print-bed layout, and tolerance tuning build on
 these same placement patterns and are covered in later printing material.
 
-Next: [Placement metadata](04_placement_metadata.md).
+[Prev: Placement](02_placement.md) | [Index](index.md) | [Next: Placement metadata](04_placement_metadata.md)

@@ -1,5 +1,7 @@
 # Placement Metadata
 
+[Prev: Basic printing](03_basic_printing.md) | [Index](index.md) | [Next: Boolean print patterns](05_boolean_patterns.md)
+
 Placement modules do more than move child geometry into position. While a child
 module is running, `$ps_*` variables describe the current face, edge, or vertex.
 Those values let one small module adapt itself to each placement site.
@@ -85,4 +87,4 @@ The full placement metadata reference lists the `$ps_*` variables available in
 face, edge, vertex, seam, and proxy contexts:
 [placement_data_model.md](../reference/placement_data_model.md).
 
-Next: [Boolean print patterns](05_boolean_patterns.md).
+[Prev: Basic printing](03_basic_printing.md) | [Index](index.md) | [Next: Boolean print patterns](05_boolean_patterns.md)

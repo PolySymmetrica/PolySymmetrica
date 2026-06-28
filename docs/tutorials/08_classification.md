@@ -1,5 +1,7 @@
 # Classification
 
+[Prev: Prisms and antiprisms](07_prisms_antiprisms.md) | [Index](index.md) | [Next: Profiles](09_profiles.md)
+
 Classification groups faces, edges, and vertices into matching families. A
 simple first use is choosing which faces receive which placed geometry.
 
@@ -46,4 +48,4 @@ This is the basic classification workflow: compute `cls` once, pass it into
 placement, then use the resulting `$ps_*_family_id` metadata inside the child
 geometry.
 
-Next: [Tutorial index](index.md).
+[Prev: Prisms and antiprisms](07_prisms_antiprisms.md) | [Index](index.md) | [Next: Profiles](09_profiles.md)
