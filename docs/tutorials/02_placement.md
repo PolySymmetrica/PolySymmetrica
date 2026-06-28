@@ -1,5 +1,7 @@
 # Placement
 
+[Prev: Models](01_models.md) | [Index](index.md) | [Next: Basic printing](03_basic_printing.md)
+
 Placement modules replay child geometry at every face, edge, or vertex of a
 polyhedron. Inside the child module, `$ps_*` values describe the current site.
 
@@ -52,3 +54,5 @@ module edge_bar() {
 
 That is the central PolySymmetrica workflow: choose a descriptor, then write
 small local child modules that respond to the current placement context.
+
+[Prev: Models](01_models.md) | [Index](index.md) | [Next: Basic printing](03_basic_printing.md)
