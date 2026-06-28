@@ -17,7 +17,7 @@ pad_poly = cuboctahedron();
 module face_cavity_cutter() {
     hull() {
         translate([0, 0, 5])
-            linear_extrude(height = 1)
+            linear_extrude(height = 8)
                 polygon(points = $ps_face_pts2d * 0.78);
         translate($ps_poly_center_local)
             sphere(r = 0.8, $fn = 12);
@@ -29,12 +29,7 @@ module clipped_face_pad() {
 
     color(col)
         intersection() {
-            ps_face_region_loop_volume(
-                -wall_thk,
-                pad_h,
-                boundary_inset = 0.45,
-                boundary_inset_mode = "side"
-            );
+            ps_face_region_loop_volume(-wall_thk, pad_h, boundary_inset = 0.45);
             translate([0, 0, -wall_thk])
                 linear_extrude(height = wall_thk + pad_h)
                     polygon(points = $ps_face_pts2d * 0.92);

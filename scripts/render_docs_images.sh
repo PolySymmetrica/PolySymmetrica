@@ -8,7 +8,7 @@ IMG_SIZE="${IMG_SIZE:-1280,960}"
 
 usage() {
     cat <<EOF
-Usage: $0 [all|first_taste|tutorial_01_models|tutorial_02_placement|tutorial_03_basic_printing|tutorial_04_placement_metadata|tutorial_05_boolean_patterns|tutorial_06_transforms|tutorial_08_classification]
+Usage: $0 [all|first_taste|tutorial_01_models|tutorial_02_placement|tutorial_03_basic_printing|tutorial_04_placement_metadata|tutorial_05_boolean_patterns|tutorial_05_face_region_volumes|tutorial_06_transforms|tutorial_08_classification]
 
 Environment:
   OPENSCAD_BIN  OpenSCAD command to use (default: openscad-nightly)
@@ -110,6 +110,17 @@ render_tutorial_05_boolean_patterns() {
         --render=true
 }
 
+render_tutorial_05_face_region_volumes() {
+    render_one \
+        tutorial_05_face_region_volumes \
+        "${REPO_ROOT}/docs/examples/tutorial_05_face_region_volumes.scad" \
+        "${REPO_ROOT}/docs/images/generated/tutorial_05_face_region_volumes.png" \
+        --projection=o \
+        --autocenter \
+        --viewall \
+        --render=true
+}
+
 render_tutorial_06_transforms() {
     render_one \
         tutorial_06_transforms \
@@ -140,6 +151,7 @@ case "${1:-all}" in
         render_tutorial_03_basic_printing
         render_tutorial_04_placement_metadata
         render_tutorial_05_boolean_patterns
+        render_tutorial_05_face_region_volumes
         render_tutorial_06_transforms
         render_tutorial_08_classification
         ;;
@@ -160,6 +172,9 @@ case "${1:-all}" in
         ;;
     tutorial_05_boolean_patterns)
         render_tutorial_05_boolean_patterns
+        ;;
+    tutorial_05_face_region_volumes)
+        render_tutorial_05_face_region_volumes
         ;;
     tutorial_06_transforms)
         render_tutorial_06_transforms
