@@ -6,7 +6,7 @@ use <polysymmetrica/core/face_regions.scad>
 use <polysymmetrica/core/placement.scad>
 use <polysymmetrica/models/archimedians_all.scad>
 
-p = cuboctahedron();
+p = truncated_tetrahedron();
 ir = 22;
 gap = 70;
 z0 = -5;

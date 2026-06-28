@@ -38,7 +38,7 @@ difference() {
 
 ## Face-Region Volumes
 
-![Cuboctahedron face-region volumes shown alone and used to clip oversized face plates](../images/generated/tutorial_05_face_region_volumes.png)
+![Truncated tetrahedron face-region volumes shown alone and used to clip oversized face plates](../images/generated/tutorial_05_face_region_volumes.png)
 
 Source: [`docs/examples/tutorial_05_face_region_volumes.scad`](../examples/tutorial_05_face_region_volumes.scad)
 
