@@ -5,10 +5,28 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 OPENSCAD_BIN="${OPENSCAD_BIN:-openscad-nightly}"
 IMG_SIZE="${IMG_SIZE:-1280,960}"
+TARGETS=(
+    first_taste
+    tutorial_01_models
+    tutorial_02_placement
+    tutorial_03_basic_printing
+    tutorial_04_placement_metadata
+    tutorial_05_boolean_patterns
+    tutorial_05_face_region_volumes
+    tutorial_06_transforms
+    tutorial_07_prisms_antiprisms
+    tutorial_08_classification
+    tutorial_09_profiles
+    tutorial_10_construction_topology
+    tutorial_10_construction_johnsons
+    tutorial_10_construction_attach
+)
 
 usage() {
+    local target_list
+    target_list="$(IFS='|'; echo "${TARGETS[*]}")"
     cat <<EOF
-Usage: $0 [all|first_taste|tutorial_01_models|tutorial_02_placement|tutorial_03_basic_printing|tutorial_04_placement_metadata|tutorial_05_boolean_patterns|tutorial_05_face_region_volumes|tutorial_06_transforms|tutorial_08_classification]
+Usage: $0 [all|${target_list}]
 
 Environment:
   OPENSCAD_BIN  OpenSCAD command to use (default: openscad-nightly)
@@ -44,147 +62,36 @@ render_one() {
             "${source}"
 }
 
-render_first_taste() {
+render_named() {
+    local name="$1"
     render_one \
-        first_taste \
-        "${REPO_ROOT}/docs/examples/first_taste.scad" \
-        "${REPO_ROOT}/docs/images/generated/first_taste.png" \
+        "${name}" \
+        "${REPO_ROOT}/docs/examples/${name}.scad" \
+        "${REPO_ROOT}/docs/images/generated/${name}.png" \
         --projection=o \
         --autocenter \
         --viewall \
         --render=true
 }
 
-render_tutorial_01_models() {
-    render_one \
-        tutorial_01_models \
-        "${REPO_ROOT}/docs/examples/tutorial_01_models.scad" \
-        "${REPO_ROOT}/docs/images/generated/tutorial_01_models.png" \
-        --projection=o \
-        --autocenter \
-        --viewall \
-        --render=true
+target_known() {
+    local target="$1"
+    local known
+    for known in "${TARGETS[@]}"; do
+        [[ "${known}" == "${target}" ]] && return 0
+    done
+    return 1
 }
 
-render_tutorial_02_placement() {
-    render_one \
-        tutorial_02_placement \
-        "${REPO_ROOT}/docs/examples/tutorial_02_placement.scad" \
-        "${REPO_ROOT}/docs/images/generated/tutorial_02_placement.png" \
-        --projection=o \
-        --autocenter \
-        --viewall \
-        --render=true
-}
-
-render_tutorial_03_basic_printing() {
-    render_one \
-        tutorial_03_basic_printing \
-        "${REPO_ROOT}/docs/examples/tutorial_03_basic_printing.scad" \
-        "${REPO_ROOT}/docs/images/generated/tutorial_03_basic_printing.png" \
-        --projection=o \
-        --autocenter \
-        --viewall \
-        --render=true
-}
-
-render_tutorial_04_placement_metadata() {
-    render_one \
-        tutorial_04_placement_metadata \
-        "${REPO_ROOT}/docs/examples/tutorial_04_placement_metadata.scad" \
-        "${REPO_ROOT}/docs/images/generated/tutorial_04_placement_metadata.png" \
-        --projection=o \
-        --autocenter \
-        --viewall \
-        --render=true
-}
-
-render_tutorial_05_boolean_patterns() {
-    render_one \
-        tutorial_05_boolean_patterns \
-        "${REPO_ROOT}/docs/examples/tutorial_05_boolean_patterns.scad" \
-        "${REPO_ROOT}/docs/images/generated/tutorial_05_boolean_patterns.png" \
-        --projection=o \
-        --autocenter \
-        --viewall \
-        --render=true
-}
-
-render_tutorial_05_face_region_volumes() {
-    render_one \
-        tutorial_05_face_region_volumes \
-        "${REPO_ROOT}/docs/examples/tutorial_05_face_region_volumes.scad" \
-        "${REPO_ROOT}/docs/images/generated/tutorial_05_face_region_volumes.png" \
-        --projection=o \
-        --autocenter \
-        --viewall \
-        --render=true
-}
-
-render_tutorial_06_transforms() {
-    render_one \
-        tutorial_06_transforms \
-        "${REPO_ROOT}/docs/examples/tutorial_06_transforms.scad" \
-        "${REPO_ROOT}/docs/images/generated/tutorial_06_transforms.png" \
-        --projection=o \
-        --autocenter \
-        --viewall \
-        --render=true
-}
-
-render_tutorial_08_classification() {
-    render_one \
-        tutorial_08_classification \
-        "${REPO_ROOT}/docs/examples/tutorial_08_classification.scad" \
-        "${REPO_ROOT}/docs/images/generated/tutorial_08_classification.png" \
-        --projection=o \
-        --autocenter \
-        --viewall \
-        --render=true
-}
-
-case "${1:-all}" in
-    all)
-        render_first_taste
-        render_tutorial_01_models
-        render_tutorial_02_placement
-        render_tutorial_03_basic_printing
-        render_tutorial_04_placement_metadata
-        render_tutorial_05_boolean_patterns
-        render_tutorial_05_face_region_volumes
-        render_tutorial_06_transforms
-        render_tutorial_08_classification
-        ;;
-    first_taste)
-        render_first_taste
-        ;;
-    tutorial_01_models)
-        render_tutorial_01_models
-        ;;
-    tutorial_02_placement)
-        render_tutorial_02_placement
-        ;;
-    tutorial_03_basic_printing)
-        render_tutorial_03_basic_printing
-        ;;
-    tutorial_04_placement_metadata)
-        render_tutorial_04_placement_metadata
-        ;;
-    tutorial_05_boolean_patterns)
-        render_tutorial_05_boolean_patterns
-        ;;
-    tutorial_05_face_region_volumes)
-        render_tutorial_05_face_region_volumes
-        ;;
-    tutorial_06_transforms)
-        render_tutorial_06_transforms
-        ;;
-    tutorial_08_classification)
-        render_tutorial_08_classification
-        ;;
-    *)
-        echo "Unknown docs image target: $1" >&2
-        usage >&2
-        exit 2
-        ;;
-esac
+target="${1:-all}"
+if [[ "${target}" == "all" ]]; then
+    for name in "${TARGETS[@]}"; do
+        render_named "${name}"
+    done
+elif target_known "${target}"; then
+    render_named "${target}"
+else
+    echo "Unknown docs image target: ${target}" >&2
+    usage >&2
+    exit 2
+fi
