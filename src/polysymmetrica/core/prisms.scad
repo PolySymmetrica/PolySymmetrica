@@ -26,11 +26,11 @@ function _ps_antiprism_height(n, p, edge, angle, eps=1e-12) =
 // Description:
 //   Build a regular, star, or compound prism with `{n,p}` caps.
 // Arguments:
-//   n = cap side count
-//   p = polygon step; `p=1` gives a regular prism
-//   edge = target edge length
-//   height = explicit prism height
-//   height_scale = multiplier applied to the chosen height
+//   n = cap side count.
+//   p = polygon step for the cap cycle. `p=1` gives an ordinary prism; other valid steps give star, retrograde, or compound cap cycles.
+//   edge = target edge length for cap and side edges.
+//   height = explicit distance between cap planes; when `undef`, uses `edge`.
+//   height_scale = multiplier applied after choosing `height`.
 function poly_prism(n=3, p=1, edge=1, height=undef, height_scale=1) =
     let(
         np = _ps_validate_np(n, p, "poly_prism", allow_compound=true),
@@ -74,12 +74,12 @@ function poly_prism(n=3, p=1, edge=1, height=undef, height_scale=1) =
 //   Build a regular, star, or compound antiprism with `{n,p}` caps and `2n`
 //   side triangles.
 // Arguments:
-//   n = cap side count
-//   p = polygon step; `p=1` gives a regular antiprism
-//   edge = target edge length
-//   angle = additive twist offset in degrees
-//   height = explicit antiprism height
-//   height_scale = multiplier applied to the chosen height
+//   n = cap side count.
+//   p = polygon step for the cap cycle. `p=1` gives an ordinary antiprism; other valid steps give star, retrograde, or compound cap cycles.
+//   edge = target cap and side edge length when `height` is `undef`.
+//   angle = additional top-cap twist in degrees, added after the default antiprism half-step twist.
+//   height = explicit distance between cap planes; when `undef`, solves the height that makes side edges length `edge`.
+//   height_scale = multiplier applied after choosing or computing `height`.
 function poly_antiprism(n=3, p=1, edge=1, angle=0, height=undef, height_scale=1) =
     let(
         np = _ps_validate_np(n, p, "poly_antiprism", allow_compound=true),
