@@ -6,10 +6,9 @@ use <polysymmetrica/core/construction.scad>
 use <polysymmetrica/core/placement.scad>
 
 ir = 22;
-gap = 66;
+gap = 84;
 wall_thk = 1.5;
 strut_d = 1.2;
-face_inset = 1.2;
 
 j1 = poly_pyramid(4);
 j4 = poly_cupola(4);
@@ -26,8 +25,7 @@ module face_shell(poly, col) {
         place_on_faces(poly, inter_radius = ir)
             translate([0, 0, -wall_thk])
                 linear_extrude(height = wall_thk)
-                    offset(delta = -face_inset)
-                        polygon(points = $ps_face_pts2d);
+                    polygon(points = $ps_face_pts2d);
 }
 
 module show_poly(poly, x, col) {

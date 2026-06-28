@@ -7,10 +7,9 @@ use <polysymmetrica/core/placement.scad>
 use <polysymmetrica/models/platonics_all.scad>
 
 ir = 20;
-gap = 74;
+gap = 92;
 wall_thk = 1.5;
 strut_d = 1.15;
-face_inset = 1.1;
 
 cube_pair = poly_attach(hexahedron(), hexahedron(), f1 = 0, f2 = 0);
 tetra_on_octa = poly_attach(octahedron(), tetrahedron(), f1 = 0, f2 = 0);
@@ -27,8 +26,7 @@ module face_shell(poly, col) {
         place_on_faces(poly, inter_radius = ir)
             translate([0, 0, -wall_thk])
                 linear_extrude(height = wall_thk)
-                    offset(delta = -face_inset)
-                        polygon(points = $ps_face_pts2d);
+                    polygon(points = $ps_face_pts2d);
 }
 
 module show_poly(poly, x, col) {

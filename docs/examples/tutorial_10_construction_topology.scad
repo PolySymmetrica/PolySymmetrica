@@ -10,7 +10,6 @@ ir = 20;
 gap = 62;
 wall_thk = 1.6;
 strut_d = 1.2;
-face_inset = 1.2;
 
 open_cube = poly_delete_faces(hexahedron(), 0, cap = false);
 capped_cube = poly_delete_faces(hexahedron(), 0, cap = true);
@@ -27,8 +26,7 @@ module face_shell(poly, col) {
         place_on_faces(poly, inter_radius = ir)
             translate([0, 0, -wall_thk])
                 linear_extrude(height = wall_thk)
-                    offset(delta = -face_inset)
-                        polygon(points = $ps_face_pts2d);
+                    polygon(points = $ps_face_pts2d);
 }
 
 module show_poly(poly, x, col) {
