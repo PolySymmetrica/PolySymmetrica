@@ -75,13 +75,12 @@ function _ps_poly_from_face_points(faces_pts_all, eps, len_eps=undef) =
 // Description:
 //   Build a poly descriptor from site-based face cycles.
 // Arguments:
-//   verts0 = original vertex list
-//   sites = site metadata records
-//   site_points = point list for site records
-//   face_cycles = cycles using `[0, v_idx]` for original vertices and
-//       `[1, site_idx]` for site points
-//   eps = geometric tolerance
-//   len_eps = point-merging tolerance
+//   verts0 = original vertex list, before generated transform points are added.
+//   sites = metadata records for generated sites; used for duplicate-site detection and provenance checks.
+//   site_points = generated 3D points corresponding one-to-one with `sites`.
+//   face_cycles = output face cycles using `[0, v_idx]` for original vertices and `[1, site_idx]` for generated site points.
+//   eps = geometric tolerance for face simplification and validation.
+//   len_eps = point-merging tolerance for coincident generated/original points.
 function ps_poly_transform_from_sites(verts0, sites, site_points, face_cycles, eps=1e-8, len_eps=1e-6) =
     let(
         faces_pts_all = [

@@ -126,11 +126,11 @@ function _ps_profile_row_get(row, key) =
 //   Resolve one override value from a profile using fixed precedence
 //   `id > family > all`, with later rows winning inside the same scope.
 // Arguments:
-//   profile = profile row list
-//   kind = `"face"`, `"vert"`, or `"edge"`
-//   key = operator-defined parameter key
-//   element_id = element index for `"id"` lookups
-//   family_id = family id for `"family"` lookups
+//   profile = profile row list, or `undef` for no overrides.
+//   kind = element kind to resolve: `"face"`, `"vert"`, or `"edge"`.
+//   key = operator-defined parameter key such as `"df"`, `"t"`, `"c"`, or `"de"`.
+//   element_id = element index used by `"id"` scoped rows.
+//   family_id = classification family id used by `"family"` scoped rows.
 function ps_profile_get(profile, kind, key, element_id=undef, family_id=undef) =
     let(
         rows = is_undef(profile) ? [] : profile,
@@ -154,8 +154,8 @@ function ps_profile_get(profile, kind, key, element_id=undef, family_id=undef) =
 // Description:
 //   Count profile rows for one element kind.
 // Arguments:
-//   profile = profile row list
-//   kind = `"face"`, `"vert"`, or `"edge"`
+//   profile = profile row list, or `undef` for no rows.
+//   kind = element kind to count: `"face"`, `"vert"`, or `"edge"`.
 function ps_profile_count_kind(profile, kind) =
     is_undef(profile) ? 0
         : len([for (row = profile) if (_ps_profile_row_kind(row) == kind) 1]);
@@ -166,7 +166,7 @@ function ps_profile_count_kind(profile, kind) =
 // Description:
 //   Count the total number of profile rows.
 // Arguments:
-//   profile = profile row list
+//   profile = profile row list, or `undef` for no rows.
 function ps_profile_row_count(profile) =
     is_undef(profile) ? 0 : len(profile);
 
@@ -177,9 +177,9 @@ function ps_profile_row_count(profile) =
 //   Determine whether a profile contains at least one row for the supplied kind
 //   and scope.
 // Arguments:
-//   profile = profile row list
-//   kind = `"face"`, `"vert"`, or `"edge"`
-//   scope = `"all"`, `"family"`, or `"id"`
+//   profile = profile row list, or `undef` for no rows.
+//   kind = element kind to inspect: `"face"`, `"vert"`, or `"edge"`.
+//   scope = profile selector scope: `"all"`, `"family"`, or `"id"`.
 function ps_profile_has_scope(profile, kind, scope) =
     is_undef(profile) ? false
         : (len([
@@ -193,8 +193,8 @@ function ps_profile_has_scope(profile, kind, scope) =
 // Description:
 //   Convenience test for whether a profile uses family-scoped rows for one kind.
 // Arguments:
-//   profile = profile row list
-//   kind = `"face"`, `"vert"`, or `"edge"`
+//   profile = profile row list, or `undef` for no rows.
+//   kind = element kind to inspect: `"face"`, `"vert"`, or `"edge"`.
 function ps_profile_uses_family(profile, kind) =
     ps_profile_has_scope(profile, kind, "family");
 
@@ -204,11 +204,11 @@ function ps_profile_uses_family(profile, kind) =
 // Description:
 //   Compile one `kind`/`key` profile view into a dense lookup array.
 // Arguments:
-//   profile = profile row list
-//   kind = `"face"`, `"vert"`, or `"edge"`
-//   key = operator-defined parameter key
-//   count = output array length
-//   family_ids = optional parallel family-id array for family-scoped lookups
+//   profile = profile row list, or `undef` for no overrides.
+//   kind = element kind to compile: `"face"`, `"vert"`, or `"edge"`.
+//   key = operator-defined parameter key to extract.
+//   count = output array length, normally the number of elements of `kind`.
+//   family_ids = optional parallel family-id array for family-scoped lookups; when omitted, family rows cannot match.
 function ps_profile_compile_key(profile, kind, key, count, family_ids=undef) =
     [for (idx = [0:1:max(0, count-1)])
         ps_profile_get(
@@ -230,9 +230,8 @@ function ps_profile_compile_key(profile, kind, key, count, family_ids=undef) =
 // Description:
 //   Compile multiple profile specs into dense lookup arrays in spec order.
 // Arguments:
-//   profile = profile row list
-//   specs = compile spec rows `[kind, key, count]` or
-//       `[kind, key, count, family_ids]`
+//   profile = profile row list, or `undef` for no overrides.
+//   specs = compile spec rows `[kind, key, count]` or `[kind, key, count, family_ids]`; the returned arrays preserve this order.
 function ps_profile_compile_specs(profile, specs) =
     [for (spec = specs)
         ps_profile_compile_key(
@@ -250,8 +249,8 @@ function ps_profile_compile_specs(profile, specs) =
 // Description:
 //   Safely read one compiled parameter entry with bounds checking.
 // Arguments:
-//   arr = compiled parameter array
-//   idx = element index
+//   arr = compiled parameter array returned by `ps_profile_compile_key(...)`, or `undef`.
+//   idx = element index to read.
 function ps_compiled_param_get(arr, idx) =
     (is_undef(arr) || idx < 0 || idx >= len(arr)) ? undef : arr[idx];
 
@@ -261,7 +260,7 @@ function ps_compiled_param_get(arr, idx) =
 // Description:
 //   Echo a normalized interpretation of a profile for debugging.
 // Arguments:
-//   profile = profile row list
+//   profile = profile row list, or `undef` for no rows.
 module ps_profile_print(profile) {
     rows = is_undef(profile) ? [] : profile;
     echo(str("profile: rows=", len(rows)));

@@ -241,13 +241,13 @@ function _ps_truncate_norm_to_t(poly, c) =
 //   each original edge with two edge points. `t` is the edge fraction from each
 //   endpoint, while `c` maps to `t` through the library default normalization.
 // Arguments:
-//   poly = source poly descriptor
-//   t = explicit truncation fraction
-//   c = normalized truncation control
-//   eps = geometric tolerance
-//   profile = optional per-vertex override profile
-//   cleanup = whether to run cleanup on the result
-//   cleanup_eps = cleanup tolerance
+//   poly = source poly descriptor.
+//   t = explicit truncation fraction measured along each incident edge from the original vertex. `t=0` leaves the poly unchanged; `t=0.5` is invalid because opposite cuts collapse together.
+//   c = normalized truncation control mapped to `t` through the library default for this source poly; ignored when `t` is supplied.
+//   eps = geometric tolerance for zero-cut detection and transform construction.
+//   profile = optional vertex profile rows supporting `["t", value]` and `["c", value]` overrides.
+//   cleanup = whether to run structural cleanup on the result.
+//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_truncate(
     poly,
     t=undef,
@@ -353,10 +353,10 @@ function poly_truncate(
 //   Rectify a poly by replacing each original vertex with the cycle of incident
 //   edge midpoints.
 // Arguments:
-//   poly = source poly descriptor
-//   profile = reserved for future extensions; currently unsupported
-//   cleanup = whether to run cleanup on the result
-//   cleanup_eps = cleanup tolerance
+//   poly = source poly descriptor.
+//   profile = reserved for future extensions; currently unsupported and must be empty/`undef`.
+//   cleanup = whether to run structural cleanup on the result.
+//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_rectify(
     poly,
     profile=undef,
@@ -435,14 +435,14 @@ function poly_rectify(
 //   omitting vertex faces. `t` is a signed face-plane offset expressed as a
 //   fraction of each face's collapse distance.
 // Arguments:
-//   poly = source poly descriptor
-//   t = signed chamfer fraction
-//   c = normalized chamfer control
-//   eps = geometric tolerance
-//   len_eps = point-merging tolerance
-//   profile = optional per-face override profile
-//   cleanup = whether to run cleanup on the result
-//   cleanup_eps = cleanup tolerance
+//   poly = source poly descriptor.
+//   t = signed chamfer fraction of each face's collapse distance. Positive and negative values move the chamfer in opposite face-normal directions; `abs(t) == 1` is invalid because it collapses a face.
+//   c = normalized chamfer control mapped through the library truncation default; ignored when `t` is supplied.
+//   eps = geometric tolerance for collapse and transform construction.
+//   len_eps = point-merging tolerance for generated chamfer vertices.
+//   profile = optional face profile rows supporting `["t", value]` and `["c", value]` overrides.
+//   cleanup = whether to run structural cleanup on the result.
+//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_chamfer(
     poly,
     t=undef,
@@ -619,17 +619,17 @@ function _ps_cantellate_df_from_c(poly, c, df_max=undef, steps=16, family_edge_i
 //   Cantellate or expand a poly. When `df` is omitted, `c` is mapped onto a
 //   face offset using the square-edge calibration map.
 // Arguments:
-//   poly = source poly descriptor
-//   df = explicit face offset
-//   c = normalized cantellation control
-//   df_max = optional maximum face offset for normalized mapping
-//   steps = calibration search steps
-//   family_edge_idx = representative edge-family index for calibration
-//   eps = geometric tolerance
-//   len_eps = point-merging tolerance
-//   profile = optional per-face override profile
-//   cleanup = whether to run cleanup on the result
-//   cleanup_eps = cleanup tolerance
+//   poly = source poly descriptor.
+//   df = explicit outward face offset used to build the expanded face planes. When supplied, it is used directly unless a profile row overrides it.
+//   c = normalized cantellation control mapped to `df`; `c=0.5` targets the calibrated square-edge position for the selected edge family.
+//   df_max = optional maximum face offset used by normalized `c` mapping.
+//   steps = calibration search step count for normalized `c` mapping.
+//   family_edge_idx = representative source edge-family index used to choose which edge faces should become square at `c=0.5`.
+//   eps = geometric tolerance for transform construction.
+//   len_eps = point-merging tolerance for generated vertices.
+//   profile = optional face profile rows supporting `["df", value]` and `["c", value]` overrides.
+//   cleanup = whether to run structural cleanup on the result.
+//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_cantellate(
     poly,
     df=undef,
@@ -805,16 +805,16 @@ function solve_cantellate_square_df(poly, df_min, df_max, steps=40, family_edge_
 //   Cantellate a poly using normalized control `c in [0,1]`, mapped onto `df`
 //   so that `c=0.5` hits the computed square-edge offset.
 // Arguments:
-//   poly = source poly descriptor
-//   c = normalized cantellation control
-//   df_max = optional maximum face offset for normalized mapping
-//   steps = calibration search steps
-//   family_edge_idx = representative edge-family index for calibration
-//   eps = geometric tolerance
-//   len_eps = point-merging tolerance
-//   profile = optional per-face override profile
-//   cleanup = whether to run cleanup on the result
-//   cleanup_eps = cleanup tolerance
+//   poly = source poly descriptor.
+//   c = normalized cantellation control; `c=0.5` targets the calibrated square-edge position for the selected edge family.
+//   df_max = optional maximum face offset used by normalized `c` mapping.
+//   steps = calibration search step count for normalized `c` mapping.
+//   family_edge_idx = representative source edge-family index used to choose which edge faces should become square at `c=0.5`.
+//   eps = geometric tolerance for transform construction.
+//   len_eps = point-merging tolerance for generated vertices.
+//   profile = optional face profile rows supporting `["df", value]` and `["c", value]` overrides.
+//   cleanup = whether to run structural cleanup on the result.
+//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_cantellate_norm(
     poly,
     c,
@@ -1285,9 +1285,9 @@ function _ps_snub_profile_rows(df, angle, c, face_df_by_family=undef) =
 //   Build a default snub profile for one poly by solving the library's snub
 //   defaults and converting them into profile rows.
 // Arguments:
-//   poly = source poly descriptor
-//   handedness = snub handedness
-//   eps = solver tolerance
+//   poly = source poly descriptor.
+//   handedness = snub handedness; positive and negative values choose opposite twist directions.
+//   eps = solver tolerance for automatic snub parameter search.
 function ps_snub_default_profile(poly, handedness=1, eps=1e-9) =
     let(
         params = _ps_snub_default_params(poly, handedness, eps),
@@ -1306,17 +1306,17 @@ function ps_snub_default_profile(poly, handedness=1, eps=1e-9) =
 //   automatic defaults are solved and converted into profile rows before any
 //   explicit profile rows, so explicit rows still win.
 // Arguments:
-//   poly = source poly descriptor
-//   angle = explicit snub twist angle
-//   c = normalized cantellation control for default edge/vertex inset
-//   df = explicit face offset
-//   de = explicit edge/vertex inset
-//   handedness = snub handedness
-//   eps = geometric tolerance
-//   len_eps = point-merging tolerance
-//   profile = optional per-face/per-vertex override profile
-//   cleanup = whether to run cleanup on the result
-//   cleanup_eps = cleanup tolerance
+//   poly = source poly descriptor.
+//   angle = explicit face-local twist angle in degrees; when `undef`, an angle is solved from the other controls.
+//   c = normalized control used to derive default face offset and edge/vertex inset when explicit `df`/`de` are not supplied.
+//   df = explicit outward face offset.
+//   de = explicit edge/vertex inset used to shape snub triangles around source edges and vertices.
+//   handedness = snub handedness; positive and negative values choose opposite twist directions.
+//   eps = geometric tolerance for transform construction.
+//   len_eps = point-merging tolerance for generated vertices.
+//   profile = optional face rows supporting `df`/`angle` and vertex rows supporting `c`/`de`; explicit rows override automatic defaults.
+//   cleanup = whether to run structural cleanup on the result.
+//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_snub(
     poly,
     angle=undef,
@@ -1524,14 +1524,14 @@ function poly_snub(
 //   Combine truncation and cantellation in one operator. `t` controls the
 //   face-plane shift and `c` controls edge and vertex expansion.
 // Arguments:
-//   poly = source poly descriptor
-//   t = explicit truncation-style control
-//   c = explicit cantellation-style control
-//   eps = geometric tolerance
-//   len_eps = point-merging tolerance
-//   profile = optional per-face, per-vertex, and per-edge override profile
-//   cleanup = whether to run cleanup on the result
-//   cleanup_eps = cleanup tolerance
+//   poly = source poly descriptor.
+//   t = truncation-style vertex control; when omitted for supported regular bases, a default is solved with `c`.
+//   c = cantellation-style expansion control; when omitted for supported regular bases, a default is solved with `t`.
+//   eps = geometric tolerance for transform construction.
+//   len_eps = point-merging tolerance for generated vertices.
+//   profile = optional vertex rows supporting `t`/`c`, face rows supporting `c`, and edge rows supporting `c`/`de`.
+//   cleanup = whether to run structural cleanup on the result.
+//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_cantitruncate(
     poly,
     t=undef,

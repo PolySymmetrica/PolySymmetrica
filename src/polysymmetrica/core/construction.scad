@@ -194,11 +194,11 @@ function poly_cap_loops(poly, loops=undef, cleanup=true, cleanup_eps=1e-8) =
 //   Delete one or more faces from a poly descriptor. When `cap=true`, recover
 //   the resulting boundary loops and cap the openings.
 // Arguments:
-//   poly = source poly descriptor
-//   fids = face index or list of face indices to remove
-//   cap = whether to cap the resulting openings
-//   cleanup = whether to run `poly_cleanup()` on the result
-//   cleanup_eps = cleanup tolerance
+//   poly = source poly descriptor.
+//   fids = one face index, or a list of face indices, to remove.
+//   cap = whether to recover and fill boundary loops created by the deletion.
+//   cleanup = whether to run `poly_cleanup()` on the open or capped result.
+//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_delete_faces(poly, fids, cap=false, cleanup=true, cleanup_eps=1e-8) =
     let(
         fids_raw = is_list(fids) ? fids : [fids],
@@ -332,13 +332,13 @@ function _ps_poly_from_face_points_preserve_scale(faces_pts_all, e_over_ir, eps=
 //   `"below"` side relative to the plane normal. When `cap=true`, the cut
 //   opening is recovered from boundary loops and capped.
 // Arguments:
-//   poly = source closed poly descriptor
-//   plane_pt = point on the slicing plane
-//   plane_n = slicing-plane normal
-//   keep = which side to retain, `"above"` or `"below"`
-//   cap = whether to cap the cut opening
-//   cleanup = whether to run `poly_cleanup()` on the result
-//   cleanup_eps = cleanup tolerance
+//   poly = source closed poly descriptor.
+//   plane_pt = any 3D point on the slicing plane.
+//   plane_n = slicing-plane normal; `"above"` means the retained side has non-negative signed distance along this vector.
+//   keep = which side to retain: `"above"` or `"below"`.
+//   cap = whether to recover and fill the cut boundary loop.
+//   cleanup = whether to run `poly_cleanup()` on the clipped result before optional capping.
+//   cleanup_eps = cleanup tolerance used for clipping and cleanup.
 function poly_slice(
     poly,
     plane_pt,
@@ -386,11 +386,11 @@ function poly_slice(
 //   Compound bases are not supported because multiple base cycles would share
 //   one apex.
 // Arguments:
-//   n = base side count
-//   p = polygon step; `p=1` gives an ordinary pyramid
-//   edge = target base edge length; also the side edge length when `height=undef`
-//   height = explicit apex-to-base-plane height
-//   height_scale = multiplier applied to the chosen height
+//   n = base side count; must define one non-compound base cycle.
+//   p = polygon step; `p=1` gives an ordinary pyramid and larger valid steps give star/retrograde bases.
+//   edge = target base edge length; also the side edge length when `height=undef`.
+//   height = explicit apex-to-base-plane height; when `undef`, a regular side edge solution is computed.
+//   height_scale = multiplier applied after choosing or computing `height`.
 function poly_pyramid(n=4, p=1, edge=1, height=undef, height_scale=1) =
     let(
         np = _ps_validate_np(n, p, "poly_pyramid"),
@@ -430,10 +430,10 @@ function poly_pyramid(n=4, p=1, edge=1, height=undef, height_scale=1) =
 //   Build an exact `n`-gonal cupola with a top `n`-gon, a base `2n`-gon, and
 //   alternating square and triangular side faces.
 // Arguments:
-//   n = top polygon arity
-//   edge = common target edge length
-//   height = explicit cupola height
-//   height_scale = multiplier applied to the chosen height
+//   n = top polygon arity; the base has `2*n` sides.
+//   edge = common target edge length for top, base, and side faces.
+//   height = explicit cupola height; when `undef`, the height that makes side edges length `edge` is computed.
+//   height_scale = multiplier applied after choosing or computing `height`.
 function poly_cupola(n=3, edge=1, height=undef, height_scale=1) =
     let(
         _n_ok = assert(abs(n - round(n)) < 1e-9 && round(n) >= 3, "poly_cupola: n must be an integer >= 3"),
@@ -502,7 +502,7 @@ function _ps_face_mean_edge_len(poly, fi, who) =
 //   Build the exact pentagonal rotunda (J6) by slicing an
 //   icosidodecahedron through the origin and capping the retained half.
 // Arguments:
-//   edge = target edge length
+//   edge = target edge length for the generated pentagonal rotunda.
 function poly_rotunda(edge=1) =
     let(
         _0 = assert(edge > 0, "poly_rotunda: edge must be > 0"),
@@ -523,14 +523,14 @@ function poly_rotunda(edge=1) =
 //   Attach a prism belt to a selected face. This is the construction
 //   primitive behind elongated Johnson solids.
 // Arguments:
-//   poly = source poly descriptor
-//   f = target face index or face-index list
-//   height = explicit prism height
-//   height_scale = multiplier applied to the chosen height
-//   rotate_step = cyclic face rotation to apply before attachment
-//   eps = geometric tolerance
-//   cleanup = whether to run cleanup on the result
-//   cleanup_eps = cleanup tolerance
+//   poly = source poly descriptor.
+//   f = target face index, or list of target face indices, that will receive prism belts.
+//   height = explicit prism belt height; when `undef`, the belt uses its default prism height.
+//   height_scale = multiplier applied after choosing or computing belt height.
+//   rotate_step = cyclic vertex correspondence shift applied when attaching the belt seam face.
+//   eps = geometric tolerance for attachment.
+//   cleanup = whether to run structural cleanup on the attached result.
+//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_elongate(
     poly,
     f=0,
@@ -567,15 +567,15 @@ function poly_elongate(
 //   Attach an antiprism belt to a selected face. This is the construction
 //   primitive behind gyroelongated Johnson solids.
 // Arguments:
-//   poly = source poly descriptor
-//   f = target face index or face-index list
-//   angle = additional antiprism twist in degrees
-//   height = explicit antiprism height
-//   height_scale = multiplier applied to the chosen height
-//   rotate_step = cyclic face rotation to apply before attachment
-//   eps = geometric tolerance
-//   cleanup = whether to run cleanup on the result
-//   cleanup_eps = cleanup tolerance
+//   poly = source poly descriptor.
+//   f = target face index, or list of target face indices, that will receive antiprism belts.
+//   angle = additional antiprism twist in degrees beyond the default cap twist.
+//   height = explicit antiprism belt height; when `undef`, the belt computes the side-edge-compatible height.
+//   height_scale = multiplier applied after choosing or computing belt height.
+//   rotate_step = cyclic vertex correspondence shift applied when attaching the belt seam face.
+//   eps = geometric tolerance for attachment.
+//   cleanup = whether to run structural cleanup on the attached result.
+//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_gyroelongate(
     poly,
     f=0,
@@ -613,16 +613,16 @@ function poly_gyroelongate(
 //   Attach `p2` onto `p1` by aligning selected planar faces and then removing
 //   the seam faces from the joined result.
 // Arguments:
-//   p1 = base poly descriptor
-//   p2 = attached poly descriptor
-//   f1 = face index or face-index list on `p1`
-//   f2 = face index on `p2`
-//   rotate_step = cyclic face rotation to apply to `p2`
-//   scale_mode = `"fit_edge"` to match edge lengths, or `"none"`
-//   mirror = whether to mirror `p2` through the attachment plane
-//   eps = geometric tolerance
-//   cleanup = whether to run cleanup on the result
-//   cleanup_eps = cleanup tolerance
+//   p1 = base closed poly descriptor.
+//   p2 = closed poly descriptor to attach.
+//   f1 = face index, or list of face indices, on `p1`. List mode attaches one transformed copy of `p2` to each selected base face.
+//   f2 = seam face index on `p2`; this same attached face is used for every `f1` entry.
+//   rotate_step = cyclic vertex correspondence shift applied to `p2`'s seam face before alignment.
+//   scale_mode = `"fit_edge"` to scale `p2` so seam mean edge lengths match, or `"none"` to require already-compatible sizes.
+//   mirror = whether to mirror `p2` through the attachment plane before welding.
+//   eps = geometric tolerance for face planarity and attachment validation.
+//   cleanup = whether to run structural cleanup on the joined result.
+//   cleanup_eps = cleanup tolerance used for seam merge and cleanup.
 function poly_attach(
     p1, p2,
     f1=0, f2=0,
