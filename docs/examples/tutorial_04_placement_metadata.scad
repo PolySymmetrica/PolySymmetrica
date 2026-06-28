@@ -35,7 +35,7 @@ module fitted_edge_strut() {
 module face_cavity_cutter() {
     hull() {
         translate([0, 0, 5])
-            linear_extrude(height = 1)
+            linear_extrude(height = 8)
                 polygon(points = $ps_face_pts2d * 0.78);
         translate($ps_poly_center_local)
             sphere(r = 0.8, $fn = 12);

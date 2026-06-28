@@ -59,7 +59,7 @@ the interior:
 module face_cavity_cutter() {
     hull() {
         translate([0, 0, 5])
-            linear_extrude(height = 1)
+            linear_extrude(height = 8)
                 polygon(points = $ps_face_pts2d * 0.78);
         translate($ps_poly_center_local)
             sphere(r = 0.8, $fn = 12);
@@ -80,3 +80,9 @@ difference() {
 
 The pattern is the same in each case: write a small local child module, then let
 placement metadata supply the per-site values.
+
+The full placement metadata reference lists the `$ps_*` variables available in
+face, edge, vertex, seam, and proxy contexts:
+[placement_data_model.md](../reference/placement_data_model.md).
+
+Next: [Boolean print patterns](05_boolean_patterns.md).

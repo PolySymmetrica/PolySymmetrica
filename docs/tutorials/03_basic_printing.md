@@ -76,3 +76,5 @@ registration holes, or trimming corners from an already printable solid.
 
 Sockets, clearances, separate print-bed layout, and tolerance tuning build on
 these same placement patterns and are covered in later printing material.
+
+Next: [Placement metadata](04_placement_metadata.md).

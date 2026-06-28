@@ -45,3 +45,5 @@ module face_plate() {
 This is the basic classification workflow: compute `cls` once, pass it into
 placement, then use the resulting `$ps_*_family_id` metadata inside the child
 geometry.
+
+Next: [Tutorial index](index.md).

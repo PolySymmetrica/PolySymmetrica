@@ -52,3 +52,5 @@ module edge_bar() {
 
 That is the central PolySymmetrica workflow: choose a descriptor, then write
 small local child modules that respond to the current placement context.
+
+Next: [Basic printing](03_basic_printing.md).

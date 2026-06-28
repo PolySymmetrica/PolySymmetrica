@@ -50,3 +50,5 @@ The deployed API docs are the catalogue view:
 
 Transform defaults work well for regular examples. Later chapters show how
 classification and profiles give finer control over mixed-family models.
+
+Next: [Classification](08_classification.md).

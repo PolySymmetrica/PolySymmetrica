@@ -60,3 +60,5 @@ module clipped_face_pad() {
 This is the beginner version of anti-interference: use the generated volume as
 a practical cutter that keeps each face's print geometry inside its own local
 space. Later printing material covers the lower-level face-region model.
+
+Next: [Transforms](06_transforms.md).
