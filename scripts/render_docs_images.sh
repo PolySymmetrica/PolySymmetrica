@@ -8,7 +8,7 @@ IMG_SIZE="${IMG_SIZE:-1280,960}"
 
 usage() {
     cat <<EOF
-Usage: $0 [all|first_taste|tutorial_01_models|tutorial_02_placement|tutorial_03_basic_printing|tutorial_04_placement_metadata|tutorial_05_boolean_patterns|tutorial_05_face_region_volumes|tutorial_06_transforms|tutorial_08_classification]
+Usage: $0 [all|first_taste|tutorial_01_models|tutorial_02_placement|tutorial_03_basic_printing|tutorial_04_placement_metadata|tutorial_05_boolean_patterns|tutorial_05_face_region_volumes|tutorial_06_transforms|tutorial_07_prisms_antiprisms|tutorial_08_classification|tutorial_09_profiles|tutorial_10_construction_topology|tutorial_10_construction_johnsons]
 
 Environment:
   OPENSCAD_BIN  OpenSCAD command to use (default: openscad-nightly)
@@ -132,11 +132,55 @@ render_tutorial_06_transforms() {
         --render=true
 }
 
+render_tutorial_07_prisms_antiprisms() {
+    render_one \
+        tutorial_07_prisms_antiprisms \
+        "${REPO_ROOT}/docs/examples/tutorial_07_prisms_antiprisms.scad" \
+        "${REPO_ROOT}/docs/images/generated/tutorial_07_prisms_antiprisms.png" \
+        --projection=o \
+        --autocenter \
+        --viewall \
+        --render=true
+}
+
 render_tutorial_08_classification() {
     render_one \
         tutorial_08_classification \
         "${REPO_ROOT}/docs/examples/tutorial_08_classification.scad" \
         "${REPO_ROOT}/docs/images/generated/tutorial_08_classification.png" \
+        --projection=o \
+        --autocenter \
+        --viewall \
+        --render=true
+}
+
+render_tutorial_09_profiles() {
+    render_one \
+        tutorial_09_profiles \
+        "${REPO_ROOT}/docs/examples/tutorial_09_profiles.scad" \
+        "${REPO_ROOT}/docs/images/generated/tutorial_09_profiles.png" \
+        --projection=o \
+        --autocenter \
+        --viewall \
+        --render=true
+}
+
+render_tutorial_10_construction_topology() {
+    render_one \
+        tutorial_10_construction_topology \
+        "${REPO_ROOT}/docs/examples/tutorial_10_construction_topology.scad" \
+        "${REPO_ROOT}/docs/images/generated/tutorial_10_construction_topology.png" \
+        --projection=o \
+        --autocenter \
+        --viewall \
+        --render=true
+}
+
+render_tutorial_10_construction_johnsons() {
+    render_one \
+        tutorial_10_construction_johnsons \
+        "${REPO_ROOT}/docs/examples/tutorial_10_construction_johnsons.scad" \
+        "${REPO_ROOT}/docs/images/generated/tutorial_10_construction_johnsons.png" \
         --projection=o \
         --autocenter \
         --viewall \
@@ -153,7 +197,11 @@ case "${1:-all}" in
         render_tutorial_05_boolean_patterns
         render_tutorial_05_face_region_volumes
         render_tutorial_06_transforms
+        render_tutorial_07_prisms_antiprisms
         render_tutorial_08_classification
+        render_tutorial_09_profiles
+        render_tutorial_10_construction_topology
+        render_tutorial_10_construction_johnsons
         ;;
     first_taste)
         render_first_taste
@@ -179,8 +227,20 @@ case "${1:-all}" in
     tutorial_06_transforms)
         render_tutorial_06_transforms
         ;;
+    tutorial_07_prisms_antiprisms)
+        render_tutorial_07_prisms_antiprisms
+        ;;
     tutorial_08_classification)
         render_tutorial_08_classification
+        ;;
+    tutorial_09_profiles)
+        render_tutorial_09_profiles
+        ;;
+    tutorial_10_construction_topology)
+        render_tutorial_10_construction_topology
+        ;;
+    tutorial_10_construction_johnsons)
+        render_tutorial_10_construction_johnsons
         ;;
     *)
         echo "Unknown docs image target: $1" >&2
