@@ -4,16 +4,17 @@
 
 use <polysymmetrica/core/construction.scad>
 use <polysymmetrica/core/placement.scad>
+use <polysymmetrica/models/platonics_all.scad>
 
-ir = 22;
-gap = 66;
+ir = 20;
+gap = 74;
 wall_thk = 1.5;
-strut_d = 1.2;
-face_inset = 1.2;
+strut_d = 1.15;
+face_inset = 1.1;
 
-j1 = poly_pyramid(4);
-j4 = poly_cupola(4);
-j6 = poly_rotunda();
+cube_pair = poly_attach(hexahedron(), hexahedron(), f1 = 0, f2 = 0);
+tetra_on_octa = poly_attach(octahedron(), tetrahedron(), f1 = 0, f2 = 0);
+tetra_cluster = poly_attach(octahedron(), tetrahedron(), f1 = [0, 2, 4], f2 = 0);
 
 module edge_frame(poly) {
     color("dimgray")
@@ -37,6 +38,6 @@ module show_poly(poly, x, col) {
     }
 }
 
-show_poly(j1, -gap, "tomato");
-show_poly(j4, 0, "gold");
-show_poly(j6, gap, "dodgerblue");
+show_poly(cube_pair, -gap, "tomato");
+show_poly(tetra_on_octa, 0, "gold");
+show_poly(tetra_cluster, gap, "dodgerblue");

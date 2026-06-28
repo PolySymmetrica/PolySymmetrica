@@ -52,6 +52,36 @@ j6 = poly_rotunda();
 Those are still ordinary poly descriptors. They can be rendered, placed on,
 transformed, or used as inputs to later construction helpers.
 
+## Attach
+
+![Face-to-face attachment examples](../images/generated/tutorial_10_construction_attach.png)
+
+Source: [`docs/examples/tutorial_10_construction_attach.scad`](../examples/tutorial_10_construction_attach.scad)
+
+`poly_attach(...)` joins two closed polyhedra face-to-face. It aligns the
+selected seam faces, removes those seam faces, and welds the remaining boundary:
+
+```scad
+cube_pair = poly_attach(hexahedron(), hexahedron(), f1 = 0, f2 = 0);
+```
+
+The face-selection arguments are:
+
+- `f1`: face index, or list of face indices, on the base polyhedron,
+- `f2`: face index on the polyhedron being attached.
+
+When `f1` is a list, the same attached polyhedron is copied onto each selected
+base face:
+
+```scad
+tetra_cluster = poly_attach(octahedron(), tetrahedron(), f1 = [0, 2, 4], f2 = 0);
+```
+
+`f1` and `f2` must select faces with the same number of vertices. The default
+`scale_mode = "fit_edge"` scales the attached polyhedron so the two seam faces
+match. `rotate_step` changes which vertices correspond around the seam when a
+face has more than one useful alignment.
+
 The full construction notes cover attachment, elongation, gyroelongation, and
 the assumptions behind these topology operations:
 [construction.md](../guides/construction.md).

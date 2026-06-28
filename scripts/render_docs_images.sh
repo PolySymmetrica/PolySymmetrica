@@ -19,6 +19,7 @@ TARGETS=(
     tutorial_09_profiles
     tutorial_10_construction_topology
     tutorial_10_construction_johnsons
+    tutorial_10_construction_attach
 )
 
 usage() {
