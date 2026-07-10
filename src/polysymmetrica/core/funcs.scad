@@ -547,6 +547,20 @@ function _ps_index_of(list, v) =
     let(idx = search(v, list))
     (len(idx) == 0) ? -1 : idx[0];
 
+// Function: _ps_cycle_rotate()
+// Usage:
+//   result = _ps_cycle_rotate(list, k);
+// Description:
+//   Cyclic left rotation helper.
+//   .
+//   - Returns: rotated sequence
+// Arguments:
+//   list = sequence
+//   k = rotation offset
+function _ps_cycle_rotate(list, k) =
+    let(n = len(list))
+    [for (i = [0:1:n-1]) list[(i + k) % n]];
+
 ///////////////////////////////////////
 // ---- Vector math ----
 // Function: v_add()
@@ -1404,6 +1418,7 @@ function _ps_next_face_around_vertex(v, f_cur, f_prev, faces, edges, edge_faces)
         f = faces[f_cur],
         n = len(f),
         pos = [for (k = [0 : n-1]) if (f[k] == v) k],
+        _has_v = assert(len(pos) == 1, str("_ps_next_face_around_vertex: face ", f_cur, " must contain vertex ", v, " exactly once")),
         k0 = pos[0],
         k_prev = (k0 - 1 + n) % n,
         k_next = (k0 + 1) % n,
@@ -1411,8 +1426,12 @@ function _ps_next_face_around_vertex(v, f_cur, f_prev, faces, edges, edge_faces)
         v_next = f[k_next],
         ei1 = ps_find_edge_index(edges, v, v_next),
         ei2 = ps_find_edge_index(edges, v_prev, v),
+        _edge1 = assert(ei1 >= 0, str("_ps_next_face_around_vertex: missing edge [", v, ",", v_next, "]")),
+        _edge2 = assert(ei2 >= 0, str("_ps_next_face_around_vertex: missing edge [", v_prev, ",", v, "]")),
         ef1 = edge_faces[ei1],
         ef2 = edge_faces[ei2],
+        _manifold1 = assert(len(ef1) == 2, str("_ps_next_face_around_vertex: edge [", v, ",", v_next, "] must have exactly two incident faces")),
+        _manifold2 = assert(len(ef2) == 2, str("_ps_next_face_around_vertex: edge [", v_prev, ",", v, "] must have exactly two incident faces")),
         cand1 = (ef1[0] == f_cur ? ef1[1] : ef1[0]),
         cand2 = (ef2[0] == f_cur ? ef2[1] : ef2[0]),
         candidates = [cand1, cand2],
@@ -1460,9 +1479,115 @@ function ps_faces_around_vertex(poly, v, edges, edge_faces) =
     let(
         faces = poly_faces(poly),
         inc = ps_vertex_incident_faces(poly, v),
+        _has_inc = assert(len(inc) > 0, str("ps_faces_around_vertex: vertex ", v, " has no incident faces")),
         start = inc[0]
     )
     _ps_faces_around_vertex_rec(v, start, -1, start, faces, edges, edge_faces);
+
+// Function: _ps_vertex_fan_neighbor_for_face()
+// Usage:
+//   result = _ps_vertex_fan_neighbor_for_face(faces, face_idx, vertex_idx);
+// Description:
+//   Get the next vertex around one incident face for vertex-fan ordering.
+//   .
+//   - Returns: neighbour vertex index
+// Arguments:
+//   faces = face list
+//   face_idx = incident face index
+//   vertex_idx = source vertex index
+function _ps_vertex_fan_neighbor_for_face(faces, face_idx, vertex_idx) =
+    let(
+        f = faces[face_idx],
+        n = len(f),
+        pos = _ps_index_of(f, vertex_idx),
+        _has_v = assert(pos >= 0, str("_ps_vertex_fan_neighbor_for_face: face ", face_idx, " does not contain vertex ", vertex_idx))
+    )
+    f[(pos + 1) % n];
+
+// Function: ps_vertex_fan()
+// Usage:
+//   result = ps_vertex_fan(poly, vertex_idx, edges, edge_faces);
+// Description:
+//   Build the abstract vertex fan for one source vertex.
+//   .
+//   The fan is the topological ordering of faces, neighbour vertices, and
+//   incident edges around a vertex. Neighbours are cyclic and anchored at the
+//   lowest neighbour index; cyclic direction follows the source face winding.
+//   .
+//   - Returns: vertex fan record `[vertex_idx, faces_idx, neighbors_idx, edges_idx]`
+//   .
+//   - Limitations/Gotchas: assumes a closed manifold local vertex neighbourhood
+// Arguments:
+//   poly = poly descriptor
+//   vertex_idx = source vertex index
+//   edges = optional edge list for reuse
+//   edge_faces = optional edge-face table for reuse
+function ps_vertex_fan(poly, vertex_idx, edges=undef, edge_faces=undef) =
+    let(
+        faces = poly_faces(poly),
+        e = is_undef(edges) ? _ps_edges_from_faces(faces) : edges,
+        ef = is_undef(edge_faces) ? ps_edge_faces_table(faces, e) : edge_faces,
+        faces_idx0 = ps_faces_around_vertex(poly, vertex_idx, e, ef),
+        neighbors_idx0 = [
+            for (fi = faces_idx0)
+                _ps_vertex_fan_neighbor_for_face(faces, fi, vertex_idx)
+        ],
+        anchor_neighbor = min(neighbors_idx0),
+        anchor = _ps_index_of(neighbors_idx0, anchor_neighbor),
+        faces_idx = _ps_cycle_rotate(faces_idx0, anchor),
+        neighbors_idx = _ps_cycle_rotate(neighbors_idx0, anchor),
+        edges_idx = [
+            for (nj = neighbors_idx)
+                let(ei = ps_find_edge_index(e, vertex_idx, nj))
+                assert(ei >= 0, str("ps_vertex_fan: missing edge [", vertex_idx, ",", nj, "]"))
+                ei
+        ]
+    )
+    [vertex_idx, faces_idx, neighbors_idx, edges_idx];
+
+// Function: ps_vertex_fan_idx()
+// Usage:
+//   result = ps_vertex_fan_idx(fan);
+// Description:
+//   Get the source vertex index from a vertex fan.
+//   .
+//   - Returns: vertex index
+// Arguments:
+//   fan = vertex fan record
+function ps_vertex_fan_idx(fan) = fan[0];
+
+// Function: ps_vertex_fan_faces_idx()
+// Usage:
+//   result = ps_vertex_fan_faces_idx(fan);
+// Description:
+//   Get cyclic incident face indices from a vertex fan.
+//   .
+//   - Returns: face indices
+// Arguments:
+//   fan = vertex fan record
+function ps_vertex_fan_faces_idx(fan) = fan[1];
+
+// Function: ps_vertex_fan_neighbors_idx()
+// Usage:
+//   result = ps_vertex_fan_neighbors_idx(fan);
+// Description:
+//   Get cyclic adjacent vertex indices from a vertex fan.
+//   .
+//   - Returns: neighbour vertex indices
+// Arguments:
+//   fan = vertex fan record
+function ps_vertex_fan_neighbors_idx(fan) = fan[2];
+
+// Function: ps_vertex_fan_edges_idx()
+// Usage:
+//   result = ps_vertex_fan_edges_idx(fan);
+// Description:
+//   Get cyclic incident edge indices from a vertex fan.
+//   .
+//   - Returns: edge indices
+// Arguments:
+//   fan = vertex fan record
+function ps_vertex_fan_edges_idx(fan) = fan[3];
 
 
 ///////////////////////////////////////

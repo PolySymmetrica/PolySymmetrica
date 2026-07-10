@@ -307,8 +307,8 @@ Vertex site accessors:
 | `ps_vertex_site_radius(site)` | Distance from parent origin to vertex. |
 | `ps_vertex_site_poly_center_local(site)` | Poly center in vertex-local coordinates. |
 | `ps_vertex_site_valence(site)` | Number of incident source edges. |
-| `ps_vertex_site_neighbors_idx(site)` | Adjacent vertex indices. |
-| `ps_vertex_site_neighbor_pts_local(site)` | Adjacent vertex positions in vertex-local coordinates. |
+| `ps_vertex_site_neighbors_idx(site)` | Adjacent vertex indices. Closed-manifold vertices use cyclic vertex-fan order anchored at the lowest neighbour index; boundary vertices use edge-scan order. |
+| `ps_vertex_site_neighbor_pts_local(site)` | Adjacent vertex positions in vertex-local coordinates, aligned with `ps_vertex_site_neighbors_idx(site)`. |
 | `ps_vertex_site_family_id(site)` | Classification family id, or `undef`. |
 | `ps_vertex_site_face_family_count(site)` | Number of face families, or `undef`. |
 | `ps_vertex_site_edge_family_count(site)` | Number of edge families, or `undef`. |
