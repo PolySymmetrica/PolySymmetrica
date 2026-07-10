@@ -474,6 +474,42 @@ module test_ps_vertex_sites__open_construction_outputs_remain_placeable() {
     }
 }
 
+module test_ps_vertex_site_from_local_poly__closed_ring_uses_fan_order() {
+    p = hexahedron();
+    faces = poly_faces(p);
+    verts = poly_verts(p);
+    edges = _ps_edges_from_faces(faces);
+    edge_faces = ps_edge_faces_table(faces, edges);
+
+    for (vi = [0:1:len(verts)-1]) {
+        site = _ps_vertex_site_from_local_poly(vi, faces, verts);
+        expected = ps_vertex_fan_neighbors_idx(ps_vertex_fan(p, vi, edges, edge_faces));
+        assert(
+            ps_vertex_site_neighbors_idx(site) == expected,
+            str("closed local vertex site should expose fan order vi=", vi, " got=", ps_vertex_site_neighbors_idx(site), " expected=", expected)
+        );
+    }
+}
+
+module test_ps_vertex_site_from_local_poly__open_ring_uses_edge_scan_order() {
+    p = poly_delete_faces(hexahedron(), 0, cap=false, cleanup=false);
+    faces = poly_faces(p);
+    verts = poly_verts(p);
+    edges = _ps_edges_from_faces(faces);
+    edge_faces = ps_edge_faces_table(faces, edges);
+
+    for (vi = [0:1:len(verts)-1]) {
+        if (_test_vertex_has_boundary_edge(edges, edge_faces, vi)) {
+            site = _ps_vertex_site_from_local_poly(vi, faces, verts);
+            expected = _ps_vertex_site_neighbors_idx(edges, vi);
+            assert(
+                ps_vertex_site_neighbors_idx(site) == expected,
+                str("open local vertex site should expose edge-scan order vi=", vi, " got=", ps_vertex_site_neighbors_idx(site), " expected=", expected)
+            );
+        }
+    }
+}
+
 module test_ps_vertex_site_accessors__match_record_layout() {
     p = rhombicuboctahedron();
     cls = poly_classify(p, 1, 1e-6, 1, false);
@@ -1014,6 +1050,8 @@ module run_TestPlacement() {
     test_ps_vertex_fan__rhombicuboctahedron_neighbors_are_cyclic_and_anchored();
     test_ps_vertex_sites__neighbors_match_vertex_fan_order();
     test_ps_vertex_sites__open_construction_outputs_remain_placeable();
+    test_ps_vertex_site_from_local_poly__closed_ring_uses_fan_order();
+    test_ps_vertex_site_from_local_poly__open_ring_uses_edge_scan_order();
     test_ps_vertex_site_accessors__match_record_layout();
     test_ps_vertex_site_frame__matches_site_accessors();
     test_place_on_all__cube_single_family();
