@@ -394,6 +394,51 @@ module test_ps_vertex_sites__cube_records_match_vertex_structure() {
     }
 }
 
+module test_ps_vertex_fan__rhombicuboctahedron_neighbors_are_cyclic_and_anchored() {
+    p = rhombicuboctahedron();
+    faces = poly_faces(p);
+    edges = _ps_edges_from_faces(faces);
+    edge_faces = ps_edge_faces_table(faces, edges);
+
+    for (vi = [0:1:len(poly_verts(p))-1]) {
+        fan = ps_vertex_fan(p, vi, edges, edge_faces);
+        faces_idx = ps_vertex_fan_faces_idx(fan);
+        neighbors_idx = ps_vertex_fan_neighbors_idx(fan);
+        edges_idx = ps_vertex_fan_edges_idx(fan);
+
+        assert_int_eq(ps_vertex_fan_idx(fan), vi, "vertex fan source id");
+        assert_int_eq(len(neighbors_idx), len(faces_idx), str("fan neighbor/face count vi=", vi));
+        assert_int_eq(len(edges_idx), len(neighbors_idx), str("fan edge/neighbor count vi=", vi));
+        assert_int_eq(neighbors_idx[0], min(neighbors_idx), str("fan should start at lowest neighbor id vi=", vi));
+
+        for (i = [0:1:len(faces_idx)-1]) {
+            f = faces[faces_idx[i]];
+            pos = _ps_index_of(f, vi);
+            expected_neighbor = f[(pos + 1) % len(f)];
+            expected_edge = ps_find_edge_index(edges, vi, neighbors_idx[i]);
+            assert_int_eq(neighbors_idx[i], expected_neighbor, str("fan neighbor should match cyclic face successor vi=", vi, " i=", i));
+            assert_int_eq(edges_idx[i], expected_edge, str("fan edge should match fan neighbor vi=", vi, " i=", i));
+        }
+    }
+}
+
+module test_ps_vertex_sites__neighbors_match_vertex_fan_order() {
+    p = rhombicuboctahedron();
+    faces = poly_faces(p);
+    edges = _ps_edges_from_faces(faces);
+    edge_faces = ps_edge_faces_table(faces, edges);
+    sites = ps_vertex_sites(p);
+
+    for (site = sites) {
+        vi = ps_vertex_site_idx(site);
+        fan = ps_vertex_fan(p, vi, edges, edge_faces);
+        assert(
+            ps_vertex_site_neighbors_idx(site) == ps_vertex_fan_neighbors_idx(fan),
+            str("vertex site should expose fan neighbor order vi=", vi, " site=", ps_vertex_site_neighbors_idx(site), " fan=", ps_vertex_fan_neighbors_idx(fan))
+        );
+    }
+}
+
 module test_ps_vertex_site_accessors__match_record_layout() {
     p = rhombicuboctahedron();
     cls = poly_classify(p, 1, 1e-6, 1, false);
@@ -931,6 +976,8 @@ module run_TestPlacement() {
     test_ps_edge_sites__cube_uses_adjacent_face_normal_bisector();
     test_ps_edge_sites__preserves_raw_edge_order_for_classify_ids();
     test_ps_vertex_sites__cube_records_match_vertex_structure();
+    test_ps_vertex_fan__rhombicuboctahedron_neighbors_are_cyclic_and_anchored();
+    test_ps_vertex_sites__neighbors_match_vertex_fan_order();
     test_ps_vertex_site_accessors__match_record_layout();
     test_ps_vertex_site_frame__matches_site_accessors();
     test_place_on_all__cube_single_family();

@@ -382,6 +382,8 @@ function _ps_vertex_site_from_local_poly(vertex_idx, faces, verts_local, poly_ce
         poly_center_parent = is_undef(poly_center_local_parent) ? [0, 0, 0] : poly_center_local_parent,
         radial_raw = center - poly_center_parent,
         ez = (norm(radial_raw) <= eps) ? [0, 0, 1] : v_norm(radial_raw),
+        // Local proxy/replay face sets may be partial and open, so a closed
+        // cyclic vertex fan is not necessarily defined here.
         neighbors_idx = _ps_vertex_site_neighbors_idx(edges, vertex_idx),
         neighbor0 = len(neighbors_idx) == 0 ? undef : verts_local[neighbors_idx[0]],
         neighbor_dir = is_undef(neighbor0) ? undef : neighbor0 - center,
@@ -1805,7 +1807,7 @@ function ps_edge_sites(poly, inter_radius = 1, edge_len = undef, classify = unde
 //   .
 //   - Returns: list of vertex site records `[vertex_idx, edge_len, vert_radius, poly_center_local, vertex_valence, vertex_neighbors_idx, vertex_neighbor_pts_local, vertex_family_id, face_family_count, edge_family_count, vertex_family_count, frame]`
 //   .
-//   - Limitations/Gotchas: preserves the current radial vertex frame derived from one projected neighbor direction
+//   - Limitations/Gotchas: vertex neighbours are a cyclic fan order anchored at the lowest neighbour index; the radial vertex frame derives X from that first projected neighbour direction
 // Arguments:
 //   poly = source poly descriptor.
 //   inter_radius = target interradius scale used when `edge_len` is `undef`.
@@ -1819,6 +1821,7 @@ function ps_vertex_sites(poly, inter_radius = 1, edge_len = undef, classify = un
         verts = poly_verts(poly),
         faces = poly_faces(poly),
         edges = _ps_edges_from_faces(faces),
+        edge_faces = ps_edge_faces_table(faces, edges),
         cls = _ps_resolve_classify(poly, classify, classify_opts),
         family_counts = is_undef(cls) ? undef : ps_classify_counts(cls),
         vert_family_ids = is_undef(cls) ? [] : ps_classify_vert_ids(cls, len(verts)),
@@ -1831,7 +1834,9 @@ function ps_vertex_sites(poly, inter_radius = 1, edge_len = undef, classify = un
             let(
                 v0 = verts[vi] * scale,
                 ez = v_norm(v0),
-                ni = poly_vertex_neighbor(poly, vi),
+                fan = ps_vertex_fan(poly, vi, edges, edge_faces),
+                neighbors_idx = ps_vertex_fan_neighbors_idx(fan),
+                ni = neighbors_idx[0],
                 v1 = verts[ni] * scale,
                 neighbor_dir = v1 - v0,
                 proj = neighbor_dir - ez * v_dot(neighbor_dir, ez),
@@ -1840,7 +1845,6 @@ function ps_vertex_sites(poly, inter_radius = 1, edge_len = undef, classify = un
                 ey = v_cross(ez, ex),
                 center = v0,
                 vert_radius = norm(center),
-                neighbors_idx = _ps_vertex_site_neighbors_idx(edges, vi),
                 valence = len(neighbors_idx),
                 neighbor_pts_local = [
                     for (nj = neighbors_idx)
