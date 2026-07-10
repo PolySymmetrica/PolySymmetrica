@@ -284,7 +284,7 @@ public:
 | --- | --- |
 | `$ps_vertex_idx` | Index of the current vertex in the poly descriptor. |
 | `$ps_vertex_valence` | Number of incident edges at the current vertex. |
-| `$ps_vertex_neighbors_idx` | Neighbor vertex indices incident to the current vertex, in cyclic vertex-fan order anchored at the lowest neighbour index. |
+| `$ps_vertex_neighbors_idx` | Neighbor vertex indices incident to the current vertex. Closed-manifold vertices use cyclic vertex-fan order anchored at the lowest neighbour index; boundary vertices use edge-scan order. |
 | `$ps_vertex_neighbor_pts_local` | Vectors from the current vertex to each neighbor, expressed in vertex-local coordinates and aligned with `$ps_vertex_neighbors_idx`. |
 | `$ps_vert_radius` | Distance from the poly center to the current vertex, in world units after scaling. |
 | `$ps_vertex_family_id` | Family id of the current vertex from `poly_classify(...)`, or `undef` if no classification is active. |

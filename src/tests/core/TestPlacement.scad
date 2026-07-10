@@ -6,6 +6,7 @@
 
 use <../../polysymmetrica/core/placement.scad>
 use <../../polysymmetrica/core/classify.scad>
+use <../../polysymmetrica/core/construction.scad>
 use <../../polysymmetrica/core/funcs.scad>
 use <../../polysymmetrica/core/prisms.scad>
 use <../../polysymmetrica/core/truncation.scad>
@@ -436,6 +437,40 @@ module test_ps_vertex_sites__neighbors_match_vertex_fan_order() {
             ps_vertex_site_neighbors_idx(site) == ps_vertex_fan_neighbors_idx(fan),
             str("vertex site should expose fan neighbor order vi=", vi, " site=", ps_vertex_site_neighbors_idx(site), " fan=", ps_vertex_fan_neighbors_idx(fan))
         );
+    }
+}
+
+function _test_vertex_has_boundary_edge(edges, edge_faces, vi) =
+    len([
+        for (ei = [0:1:len(edges)-1])
+            if ((edges[ei][0] == vi || edges[ei][1] == vi) && len(edge_faces[ei]) != 2)
+                ei
+    ]) > 0;
+
+module test_ps_vertex_sites__open_construction_outputs_remain_placeable() {
+    cases = [
+        poly_delete_faces(hexahedron(), 0, cap=false, cleanup=false),
+        poly_slice(hexahedron(), [0,0,0], [0,0,1], keep="above", cap=false)
+    ];
+
+    for (p = cases) {
+        faces = poly_faces(p);
+        edges = _ps_edges_from_faces(faces);
+        edge_faces = ps_edge_faces_table(faces, edges);
+        sites = ps_vertex_sites(p);
+
+        assert_int_eq(len(sites), len(poly_verts(p)), "open construction output should produce one vertex site per vertex");
+
+        for (site = sites) {
+            vi = ps_vertex_site_idx(site);
+            expected = _test_vertex_has_boundary_edge(edges, edge_faces, vi)
+                ? _ps_vertex_site_neighbors_idx(edges, vi)
+                : ps_vertex_fan_neighbors_idx(ps_vertex_fan(p, vi, edges, edge_faces));
+            assert(
+                ps_vertex_site_neighbors_idx(site) == expected,
+                str("open vertex site neighbor order mismatch vi=", vi, " got=", ps_vertex_site_neighbors_idx(site), " expected=", expected)
+            );
+        }
     }
 }
 
@@ -978,6 +1013,7 @@ module run_TestPlacement() {
     test_ps_vertex_sites__cube_records_match_vertex_structure();
     test_ps_vertex_fan__rhombicuboctahedron_neighbors_are_cyclic_and_anchored();
     test_ps_vertex_sites__neighbors_match_vertex_fan_order();
+    test_ps_vertex_sites__open_construction_outputs_remain_placeable();
     test_ps_vertex_site_accessors__match_record_layout();
     test_ps_vertex_site_frame__matches_site_accessors();
     test_place_on_all__cube_single_family();

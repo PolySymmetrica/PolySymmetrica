@@ -45,6 +45,21 @@ function _ps_resolve_classify(poly, classify=undef, classify_opts=undef) =
             _ps_cls_opt(classify_opts, 3, false)
         );
 
+function _ps_vertex_site_has_closed_fan(edges, edge_faces, vertex_idx) =
+    let(
+        incident_edge_idxs = [
+            for (ei = [0:1:len(edges)-1])
+                if (edges[ei][0] == vertex_idx || edges[ei][1] == vertex_idx)
+                    ei
+        ],
+        non_manifold = [
+            for (ei = incident_edge_idxs)
+                if (len(edge_faces[ei]) != 2)
+                    ei
+        ]
+    )
+    len(incident_edge_idxs) > 0 && len(non_manifold) == 0;
+
 // Function: _ps_face_site_neighbors_idx()
 // Usage:
 //   result = _ps_face_site_neighbors_idx(face, fi, faces0, edges, edge_faces);
@@ -1807,7 +1822,7 @@ function ps_edge_sites(poly, inter_radius = 1, edge_len = undef, classify = unde
 //   .
 //   - Returns: list of vertex site records `[vertex_idx, edge_len, vert_radius, poly_center_local, vertex_valence, vertex_neighbors_idx, vertex_neighbor_pts_local, vertex_family_id, face_family_count, edge_family_count, vertex_family_count, frame]`
 //   .
-//   - Limitations/Gotchas: vertex neighbours are a cyclic fan order anchored at the lowest neighbour index; the radial vertex frame derives X from that first projected neighbour direction
+//   - Limitations/Gotchas: closed-manifold vertices use cyclic fan order anchored at the lowest neighbour index; boundary vertices keep edge-scan neighbour order so open construction outputs remain placeable
 // Arguments:
 //   poly = source poly descriptor.
 //   inter_radius = target interradius scale used when `edge_len` is `undef`.
@@ -1834,8 +1849,10 @@ function ps_vertex_sites(poly, inter_radius = 1, edge_len = undef, classify = un
             let(
                 v0 = verts[vi] * scale,
                 ez = v_norm(v0),
-                fan = ps_vertex_fan(poly, vi, edges, edge_faces),
-                neighbors_idx = ps_vertex_fan_neighbors_idx(fan),
+                closed_fan = _ps_vertex_site_has_closed_fan(edges, edge_faces, vi),
+                neighbors_idx = closed_fan
+                    ? ps_vertex_fan_neighbors_idx(ps_vertex_fan(poly, vi, edges, edge_faces))
+                    : _ps_vertex_site_neighbors_idx(edges, vi),
                 ni = neighbors_idx[0],
                 v1 = verts[ni] * scale,
                 neighbor_dir = v1 - v0,
