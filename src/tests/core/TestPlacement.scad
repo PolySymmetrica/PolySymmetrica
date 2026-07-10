@@ -491,6 +491,23 @@ module test_ps_vertex_site_from_local_poly__closed_ring_uses_fan_order() {
     }
 }
 
+module test_ps_vertex_site_from_local_poly__does_not_rebuild_local_poly() {
+    // Edge [0, 1] has midpoint at the edge-midpoint center, so poly_make(...)
+    // would reject these replay-local coordinates before fan traversal.
+    verts = [[1,0,0], [-1,0,0], [0,1,0], [0,-1,0]];
+    faces = [[0,1,2], [0,3,1], [0,2,3], [1,3,2]];
+    raw_poly = [verts, faces, 1];
+    edges = _ps_edges_from_faces(faces);
+    edge_faces = ps_edge_faces_table(faces, edges);
+    site = _ps_vertex_site_from_local_poly(0, faces, verts);
+    expected = ps_vertex_fan_neighbors_idx(ps_vertex_fan(raw_poly, 0, edges, edge_faces));
+
+    assert(
+        ps_vertex_site_neighbors_idx(site) == expected,
+        str("local vertex site should not rebuild/recenter replay-local poly got=", ps_vertex_site_neighbors_idx(site), " expected=", expected)
+    );
+}
+
 module test_ps_vertex_site_from_local_poly__open_ring_uses_edge_scan_order() {
     p = poly_delete_faces(hexahedron(), 0, cap=false, cleanup=false);
     faces = poly_faces(p);
@@ -1051,6 +1068,7 @@ module run_TestPlacement() {
     test_ps_vertex_sites__neighbors_match_vertex_fan_order();
     test_ps_vertex_sites__open_construction_outputs_remain_placeable();
     test_ps_vertex_site_from_local_poly__closed_ring_uses_fan_order();
+    test_ps_vertex_site_from_local_poly__does_not_rebuild_local_poly();
     test_ps_vertex_site_from_local_poly__open_ring_uses_edge_scan_order();
     test_ps_vertex_site_accessors__match_record_layout();
     test_ps_vertex_site_frame__matches_site_accessors();

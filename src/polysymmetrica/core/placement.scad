@@ -394,7 +394,7 @@ function _ps_vertex_site_from_local_poly(vertex_idx, faces, verts_local, poly_ce
     let(
         edges = _ps_edges_from_faces(faces),
         edge_faces = ps_edge_faces_table(faces, edges),
-        local_poly = poly_make(verts_local, faces, 1),
+        local_poly = [verts_local, faces, 1],
         center = verts_local[vertex_idx],
         poly_center_parent = is_undef(poly_center_local_parent) ? [0, 0, 0] : poly_center_local_parent,
         radial_raw = center - poly_center_parent,
