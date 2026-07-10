@@ -889,6 +889,8 @@ function ps_vertex_site_valence(site) = site[4];
 //   Get neighbor vertex indices from a vertex placement site.
 //   .
 //   - Returns: adjacent vertex indices
+//   .
+//   - Limitations/Gotchas: closed vertex fans use cyclic order anchored at the lowest neighbour index; boundary or partial proxy/replay sites use edge-scan order
 // Arguments:
 //   site = vertex placement site record
 function ps_vertex_site_neighbors_idx(site) = site[5];

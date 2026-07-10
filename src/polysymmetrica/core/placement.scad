@@ -393,13 +393,16 @@ function _ps_edge_site_from_local_poly(edge_idx, faces, verts_local, poly_center
 function _ps_vertex_site_from_local_poly(vertex_idx, faces, verts_local, poly_center_local_parent=undef, eps=1e-12) =
     let(
         edges = _ps_edges_from_faces(faces),
+        edge_faces = ps_edge_faces_table(faces, edges),
+        local_poly = [verts_local, faces, 1],
         center = verts_local[vertex_idx],
         poly_center_parent = is_undef(poly_center_local_parent) ? [0, 0, 0] : poly_center_local_parent,
         radial_raw = center - poly_center_parent,
         ez = (norm(radial_raw) <= eps) ? [0, 0, 1] : v_norm(radial_raw),
-        // Local proxy/replay face sets may be partial and open, so a closed
-        // cyclic vertex fan is not necessarily defined here.
-        neighbors_idx = _ps_vertex_site_neighbors_idx(edges, vertex_idx),
+        closed_fan = _ps_vertex_site_has_closed_fan(edges, edge_faces, vertex_idx),
+        neighbors_idx = closed_fan
+            ? ps_vertex_fan_neighbors_idx(ps_vertex_fan(local_poly, vertex_idx, edges, edge_faces))
+            : _ps_vertex_site_neighbors_idx(edges, vertex_idx),
         neighbor0 = len(neighbors_idx) == 0 ? undef : verts_local[neighbors_idx[0]],
         neighbor_dir = is_undef(neighbor0) ? undef : neighbor0 - center,
         proj = is_undef(neighbor_dir) ? undef : neighbor_dir - ez * v_dot(neighbor_dir, ez),

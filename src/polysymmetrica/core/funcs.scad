@@ -1527,7 +1527,20 @@ function ps_vertex_fan(poly, vertex_idx, edges=undef, edge_faces=undef) =
         faces = poly_faces(poly),
         e = is_undef(edges) ? _ps_edges_from_faces(faces) : edges,
         ef = is_undef(edge_faces) ? ps_edge_faces_table(faces, e) : edge_faces,
+        incident_faces = ps_vertex_incident_faces(poly, vertex_idx),
         faces_idx0 = ps_faces_around_vertex(poly, vertex_idx, e, ef),
+        _complete = assert(
+            len(faces_idx0) == len(incident_faces),
+            str(
+                "ps_vertex_fan: vertex ",
+                vertex_idx,
+                " has disconnected or pinched fan; traversed ",
+                len(faces_idx0),
+                " of ",
+                len(incident_faces),
+                " incident faces"
+            )
+        ),
         neighbors_idx0 = [
             for (fi = faces_idx0)
                 _ps_vertex_fan_neighbor_for_face(faces, fi, vertex_idx)
