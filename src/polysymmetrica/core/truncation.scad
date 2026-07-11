@@ -270,6 +270,7 @@ function poly_truncate(
             faces = base[1],
             edges = base[2],
             edge_faces = base[3],
+            poly0 = base[5],
             vert_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "vert"))
                 ? ps_classify_vert_ids(poly_classify(poly, 1, 1e-6, 1, false), len(verts))
                 : undef,
@@ -323,17 +324,8 @@ function poly_truncate(
                 vert_cycles = [
                     for (vi = [0:1:len(verts)-1])
                         let(
-                            fc = ps_faces_around_vertex(poly, vi, edges, edge_faces),
-                            neigh = [
-                                for (idx = [0:1:len(fc)-1])
-                                    let(
-                                        f = faces[ fc[idx] ],
-                                        m = len(f),
-                                        pos = _ps_index_of(f, vi),
-                                        v_next = f[(pos+1)%m]
-                                    )
-                                    v_next
-                            ]
+                            fan = ps_vertex_fan(poly0, vi, edges, edge_faces),
+                            neigh = ps_vertex_fan_neighbors_idx(fan)
                         )
                         [
                             for (vn = neigh)
@@ -398,17 +390,8 @@ function poly_rectify(
         vert_faces = [
             for (vi = [0:1:len(verts)-1])
                 let(
-                    fc = ps_faces_around_vertex(poly0, vi, edges, edge_faces),
-                    neigh = [
-                        for (idx = [0:1:len(fc)-1])
-                            let(
-                                f = faces0[fc[idx]],
-                                m = len(f),
-                                pos = _ps_index_of(f, vi),
-                                v_next = f[(pos+1)%m]
-                            )
-                            v_next
-                    ]
+                    fan = ps_vertex_fan(poly0, vi, edges, edge_faces),
+                    neigh = ps_vertex_fan_neighbors_idx(fan)
                 )
                 [
                     for (vn = neigh)
@@ -724,7 +707,7 @@ function poly_cantellate(
         ],
         vert_cycles = [
             for (vi = [0:1:len(verts0)-1])
-                let(fc = ps_faces_around_vertex(poly0, vi, edges, edge_faces))
+                let(fc = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)))
                 [
                     for (fi = fc)
                         let(pos = _ps_index_of(faces0[fi], vi))
@@ -964,7 +947,7 @@ function _ps_snub_eval_errors_base(verts0, faces0, edges, edge_faces, face_n, po
         vert_face_errs = [
             for (vi = [0:1:len(verts0)-1])
                 let(
-                    fc = ps_faces_around_vertex(poly0, vi, edges, edge_faces),
+                    fc = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)),
                     pts = [for (fi = fc) _ps_snub_face_cached_point(face_pts, faces0, fi, vi)]
                 )
                 if (len([for (p = pts) if (is_undef(p)) 1]) == 0)
@@ -1476,7 +1459,7 @@ function poly_snub(
         ],
         vert_cycles = [
             for (vi = [0:1:len(verts0)-1])
-                let(fc = ps_faces_around_vertex(poly0, vi, edges, edge_faces))
+                let(fc = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)))
                 [
                     for (fi = fc)
                         let(pos = _ps_index_of(faces0[fi], vi))
