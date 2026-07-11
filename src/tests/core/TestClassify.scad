@@ -6,6 +6,7 @@
 
 use <../testing_util.scad>
 use <../../polysymmetrica/core/classify.scad>
+use <../../polysymmetrica/core/funcs.scad>
 use <../../polysymmetrica/core/truncation.scad>
 use <../../polysymmetrica/core/duals.scad>
 use <../../polysymmetrica/models/platonics_all.scad>
@@ -19,6 +20,29 @@ module assert_int_eq(a, b, msg="") {
 function _classify_counts(poly, detail=0) =
     let(cls = poly_classify(poly, detail))
     [len(cls[0]), len(cls[1]), len(cls[2])];
+
+function _poly_with_rotated_face_starts(poly) =
+    let(faces = poly_faces(poly))
+    [
+        poly_verts(poly),
+        [
+            for (i = [0:1:len(faces)-1])
+                rotl(faces[i], i % len(faces[i]))
+        ],
+        poly_e_over_ir(poly)
+    ];
+
+function _classify_edge_ids_for_edges(poly, cls, target_edges) =
+    let(
+        edges = _ps_edges_from_faces(poly_faces(poly)),
+        nv = len(poly_verts(poly)),
+        edge_keys = _ps_edge_keys_list(edges, nv),
+        ids = ps_classify_edge_ids(cls, len(edges))
+    )
+    [
+        for (e = target_edges)
+            ids[_ps_edge_index(edge_keys, e[0], e[1], nv)]
+    ];
 
 module test_classify__platonics_single_family() {
     plats = [
@@ -87,6 +111,30 @@ module test_classify__detail_refines_faces() {
     assert_int_eq(counts2[0], 2, "detail=2: dual trunc rhomb triacont faces = 2");
 }
 
+module test_classify__cyclic_face_starts_do_not_change_families() {
+    p = great_rhombicuboctahedron();
+    p_rot = _poly_with_rotated_face_starts(p);
+    cls = poly_classify(p, 1, 1e-6, 1, false);
+    cls_rot = poly_classify(p_rot, 1, 1e-6, 1, false);
+    faces = poly_faces(p);
+    faces_rot = poly_faces(p_rot);
+    edges = _ps_edges_from_faces(faces);
+
+    assert(ps_classify_counts(cls) == ps_classify_counts(cls_rot), "cyclic face starts: classification counts should match");
+    assert(
+        ps_classify_face_ids(cls, len(faces)) == ps_classify_face_ids(cls_rot, len(faces_rot)),
+        "cyclic face starts: face ids should match"
+    );
+    assert(
+        _classify_edge_ids_for_edges(p, cls, edges) == _classify_edge_ids_for_edges(p_rot, cls_rot, edges),
+        "cyclic face starts: edge ids should match by edge"
+    );
+    assert(
+        ps_classify_vert_ids(cls, len(poly_verts(p))) == ps_classify_vert_ids(cls_rot, len(poly_verts(p_rot))),
+        "cyclic face starts: vertex ids should match"
+    );
+}
+
 module test_classify__group_by_key_composite() {
     keys = [
         [3, [1, 2]],
@@ -126,6 +174,7 @@ module run_TestClassify() {
     test_classify__rhombi_duals_face_family();
     test_classify__dual_trunc_rhomb_triaconta_faces_split();
     test_classify__detail_refines_faces();
+    test_classify__cyclic_face_starts_do_not_change_families();
     test_classify__group_by_key_composite();
     test_ps_classification_describe_str__summary();
     test_ps_classification_describe_str__formatter_override();
