@@ -110,6 +110,22 @@ module test_poly_truncate__tetra_counts_at_one_third() {
     assert_int_eq(ps_sum([for (s=sizes) if (s==6) 1]), 4, "4 hex faces");
 }
 
+module test_poly_truncate__miswound_input_uses_oriented_fan() {
+    p = _tetra_poly();
+    faces = poly_faces(p);
+    p_bad = [
+        poly_verts(p),
+        concat([[faces[0][2], faces[0][1], faces[0][0]]], [for (i = [1:1:len(faces)-1]) faces[i]]),
+        poly_e_over_ir(p)
+    ];
+    q = poly_truncate(p_bad, 1/3);
+
+    assert_poly_valid(q);
+    assert_int_eq(len(poly_verts(q)), 12, "miswound trunc tetra verts=12");
+    assert_int_eq(len(poly_edges(q)), 18, "miswound trunc tetra edges=18");
+    assert_int_eq(len(poly_faces(q)), 8, "miswound trunc tetra faces=8");
+}
+
 
 // truncation t=0: counts preserved (geometry changes because of dedup path; still should match input)
 module test_poly_truncate__t_zero_counts_preserved() {
@@ -698,6 +714,7 @@ module run_TestTruncation() {
     test__ps_truncate_default_t__tetra_one_thirdish();
 
     test_poly_truncate__tetra_counts_at_one_third();
+    test_poly_truncate__miswound_input_uses_oriented_fan();
     test_poly_truncate__t_zero_counts_preserved();
     test_poly_chamfer__cube_face_counts();
     test_poly_truncate_then_dual__counts_relations();

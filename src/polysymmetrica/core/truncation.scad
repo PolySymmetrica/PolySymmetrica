@@ -270,6 +270,7 @@ function poly_truncate(
             faces = base[1],
             edges = base[2],
             edge_faces = base[3],
+            poly0 = base[5],
             vert_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "vert"))
                 ? ps_classify_vert_ids(poly_classify(poly, 1, 1e-6, 1, false), len(verts))
                 : undef,
@@ -323,7 +324,7 @@ function poly_truncate(
                 vert_cycles = [
                     for (vi = [0:1:len(verts)-1])
                         let(
-                            fan = ps_vertex_fan(poly, vi, edges, edge_faces),
+                            fan = ps_vertex_fan(poly0, vi, edges, edge_faces),
                             neigh = ps_vertex_fan_neighbors_idx(fan)
                         )
                         [
