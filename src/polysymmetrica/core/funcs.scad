@@ -1506,24 +1506,23 @@ function _ps_vertex_fan_neighbor_for_face(faces, face_idx, vertex_idx) =
 
 // Function: ps_vertex_fan()
 // Usage:
-//   result = ps_vertex_fan(poly, vertex_idx, edges, edge_faces, canonical);
+//   result = ps_vertex_fan(poly, vertex_idx, edges, edge_faces);
 // Description:
 //   Build the abstract vertex fan for one source vertex.
 //   .
 //   The fan is the topological ordering of faces, neighbour vertices, and
 //   incident edges around a vertex. Neighbours are cyclic and anchored at the
-//   lowest neighbour index by default; cyclic direction follows the source face winding.
+//   lowest neighbour index; cyclic direction follows the source face winding.
 //   .
 //   - Returns: vertex fan record `[vertex_idx, faces_idx, neighbors_idx, edges_idx]`
 //   .
-//   - Limitations/Gotchas: assumes a closed manifold local vertex neighbourhood. Set `canonical=false` to preserve the raw `ps_faces_around_vertex(...)` cycle start for geometry builders that need stable legacy face loops.
+//   - Limitations/Gotchas: assumes a closed manifold local vertex neighbourhood
 // Arguments:
 //   poly = poly descriptor
 //   vertex_idx = source vertex index
 //   edges = optional edge list for reuse
 //   edge_faces = optional edge-face table for reuse
-//   canonical = whether to rotate the fan to the lowest neighbour index
-function ps_vertex_fan(poly, vertex_idx, edges=undef, edge_faces=undef, canonical=true) =
+function ps_vertex_fan(poly, vertex_idx, edges=undef, edge_faces=undef) =
     let(
         faces = poly_faces(poly),
         e = is_undef(edges) ? _ps_edges_from_faces(faces) : edges,
@@ -1548,8 +1547,8 @@ function ps_vertex_fan(poly, vertex_idx, edges=undef, edge_faces=undef, canonica
         ],
         anchor_neighbor = min(neighbors_idx0),
         anchor = _ps_index_of(neighbors_idx0, anchor_neighbor),
-        faces_idx = canonical ? _ps_cycle_rotate(faces_idx0, anchor) : faces_idx0,
-        neighbors_idx = canonical ? _ps_cycle_rotate(neighbors_idx0, anchor) : neighbors_idx0,
+        faces_idx = _ps_cycle_rotate(faces_idx0, anchor),
+        neighbors_idx = _ps_cycle_rotate(neighbors_idx0, anchor),
         edges_idx = [
             for (nj = neighbors_idx)
                 let(ei = ps_find_edge_index(e, vertex_idx, nj))

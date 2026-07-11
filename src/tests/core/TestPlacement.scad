@@ -423,22 +423,6 @@ module test_ps_vertex_fan__rhombicuboctahedron_neighbors_are_cyclic_and_anchored
     }
 }
 
-module test_ps_vertex_fan__noncanonical_preserves_raw_face_cycle_start() {
-    p = rhombicuboctahedron();
-    faces = poly_faces(p);
-    edges = _ps_edges_from_faces(faces);
-    edge_faces = ps_edge_faces_table(faces, edges);
-
-    for (vi = [0:1:len(poly_verts(p))-1]) {
-        raw_faces = ps_faces_around_vertex(p, vi, edges, edge_faces);
-        fan = ps_vertex_fan(p, vi, edges, edge_faces, canonical=false);
-        assert(
-            ps_vertex_fan_faces_idx(fan) == raw_faces,
-            str("noncanonical fan should preserve raw face cycle start vi=", vi, " got=", ps_vertex_fan_faces_idx(fan), " expected=", raw_faces)
-        );
-    }
-}
-
 module test_ps_vertex_sites__neighbors_match_vertex_fan_order() {
     p = rhombicuboctahedron();
     faces = poly_faces(p);
@@ -1081,7 +1065,6 @@ module run_TestPlacement() {
     test_ps_edge_sites__preserves_raw_edge_order_for_classify_ids();
     test_ps_vertex_sites__cube_records_match_vertex_structure();
     test_ps_vertex_fan__rhombicuboctahedron_neighbors_are_cyclic_and_anchored();
-    test_ps_vertex_fan__noncanonical_preserves_raw_face_cycle_start();
     test_ps_vertex_sites__neighbors_match_vertex_fan_order();
     test_ps_vertex_sites__open_construction_outputs_remain_placeable();
     test_ps_vertex_site_from_local_poly__closed_ring_uses_fan_order();
