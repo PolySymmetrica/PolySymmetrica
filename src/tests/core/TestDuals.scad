@@ -129,6 +129,22 @@ module test_poly_dual__tetra_self_dual_counts() {
     for (fi=[0:3]) assert_int_eq(len(poly_faces(d)[fi]), 3, "tri face");
 }
 
+module test_poly_dual__miswound_input_uses_oriented_fan() {
+    p = _tetra_poly();
+    faces = poly_faces(p);
+    p_bad = [
+        poly_verts(p),
+        concat([[faces[0][2], faces[0][1], faces[0][0]]], [for (i = [1:1:len(faces)-1]) faces[i]]),
+        poly_e_over_ir(p)
+    ];
+    d = poly_dual(p_bad);
+
+    ps_assert_poly_valid_mode(d, "closed");
+    assert_int_eq(len(poly_verts(d)), 4, "miswound tetra dual verts=4");
+    assert_int_eq(len(poly_faces(d)), 4, "miswound tetra dual faces=4");
+    for (fi=[0:3]) assert_int_eq(len(poly_faces(d)[fi]), 3, "miswound tetra dual tri face");
+}
+
 
 // ps_dual_scale returns sane positive
 module test_ps_dual_scale__sane_range() {
@@ -197,6 +213,7 @@ module run_TestDuals() {
     test_ps_face_polar_verts__incidence_relation();
     test_poly_dual__octa_to_cube_counts();
     test_poly_dual__tetra_self_dual_counts();
+    test_poly_dual__miswound_input_uses_oriented_fan();
     test_ps_dual_scale__sane_range();
     test_face_family_helpers__rectified_octa();
     test_face_family_helpers__truncated_octa();

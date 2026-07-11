@@ -18,7 +18,7 @@ function _ps_dual_faces(poly, centers) =
     )
     [
         for (vi = [0 : len(verts)-1])
-            ps_faces_around_vertex(poly, vi, edges, edge_faces)
+            ps_vertex_fan_faces_idx(ps_vertex_fan(poly, vi, edges, edge_faces))
     ];
 
 
