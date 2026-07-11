@@ -30,7 +30,8 @@ function _ps_dual_metric_edge_idx(verts, faces, eps=1e-9) =
         verts0   = [for (v = verts) v - center],
         midrs    = [for (e = edges) norm((verts0[e[0]] + verts0[e[1]]) / 2)],
         ir       = min(midrs),
-        tol      = eps * max(1, ir),
+        _1       = assert(ir > 0, "_ps_dual_metric_edge_idx: dual inter-radius must be positive"),
+        tol      = eps * ir,
         nv       = len(verts),
         keys     = [
             for (i = [0:1:len(edges)-1])

@@ -119,6 +119,30 @@ module test__ps_dual_unit_edge_and_e_over_ir__stable_under_face_rotation() {
     assert_near(m0[1], m0[0] / ir, 1e-9, "dual e_over_ir should use descriptor inter-radius");
 }
 
+module test__ps_dual_unit_edge_and_e_over_ir__large_source_uses_scale_relative_tolerance() {
+    s = 1e9;
+    p0 = j1_square_pyramid();
+    p = [[for (v = poly_verts(p0)) v * s], poly_faces(p0), poly_e_over_ir(p0)];
+    verts0 = poly_verts(p);
+    faces0 = ps_orient_all_faces_outward(verts0, poly_faces(p));
+    dual_vf_raw = poly_dual_polar_vf(verts0, faces0);
+    dv_raw = dual_vf_raw[0];
+    df_raw = dual_vf_raw[1];
+    df_rot = [for (f = df_raw) rotl(f, 1)];
+    edges = _ps_edges_from_faces(df_raw);
+    center = _ps_poly_mid_center(dv_raw, df_raw);
+    dv_centered = [for (v = dv_raw) v - center];
+    edge_midradii = [for (e = edges) norm((dv_centered[e[0]] + dv_centered[e[1]]) / 2)];
+    ir = min(edge_midradii);
+
+    m0 = _ps_dual_unit_edge_and_e_over_ir(dv_raw, df_raw);
+    m1 = _ps_dual_unit_edge_and_e_over_ir(dv_raw, df_rot);
+
+    assert_near(m0[0], m1[0], 1e-15, "large-source dual unit edge stable under cyclic face starts");
+    assert_near(m0[1], m1[1], 1e-9, "large-source dual e_over_ir stable under cyclic face starts");
+    assert_near(m0[1], m0[0] / ir, 1e-9, "large-source dual e_over_ir should use descriptor inter-radius");
+}
+
 
 // ps_face_polar_verts correctness: n·q = 1/d, and q colinear with n
 module test_ps_face_polar_verts__incidence_relation() {
@@ -242,6 +266,7 @@ module run_TestDuals() {
     test_dual__validity();
     test__ps_dual_unit_edge_and_e_over_ir__positive();
     test__ps_dual_unit_edge_and_e_over_ir__stable_under_face_rotation();
+    test__ps_dual_unit_edge_and_e_over_ir__large_source_uses_scale_relative_tolerance();
     test_ps_face_polar_verts__incidence_relation();
     test_poly_dual__octa_to_cube_counts();
     test_poly_dual__tetra_self_dual_counts();
