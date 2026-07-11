@@ -22,14 +22,34 @@ function _ps_dual_faces(poly, centers) =
     ];
 
 
+function _ps_dual_metric_edge_idx(verts, faces, eps=1e-9) =
+    let(
+        edges    = _ps_edges_from_faces(faces),
+        _0       = assert(len(edges) > 0, "_ps_dual_metric_edge_idx: dual has no edges"),
+        center   = _ps_poly_mid_center(verts, faces),
+        verts0   = [for (v = verts) v - center],
+        midrs    = [for (e = edges) norm((verts0[e[0]] + verts0[e[1]]) / 2)],
+        ir       = min(midrs),
+        tol      = eps * max(1, ir),
+        nv       = len(verts),
+        keys     = [
+            for (i = [0:1:len(edges)-1])
+                if (abs(midrs[i] - ir) <= tol)
+                    edges[i][0] * nv + edges[i][1]
+        ],
+        key      = min(keys)
+    )
+    [for (i = [0:1:len(edges)-1]) if (edges[i][0] * nv + edges[i][1] == key) i][0];
+
 function _ps_dual_unit_edge_and_e_over_ir(verts, faces) =
     let(
         edges    = _ps_edges_from_faces(faces),
-        e0       = edges[0],
+        e0       = edges[_ps_dual_metric_edge_idx(verts, faces)],
         vA       = verts[e0[0]],
         vB       = verts[e0[1]],
+        center   = _ps_poly_mid_center(verts, faces),
         unit_e   = norm(vB - vA),
-        mid      = (vA + vB) / 2,
+        mid      = (vA + vB) / 2 - center,
         ir       = norm(mid),
         e_over_ir = unit_e / ir
     )

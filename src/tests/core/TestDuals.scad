@@ -8,6 +8,7 @@ use <../../polysymmetrica/core/funcs.scad>
 use <../../polysymmetrica/core/duals.scad>
 use <../../polysymmetrica/core/truncation.scad>
 use <../../polysymmetrica/core/validate.scad>
+use <../../polysymmetrica/models/johnsons_all.scad>
 use <../../polysymmetrica/models/platonics_all.scad>
 use <../testing_util.scad>
 
@@ -86,6 +87,36 @@ module test__ps_dual_unit_edge_and_e_over_ir__positive() {
     ue_eir = _ps_dual_unit_edge_and_e_over_ir(poly_verts(d), poly_faces(d));
     assert(ue_eir[0] > 0, "unit edge > 0");
     assert(ue_eir[1] > 0, "e_over_ir > 0");
+}
+
+module test__ps_dual_unit_edge_and_e_over_ir__stable_under_face_rotation() {
+    p = j1_square_pyramid();
+    verts0 = poly_verts(p);
+    faces0 = ps_orient_all_faces_outward(verts0, poly_faces(p));
+    dual_vf_raw = poly_dual_polar_vf(verts0, faces0);
+    dv_raw = dual_vf_raw[0];
+    df_raw = dual_vf_raw[1];
+    df_rot = [for (f = df_raw) rotl(f, 1)];
+    edges = _ps_edges_from_faces(df_raw);
+    center = _ps_poly_mid_center(dv_raw, df_raw);
+    dv_centered = [for (v = dv_raw) v - center];
+    edge_lengths = [for (e = edges) norm(dv_raw[e[1]] - dv_raw[e[0]])];
+    edge_midradii = [for (e = edges) norm((dv_centered[e[0]] + dv_centered[e[1]]) / 2)];
+    ir = min(edge_midradii);
+    metric_edge_lengths = [
+        for (i = [0:1:len(edges)-1])
+            if (abs(edge_midradii[i] - ir) <= 1e-9)
+                edge_lengths[i]
+    ];
+
+    m0 = _ps_dual_unit_edge_and_e_over_ir(dv_raw, df_raw);
+    m1 = _ps_dual_unit_edge_and_e_over_ir(dv_raw, df_rot);
+
+    assert_near(m0[0], m1[0], 1e-9, "dual unit edge stable under cyclic face starts");
+    assert_near(m0[1], m1[1], 1e-9, "dual e_over_ir stable under cyclic face starts");
+    assert(max([for (el = metric_edge_lengths) abs(el - m0[0]) <= 1e-9 ? 1 : 0]) == 1, "dual metric edge should attain min edge-midradius");
+    assert(m0[0] > min(edge_lengths) + 1e-6, "square-pyramid min-midradius dual edge is not the shortest edge");
+    assert_near(m0[1], m0[0] / ir, 1e-9, "dual e_over_ir should use descriptor inter-radius");
 }
 
 
@@ -210,6 +241,7 @@ module run_TestDuals() {
     test__ps_dual_faces__count_equals_original_vertices();
     test_dual__validity();
     test__ps_dual_unit_edge_and_e_over_ir__positive();
+    test__ps_dual_unit_edge_and_e_over_ir__stable_under_face_rotation();
     test_ps_face_polar_verts__incidence_relation();
     test_poly_dual__octa_to_cube_counts();
     test_poly_dual__tetra_self_dual_counts();
