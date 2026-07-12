@@ -566,6 +566,24 @@ module test_ps_vertex_site_frame__matches_site_accessors() {
     assert(ps_placement_frame_matrix(frame) == ps_placement_frame_matrix(site[11]), "vertex site frame matrix");
 }
 
+module test_ps_vertex_sites__truncated_tetrahedron_frames_are_orthonormal() {
+    sites = ps_vertex_sites(truncated_tetrahedron());
+
+    for (site = sites) {
+        vi = ps_vertex_site_idx(site);
+        ex = ps_vertex_site_ex(site);
+        ey = ps_vertex_site_ey(site);
+        ez = ps_vertex_site_ez(site);
+
+        assert(abs(norm(ex) - 1) < 1e-9, str("truncated tetra vertex frame ex unit vi=", vi, " ex=", ex));
+        assert(abs(norm(ey) - 1) < 1e-9, str("truncated tetra vertex frame ey unit vi=", vi, " ey=", ey));
+        assert(abs(norm(ez) - 1) < 1e-9, str("truncated tetra vertex frame ez unit vi=", vi, " ez=", ez));
+        assert(abs(v_dot(ex, ey)) < 1e-9, str("truncated tetra vertex frame ex/ey orthogonal vi=", vi, " ex=", ex, " ey=", ey));
+        assert(abs(v_dot(ex, ez)) < 1e-9, str("truncated tetra vertex frame ex/ez orthogonal vi=", vi, " ex=", ex, " ez=", ez));
+        assert(abs(v_dot(ey, ez)) < 1e-9, str("truncated tetra vertex frame ey/ez orthogonal vi=", vi, " ey=", ey, " ez=", ez));
+    }
+}
+
 module test_place_on_all__cube_single_family() {
     p = hexahedron();
     cls = poly_classify(p, 1, 1e-6, 1, false);
@@ -1072,6 +1090,7 @@ module run_TestPlacement() {
     test_ps_vertex_site_from_local_poly__open_ring_uses_edge_scan_order();
     test_ps_vertex_site_accessors__match_record_layout();
     test_ps_vertex_site_frame__matches_site_accessors();
+    test_ps_vertex_sites__truncated_tetrahedron_frames_are_orthonormal();
     test_place_on_all__cube_single_family();
     test_place_on_edges__no_auto_classify_by_default();
     test_place_on_all__indices_filter_selected_ids();
