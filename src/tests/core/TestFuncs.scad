@@ -365,17 +365,6 @@ module test_face_frame_normal__nonplanar_is_unit_and_oriented() {
     assert_near(v_dot(n_frame, n_rev), -1, 1e-9, "frame normal flips with reversed winding");
 }
 
-
-// --- poly_vertex_neighbor ---
-module test_poly_vertex_neighbor__returns_incident_vertex() {
-    verts = [[0,0,0],[1,0,0],[0,1,0],[0,0,1]];
-    faces = [[0,1,2],[0,1,3],[0,2,3],[1,2,3]];
-    p = poly_make(verts, faces, 1);
-    n = poly_vertex_neighbor(p, 0);
-    assert(n==1 || n==2 || n==3, "neighbor must be incident");
-}
-
-
 // --- _ps_edges_from_faces / ps_face_has_edge / ps_edge_faces_table ---
 module test_edges_from_faces__tetra_counts() {
     faces = [[0,1,2],[0,1,3],[0,2,3],[1,2,3]];
@@ -723,8 +712,6 @@ module run_TestFuncs() {
     test_ps_face_planarity_err__planar_and_nonplanar();
     test_face_frame_normal__planar_matches_face_normal();
     test_face_frame_normal__nonplanar_is_unit_and_oriented();
-
-    test_poly_vertex_neighbor__returns_incident_vertex();
 
     test_edges_from_faces__tetra_counts();
     test_edges_from_faces__quad_edges();

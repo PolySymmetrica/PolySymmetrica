@@ -1861,7 +1861,7 @@ function ps_vertex_sites(poly, inter_radius = 1, edge_len = undef, classify = un
                 neighbor_dir = v1 - v0,
                 proj = neighbor_dir - ez * v_dot(neighbor_dir, ez),
                 proj_len = norm(proj),
-                ex = (proj_len == 0) ? [1,0,0] : proj / proj_len,
+                ex = (proj_len == 0) ? _ps_any_perp(ez) : proj / proj_len,
                 ey = v_cross(ez, ex),
                 center = v0,
                 vert_radius = norm(center),
