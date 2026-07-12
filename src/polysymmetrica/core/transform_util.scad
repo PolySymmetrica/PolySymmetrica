@@ -155,7 +155,7 @@ function _ps_edge_cycles_from_face_edge_sites(faces0, edges, edge_faces, face_ed
 function _ps_vert_cycles_from_face_edge_sites(verts0, faces0, edges, edge_faces, face_edge_offsets, poly0) =
     [
         for (vi = [0:1:len(verts0)-1])
-            let(fc = ps_faces_around_vertex(poly0, vi, edges, edge_faces))
+            let(fc = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)))
             [
                 for (fi = fc)
                     let(

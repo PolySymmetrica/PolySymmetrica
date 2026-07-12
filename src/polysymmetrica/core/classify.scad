@@ -317,7 +317,7 @@ function _ps_vert_keys_from(verts, faces, edges, edge_faces, detail, eps) =
     [
         for (vi = [0:1:len(verts)-1])
             let(
-                fc = ps_faces_around_vertex([verts, faces, 0], vi, edges, edge_faces),
+                fc = ps_vertex_fan_faces_idx(ps_vertex_fan([verts, faces, 0], vi, edges, edge_faces)),
                 ks = _ps_cyclic_canonical([for (fi = fc) len(faces[fi])], "max", false),
                 elens = [
                     for (e = edges)
@@ -443,7 +443,7 @@ function _ps_refine_vert_keys(poly, vert_keys, face_keys, edges, edge_faces) =
     [
         for (vi = [0:1:len(poly_verts(poly))-1])
             let(
-                fc = ps_faces_around_vertex(poly, vi, edges, edge_faces),
+                fc = ps_vertex_fan_faces_idx(ps_vertex_fan(poly, vi, edges, edge_faces)),
                 nbr_ids = [for (fi = fc) face_ids[fi]],
                 nbr_key = _ps_cyclic_canonical(nbr_ids, "max", false)
             )
