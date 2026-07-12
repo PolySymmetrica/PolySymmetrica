@@ -1280,29 +1280,6 @@ function _ps_face_planarity_err(verts, f, eps=1e-12) =
 function _ps_faces_max_planarity_err(verts, faces, eps=1e-12) =
     (len(faces) == 0) ? 0 : max([for (f = faces) _ps_face_planarity_err(verts, f, eps)]);
 
-
-// Function: poly_vertex_neighbor()
-// Usage:
-//   result = poly_vertex_neighbor(poly, vi);
-// Description:
-//   Return one neighbor vertex of a vertex.
-//   .
-//   - Returns: first adjacent vertex found in face traversal
-// Arguments:
-//   poly = poly descriptor
-//   vi = vertex index
-function poly_vertex_neighbor(poly, vi) =
-    let(
-        faces = poly_faces(poly),
-        // collect "next" vertex after vi in any face that contains it
-        candidates = [
-            for (f = faces)
-                for (k = [0 : len(f)-1])
-                    if (f[k] == vi) f[(k+1) % len(f)]
-        ]
-    ) candidates[0];  // first one is enough
-
-
 ///////////////////////////////////////
 // ---- Topology helpers ----
 // Function: _ps_edges_from_faces()
