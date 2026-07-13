@@ -522,6 +522,30 @@ module test_orient_all_faces_outward__normalizes_volume_for_tiny_inward_shell() 
     assert(poly_valid(q, "convex"), "tiny translated shell remains convex-valid");
 }
 
+module test_orient_all_faces_outward__orients_disconnected_shells_independently() {
+    p = hexahedron();
+    verts0 = [for (v = poly_verts(p)) v + [10, 0, 0]];
+    verts1 = [for (v = poly_verts(p)) v + [13, 0, 0]];
+    faces0 = poly_faces(p);
+    faces1 = [for (f = faces0) [for (vi = f) vi + len(verts0)]];
+    faces1_in = [for (f = faces1) _ps_reverse(f)];
+    verts = concat(verts0, verts1);
+    faces = concat(faces0, faces1_in);
+    expected = concat(faces0, faces1);
+    out = ps_orient_all_faces_outward(verts, faces);
+    comps = _ps_face_components(out);
+
+    assert(out == expected, "disconnected inward shell should be reversed independently");
+    assert_int_eq(len(comps), 2, "compound should have two face components");
+    assert(
+        min([
+            for (comp = comps)
+                _ps_faces_signed_volume6_normalized_rhr(verts, _ps_faces_for_indices(out, comp)) < -EPS ? 1 : 0
+        ]) == 1,
+        "every disconnected shell should be LHR outward"
+    );
+}
+
 module test_ps_sort__numbers() {
     v = [3,1,4,1,5,9,2];
     s = _ps_sort(v);
@@ -797,6 +821,7 @@ module run_TestFuncs() {
     test_orient_all_faces_outward__repairs_one_reversed_face_off_origin();
     test_orient_all_faces_outward__reverses_whole_inward_shell_off_origin();
     test_orient_all_faces_outward__normalizes_volume_for_tiny_inward_shell();
+    test_orient_all_faces_outward__orients_disconnected_shells_independently();
     test_ps_sort__numbers();
     test_ps_sort__floats();
     test_ps_sort__empty();
