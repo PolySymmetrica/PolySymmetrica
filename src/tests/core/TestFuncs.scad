@@ -48,12 +48,39 @@ function _cube_with_degenerate_extra_face() =
     )
     [v, concat(f, [[0,1,0]]), poly_e_over_ir(p)];
 
+function _cube_with_collinear_extra_face() =
+    let(
+        p = hexahedron(),
+        v0 = poly_verts(p),
+        f = poly_faces(p),
+        base = len(v0),
+        v = concat(v0, [[0,0,0], [1,0,1], [2,0,2], [3,0,3]])
+    )
+    [v, concat(f, [[base, base + 1, base + 2, base + 3]]), poly_e_over_ir(p)];
+
 function _pyramid_with_nonplanar_base() =
     let(
         v = [[1,1,0],[-1,1,0],[-1,-1,0.2],[1,-1,0],[0,0,1]],
         f = [[0,1,2,3],[0,4,1],[1,4,2],[2,4,3],[3,4,0]]
     )
     [v, f, 1];
+
+function _folded_face_with_zero_boundary_area_vector() =
+    [
+        [[-1,0,1],[-1,-1,-1],[1,0,1],[1,0,0],[1,-1,0],[-1,0,0]],
+        [[0,1,2,3,4,5]],
+        1
+    ];
+
+function _cube_with_bowtie_extra_face() =
+    let(
+        p = hexahedron(),
+        v0 = poly_verts(p),
+        f = poly_faces(p),
+        base = len(v0),
+        v = concat(v0, [[0,0,0], [1,1,0], [0,1,0], [1,0,0]])
+    )
+    [v, concat(f, [[base, base + 1, base + 2, base + 3]]), poly_e_over_ir(p)];
 
 function _tetra_with_duplicate_vertex() =
     let(
@@ -334,6 +361,36 @@ module test_ps_face_area_mag__triangle_unit_half() {
     verts = [[0,0,0],[1,0,0],[0,1,0]];
     a = _ps_face_area_mag(verts, [0,1,2]);
     assert_near(a, 0.5, 1e-12, "face area triangle");
+}
+
+module test_ps_face_area_mag__concave_polygon_uses_boundary_area() {
+    verts = [[0,0,0],[2,0,0],[2,2,0],[1,1,0],[0,2,0]];
+    a = _ps_face_area_mag(verts, [0,1,2,3,4]);
+
+    assert_near(a, 3, 1e-12, "concave face area should not overcount triangle fan");
+}
+
+module test_ps_face_area_mag__tilted_concave_polygon_uses_boundary_area() {
+    verts = [[0,0,0],[2,0,2],[2,2,4],[1,1,2],[0,2,2]];
+    a = _ps_face_area_mag(verts, [0,1,2,3,4]);
+
+    assert_near(a, 3 * sqrt(3), 1e-12, "tilted concave face area");
+}
+
+module test_ps_face_area_mag__small_collinear_first_face_uses_boundary_area() {
+    s = 1e-7;
+    verts = [[0,0,0],[s,0,0],[2*s,0,0],[2*s,s,0],[0,s,0]];
+    a = _ps_face_area_mag(verts, [0,1,2,3,4]);
+
+    assert_near(a, 2e-14, 1e-20, "small collinear-first face area");
+}
+
+module test_ps_face_area_mag__far_from_origin_uses_local_differences() {
+    o = [1e8, 1e8, 0];
+    verts = [o, o + [1,0,0], o + [1,1,0], o + [0,1,0]];
+    a = _ps_face_area_mag(verts, [0,1,2,3]);
+
+    assert_near(a, 1, 1e-12, "far-from-origin face area");
 }
 
 module test_ps_face_planarity_err__planar_and_nonplanar() {
@@ -763,12 +820,51 @@ module test_poly_cleanup__drops_degenerate_faces() {
     assert(poly_valid(q, "closed"), "cleanup dropped degenerate face should remain closed-valid");
 }
 
+module test_poly_cleanup__drops_collinear_unique_index_face() {
+    p = _cube_with_collinear_extra_face();
+    q = poly_cleanup(p, eps=1e-8, fix_winding=true, drop_degenerate=true);
+
+    assert_int_eq(len(poly_faces(q)), 6, "cleanup dropped collinear unique-index face");
+    assert(poly_valid(q, "closed"), "cleanup dropped collinear face should remain closed-valid");
+}
+
+module test_poly_cleanup__preserves_planar_self_crossing_zero_boundary_area_face() {
+    p = _cube_with_bowtie_extra_face();
+    q = poly_cleanup(p, eps=1e-8, fix_winding=false);
+    bowtie = poly_faces(q)[6];
+
+    assert_int_eq(len(poly_faces(q)), 7, "cleanup should preserve planar self-crossing face");
+    assert_near(_ps_face_area_mag(poly_verts(q), bowtie), 0, 1e-12,
+        "bow-tie projected signed boundary area cancels");
+    assert(_ps_face_fan_area_mag(poly_verts(q), bowtie) > 1e-8,
+        "bow-tie fan area should be positive");
+}
+
 module test_poly_cleanup__triangulates_nonplanar_faces() {
     p = _pyramid_with_nonplanar_base();
     q = poly_cleanup(p, eps=1e-8, triangulate_nonplanar=true, fix_winding=true);
     assert_int_eq(len(poly_faces(q)), 6, "cleanup triangulates nonplanar quad base into two triangles");
     assert_int_eq(_count_faces_of_size(q, 4), 0, "cleanup triangulated nonplanar quads");
     assert(poly_valid(q, "struct"), "cleanup triangulated output should be structurally valid");
+}
+
+module test_poly_cleanup__triangulates_folded_zero_boundary_area_face() {
+    p = _folded_face_with_zero_boundary_area_vector();
+    q = poly_cleanup(p, eps=1e-8, triangulate_nonplanar=true, fix_winding=false);
+
+    assert_int_eq(len(poly_faces(q)), 4, "cleanup should triangulate folded zero-boundary-area face");
+    assert_int_eq(_count_faces_of_size(q, 3), 4, "folded face should become four triangles");
+    assert(poly_valid(q, "struct"), "folded triangulated output should be structurally valid");
+}
+
+module test_poly_cleanup__preserves_folded_zero_boundary_area_face_by_default() {
+    p = _folded_face_with_zero_boundary_area_vector();
+    q = poly_cleanup(p, eps=1e-8);
+
+    assert_int_eq(len(poly_faces(q)), 1, "default cleanup should preserve folded nonplanar face");
+    assert_int_eq(len(poly_faces(q)[0]), 6, "default cleanup should leave folded face untriangulated");
+    assert(_ps_face_planarity_err(poly_verts(q), poly_faces(q)[0], 1e-8) > 1e-8,
+        "default cleanup should preserve the nonplanar loop when triangulation is disabled");
 }
 
 module test_poly_cleanup__merges_and_compacts_vertices() {
@@ -824,6 +920,10 @@ module run_TestFuncs() {
     test_face_centroid__triangle();
     test_face_normal__orientation();
     test_ps_face_area_mag__triangle_unit_half();
+    test_ps_face_area_mag__concave_polygon_uses_boundary_area();
+    test_ps_face_area_mag__tilted_concave_polygon_uses_boundary_area();
+    test_ps_face_area_mag__small_collinear_first_face_uses_boundary_area();
+    test_ps_face_area_mag__far_from_origin_uses_local_differences();
     test_ps_face_planarity_err__planar_and_nonplanar();
     test_ps_face_planarity_err__first_three_collinear_planar_face();
     test_face_frame_normal__planar_matches_face_normal();
@@ -860,7 +960,11 @@ module run_TestFuncs() {
     test_params__selector_precedence_and_compile();
     test_poly_cleanup__normalizes_face_cycles();
     test_poly_cleanup__drops_degenerate_faces();
+    test_poly_cleanup__drops_collinear_unique_index_face();
+    test_poly_cleanup__preserves_planar_self_crossing_zero_boundary_area_face();
     test_poly_cleanup__triangulates_nonplanar_faces();
+    test_poly_cleanup__triangulates_folded_zero_boundary_area_face();
+    test_poly_cleanup__preserves_folded_zero_boundary_area_face_by_default();
     test_poly_cleanup__merges_and_compacts_vertices();
     test_poly_cleanup__tiny_uniform_scale_not_dropped_by_area_tol();
 }

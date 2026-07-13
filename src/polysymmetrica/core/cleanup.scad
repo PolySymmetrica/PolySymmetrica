@@ -22,12 +22,25 @@
 
 use <funcs.scad>
 
+function _ps_face_fan_area_mag(verts, f) =
+    (len(f) < 3) ? 0 :
+    ps_sum([
+        for (i = [1:1:len(f)-2])
+            norm(v_cross(verts[f[i]] - verts[f[0]], verts[f[i+1]] - verts[f[0]])) / 2
+    ]);
+
+function _ps_face_has_cleanup_area(verts, f, eps) =
+    // Projected boundary area handles simple concave faces; fan area preserves
+    // folded and self-crossing loops whose signed boundary area cancels.
+    (_ps_face_area_mag(verts, f) > (eps * eps)) ||
+    (_ps_face_fan_area_mag(verts, f) > (eps * eps));
+
 function _ps_face_is_degenerate(verts, f, eps) =
     (len(f) < 3) ||
     (_ps_distinct_count(f) < 3) ||
     (_ps_distinct_count(f) != len(f)) ||
     // Area is quadratic in length, so compare against eps^2 (eps is linear tol).
-    (_ps_face_area_mag(verts, f) <= (eps * eps));
+    !_ps_face_has_cleanup_area(verts, f, eps);
 
 function _ps_faces_drop_degenerate(verts, faces, eps) =
     [for (f = faces) if (!_ps_face_is_degenerate(verts, f, eps)) f];
