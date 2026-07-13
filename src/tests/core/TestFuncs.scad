@@ -48,6 +48,16 @@ function _cube_with_degenerate_extra_face() =
     )
     [v, concat(f, [[0,1,0]]), poly_e_over_ir(p)];
 
+function _cube_with_collinear_extra_face() =
+    let(
+        p = hexahedron(),
+        v0 = poly_verts(p),
+        f = poly_faces(p),
+        base = len(v0),
+        v = concat(v0, [[0,0,0], [1,0,1], [2,0,2], [3,0,3]])
+    )
+    [v, concat(f, [[base, base + 1, base + 2, base + 3]]), poly_e_over_ir(p)];
+
 function _pyramid_with_nonplanar_base() =
     let(
         v = [[1,1,0],[-1,1,0],[-1,-1,0.2],[1,-1,0],[0,0,1]],
@@ -800,6 +810,14 @@ module test_poly_cleanup__drops_degenerate_faces() {
     assert(poly_valid(q, "closed"), "cleanup dropped degenerate face should remain closed-valid");
 }
 
+module test_poly_cleanup__drops_collinear_unique_index_face() {
+    p = _cube_with_collinear_extra_face();
+    q = poly_cleanup(p, eps=1e-8, fix_winding=true, drop_degenerate=true);
+
+    assert_int_eq(len(poly_faces(q)), 6, "cleanup dropped collinear unique-index face");
+    assert(poly_valid(q, "closed"), "cleanup dropped collinear face should remain closed-valid");
+}
+
 module test_poly_cleanup__triangulates_nonplanar_faces() {
     p = _pyramid_with_nonplanar_base();
     q = poly_cleanup(p, eps=1e-8, triangulate_nonplanar=true, fix_winding=true);
@@ -920,6 +938,7 @@ module run_TestFuncs() {
     test_params__selector_precedence_and_compile();
     test_poly_cleanup__normalizes_face_cycles();
     test_poly_cleanup__drops_degenerate_faces();
+    test_poly_cleanup__drops_collinear_unique_index_face();
     test_poly_cleanup__triangulates_nonplanar_faces();
     test_poly_cleanup__triangulates_folded_zero_boundary_area_face();
     test_poly_cleanup__preserves_folded_zero_boundary_area_face_by_default();

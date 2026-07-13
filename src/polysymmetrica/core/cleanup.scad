@@ -22,8 +22,17 @@
 
 use <funcs.scad>
 
+function _ps_face_fan_area_mag(verts, f) =
+    (len(f) < 3) ? 0 :
+    ps_sum([
+        for (i = [1:1:len(f)-2])
+            norm(v_cross(verts[f[i]] - verts[f[0]], verts[f[i+1]] - verts[f[0]])) / 2
+    ]);
+
 function _ps_face_preserve_nonplanar_for_cleanup(verts, f, eps, preserve_nonplanar) =
-    preserve_nonplanar && !_ps_face_is_planar(verts, f, eps);
+    preserve_nonplanar &&
+    !_ps_face_is_planar(verts, f, eps) &&
+    _ps_face_fan_area_mag(verts, f) > (eps * eps);
 
 function _ps_face_is_degenerate(verts, f, eps, preserve_nonplanar=false) =
     (len(f) < 3) ||
