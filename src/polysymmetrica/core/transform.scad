@@ -31,8 +31,9 @@ function _ps_face_points_to_indices(uniq, face_pts, eps) =
 function _ps_face_keep_after_simplify(f) =
     (len(f) >= 3) && (_ps_distinct_count(f) >= 3);
 
-function _ps_poly_from_face_points(faces_pts_all, eps, len_eps=undef) =
+function _ps_poly_from_face_points(faces_pts_all, eps, len_eps=undef, orientation="global") =
     let(
+        _orient_ok = assert(orientation == "global" || orientation == "semantic", "transform: orientation must be global or semantic"),
         len_eps_eff = is_undef(len_eps) ? eps : len_eps,
         bad_pts = [
             for (fi = [0:1:len(faces_pts_all)-1])
@@ -55,7 +56,9 @@ function _ps_poly_from_face_points(faces_pts_all, eps, len_eps=undef) =
         faces_idx_simpl = [ for (f = faces_idx) _ps_face_clean_cycle(f) ],
         faces_idx_keep = [ for (f = faces_idx_simpl) if (_ps_face_keep_after_simplify(f)) f ],
         _simp_ok = assert(len(faces_idx_keep) > 0, "transform: no non-degenerate faces after simplification"),
-        faces_out = ps_orient_all_faces_outward(uniq_verts, faces_idx_keep),
+        faces_out = (orientation == "semantic")
+            ? [for (f = faces_idx_keep) ps_orient_face_outward(uniq_verts, f)]
+            : ps_orient_all_faces_outward(uniq_verts, faces_idx_keep),
         edges_new = _ps_edges_from_faces(faces_out),
         _edge_ok = assert(len(edges_new) > 0, "transform: no edges after simplification"),
         e0 = edges_new[0],
@@ -71,7 +74,7 @@ function _ps_poly_from_face_points(faces_pts_all, eps, len_eps=undef) =
 // Function: ps_poly_transform_from_sites()
 // Usage:
 //   result = ps_poly_transform_from_sites(verts0, sites, site_points,
-//       face_cycles, eps=1e-8, len_eps=1e-6);
+//       face_cycles, eps=1e-8, len_eps=1e-6, orientation="global");
 // Description:
 //   Build a poly descriptor from site-based face cycles.
 // Arguments:
@@ -81,7 +84,8 @@ function _ps_poly_from_face_points(faces_pts_all, eps, len_eps=undef) =
 //   face_cycles = output face cycles using `[0, v_idx]` for original vertices and `[1, site_idx]` for generated site points.
 //   eps = geometric tolerance for face simplification and validation.
 //   len_eps = point-merging tolerance for coincident generated/original points.
-function ps_poly_transform_from_sites(verts0, sites, site_points, face_cycles, eps=1e-8, len_eps=1e-6) =
+//   orientation = `"global"` for topology/global-volume orientation, or `"semantic"` for per-face origin orientation.
+function ps_poly_transform_from_sites(verts0, sites, site_points, face_cycles, eps=1e-8, len_eps=1e-6, orientation="global") =
     let(
         faces_pts_all = [
             for (cy = face_cycles)
@@ -107,4 +111,4 @@ function ps_poly_transform_from_sites(verts0, sites, site_points, face_cycles, e
                 " idx ", bad_cycles[0][1], " c=", bad_cycles[0][2], " p=", bad_cycles[0][3])
         )
     )
-    _ps_poly_from_face_points(faces_pts_all, eps, len_eps);
+    _ps_poly_from_face_points(faces_pts_all, eps, len_eps, orientation);

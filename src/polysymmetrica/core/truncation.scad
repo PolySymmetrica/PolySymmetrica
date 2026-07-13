@@ -291,6 +291,9 @@ function poly_truncate(
                         : t_base
             ],
             _t_ok = assert(min([for (tv = t_by_vert) (tv != 0.5) ? 1 : 0]) == 1, "poly_truncate: t=0.5 is not allowed"),
+            transform_orientation = (min(t_by_vert) < -eps || max(t_by_vert) > 0.5 + eps)
+                ? "semantic"
+                : "global",
             all_zero = max([for (tv = t_by_vert) abs(tv)]) <= eps
         )
         let(
@@ -334,7 +337,7 @@ function poly_truncate(
                 ],
                 cycles_all = concat(face_cycles, vert_cycles)
             )
-            ps_poly_transform_from_sites(verts, sites, site_points, cycles_all, eps, eps)
+            ps_poly_transform_from_sites(verts, sites, site_points, cycles_all, eps, eps, transform_orientation)
         )
         ps_finalize_poly(q, cleanup, cleanup_eps);
 

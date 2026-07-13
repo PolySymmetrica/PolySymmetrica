@@ -471,6 +471,43 @@ module test_orient_all_faces_outward__length_preserved() {
     assert_int_eq(len(out), len(faces), "face count preserved");
 }
 
+module test_orient_all_faces_outward__translated_closed_mesh_keeps_consistent_winding() {
+    p = hexahedron();
+    verts = [for (v = poly_verts(p)) v + [10, 0, 0]];
+    faces = poly_faces(p);
+    out = ps_orient_all_faces_outward(verts, faces);
+    q = [verts, out, poly_e_over_ir(p)];
+
+    assert(out == faces, "translated outward shell should not be reoriented face-by-face");
+    assert(poly_validate_winding(q), "translated shell winding remains consistent");
+    assert(poly_valid(q, "convex"), "translated shell remains convex-valid");
+}
+
+module test_orient_all_faces_outward__repairs_one_reversed_face_off_origin() {
+    p = hexahedron();
+    verts = [for (v = poly_verts(p)) v + [10, 0, 0]];
+    faces = poly_faces(p);
+    faces_bad = [
+        for (i = [0:1:len(faces)-1])
+            (i == 0) ? _ps_reverse(faces[i]) : faces[i]
+    ];
+    out = ps_orient_all_faces_outward(verts, faces_bad);
+
+    assert(out == faces, "single reversed face should be repaired topologically");
+    assert(_ps_faces_signed_volume6_rhr(verts, out) < -EPS, "repaired shell is LHR outward");
+}
+
+module test_orient_all_faces_outward__reverses_whole_inward_shell_off_origin() {
+    p = hexahedron();
+    verts = [for (v = poly_verts(p)) v + [10, 0, 0]];
+    faces = poly_faces(p);
+    faces_in = [for (f = faces) _ps_reverse(f)];
+    out = ps_orient_all_faces_outward(verts, faces_in);
+
+    assert(out == faces, "inward shell should be reversed globally");
+    assert(_ps_faces_signed_volume6_rhr(verts, out) < -EPS, "globally reversed shell is LHR outward");
+}
+
 module test_ps_sort__numbers() {
     v = [3,1,4,1,5,9,2];
     s = _ps_sort(v);
@@ -742,6 +779,9 @@ module run_TestFuncs() {
 
     test_orient_face_outward__makes_centroid_dot_normal_nonnegative();
     test_orient_all_faces_outward__length_preserved();
+    test_orient_all_faces_outward__translated_closed_mesh_keeps_consistent_winding();
+    test_orient_all_faces_outward__repairs_one_reversed_face_off_origin();
+    test_orient_all_faces_outward__reverses_whole_inward_shell_off_origin();
     test_ps_sort__numbers();
     test_ps_sort__floats();
     test_ps_sort__empty();
