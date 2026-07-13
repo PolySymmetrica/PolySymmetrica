@@ -345,6 +345,12 @@ module test_ps_face_planarity_err__planar_and_nonplanar() {
     assert(e1 > 0, "planarity err nonplanar > 0");
 }
 
+module test_ps_face_planarity_err__first_three_collinear_planar_face() {
+    verts = [[0,0,0],[1,0,0],[2,0,0],[2,0,1],[0,0,1]];
+    e = _ps_face_planarity_err(verts, [0,1,2,3,4], 1e-12);
+    assert_near(e, 0, 1e-12, "planarity should use the full face loop normal");
+}
+
 module test_face_frame_normal__planar_matches_face_normal() {
     verts = [[0,0,0],[1,0,0],[1,1,0],[0,1,0]];
     f = [0,1,2,3];
@@ -363,6 +369,16 @@ module test_face_frame_normal__nonplanar_is_unit_and_oriented() {
     assert_near(v_len(n_frame), 1, 1e-9, "frame normal unit");
     assert(v_dot(n_frame, n_topo) > 0, "frame normal aligned with topo orientation");
     assert_near(v_dot(n_frame, n_rev), -1, 1e-9, "frame normal flips with reversed winding");
+}
+
+module test_face_frame_normal__first_three_collinear_follows_lhr_winding() {
+    verts = [[0,0,0],[1,0,0],[2,0,0],[2,1,0],[0,1,0]];
+    f = [0,1,2,3,4];
+    n_frame = ps_face_frame_normal(verts, f);
+    n_rev = ps_face_frame_normal(verts, _ps_reverse(f));
+
+    assert_vec3_near(n_frame, [0,0,-1], 1e-12, "collinear first-three face normal should follow LHR");
+    assert_vec3_near(n_rev, [0,0,1], 1e-12, "reversed collinear first-three face normal should flip");
 }
 
 // --- _ps_edges_from_faces / ps_face_has_edge / ps_edge_faces_table ---
@@ -710,8 +726,10 @@ module run_TestFuncs() {
     test_face_normal__orientation();
     test_ps_face_area_mag__triangle_unit_half();
     test_ps_face_planarity_err__planar_and_nonplanar();
+    test_ps_face_planarity_err__first_three_collinear_planar_face();
     test_face_frame_normal__planar_matches_face_normal();
     test_face_frame_normal__nonplanar_is_unit_and_oriented();
+    test_face_frame_normal__first_three_collinear_follows_lhr_winding();
 
     test_edges_from_faces__tetra_counts();
     test_edges_from_faces__quad_edges();

@@ -68,11 +68,17 @@ module test_validity__winding_mismatch() {
     assert_false(poly_valid(p, "closed"), "winding mismatch should fail closed");
 }
 
+module test_validity__face_planar_handles_collinear_first_three_vertices() {
+    verts = [[0,0,0],[1,0,0],[2,0,0],[2,0,1],[0,0,1]];
+    assert_true(_ps_face_planar(verts, [0,1,2,3,4], EPS), "planar vertical face with collinear first three vertices");
+}
+
 module run_TestValidity() {
     test_validity__regulars_closed();
     test_validity__star_face_modes();
     test_validity__duplicate_indices();
     test_validity__winding_mismatch();
+    test_validity__face_planar_handles_collinear_first_three_vertices();
 }
 
 run_TestValidity();

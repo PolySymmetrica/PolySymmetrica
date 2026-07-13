@@ -70,7 +70,7 @@ function ps_face_polar_verts(verts, faces) =
         for (fi = [0 : len(faces)-1])
             let(
                 f = faces[fi],
-                n = ps_face_normal(verts, f),        // unit outward normal
+                n = ps_face_frame_normal(verts, f),  // unit outward normal
                 d = v_dot(n, verts[f[0]])         // plane offset along n
             )
             assert(d > 0, str("ps_face_polar_verts: d<=0 at face ", fi))

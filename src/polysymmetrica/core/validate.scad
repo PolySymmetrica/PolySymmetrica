@@ -76,7 +76,7 @@ function _ps_edges_winding_ok(faces, strict=true) =
 
 function _ps_face_planar(verts, f, eps) =
     let(
-        n = ps_face_normal(verts, f),
+        n = ps_face_frame_normal(verts, f, eps),
         nlen = norm(n),
         d = v_dot(n, verts[f[0]])
     )
@@ -102,7 +102,7 @@ function _ps_seg_intersect(a, b, c, d, eps=1e-9) =
 
 function _ps_face_self_intersections(verts, f, eps=1e-9) =
     let(
-        n = ps_face_normal(verts, f),
+        n = ps_face_frame_normal(verts, f, eps),
         c = ps_face_centroid(verts, f),
         a0 = verts[f[0]] - c,
         proj = a0 - n * v_dot(a0, n),
@@ -146,7 +146,7 @@ function _ps_faces_outward(verts, faces, eps=1e-9) =
     min([
         for (f = faces)
             let(c = ps_face_centroid(verts, f),
-                n = ps_face_normal(verts, f))
+                n = ps_face_frame_normal(verts, f, eps))
             (v_dot(c, n) >= -eps) ? 1 : 0
     ]) == 1;
 
@@ -154,7 +154,7 @@ function _ps_poly_convex(verts, faces, eps=1e-9) =
     let(faces_out = ps_orient_all_faces_outward(verts, faces))
     min([
         for (f = faces_out)
-            let(n = ps_face_normal(verts, f),
+            let(n = ps_face_frame_normal(verts, f, eps),
                 d = v_dot(n, verts[f[0]]))
             min([ for (v = verts) v_dot(n, v) <= d + eps ? 1 : 0 ]) == 1 ? 1 : 0
     ]) == 1;
