@@ -549,6 +549,38 @@ function _ps_face_signed_volume6_rhr(verts, f) =
 function _ps_faces_signed_volume6_rhr(verts, faces) =
     ps_sum([for (f = faces) _ps_face_signed_volume6_rhr(verts, f)]);
 
+// Function: _ps_faces_volume_scale3()
+// Usage:
+//   result = _ps_faces_volume_scale3(verts, faces);
+// Description:
+//   Compute a cubic scale for signed-volume orientation tests.
+//   .
+//   - Returns: largest edge length cubed, or 1 for edgeless input
+// Arguments:
+//   verts = vertex list
+//   faces = face list
+function _ps_faces_volume_scale3(verts, faces) =
+    let(
+        edges = _ps_edges_from_faces(faces),
+        max_edge = (len(edges) == 0)
+            ? 0
+            : max([for (e = edges) norm(verts[e[1]] - verts[e[0]])])
+    )
+    (max_edge > 0) ? max_edge * max_edge * max_edge : 1;
+
+// Function: _ps_faces_signed_volume6_normalized_rhr()
+// Usage:
+//   result = _ps_faces_signed_volume6_normalized_rhr(verts, faces);
+// Description:
+//   Compute signed `volume6` normalized by mesh edge scale cubed.
+//   .
+//   - Returns: dimensionless signed scalar; negative means LHR outward for closed shells
+// Arguments:
+//   verts = vertex list
+//   faces = face list
+function _ps_faces_signed_volume6_normalized_rhr(verts, faces) =
+    _ps_faces_signed_volume6_rhr(verts, faces) / _ps_faces_volume_scale3(verts, faces);
+
 // Function: _ps_faces_winding_consistent()
 // Usage:
 //   result = _ps_faces_winding_consistent(faces, strict);
@@ -616,9 +648,9 @@ function _ps_faces_semantic_origin_orient(verts, faces) =
 // Arguments:
 //   verts = vertex list
 //   faces = topology-consistent face list
-//   eps = signed-volume tolerance
+//   eps = normalized signed-volume tolerance
 function _ps_faces_orient_by_signed_volume(verts, faces, eps=1e-9) =
-    let(vol6 = _ps_faces_signed_volume6_rhr(verts, faces))
+    let(vol6 = _ps_faces_signed_volume6_normalized_rhr(verts, faces))
     (vol6 > eps)
         ? [for (f = faces) _ps_reverse(f)]
         : faces;
@@ -2240,7 +2272,7 @@ function ps_orient_face_outward(verts, f) =
 // Arguments:
 //   verts = 3D vertex list
 //   faces = face list
-//   eps = signed-volume tolerance
+//   eps = normalized signed-volume tolerance
 function ps_orient_all_faces_outward(verts, faces, eps=1e-9) =
     let(semantic = _ps_faces_semantic_origin_orient(verts, faces))
     !is_undef(semantic)

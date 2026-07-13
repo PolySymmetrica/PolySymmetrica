@@ -117,7 +117,7 @@ function _ps_edges_manifold(verts, faces) =
     ]) == 1;
 
 function _ps_faces_outward(verts, faces, eps=1e-9) =
-    _ps_faces_signed_volume6_rhr(verts, faces) < -eps;
+    _ps_faces_signed_volume6_normalized_rhr(verts, faces) < -eps;
 
 function _ps_poly_convex(verts, faces, eps=1e-9) =
     let(faces_out = ps_orient_all_faces_outward(verts, faces))

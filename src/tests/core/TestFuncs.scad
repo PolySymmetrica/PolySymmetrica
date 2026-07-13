@@ -508,6 +508,20 @@ module test_orient_all_faces_outward__reverses_whole_inward_shell_off_origin() {
     assert(_ps_faces_signed_volume6_rhr(verts, out) < -EPS, "globally reversed shell is LHR outward");
 }
 
+module test_orient_all_faces_outward__normalizes_volume_for_tiny_inward_shell() {
+    p = hexahedron();
+    s = 1e-4;
+    verts = [for (v = poly_verts(p)) v * s + [10, 0, 0]];
+    faces = poly_faces(p);
+    faces_in = [for (f = faces) _ps_reverse(f)];
+    out = ps_orient_all_faces_outward(verts, faces_in);
+    q = [verts, out, poly_e_over_ir(p)];
+
+    assert(out == faces, "tiny inward shell should be reversed by normalized volume sign");
+    assert(_ps_faces_signed_volume6_normalized_rhr(verts, out) < -EPS, "normalized volume sign is LHR outward");
+    assert(poly_valid(q, "convex"), "tiny translated shell remains convex-valid");
+}
+
 module test_ps_sort__numbers() {
     v = [3,1,4,1,5,9,2];
     s = _ps_sort(v);
@@ -782,6 +796,7 @@ module run_TestFuncs() {
     test_orient_all_faces_outward__translated_closed_mesh_keeps_consistent_winding();
     test_orient_all_faces_outward__repairs_one_reversed_face_off_origin();
     test_orient_all_faces_outward__reverses_whole_inward_shell_off_origin();
+    test_orient_all_faces_outward__normalizes_volume_for_tiny_inward_shell();
     test_ps_sort__numbers();
     test_ps_sort__floats();
     test_ps_sort__empty();
