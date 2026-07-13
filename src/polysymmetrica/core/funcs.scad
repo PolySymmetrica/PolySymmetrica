@@ -1502,11 +1502,16 @@ function _ps_face_area_projected_term(a, b, axis) =
                   (a[0] * b[1] - b[0] * a[1]);
 
 function _ps_face_area2_vector(verts, f) =
+    let(o = verts[f[0]])
     [
         for (axis = [0:1:2])
             ps_sum([
                 for (i = [0:1:len(f)-1])
-                    _ps_face_area_projected_term(verts[f[i]], verts[f[(i+1)%len(f)]], axis)
+                    _ps_face_area_projected_term(
+                        verts[f[i]] - o,
+                        verts[f[(i+1)%len(f)]] - o,
+                        axis
+                    )
             ])
     ];
 
