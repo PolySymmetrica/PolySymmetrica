@@ -44,33 +44,7 @@ function _ps_faces_edges_nonzero(verts, faces, eps) =
 // ---- winding consistency ----
 
 function _ps_edges_winding_ok(faces, strict=true) =
-    let(
-        dir_edges = [
-            for (f = faces)
-                for (k = [0:1:len(f)-1])
-                    let(
-                        a = f[k],
-                        b = f[(k+1)%len(f)],
-                        u = (a < b) ? a : b,
-                        v = (a < b) ? b : a,
-                        dir = (a < b) ? 1 : -1
-                    )
-                    [u, v, dir]
-        ],
-        edges = _ps_edges_from_faces(faces)
-    )
-    (len(edges) == 0) ? false :
-    min([
-        for (e = edges)
-            let(
-                u = e[0],
-                v = e[1],
-                fwd = len([for (de = dir_edges) if (de[0]==u && de[1]==v && de[2]==1) 1]),
-                back = len([for (de = dir_edges) if (de[0]==u && de[1]==v && de[2]==-1) 1])
-            )
-            strict ? ((fwd == 1 && back == 1) ? 1 : 0)
-                   : ((fwd == back && fwd > 0) ? 1 : 0)
-    ]) == 1;
+    _ps_faces_winding_consistent(faces, strict);
 
 // ---- planarity & intersections ----
 
@@ -143,12 +117,7 @@ function _ps_edges_manifold(verts, faces) =
     ]) == 1;
 
 function _ps_faces_outward(verts, faces, eps=1e-9) =
-    min([
-        for (f = faces)
-            let(c = ps_face_centroid(verts, f),
-                n = ps_face_frame_normal(verts, f, eps))
-            (v_dot(c, n) >= -eps) ? 1 : 0
-    ]) == 1;
+    _ps_faces_signed_volume6_normalized_rhr(verts, faces) < -eps;
 
 function _ps_poly_convex(verts, faces, eps=1e-9) =
     let(faces_out = ps_orient_all_faces_outward(verts, faces))

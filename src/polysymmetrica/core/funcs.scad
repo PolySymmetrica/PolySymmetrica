@@ -518,6 +518,273 @@ function _ps_fix_winding_all(faces, fixed=undef) =
         _ps_fix_winding_queue(faces, _ps_list_set(init, seed, faces[seed]), [seed])
     );
 
+// Function: _ps_unique_face_indices()
+// Usage:
+//   result = _ps_unique_face_indices(list);
+// Description:
+//   Keep first occurrences from a face-index list.
+//   .
+//   - Returns: list with duplicate values removed
+// Arguments:
+//   list = input list
+function _ps_unique_face_indices(list) =
+    [for (i = [0:1:len(list)-1]) if (_ps_index_of(list, list[i]) == i) list[i]];
+
+// Function: _ps_face_neighbor_indices()
+// Usage:
+//   result = _ps_face_neighbor_indices(faces, fi);
+// Description:
+//   Find face indices that share an edge with one face.
+//   .
+//   - Returns: adjacent face indices
+// Arguments:
+//   faces = face list
+//   fi = face index
+function _ps_face_neighbor_indices(faces, fi) =
+    _ps_unique_face_indices([
+        for (e = _ps_face_edges_dir(faces[fi]))
+            for (fj = _ps_adjacent_faces_for_edge(faces, e[0], e[1], fi))
+                fj
+    ]);
+
+// Function: _ps_face_component_queue()
+// Usage:
+//   result = _ps_face_component_queue(faces, component, queue);
+// Description:
+//   Breadth-first traversal of one connected face component.
+//   .
+//   - Returns: face indices in one component
+// Arguments:
+//   faces = face list
+//   component = accumulated face indices
+//   queue = pending face indices
+function _ps_face_component_queue(faces, component, queue) =
+    (len(queue) == 0) ? component :
+    let(
+        fi = queue[0],
+        component2 = _ps_list_contains(component, fi) ? component : concat(component, [fi]),
+        queue_tail = [for (i = [1:1:len(queue)-1]) if (i < len(queue)) queue[i]],
+        nbrs = [
+            for (fj = _ps_face_neighbor_indices(faces, fi))
+                if (!_ps_list_contains(component2, fj) && !_ps_list_contains(queue_tail, fj))
+                    fj
+        ]
+    )
+    _ps_face_component_queue(faces, component2, concat(queue_tail, nbrs));
+
+// Function: _ps_face_components()
+// Usage:
+//   result = _ps_face_components(faces, seen);
+// Description:
+//   Partition faces into edge-connected components.
+//   .
+//   - Returns: `[[face_idx, ...], ...]`
+// Arguments:
+//   faces = face list
+//   seen = optional accumulated face indices
+function _ps_face_components(faces, seen=[]) =
+    let(
+        seeds = [for (i = [0:1:len(faces)-1]) if (!_ps_list_contains(seen, i)) i]
+    )
+    (len(seeds) == 0) ? [] :
+    let(
+        comp = _ps_face_component_queue(faces, [], [seeds[0]])
+    )
+    concat([comp], _ps_face_components(faces, concat(seen, comp)));
+
+// Function: _ps_face_signed_volume6_rhr()
+// Usage:
+//   result = _ps_face_signed_volume6_rhr(verts, f);
+// Description:
+//   Compute six times the signed volume contribution of one polygon face,
+//   using the conventional right-hand triangle-fan sign.
+//   .
+//   - Returns: signed scalar; PolySymmetrica/OpenSCAD LHR outward shells have negative total volume
+// Arguments:
+//   verts = vertex list
+//   f = face index loop
+function _ps_face_signed_volume6_rhr(verts, f) =
+    (len(f) < 3) ? 0 :
+    ps_sum([
+        for (i = [1:1:len(f)-2])
+            v_dot(verts[f[0]], v_cross(verts[f[i]], verts[f[i+1]]))
+    ]);
+
+// Function: _ps_faces_signed_volume6_rhr()
+// Usage:
+//   result = _ps_faces_signed_volume6_rhr(verts, faces);
+// Description:
+//   Compute six times the signed volume of an oriented face set.
+//   .
+//   - Returns: signed scalar; negative means LHR outward for closed shells
+// Arguments:
+//   verts = vertex list
+//   faces = face list
+function _ps_faces_signed_volume6_rhr(verts, faces) =
+    ps_sum([for (f = faces) _ps_face_signed_volume6_rhr(verts, f)]);
+
+// Function: _ps_faces_volume_scale3()
+// Usage:
+//   result = _ps_faces_volume_scale3(verts, faces);
+// Description:
+//   Compute a cubic scale for signed-volume orientation tests.
+//   .
+//   - Returns: smallest positive edge length cubed, or 1 for edgeless input
+// Arguments:
+//   verts = vertex list
+//   faces = face list
+function _ps_faces_volume_scale3(verts, faces) =
+    let(
+        edges = _ps_edges_from_faces(faces),
+        edge_lens = [
+            for (e = edges)
+                let(len = norm(verts[e[1]] - verts[e[0]]))
+                if (len > 0) len
+        ],
+        min_edge = (len(edge_lens) == 0) ? 0 : min(edge_lens)
+    )
+    (min_edge > 0) ? min_edge * min_edge * min_edge : 1;
+
+// Function: _ps_faces_signed_volume6_normalized_rhr()
+// Usage:
+//   result = _ps_faces_signed_volume6_normalized_rhr(verts, faces);
+// Description:
+//   Compute signed `volume6` normalized by local mesh edge scale cubed.
+//   .
+//   - Returns: dimensionless signed scalar; negative means LHR outward for closed shells
+// Arguments:
+//   verts = vertex list
+//   faces = face list
+function _ps_faces_signed_volume6_normalized_rhr(verts, faces) =
+    _ps_faces_signed_volume6_rhr(verts, faces) / _ps_faces_volume_scale3(verts, faces);
+
+// Function: _ps_faces_winding_consistent()
+// Usage:
+//   result = _ps_faces_winding_consistent(faces, strict);
+// Description:
+//   Check whether all shared edges have opposing directed windings.
+//   .
+//   - Returns: boolean
+// Arguments:
+//   faces = face list
+//   strict = when true, every undirected edge must appear exactly twice
+function _ps_faces_winding_consistent(faces, strict=true) =
+    let(
+        dir_edges = [
+            for (f = faces)
+                for (k = [0:1:len(f)-1])
+                    let(
+                        a = f[k],
+                        b = f[(k+1)%len(f)],
+                        u = (a < b) ? a : b,
+                        v = (a < b) ? b : a,
+                        dir = (a < b) ? 1 : -1
+                    )
+                    [u, v, dir]
+        ],
+        edges = _ps_edges_from_faces(faces)
+    )
+    (len(edges) == 0) ? false :
+    min([
+        for (e = edges)
+            let(
+                u = e[0],
+                v = e[1],
+                fwd = len([for (de = dir_edges) if (de[0] == u && de[1] == v && de[2] == 1) 1]),
+                back = len([for (de = dir_edges) if (de[0] == u && de[1] == v && de[2] == -1) 1])
+            )
+            strict ? ((fwd == 1 && back == 1) ? 1 : 0)
+                   : ((fwd == back && fwd > 0) ? 1 : 0)
+    ]) == 1;
+
+// Function: _ps_faces_semantic_origin_orient()
+// Usage:
+//   result = _ps_faces_semantic_origin_orient(verts, faces);
+// Description:
+//   Apply per-face origin orientation only when it already forms a coherent
+//   shared-edge winding.
+//   .
+//   - Returns: oriented face list, or `undef` when the result is inconsistent
+// Arguments:
+//   verts = vertex list
+//   faces = face list
+function _ps_faces_semantic_origin_orient(verts, faces) =
+    let(oriented = [for (f = faces) ps_orient_face_outward(verts, f)])
+    _ps_faces_winding_consistent(oriented, true) ? oriented : undef;
+
+// Function: _ps_faces_for_indices()
+// Usage:
+//   result = _ps_faces_for_indices(faces, idxs);
+// Description:
+//   Select faces by index.
+//   .
+//   - Returns: face sublist
+// Arguments:
+//   faces = face list
+//   idxs = face indices
+function _ps_faces_for_indices(faces, idxs) =
+    [for (i = idxs) faces[i]];
+
+// Function: _ps_component_oriented_face_pairs()
+// Usage:
+//   result = _ps_component_oriented_face_pairs(verts, faces, comp, eps);
+// Description:
+//   Orient one connected face component by normalized signed volume.
+//   .
+//   - Returns: `[face_idx, oriented_face]` pairs
+// Arguments:
+//   verts = vertex list
+//   faces = topology-consistent face list
+//   comp = face-index component
+//   eps = normalized signed-volume tolerance
+function _ps_component_oriented_face_pairs(verts, faces, comp, eps) =
+    let(
+        comp_faces = _ps_faces_for_indices(faces, comp),
+        vol6 = _ps_faces_signed_volume6_normalized_rhr(verts, comp_faces),
+        reverse = vol6 > eps
+    )
+    [
+        for (i = [0:1:len(comp)-1])
+            [comp[i], reverse ? _ps_reverse(comp_faces[i]) : comp_faces[i]]
+    ];
+
+// Function: _ps_face_pair_value()
+// Usage:
+//   result = _ps_face_pair_value(pairs, fi);
+// Description:
+//   Retrieve an oriented face from `[face_idx, face]` pairs.
+//   .
+//   - Returns: face loop
+// Arguments:
+//   pairs = `[face_idx, face]` pairs
+//   fi = face index
+function _ps_face_pair_value(pairs, fi) =
+    [for (p = pairs) if (p[0] == fi) p[1]][0];
+
+// Function: _ps_faces_orient_by_signed_volume()
+// Usage:
+//   result = _ps_faces_orient_by_signed_volume(verts, faces, eps);
+// Description:
+//   Reverse each connected face component that has right-hand outward signed volume.
+//   .
+//   - Returns: face list with each component independently oriented
+//   .
+//   - Limitations/Gotchas: zero-volume/open face sets keep their topology-consistent seed orientation
+// Arguments:
+//   verts = vertex list
+//   faces = topology-consistent face list
+//   eps = normalized signed-volume tolerance
+function _ps_faces_orient_by_signed_volume(verts, faces, eps=1e-9) =
+    let(
+        components = _ps_face_components(faces),
+        pairs = [
+            for (comp = components)
+                for (p = _ps_component_oriented_face_pairs(verts, faces, comp, eps))
+                    p
+        ]
+    )
+    [for (fi = [0:1:len(faces)-1]) _ps_face_pair_value(pairs, fi)];
+
 ///////////////////////////////////////
 // ---- List helpers (private) ----
 // Function: _ps_list_contains()
@@ -2121,13 +2388,23 @@ function ps_orient_face_outward(verts, f) =
 
 // Function: ps_orient_all_faces_outward()
 // Usage:
-//   result = ps_orient_all_faces_outward(verts, faces);
+//   result = ps_orient_all_faces_outward(verts, faces, eps);
 // Description:
-//   Orient all faces so normals point away from origin.
+//   Orient all faces as an OpenSCAD LHR outward shell where a global volume
+//   direction is available.
 //   .
-//   - Returns: oriented face list
+//   - Returns: topology-consistent face list, possibly reversed as a whole
+//   .
+//   - Limitations/Gotchas: keeps per-face semantic orientation when that already
+//     forms a coherent shell; otherwise repairs shared-edge winding before the
+//     global outside decision. Zero-volume/open face sets keep the repaired seed
+//     orientation.
 // Arguments:
 //   verts = 3D vertex list
 //   faces = face list
-function ps_orient_all_faces_outward(verts, faces) =
-    [ for (f = faces) ps_orient_face_outward(verts, f) ];
+//   eps = normalized signed-volume tolerance
+function ps_orient_all_faces_outward(verts, faces, eps=1e-9) =
+    let(semantic = _ps_faces_semantic_origin_orient(verts, faces))
+    !is_undef(semantic)
+        ? semantic
+        : _ps_faces_orient_by_signed_volume(verts, _ps_fix_winding_all(faces), eps);
