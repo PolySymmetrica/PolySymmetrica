@@ -518,16 +518,16 @@ function _ps_fix_winding_all(faces, fixed=undef) =
         _ps_fix_winding_queue(faces, _ps_list_set(init, seed, faces[seed]), [seed])
     );
 
-// Function: _ps_unique_values()
+// Function: _ps_unique_face_indices()
 // Usage:
-//   result = _ps_unique_values(list);
+//   result = _ps_unique_face_indices(list);
 // Description:
-//   Keep first occurrences from a list.
+//   Keep first occurrences from a face-index list.
 //   .
 //   - Returns: list with duplicate values removed
 // Arguments:
 //   list = input list
-function _ps_unique_values(list) =
+function _ps_unique_face_indices(list) =
     [for (i = [0:1:len(list)-1]) if (_ps_index_of(list, list[i]) == i) list[i]];
 
 // Function: _ps_face_neighbor_indices()
@@ -541,7 +541,7 @@ function _ps_unique_values(list) =
 //   faces = face list
 //   fi = face index
 function _ps_face_neighbor_indices(faces, fi) =
-    _ps_unique_values([
+    _ps_unique_face_indices([
         for (e = _ps_face_edges_dir(faces[fi]))
             for (fj = _ps_adjacent_faces_for_edge(faces, e[0], e[1], fi))
                 fj
