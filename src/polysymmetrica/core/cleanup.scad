@@ -22,14 +22,14 @@
 
 use <funcs.scad>
 
-function _ps_face_preserve_nonplanar_for_triangulation(verts, f, eps, preserve_nonplanar) =
+function _ps_face_preserve_nonplanar_for_cleanup(verts, f, eps, preserve_nonplanar) =
     preserve_nonplanar && !_ps_face_is_planar(verts, f, eps);
 
 function _ps_face_is_degenerate(verts, f, eps, preserve_nonplanar=false) =
     (len(f) < 3) ||
     (_ps_distinct_count(f) < 3) ||
     (_ps_distinct_count(f) != len(f)) ||
-    (!_ps_face_preserve_nonplanar_for_triangulation(verts, f, eps, preserve_nonplanar) &&
+    (!_ps_face_preserve_nonplanar_for_cleanup(verts, f, eps, preserve_nonplanar) &&
     // Area is quadratic in length, so compare against eps^2 (eps is linear tol).
     (_ps_face_area_mag(verts, f) <= (eps * eps)));
 
@@ -114,11 +114,13 @@ function poly_cleanup(
         map2 = merged[1],
         faces2 = _ps_faces_clean_cycles(_ps_faces_remap(faces1, map2)),
 
-        faces3 = drop_degenerate ? _ps_faces_drop_degenerate(verts2, faces2, eps, triangulate_nonplanar) : faces2,
+        // Non-planar folded loops can have zero projected boundary area; keep
+        // them unless triangulation has produced area-testable triangles.
+        faces3 = drop_degenerate ? _ps_faces_drop_degenerate(verts2, faces2, eps, true) : faces2,
         max_planarity_before = _ps_faces_max_planarity_err(verts2, faces3, eps),
 
         faces4 = triangulate_nonplanar ? _ps_faces_triangulate_nonplanar(verts2, faces3, eps) : faces3,
-        faces5 = drop_degenerate ? _ps_faces_drop_degenerate(verts2, faces4, eps) : faces4,
+        faces5 = drop_degenerate ? _ps_faces_drop_degenerate(verts2, faces4, eps, !triangulate_nonplanar) : faces4,
 
         compacted = remove_unreferenced ? _ps_compact_unreferenced(verts2, faces5) : [verts2, faces5],
         verts6 = compacted[0],

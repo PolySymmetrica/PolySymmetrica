@@ -817,6 +817,16 @@ module test_poly_cleanup__triangulates_folded_zero_boundary_area_face() {
     assert(poly_valid(q, "struct"), "folded triangulated output should be structurally valid");
 }
 
+module test_poly_cleanup__preserves_folded_zero_boundary_area_face_by_default() {
+    p = _folded_face_with_zero_boundary_area_vector();
+    q = poly_cleanup(p, eps=1e-8);
+
+    assert_int_eq(len(poly_faces(q)), 1, "default cleanup should preserve folded nonplanar face");
+    assert_int_eq(len(poly_faces(q)[0]), 6, "default cleanup should leave folded face untriangulated");
+    assert(_ps_face_planarity_err(poly_verts(q), poly_faces(q)[0], 1e-8) > 1e-8,
+        "default cleanup should preserve the nonplanar loop when triangulation is disabled");
+}
+
 module test_poly_cleanup__merges_and_compacts_vertices() {
     p = _tetra_with_duplicate_vertex();
     q = poly_cleanup(p, eps=1e-8, merge_vertices=true, remove_unreferenced=true, fix_winding=true);
@@ -912,6 +922,7 @@ module run_TestFuncs() {
     test_poly_cleanup__drops_degenerate_faces();
     test_poly_cleanup__triangulates_nonplanar_faces();
     test_poly_cleanup__triangulates_folded_zero_boundary_area_face();
+    test_poly_cleanup__preserves_folded_zero_boundary_area_face_by_default();
     test_poly_cleanup__merges_and_compacts_vertices();
     test_poly_cleanup__tiny_uniform_scale_not_dropped_by_area_tol();
 }
