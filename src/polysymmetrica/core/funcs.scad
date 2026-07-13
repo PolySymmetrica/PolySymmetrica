@@ -1496,24 +1496,41 @@ function ps_face_frame_normal(verts, f, eps=1e-12) =
     )
     v_norm(n_aligned);
 
+function _ps_face_area_projection_axis(n) =
+    let(a = [abs(n[0]), abs(n[1]), abs(n[2])])
+    (a[0] >= a[1] && a[0] >= a[2]) ? 0 :
+    (a[1] >= a[2]) ? 1 : 2;
+
+function _ps_face_area_projected_term(a, b, axis) =
+    (axis == 0) ? (a[1] * b[2] - b[1] * a[2]) :
+    (axis == 1) ? (a[2] * b[0] - b[2] * a[0]) :
+                  (a[0] * b[1] - b[0] * a[1]);
+
 // Function: _ps_face_area_mag()
 // Usage:
 //   result = _ps_face_area_mag(verts, f);
 // Description:
-//   Compute face area magnitude by triangle fan.
+//   Compute face area magnitude by projecting to the dominant face plane.
 //   .
 //   - Returns: non-negative area
 //   .
-//   - Limitations/Gotchas: intended for planar faces
+//   - Limitations/Gotchas: intended for planar simple faces; self-crossing
+//     boundary area follows signed polygon-area cancellation
 // Arguments:
 //   verts = 3D vertex list
 //   f = face index loop
 function _ps_face_area_mag(verts, f) =
     (len(f) < 3) ? 0 :
-    ps_sum([
-        for (i = [1:1:len(f)-2])
-            norm(v_cross(verts[f[i]] - verts[f[0]], verts[f[i+1]] - verts[f[0]])) / 2
-    ]);
+    let(
+        n = ps_face_frame_normal(verts, f),
+        axis = _ps_face_area_projection_axis(n),
+        denom = abs(n[axis]),
+        area2_proj = ps_sum([
+            for (i = [0:1:len(f)-1])
+                _ps_face_area_projected_term(verts[f[i]], verts[f[(i+1)%len(f)]], axis)
+        ])
+    )
+    (denom == 0) ? 0 : abs(area2_proj) / (2 * denom);
 
 // Function: _ps_face_planarity_err()
 // Usage:

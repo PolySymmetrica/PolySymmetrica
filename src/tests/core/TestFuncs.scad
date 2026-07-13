@@ -336,6 +336,20 @@ module test_ps_face_area_mag__triangle_unit_half() {
     assert_near(a, 0.5, 1e-12, "face area triangle");
 }
 
+module test_ps_face_area_mag__concave_polygon_uses_boundary_area() {
+    verts = [[0,0,0],[2,0,0],[2,2,0],[1,1,0],[0,2,0]];
+    a = _ps_face_area_mag(verts, [0,1,2,3,4]);
+
+    assert_near(a, 3, 1e-12, "concave face area should not overcount triangle fan");
+}
+
+module test_ps_face_area_mag__tilted_concave_polygon_uses_boundary_area() {
+    verts = [[0,0,0],[2,0,2],[2,2,4],[1,1,2],[0,2,2]];
+    a = _ps_face_area_mag(verts, [0,1,2,3,4]);
+
+    assert_near(a, 3 * sqrt(3), 1e-12, "tilted concave face area");
+}
+
 module test_ps_face_planarity_err__planar_and_nonplanar() {
     planar = [[0,0,0],[1,0,0],[1,1,0],[0,1,0]];
     nonplanar = [[0,0,0],[1,0,0],[1,1,0.2],[0,1,0]];
@@ -824,6 +838,8 @@ module run_TestFuncs() {
     test_face_centroid__triangle();
     test_face_normal__orientation();
     test_ps_face_area_mag__triangle_unit_half();
+    test_ps_face_area_mag__concave_polygon_uses_boundary_area();
+    test_ps_face_area_mag__tilted_concave_polygon_uses_boundary_area();
     test_ps_face_planarity_err__planar_and_nonplanar();
     test_ps_face_planarity_err__first_three_collinear_planar_face();
     test_face_frame_normal__planar_matches_face_normal();
