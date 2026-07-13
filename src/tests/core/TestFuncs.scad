@@ -55,6 +55,13 @@ function _pyramid_with_nonplanar_base() =
     )
     [v, f, 1];
 
+function _folded_face_with_zero_boundary_area_vector() =
+    [
+        [[-1,0,1],[-1,-1,-1],[1,0,1],[1,0,0],[1,-1,0],[-1,0,0]],
+        [[0,1,2,3,4,5]],
+        1
+    ];
+
 function _tetra_with_duplicate_vertex() =
     let(
         p = _tetra_poly(),
@@ -801,6 +808,15 @@ module test_poly_cleanup__triangulates_nonplanar_faces() {
     assert(poly_valid(q, "struct"), "cleanup triangulated output should be structurally valid");
 }
 
+module test_poly_cleanup__triangulates_folded_zero_boundary_area_face() {
+    p = _folded_face_with_zero_boundary_area_vector();
+    q = poly_cleanup(p, eps=1e-8, triangulate_nonplanar=true, fix_winding=false);
+
+    assert_int_eq(len(poly_faces(q)), 4, "cleanup should triangulate folded zero-boundary-area face");
+    assert_int_eq(_count_faces_of_size(q, 3), 4, "folded face should become four triangles");
+    assert(poly_valid(q, "struct"), "folded triangulated output should be structurally valid");
+}
+
 module test_poly_cleanup__merges_and_compacts_vertices() {
     p = _tetra_with_duplicate_vertex();
     q = poly_cleanup(p, eps=1e-8, merge_vertices=true, remove_unreferenced=true, fix_winding=true);
@@ -895,6 +911,7 @@ module run_TestFuncs() {
     test_poly_cleanup__normalizes_face_cycles();
     test_poly_cleanup__drops_degenerate_faces();
     test_poly_cleanup__triangulates_nonplanar_faces();
+    test_poly_cleanup__triangulates_folded_zero_boundary_area_face();
     test_poly_cleanup__merges_and_compacts_vertices();
     test_poly_cleanup__tiny_uniform_scale_not_dropped_by_area_tol();
 }

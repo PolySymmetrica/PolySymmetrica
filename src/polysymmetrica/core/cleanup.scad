@@ -22,15 +22,19 @@
 
 use <funcs.scad>
 
-function _ps_face_is_degenerate(verts, f, eps) =
+function _ps_face_preserve_nonplanar_for_triangulation(verts, f, eps, preserve_nonplanar) =
+    preserve_nonplanar && !_ps_face_is_planar(verts, f, eps);
+
+function _ps_face_is_degenerate(verts, f, eps, preserve_nonplanar=false) =
     (len(f) < 3) ||
     (_ps_distinct_count(f) < 3) ||
     (_ps_distinct_count(f) != len(f)) ||
+    (!_ps_face_preserve_nonplanar_for_triangulation(verts, f, eps, preserve_nonplanar) &&
     // Area is quadratic in length, so compare against eps^2 (eps is linear tol).
-    (_ps_face_area_mag(verts, f) <= (eps * eps));
+    (_ps_face_area_mag(verts, f) <= (eps * eps)));
 
-function _ps_faces_drop_degenerate(verts, faces, eps) =
-    [for (f = faces) if (!_ps_face_is_degenerate(verts, f, eps)) f];
+function _ps_faces_drop_degenerate(verts, faces, eps, preserve_nonplanar=false) =
+    [for (f = faces) if (!_ps_face_is_degenerate(verts, f, eps, preserve_nonplanar)) f];
 
 function _ps_face_triangulate_fan(f) =
     (len(f) < 3) ? [] : [for (i = [1:1:len(f)-2]) [f[0], f[i], f[i+1]]];
@@ -110,7 +114,7 @@ function poly_cleanup(
         map2 = merged[1],
         faces2 = _ps_faces_clean_cycles(_ps_faces_remap(faces1, map2)),
 
-        faces3 = drop_degenerate ? _ps_faces_drop_degenerate(verts2, faces2, eps) : faces2,
+        faces3 = drop_degenerate ? _ps_faces_drop_degenerate(verts2, faces2, eps, triangulate_nonplanar) : faces2,
         max_planarity_before = _ps_faces_max_planarity_err(verts2, faces3, eps),
 
         faces4 = triangulate_nonplanar ? _ps_faces_triangulate_nonplanar(verts2, faces3, eps) : faces3,
