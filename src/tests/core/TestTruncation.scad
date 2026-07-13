@@ -66,6 +66,9 @@ function _skew_quad_prism() =
     )
     poly_make(v, f);
 
+function _regular_2d_points(angles) =
+    [for (a = angles) [cos(a), sin(a), 0]];
+
 
 // point eq / find / unique
 module test__ps_unique_points__dedups_with_eps() {
@@ -124,6 +127,14 @@ module test_poly_truncate__miswound_input_uses_oriented_fan() {
     assert_int_eq(len(poly_verts(q)), 12, "miswound trunc tetra verts=12");
     assert_int_eq(len(poly_edges(q)), 18, "miswound trunc tetra edges=18");
     assert_int_eq(len(poly_faces(q)), 8, "miswound trunc tetra faces=8");
+}
+
+module test__ps_tr_vertex_cap_is_simple__detects_star_loop() {
+    pentagon = _regular_2d_points([90, 162, 234, 306, 18]);
+    pentagram = _regular_2d_points([90, 234, 18, 162, 306]);
+
+    assert(_ps_tr_vertex_cap_is_simple(pentagon), "ordinary pentagonal cap should be simple");
+    assert(!_ps_tr_vertex_cap_is_simple(pentagram), "pentagram cap should be detected as self-crossing");
 }
 
 
@@ -715,6 +726,7 @@ module run_TestTruncation() {
 
     test_poly_truncate__tetra_counts_at_one_third();
     test_poly_truncate__miswound_input_uses_oriented_fan();
+    test__ps_tr_vertex_cap_is_simple__detects_star_loop();
     test_poly_truncate__t_zero_counts_preserved();
     test_poly_chamfer__cube_face_counts();
     test_poly_truncate_then_dual__counts_relations();

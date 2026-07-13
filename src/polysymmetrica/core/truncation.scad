@@ -227,6 +227,28 @@ function _ps_index_of_min(list) =
     )
     (len(idxs) == 0) ? 0 : idxs[0];
 
+function _ps_tr_vertex_cap_face(points) =
+    [for (i = [0:1:len(points)-1]) i];
+
+function _ps_tr_vertex_cap_is_simple(points, eps=1e-9) =
+    (len(points) < 4)
+        ? true
+        : _ps_face_self_intersections(points, _ps_tr_vertex_cap_face(points), eps) == 0;
+
+function _ps_tr_edge_point_near_vertex(edges, edge_pts, vi, vn) =
+    let(
+        ei = ps_find_edge_index(edges, vi, vn),
+        e = edges[ei]
+    )
+    edge_pts[ei][e[0] == vi ? 0 : 1];
+
+function _ps_tr_assert_simple_vertex_cap(op_name, vertex_idx, points, eps=1e-9) =
+    assert(
+        _ps_tr_vertex_cap_is_simple(points, eps),
+        str(op_name, ": vertex ", vertex_idx, " would produce a self-crossing vertex cap; star vertex figures are not supported yet")
+    )
+    0;
+
 // --- Core operators ---
 
 function _ps_truncate_norm_to_t(poly, c) =
@@ -328,7 +350,12 @@ function poly_truncate(
                     for (vi = [0:1:len(verts)-1])
                         let(
                             fan = ps_vertex_fan(poly0, vi, edges, edge_faces),
-                            neigh = ps_vertex_fan_neighbors_idx(fan)
+                            neigh = ps_vertex_fan_neighbors_idx(fan),
+                            cap_points = [
+                                for (vn = neigh)
+                                    _ps_tr_edge_point_near_vertex(edges, edge_pts, vi, vn)
+                            ],
+                            _cap_ok = _ps_tr_assert_simple_vertex_cap("poly_truncate", vi, cap_points, eps)
                         )
                         [
                             for (vn = neigh)
@@ -394,7 +421,12 @@ function poly_rectify(
             for (vi = [0:1:len(verts)-1])
                 let(
                     fan = ps_vertex_fan(poly0, vi, edges, edge_faces),
-                    neigh = ps_vertex_fan_neighbors_idx(fan)
+                    neigh = ps_vertex_fan_neighbors_idx(fan),
+                    cap_points = [
+                        for (vn = neigh)
+                            edge_mid[ps_find_edge_index(edges, vi, vn)]
+                    ],
+                    _cap_ok = _ps_tr_assert_simple_vertex_cap("poly_rectify", vi, cap_points)
                 )
                 [
                     for (vn = neigh)
