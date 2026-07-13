@@ -1184,6 +1184,8 @@ function ps_face_normal(verts, f) =
 //   - Returns: unit normal direction aligned with `ps_face_normal(...)`
 //   .
 //   - Limitations/Gotchas: uses Newell-style best-fit normal for non-planar faces
+//     and follows the project/OpenSCAD LHR winding convention even when the
+//     first three vertices are collinear.
 // Arguments:
 //   verts = 3D vertex list
 //   f = face index loop
@@ -1218,7 +1220,9 @@ function ps_face_frame_normal(verts, f, eps=1e-12) =
                 )
                 (pi[0] - pj[0]) * (pi[1] + pj[1])
         ]),
-        n_newell = [nx, ny, nz],
+        // Newell's formula gives the conventional right-hand normal. The rest
+        // of PolySymmetrica follows OpenSCAD's left-hand face winding.
+        n_newell = [-nx, -ny, -nz],
         n_topo = ps_face_normal(verts, f),
         n_raw = (norm(n_newell) > eps) ? n_newell : n_topo,
         n_aligned = (v_dot(n_raw, n_topo) < 0) ? [-n_raw[0], -n_raw[1], -n_raw[2]] : n_raw
@@ -1258,7 +1262,7 @@ function _ps_face_area_mag(verts, f) =
 function _ps_face_planarity_err(verts, f, eps=1e-12) =
     (len(f) < 3) ? 0 :
     let(
-        n_raw = ps_face_normal(verts, f),
+        n_raw = ps_face_frame_normal(verts, f, eps),
         n_len = norm(n_raw),
         n = (n_len <= eps) ? [0,0,1] : (n_raw / n_len),
         d = v_dot(n, verts[f[0]]),

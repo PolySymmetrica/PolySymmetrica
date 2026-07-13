@@ -78,7 +78,7 @@ function _ps_poly_base(poly) =
         faces0 = ps_orient_all_faces_outward(verts0, poly_faces(poly)),
         edges = _ps_edges_from_faces(faces0),
         edge_faces = ps_edge_faces_table(faces0, edges),
-        face_n = [ for (f = faces0) ps_face_normal(verts0, f) ],
+        face_n = [ for (f = faces0) ps_face_frame_normal(verts0, f) ],
         poly0 = poly_make(verts0, faces0, poly_e_over_ir(poly))
     )
     [verts0, faces0, edges, edge_faces, face_n, poly0];

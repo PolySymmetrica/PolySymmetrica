@@ -162,6 +162,17 @@ module test_ps_face_polar_verts__incidence_relation() {
     }
 }
 
+module test_ps_face_polar_verts__first_three_collinear_face() {
+    verts = [[0,1,0],[1,1,0],[2,1,0],[2,1,1],[0,1,1]];
+    faces = [[0,1,2,3,4]];
+    qs = ps_face_polar_verts(verts, faces);
+
+    assert_int_eq(len(qs), 1, "one polar vertex");
+    assert_near(qs[0][0], 0, 1e-12, "polar x should use robust full-loop normal");
+    assert_near(qs[0][1], 1, 1e-12, "polar y should use robust full-loop normal");
+    assert_near(qs[0][2], 0, 1e-12, "polar z should use robust full-loop normal");
+}
+
 
 // poly_dual: octa -> cube combinatorics
 module test_poly_dual__octa_to_cube_counts() {
@@ -268,6 +279,7 @@ module run_TestDuals() {
     test__ps_dual_unit_edge_and_e_over_ir__stable_under_face_rotation();
     test__ps_dual_unit_edge_and_e_over_ir__large_source_uses_scale_relative_tolerance();
     test_ps_face_polar_verts__incidence_relation();
+    test_ps_face_polar_verts__first_three_collinear_face();
     test_poly_dual__octa_to_cube_counts();
     test_poly_dual__tetra_self_dual_counts();
     test_poly_dual__miswound_input_uses_oriented_fan();

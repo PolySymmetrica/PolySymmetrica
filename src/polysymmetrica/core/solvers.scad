@@ -276,8 +276,8 @@ function solve_cantitruncate_trig(poly, face_idx=0, edge_idx=undef) =
         fpair = ps_edge_faces_table(faces, edges)[ei],
         f0 = fpair[0],
         f1 = fpair[1],
-        n0 = ps_face_normal(verts, faces[f0]),
-        n1 = ps_face_normal(verts, faces[f1]),
+        n0 = ps_face_frame_normal(verts, faces[f0]),
+        n1 = ps_face_frame_normal(verts, faces[f1]),
         // alpha is angle between outward normals
         alpha = acos(ps_clamp(v_dot(n0, n1), -1, 1)),
         a = norm(verts[v_next] - verts[v0]),

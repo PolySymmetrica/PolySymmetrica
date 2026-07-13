@@ -509,7 +509,7 @@ function poly_rotunda(edge=1) =
         base = icosidodecahedron(),
         fi = _ps_first_face_of_arity(base, 5, "poly_rotunda"),
         face = poly_faces(base)[fi],
-        n = ps_face_normal(poly_verts(base), face),
+        n = ps_face_frame_normal(poly_verts(base), face),
         half = poly_slice(base, [0,0,0], n, keep="above", cap=true, cleanup=true),
         p = (abs(edge - 1) < 1e-12) ? half : _ps_poly_uniform_scale(half, edge)
     )
