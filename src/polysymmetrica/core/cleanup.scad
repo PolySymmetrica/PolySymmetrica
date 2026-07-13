@@ -29,21 +29,21 @@ function _ps_face_fan_area_mag(verts, f) =
             norm(v_cross(verts[f[i]] - verts[f[0]], verts[f[i+1]] - verts[f[0]])) / 2
     ]);
 
-function _ps_face_preserve_nonplanar_for_cleanup(verts, f, eps, preserve_nonplanar) =
-    preserve_nonplanar &&
-    !_ps_face_is_planar(verts, f, eps) &&
-    _ps_face_fan_area_mag(verts, f) > (eps * eps);
+function _ps_face_has_cleanup_area(verts, f, eps) =
+    // Projected boundary area handles simple concave faces; fan area preserves
+    // folded and self-crossing loops whose signed boundary area cancels.
+    (_ps_face_area_mag(verts, f) > (eps * eps)) ||
+    (_ps_face_fan_area_mag(verts, f) > (eps * eps));
 
-function _ps_face_is_degenerate(verts, f, eps, preserve_nonplanar=false) =
+function _ps_face_is_degenerate(verts, f, eps) =
     (len(f) < 3) ||
     (_ps_distinct_count(f) < 3) ||
     (_ps_distinct_count(f) != len(f)) ||
-    (!_ps_face_preserve_nonplanar_for_cleanup(verts, f, eps, preserve_nonplanar) &&
     // Area is quadratic in length, so compare against eps^2 (eps is linear tol).
-    (_ps_face_area_mag(verts, f) <= (eps * eps)));
+    !_ps_face_has_cleanup_area(verts, f, eps);
 
-function _ps_faces_drop_degenerate(verts, faces, eps, preserve_nonplanar=false) =
-    [for (f = faces) if (!_ps_face_is_degenerate(verts, f, eps, preserve_nonplanar)) f];
+function _ps_faces_drop_degenerate(verts, faces, eps) =
+    [for (f = faces) if (!_ps_face_is_degenerate(verts, f, eps)) f];
 
 function _ps_face_triangulate_fan(f) =
     (len(f) < 3) ? [] : [for (i = [1:1:len(f)-2]) [f[0], f[i], f[i+1]]];
@@ -123,13 +123,11 @@ function poly_cleanup(
         map2 = merged[1],
         faces2 = _ps_faces_clean_cycles(_ps_faces_remap(faces1, map2)),
 
-        // Non-planar folded loops can have zero projected boundary area; keep
-        // them unless triangulation has produced area-testable triangles.
-        faces3 = drop_degenerate ? _ps_faces_drop_degenerate(verts2, faces2, eps, true) : faces2,
+        faces3 = drop_degenerate ? _ps_faces_drop_degenerate(verts2, faces2, eps) : faces2,
         max_planarity_before = _ps_faces_max_planarity_err(verts2, faces3, eps),
 
         faces4 = triangulate_nonplanar ? _ps_faces_triangulate_nonplanar(verts2, faces3, eps) : faces3,
-        faces5 = drop_degenerate ? _ps_faces_drop_degenerate(verts2, faces4, eps, !triangulate_nonplanar) : faces4,
+        faces5 = drop_degenerate ? _ps_faces_drop_degenerate(verts2, faces4, eps) : faces4,
 
         compacted = remove_unreferenced ? _ps_compact_unreferenced(verts2, faces5) : [verts2, faces5],
         verts6 = compacted[0],

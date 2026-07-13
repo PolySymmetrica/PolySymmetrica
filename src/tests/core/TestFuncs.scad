@@ -72,6 +72,16 @@ function _folded_face_with_zero_boundary_area_vector() =
         1
     ];
 
+function _cube_with_bowtie_extra_face() =
+    let(
+        p = hexahedron(),
+        v0 = poly_verts(p),
+        f = poly_faces(p),
+        base = len(v0),
+        v = concat(v0, [[0,0,0], [1,1,0], [0,1,0], [1,0,0]])
+    )
+    [v, concat(f, [[base, base + 1, base + 2, base + 3]]), poly_e_over_ir(p)];
+
 function _tetra_with_duplicate_vertex() =
     let(
         p = _tetra_poly(),
@@ -818,6 +828,18 @@ module test_poly_cleanup__drops_collinear_unique_index_face() {
     assert(poly_valid(q, "closed"), "cleanup dropped collinear face should remain closed-valid");
 }
 
+module test_poly_cleanup__preserves_planar_self_crossing_zero_boundary_area_face() {
+    p = _cube_with_bowtie_extra_face();
+    q = poly_cleanup(p, eps=1e-8, fix_winding=false);
+    bowtie = poly_faces(q)[6];
+
+    assert_int_eq(len(poly_faces(q)), 7, "cleanup should preserve planar self-crossing face");
+    assert_near(_ps_face_area_mag(poly_verts(q), bowtie), 0, 1e-12,
+        "bow-tie projected signed boundary area cancels");
+    assert(_ps_face_fan_area_mag(poly_verts(q), bowtie) > 1e-8,
+        "bow-tie fan area should be positive");
+}
+
 module test_poly_cleanup__triangulates_nonplanar_faces() {
     p = _pyramid_with_nonplanar_base();
     q = poly_cleanup(p, eps=1e-8, triangulate_nonplanar=true, fix_winding=true);
@@ -939,6 +961,7 @@ module run_TestFuncs() {
     test_poly_cleanup__normalizes_face_cycles();
     test_poly_cleanup__drops_degenerate_faces();
     test_poly_cleanup__drops_collinear_unique_index_face();
+    test_poly_cleanup__preserves_planar_self_crossing_zero_boundary_area_face();
     test_poly_cleanup__triangulates_nonplanar_faces();
     test_poly_cleanup__triangulates_folded_zero_boundary_area_face();
     test_poly_cleanup__preserves_folded_zero_boundary_area_face_by_default();
