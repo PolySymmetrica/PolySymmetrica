@@ -1496,21 +1496,25 @@ function ps_face_frame_normal(verts, f, eps=1e-12) =
     )
     v_norm(n_aligned);
 
-function _ps_face_area_projection_axis(n) =
-    let(a = [abs(n[0]), abs(n[1]), abs(n[2])])
-    (a[0] >= a[1] && a[0] >= a[2]) ? 0 :
-    (a[1] >= a[2]) ? 1 : 2;
-
 function _ps_face_area_projected_term(a, b, axis) =
     (axis == 0) ? (a[1] * b[2] - b[1] * a[2]) :
     (axis == 1) ? (a[2] * b[0] - b[2] * a[0]) :
                   (a[0] * b[1] - b[0] * a[1]);
 
+function _ps_face_area2_vector(verts, f) =
+    [
+        for (axis = [0:1:2])
+            ps_sum([
+                for (i = [0:1:len(f)-1])
+                    _ps_face_area_projected_term(verts[f[i]], verts[f[(i+1)%len(f)]], axis)
+            ])
+    ];
+
 // Function: _ps_face_area_mag()
 // Usage:
 //   result = _ps_face_area_mag(verts, f);
 // Description:
-//   Compute face area magnitude by projecting to the dominant face plane.
+//   Compute face area magnitude from the projected boundary area vector.
 //   .
 //   - Returns: non-negative area
 //   .
@@ -1521,16 +1525,7 @@ function _ps_face_area_projected_term(a, b, axis) =
 //   f = face index loop
 function _ps_face_area_mag(verts, f) =
     (len(f) < 3) ? 0 :
-    let(
-        n = ps_face_frame_normal(verts, f),
-        axis = _ps_face_area_projection_axis(n),
-        denom = abs(n[axis]),
-        area2_proj = ps_sum([
-            for (i = [0:1:len(f)-1])
-                _ps_face_area_projected_term(verts[f[i]], verts[f[(i+1)%len(f)]], axis)
-        ])
-    )
-    (denom == 0) ? 0 : abs(area2_proj) / (2 * denom);
+    norm(_ps_face_area2_vector(verts, f)) / 2;
 
 // Function: _ps_face_planarity_err()
 // Usage:
