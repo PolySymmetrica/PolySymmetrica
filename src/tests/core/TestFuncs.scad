@@ -522,6 +522,30 @@ module test_orient_all_faces_outward__normalizes_volume_for_tiny_inward_shell() 
     assert(poly_valid(q, "convex"), "tiny translated shell remains convex-valid");
 }
 
+module test_orient_all_faces_outward__normalizes_volume_for_high_aspect_inward_shell() {
+    p = hexahedron();
+    verts = [for (v = poly_verts(p)) [v[0] + 10, v[1], v[2] * 1e6]];
+    faces = poly_faces(p);
+    faces_in = [for (f = faces) _ps_reverse(f)];
+    out = ps_orient_all_faces_outward(verts, faces_in);
+    q = [verts, out, poly_e_over_ir(p)];
+
+    assert(out == faces, "high-aspect inward shell should be reversed by normalized volume sign");
+    assert(_ps_faces_signed_volume6_normalized_rhr(verts, out) < -EPS, "high-aspect normalized volume sign is LHR outward");
+    assert(poly_valid(q, "convex"), "high-aspect translated shell remains convex-valid");
+}
+
+module test_poly_valid__accepts_high_aspect_outward_shell() {
+    p = hexahedron();
+    q = [
+        [for (v = poly_verts(p)) [v[0], v[1], v[2] * 1e6]],
+        poly_faces(p),
+        poly_e_over_ir(p)
+    ];
+
+    assert(poly_valid(q, "convex"), "high-aspect outward shell should remain convex-valid");
+}
+
 module test_orient_all_faces_outward__orients_disconnected_shells_independently() {
     p = hexahedron();
     verts0 = [for (v = poly_verts(p)) v + [10, 0, 0]];
@@ -821,6 +845,8 @@ module run_TestFuncs() {
     test_orient_all_faces_outward__repairs_one_reversed_face_off_origin();
     test_orient_all_faces_outward__reverses_whole_inward_shell_off_origin();
     test_orient_all_faces_outward__normalizes_volume_for_tiny_inward_shell();
+    test_orient_all_faces_outward__normalizes_volume_for_high_aspect_inward_shell();
+    test_poly_valid__accepts_high_aspect_outward_shell();
     test_orient_all_faces_outward__orients_disconnected_shells_independently();
     test_ps_sort__numbers();
     test_ps_sort__floats();

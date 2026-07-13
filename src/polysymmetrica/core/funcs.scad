@@ -629,24 +629,27 @@ function _ps_faces_signed_volume6_rhr(verts, faces) =
 // Description:
 //   Compute a cubic scale for signed-volume orientation tests.
 //   .
-//   - Returns: largest edge length cubed, or 1 for edgeless input
+//   - Returns: smallest positive edge length cubed, or 1 for edgeless input
 // Arguments:
 //   verts = vertex list
 //   faces = face list
 function _ps_faces_volume_scale3(verts, faces) =
     let(
         edges = _ps_edges_from_faces(faces),
-        max_edge = (len(edges) == 0)
-            ? 0
-            : max([for (e = edges) norm(verts[e[1]] - verts[e[0]])])
+        edge_lens = [
+            for (e = edges)
+                let(len = norm(verts[e[1]] - verts[e[0]]))
+                if (len > 0) len
+        ],
+        min_edge = (len(edge_lens) == 0) ? 0 : min(edge_lens)
     )
-    (max_edge > 0) ? max_edge * max_edge * max_edge : 1;
+    (min_edge > 0) ? min_edge * min_edge * min_edge : 1;
 
 // Function: _ps_faces_signed_volume6_normalized_rhr()
 // Usage:
 //   result = _ps_faces_signed_volume6_normalized_rhr(verts, faces);
 // Description:
-//   Compute signed `volume6` normalized by mesh edge scale cubed.
+//   Compute signed `volume6` normalized by local mesh edge scale cubed.
 //   .
 //   - Returns: dimensionless signed scalar; negative means LHR outward for closed shells
 // Arguments:
