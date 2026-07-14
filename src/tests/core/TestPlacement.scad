@@ -463,7 +463,7 @@ module test_ps_vertex_sites__open_construction_outputs_remain_placeable() {
 
         for (site = sites) {
             vi = ps_vertex_site_idx(site);
-            expected = _test_vertex_has_boundary_edge(edges, edge_faces, vi)
+            expected = !_ps_vertex_site_has_closed_fan(faces, edges, edge_faces, vi)
                 ? _ps_vertex_site_neighbors_idx(edges, vi)
                 : ps_vertex_fan_neighbors_idx(ps_vertex_fan(p, vi, edges, edge_faces));
             assert(
@@ -472,6 +472,52 @@ module test_ps_vertex_sites__open_construction_outputs_remain_placeable() {
             );
         }
     }
+}
+
+module test_ps_vertex_sites__hypertruncated_dodecahedron_t1_singular_vertices_remain_placeable() {
+    p = poly_truncate(dodecahedron(), 1);
+    faces = poly_faces(p);
+    verts = poly_verts(p);
+    edges = _ps_edges_from_faces(faces);
+    edge_faces = ps_edge_faces_table(faces, edges);
+    sites = ps_vertex_sites(p);
+    singular_vertices = [
+        for (vi = [0:1:len(verts)-1])
+            if (!_ps_vertex_site_has_closed_fan(faces, edges, edge_faces, vi))
+                vi
+    ];
+
+    assert_int_eq(len(sites), len(verts), "hypertruncated dodecahedron t=1 should produce one vertex site per vertex");
+    assert(len(singular_vertices) > 0, "hypertruncated dodecahedron t=1 should exercise singular vertex-site fallback");
+
+    for (vi = singular_vertices) {
+        expected = _ps_vertex_site_neighbors_idx(edges, vi);
+        assert(
+            ps_vertex_site_neighbors_idx(sites[vi]) == expected,
+            str("singular hypertruncated vertex should use edge-scan order vi=", vi, " got=", ps_vertex_site_neighbors_idx(sites[vi]), " expected=", expected)
+        );
+    }
+
+    place_on_vertices(p, indices = singular_vertices[0])
+        assert_int_eq($ps_vertex_valence, len(_ps_vertex_site_neighbors_idx(edges, $ps_vertex_idx)), "singular hypertruncated vertex placement valence");
+}
+
+module test_ps_vertex_site_from_local_poly__pinched_vertex_uses_edge_scan_order() {
+    verts = [[1,0,0], [2,0,0], [1,1,0], [1,0,1], [0,0,0], [1,-1,0], [1,0,-1]];
+    faces = [
+        [0,1,2], [0,3,1], [0,2,3], [1,3,2],
+        [0,5,4], [0,4,6], [0,6,5], [4,5,6]
+    ];
+    edges = _ps_edges_from_faces(faces);
+    edge_faces = ps_edge_faces_table(faces, edges);
+    site = _ps_vertex_site_from_local_poly(0, faces, verts);
+    expected = _ps_vertex_site_neighbors_idx(edges, 0);
+
+    assert(!_ps_vertex_site_has_closed_fan(faces, edges, edge_faces, 0), "pinched vertex should not be classified as a simple closed fan");
+    assert(
+        ps_vertex_site_neighbors_idx(site) == expected,
+        str("pinched local vertex site should use edge-scan order got=", ps_vertex_site_neighbors_idx(site), " expected=", expected)
+    );
 }
 
 module test_ps_vertex_site_from_local_poly__closed_ring_uses_fan_order() {
@@ -1085,9 +1131,11 @@ module run_TestPlacement() {
     test_ps_vertex_fan__rhombicuboctahedron_neighbors_are_cyclic_and_anchored();
     test_ps_vertex_sites__neighbors_match_vertex_fan_order();
     test_ps_vertex_sites__open_construction_outputs_remain_placeable();
+    test_ps_vertex_sites__hypertruncated_dodecahedron_t1_singular_vertices_remain_placeable();
     test_ps_vertex_site_from_local_poly__closed_ring_uses_fan_order();
     test_ps_vertex_site_from_local_poly__does_not_rebuild_local_poly();
     test_ps_vertex_site_from_local_poly__open_ring_uses_edge_scan_order();
+    test_ps_vertex_site_from_local_poly__pinched_vertex_uses_edge_scan_order();
     test_ps_vertex_site_accessors__match_record_layout();
     test_ps_vertex_site_frame__matches_site_accessors();
     test_ps_vertex_sites__truncated_tetrahedron_frames_are_orthonormal();
