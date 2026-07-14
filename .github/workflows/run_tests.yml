@@ -85,14 +85,24 @@ jobs:
           path: target/regression-tests
 
       - name: Ensure examples build correctly
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p target/examples
-          examples=(src/polysymmetrica/examples/{basics,truncation}/main_*.scad)
+          examples=(src/polysymmetrica/examples/{basics,truncation}/mainset -euo pipefail_*.scad)
           printf '%s\n' "${examples[@]}" | parallel \
             --will-cite \
+            --halt soon,fail=1 \
             --jobs "${EXAMPLE_JOBS:-4}" \
             --line-buffer \
             --tagstring '{/.}' \
             --joblog target/examples.joblog \
             'echo "Executing {} at $(date)"; openscad-nightly -o target/examples/{/.}.png {}'
-          ls -l target/
+          ls -l target/examples
+
+      - name: Upload example artifacts
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: visual-example-artifacts
+          path: target/examples
