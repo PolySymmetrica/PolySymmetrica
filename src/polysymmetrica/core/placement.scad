@@ -45,20 +45,81 @@ function _ps_resolve_classify(poly, classify=undef, classify_opts=undef) =
             _ps_cls_opt(classify_opts, 3, false)
         );
 
-function _ps_vertex_site_has_closed_fan(edges, edge_faces, vertex_idx) =
+function _ps_vertex_site_incident_edge_idxs(edges, vertex_idx) =
+    [
+        for (ei = [0:1:len(edges)-1])
+            if (edges[ei][0] == vertex_idx || edges[ei][1] == vertex_idx)
+                ei
+    ];
+
+function _ps_vertex_site_face_incident_edge_count(incident_edge_idxs, edge_faces, face_idx) =
+    len([
+        for (ei = incident_edge_idxs)
+            if (_ps_list_contains(edge_faces[ei], face_idx))
+                ei
+    ]);
+
+function _ps_vertex_site_adjacent_faces(incident_edge_idxs, edge_faces, face_idx) =
+    _ps_unique_values([
+        for (ei = incident_edge_idxs)
+            if (_ps_list_contains(edge_faces[ei], face_idx))
+                for (fi = edge_faces[ei])
+                    if (fi != face_idx)
+                        fi
+    ]);
+
+function _ps_vertex_site_reachable_faces(incident_edge_idxs, edge_faces, frontier, seen=[]) =
     let(
-        incident_edge_idxs = [
-            for (ei = [0:1:len(edges)-1])
-                if (edges[ei][0] == vertex_idx || edges[ei][1] == vertex_idx)
-                    ei
+        seen1 = _ps_unique_values(concat(seen, frontier)),
+        next = _ps_unique_values([
+            for (fi = frontier)
+                for (adj = _ps_vertex_site_adjacent_faces(incident_edge_idxs, edge_faces, fi))
+                    if (!_ps_list_contains(seen1, adj))
+                        adj
+        ])
+    )
+    (len(next) == 0)
+        ? seen1
+        : _ps_vertex_site_reachable_faces(incident_edge_idxs, edge_faces, next, seen1);
+
+function _ps_vertex_site_has_closed_fan(faces, edges, edge_faces, vertex_idx) =
+    let(
+        incident_edge_idxs = _ps_vertex_site_incident_edge_idxs(edges, vertex_idx),
+        incident_face_idxs = _ps_vertex_incident_face_indices(faces, vertex_idx),
+        non_simple_faces = [
+            for (fi = incident_face_idxs)
+                if (_ps_face_vertex_count(faces[fi], vertex_idx) != 1)
+                    fi
         ],
         non_manifold = [
             for (ei = incident_edge_idxs)
                 if (len(edge_faces[ei]) != 2)
                     ei
-        ]
+        ],
+        foreign_edge_faces = [
+            for (ei = incident_edge_idxs)
+                if (len(edge_faces[ei]) == 2)
+                    for (fi = edge_faces[ei])
+                        if (!_ps_list_contains(incident_face_idxs, fi))
+                            fi
+        ],
+        bad_face_degrees = [
+            for (fi = incident_face_idxs)
+                if (_ps_vertex_site_face_incident_edge_count(incident_edge_idxs, edge_faces, fi) != 2)
+                    fi
+        ],
+        reachable = (len(incident_face_idxs) == 0 || len(non_manifold) > 0)
+            ? []
+            : _ps_vertex_site_reachable_faces(incident_edge_idxs, edge_faces, [incident_face_idxs[0]])
     )
-    len(incident_edge_idxs) > 0 && len(non_manifold) == 0;
+    len(incident_edge_idxs) > 0
+        && len(incident_face_idxs) > 0
+        && len(incident_edge_idxs) == len(incident_face_idxs)
+        && len(non_simple_faces) == 0
+        && len(non_manifold) == 0
+        && len(foreign_edge_faces) == 0
+        && len(bad_face_degrees) == 0
+        && len(reachable) == len(incident_face_idxs);
 
 // Function: _ps_face_site_neighbors_idx()
 // Usage:
@@ -257,56 +318,6 @@ function _ps_face_site_from_local_poly(face_idx, faces, verts_local, poly_center
         face_local_context
     ];
 
-// Function: _ps_edge_idx_from_verts()
-// Usage:
-//   result = _ps_edge_idx_from_verts(edges, a, b);
-// Description:
-//   Find the canonical global edge index for two vertex ids.
-//   .
-//   - Returns: edge index, or `-1` when absent
-// Arguments:
-//   edges = canonical edge list
-//   a = edge endpoint vertex ids
-//   b = edge endpoint vertex ids
-function _ps_edge_idx_from_verts(edges, a, b) =
-    let(e = (a < b) ? [a, b] : [b, a])
-    _ps_edge_idx_from_canonical(edges, e);
-
-// Function: _ps_edge_idx_from_canonical()
-// Usage:
-//   result = _ps_edge_idx_from_canonical(edges, e, i);
-// Description:
-//   Find the index of a canonical edge pair without `search(...)`.
-//   .
-//   - Returns: edge index, or `-1` when absent
-// Arguments:
-//   edges = canonical edge list
-//   e = canonical edge pair
-//   i = recursion state
-function _ps_edge_idx_from_canonical(edges, e, i=0) =
-    (i >= len(edges)) ? -1 :
-    (edges[i][0] == e[0] && edges[i][1] == e[1]) ? i :
-    _ps_edge_idx_from_canonical(edges, e, i + 1);
-
-// Function: _ps_unique_values()
-// Usage:
-//   result = _ps_unique_values(vals, i, acc);
-// Description:
-//   Deduplicate scalar values while preserving first-seen order.
-//   .
-//   - Returns: unique values
-// Arguments:
-//   vals = input values
-//   i = recursion state
-//   acc = recursion state
-function _ps_unique_values(vals, i=0, acc=[]) =
-    (i >= len(vals)) ? acc :
-    _ps_unique_values(
-        vals,
-        i + 1,
-        _ps_list_contains(acc, vals[i]) ? acc : concat(acc, [vals[i]])
-    );
-
 // Function: _ps_edge_site_from_local_poly()
 // Usage:
 //   result = _ps_edge_site_from_local_poly(edge_idx, faces, verts_local, poly_center_local_parent, eps);
@@ -399,7 +410,7 @@ function _ps_vertex_site_from_local_poly(vertex_idx, faces, verts_local, poly_ce
         poly_center_parent = is_undef(poly_center_local_parent) ? [0, 0, 0] : poly_center_local_parent,
         radial_raw = center - poly_center_parent,
         ez = (norm(radial_raw) <= eps) ? [0, 0, 1] : v_norm(radial_raw),
-        closed_fan = _ps_vertex_site_has_closed_fan(edges, edge_faces, vertex_idx),
+        closed_fan = _ps_vertex_site_has_closed_fan(faces, edges, edge_faces, vertex_idx),
         neighbors_idx = closed_fan
             ? ps_vertex_fan_neighbors_idx(ps_vertex_fan(local_poly, vertex_idx, edges, edge_faces))
             : _ps_vertex_site_neighbors_idx(edges, vertex_idx),
@@ -464,10 +475,9 @@ function _ps_proxy_edge_ids_from_face_record(record, faces, verts_local, eps=1e-
                 let(
                     a = f[k],
                     b = f[(k + 1) % len(f)],
-                    edge_idx = _ps_edge_idx_from_verts(edges, a, b)
+                    edge_idx = ps_find_edge_index(edges, a, b)
                 )
-                if (edge_idx >= 0)
-                    edge_idx
+                edge_idx
         ]
     )
     _ps_unique_values(ids);
@@ -1825,7 +1835,7 @@ function ps_edge_sites(poly, inter_radius = 1, edge_len = undef, classify = unde
 //   .
 //   - Returns: list of vertex site records `[vertex_idx, edge_len, vert_radius, poly_center_local, vertex_valence, vertex_neighbors_idx, vertex_neighbor_pts_local, vertex_family_id, face_family_count, edge_family_count, vertex_family_count, frame]`
 //   .
-//   - Limitations/Gotchas: closed-manifold vertices use cyclic fan order anchored at the lowest neighbour index; boundary vertices keep edge-scan neighbour order so open construction outputs remain placeable
+//   - Limitations/Gotchas: simple closed-manifold vertices use cyclic fan order anchored at the lowest neighbour index; boundary and singular vertices keep edge-scan neighbour order so open construction outputs and degenerate construction results remain placeable
 // Arguments:
 //   poly = source poly descriptor.
 //   inter_radius = target interradius scale used when `edge_len` is `undef`.
@@ -1852,7 +1862,7 @@ function ps_vertex_sites(poly, inter_radius = 1, edge_len = undef, classify = un
             let(
                 v0 = verts[vi] * scale,
                 ez = v_norm(v0),
-                closed_fan = _ps_vertex_site_has_closed_fan(edges, edge_faces, vi),
+                closed_fan = _ps_vertex_site_has_closed_fan(faces, edges, edge_faces, vi),
                 neighbors_idx = closed_fan
                     ? ps_vertex_fan_neighbors_idx(ps_vertex_fan(poly, vi, edges, edge_faces))
                     : _ps_vertex_site_neighbors_idx(edges, vi),
