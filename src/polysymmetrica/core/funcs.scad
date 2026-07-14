@@ -518,6 +518,18 @@ function _ps_fix_winding_all(faces, fixed=undef) =
         _ps_fix_winding_queue(faces, _ps_list_set(init, seed, faces[seed]), [seed])
     );
 
+// Function: _ps_unique_values()
+// Usage:
+//   result = _ps_unique_values(list);
+// Description:
+//   Keep first occurrences from a scalar list.
+//   .
+//   - Returns: list with duplicate values removed
+// Arguments:
+//   list = input list
+function _ps_unique_values(list) =
+    [for (i = [0:1:len(list)-1]) if (_ps_index_of(list, list[i]) == i) list[i]];
+
 // Function: _ps_unique_face_indices()
 // Usage:
 //   result = _ps_unique_face_indices(list);
@@ -528,7 +540,7 @@ function _ps_fix_winding_all(faces, fixed=undef) =
 // Arguments:
 //   list = input list
 function _ps_unique_face_indices(list) =
-    [for (i = [0:1:len(list)-1]) if (_ps_index_of(list, list[i]) == i) list[i]];
+    _ps_unique_values(list);
 
 // Function: _ps_face_neighbor_indices()
 // Usage:
@@ -1644,6 +1656,35 @@ function ps_face_has_edge(f, a, b) =
             if ((x==a && y==b) || (x==b && y==a)) 1
     ]) > 0;
 
+// Function: _ps_face_vertex_count()
+// Usage:
+//   result = _ps_face_vertex_count(face, vi);
+// Description:
+//   Count occurrences of a vertex in one face loop.
+//   .
+//   - Returns: occurrence count
+// Arguments:
+//   face = face index loop
+//   vi = vertex index
+function _ps_face_vertex_count(face, vi) =
+    len([for (k = [0 : len(face)-1]) if (face[k] == vi) 1]);
+
+// Function: _ps_vertex_incident_face_indices()
+// Usage:
+//   result = _ps_vertex_incident_face_indices(faces, vi);
+// Description:
+//   Find face indices incident to a vertex from a face list.
+//   .
+//   - Returns: unordered face-index list
+// Arguments:
+//   faces = face list
+//   vi = vertex index
+function _ps_vertex_incident_face_indices(faces, vi) =
+    [
+        for (fi = [0 : len(faces)-1])
+            if (_ps_face_vertex_count(faces[fi], vi) > 0) fi
+    ];
+
 // Function: ps_vertex_incident_faces()
 // Usage:
 //   result = ps_vertex_incident_faces(poly, vi);
@@ -1655,12 +1696,7 @@ function ps_face_has_edge(f, a, b) =
 //   poly = poly descriptor
 //   vi = vertex index
 function ps_vertex_incident_faces(poly, vi) =
-    let(faces = poly_faces(poly))
-    [
-        for (fi = [0 : len(faces)-1])
-            let(f = faces[fi])
-            if (len([for (k = [0 : len(f)-1]) if (f[k] == vi) 1]) > 0) fi
-    ];
+    _ps_vertex_incident_face_indices(poly_faces(poly), vi);
 
 // Function: _ps_next_face_around_vertex()
 // Usage:
