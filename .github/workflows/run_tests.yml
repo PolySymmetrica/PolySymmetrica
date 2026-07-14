@@ -89,7 +89,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p target/examples
-          examples=(src/polysymmetrica/examples/{basics,truncation}/mainset -euo pipefail_*.scad)
+          examples=(src/polysymmetrica/examples/{basics,truncation}/main_*.scad)
           printf '%s\n' "${examples[@]}" | parallel \
             --will-cite \
             --halt soon,fail=1 \
