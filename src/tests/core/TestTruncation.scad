@@ -6,6 +6,7 @@
 
 use <../../polysymmetrica/core/funcs.scad>
 use <../../polysymmetrica/core/duals.scad>
+use <../../polysymmetrica/core/prisms.scad>
 use <../../polysymmetrica/core/transform.scad>
 use <../../polysymmetrica/core/truncation.scad>
 use <../../polysymmetrica/core/solvers.scad>
@@ -36,6 +37,12 @@ function _edge_rel_spread(poly) =
         avg = (len(lens) == 0) ? 0 : (ps_sum(lens) / len(lens))
     )
     (len(lens) == 0 || avg == 0) ? 0 : ((max(lens) - min(lens)) / avg);
+
+function _self_crossing_face_count(poly, eps=1e-9) =
+    ps_sum([
+        for (f = poly_faces(poly))
+            (_ps_face_self_intersections(poly_verts(poly), f, eps) > 0) ? 1 : 0
+    ]);
 
 function _map_face_c(size, c_by_size, default=0) =
     let(idxs = [for (i = [0:1:len(c_by_size)-1]) if (c_by_size[i][0] == size) i])
@@ -196,6 +203,20 @@ module test_poly_rectify__star_vertex_cap_allowed() {
     assert(poly_valid(q, "star_ok"), "rectified star-fan pyramid should be valid in star_ok mode");
     assert_int_eq(len(apex_cap), 5, "rectified star-fan apex cap should be pentagonal");
     assert(_ps_face_self_intersections(poly_verts(q), apex_cap) > 0, "rectified star-fan apex cap should retain star crossing");
+}
+
+module test_poly_truncate__star_antiprism_keeps_star_ok_output() {
+    q = poly_truncate(poly_antiprism(5, 2), t = 0.18);
+
+    assert(poly_valid(q, "star_ok"), "truncated 5/2 antiprism should be valid in star_ok mode");
+    assert(_self_crossing_face_count(q) > 0, "truncated 5/2 antiprism should retain self-crossing star loops");
+}
+
+module test_poly_rectify__star_prism_keeps_star_ok_output() {
+    q = poly_rectify(poly_prism(5, 2));
+
+    assert(poly_valid(q, "star_ok"), "rectified 5/2 prism should be valid in star_ok mode");
+    assert(_self_crossing_face_count(q) > 0, "rectified 5/2 prism should retain self-crossing star loops");
 }
 
 module test_poly_cantitruncate__tetra_counts() {
@@ -753,6 +774,8 @@ module run_TestTruncation() {
     test_poly_rectify__tetra_counts();
     test_poly_truncate__star_vertex_cap_allowed();
     test_poly_rectify__star_vertex_cap_allowed();
+    test_poly_truncate__star_antiprism_keeps_star_ok_output();
+    test_poly_rectify__star_prism_keeps_star_ok_output();
     test_poly_cantitruncate__tetra_counts();
     test_poly_cantellate__profile_face_df_and_c();
     test_poly_cantitruncate__unsupported_profile_ignored();

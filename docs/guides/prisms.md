@@ -86,6 +86,11 @@ Negative-test runners (expected to fail with assertions):
 For star caps (`p > 1`), faces are self-intersecting loops in 3D.  
 `poly_render(...)` currently delegates to `polyhedron(points, faces)`, and OpenSCAD F6 backends may triangulate/fill those loops differently than 2D `polygon()` even-odd behavior. This can appear as unexpected filled regions on star faces.
 
+Transforms preserve this topology. In particular, `poly_truncate(...)` and
+`poly_rectify(...)` build vertex caps from the abstract vertex figure, so a
+star vertex figure can produce a self-intersecting vertex cap. That is valid
+for star-poly workflows; check those outputs with `poly_valid(p, "star_ok")`.
+
 Current workaround for visual/debug output:
 
 - render face-local plates from placement (`$ps_face_pts2d`) via `polygon()`/`linear_extrude`, instead of a single `polyhedron(...)` cap for those faces.

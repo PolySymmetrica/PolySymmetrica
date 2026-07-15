@@ -42,6 +42,11 @@ The important habit is to keep transforms separate from placed geometry. Build
 or transform the descriptor first, then pass the result into `place_on_faces`,
 `place_on_edges`, `place_on_vertices`, or `poly_render`.
 
+For star or otherwise self-crossing inputs, `poly_truncate(...)` and
+`poly_rectify(...)` build vertex caps from the source vertex figure. Those caps
+can legitimately be self-crossing faces. Use `poly_valid(p, "star_ok")` for
+that class of output rather than convex/closed validation.
+
 ## API Catalogue
 
 The deployed API docs are the catalogue view:
