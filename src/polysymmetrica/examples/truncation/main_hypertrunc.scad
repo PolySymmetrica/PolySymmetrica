@@ -29,5 +29,5 @@ for (   p = with_index([
             linear_extrude(1) text(str("t=", t[1]));
         else
             demo(poly_truncate(p[1], t[1]));
-}        
+}
 

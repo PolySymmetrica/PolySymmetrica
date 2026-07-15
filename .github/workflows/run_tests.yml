@@ -24,11 +24,14 @@ jobs:
       - uses: actions/checkout@v6
 
       # Installs Openscad using apt
-      - name: Install OpenSCAD
+      - name: Install OpenSCAD, docsgen etc
+        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install openscad imagemagick xvfb parallel ripgrep
-          sudo snap install openscad-nightly
+          printf '%s\t%s\n' \
+            apt  'sudo apt-get update && sudo apt-get install -y openscad imagemagick xvfb ripgrep' \
+            snap 'sudo snap install openscad-nightly' \
+            pip  'python3 -m pip install --user openscad-docsgen' |
+          parallel --colsep '\t' --line-buffer --halt soon,fail=1 --tagstring '{1}' '{2}'
 
       # Runs 
       - name: Check Openscad Versions
@@ -54,10 +57,6 @@ jobs:
             openscad-2026 openscad-nightly target/unit-tests/passed-openscad-nightly.stl |
           parallel --colsep '\t' --line-buffer --tagstring '{1}' \
             '{2} -o {3} src/tests/run_all.scad'
-
-      - name: Install docsgen
-        run: |
-          python3 -m pip install --user openscad-docsgen
 
       - name: Check API docs build
         run: |
@@ -85,14 +84,23 @@ jobs:
           path: target/regression-tests
 
       - name: Ensure examples build correctly
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p target/examples
           examples=(src/polysymmetrica/examples/{basics,truncation}/main_*.scad)
           printf '%s\n' "${examples[@]}" | parallel \
             --will-cite \
+            --halt soon,fail=1 \
             --jobs "${EXAMPLE_JOBS:-4}" \
             --line-buffer \
             --tagstring '{/.}' \
-            --joblog target/examples.joblog \
-            'echo "Executing {} at $(date)"; openscad-nightly -o target/examples/{/.}.png {}'
-          ls -l target/
+            --joblog target/examples/examples.joblog \
+            'echo "Executing {} at $(date)"; openscad-nightly -o target/examples/{/.}.stl {}'
+
+      - name: Upload example artifacts (enable on failure)
+        if: false
+        uses: actions/upload-artifact@v6
+        with:
+          name: visual-example-artifacts
+          path: target/examples
