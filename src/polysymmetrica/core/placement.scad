@@ -1426,6 +1426,10 @@ module place_on_face_foreign_proxy_sites(
         $ps_proxy_vertex_valence = is_undef(vertex_site) ? undef : ps_vertex_site_valence(vertex_site);
         $ps_proxy_vertex_neighbors_idx = is_undef(vertex_site) ? undef : ps_vertex_site_neighbors_idx(vertex_site);
         $ps_proxy_vertex_neighbor_pts_local = is_undef(vertex_site) ? undef : ps_vertex_site_neighbor_pts_local(vertex_site);
+        $ps_proxy_vertex_figure = is_undef(vertex_site) ? undef : ps_vertex_site_vertex_figure(vertex_site);
+        $ps_proxy_vertex_figure_faces_idx = is_undef($ps_proxy_vertex_figure) ? undef : ps_vertex_figure_faces_idx($ps_proxy_vertex_figure);
+        $ps_proxy_vertex_figure_edges_idx = is_undef($ps_proxy_vertex_figure) ? undef : ps_vertex_figure_edges_idx($ps_proxy_vertex_figure);
+        $ps_proxy_vertex_figure_neighbors_idx = is_undef($ps_proxy_vertex_figure) ? undef : ps_vertex_figure_neighbors_idx($ps_proxy_vertex_figure);
         $ps_proxy_poly_verts_local = ps_replay_site_poly_verts_local(site);
         $ps_proxy_poly_center_local = ps_replay_site_poly_center_local(site);
         $ps_replay_idx = ps_replay_site_idx(site);
@@ -1449,6 +1453,10 @@ module place_on_face_foreign_proxy_sites(
         $ps_replay_vertex_valence = is_undef(vertex_site) ? undef : ps_vertex_site_valence(vertex_site);
         $ps_replay_vertex_neighbors_idx = is_undef(vertex_site) ? undef : ps_vertex_site_neighbors_idx(vertex_site);
         $ps_replay_vertex_neighbor_pts_local = is_undef(vertex_site) ? undef : ps_vertex_site_neighbor_pts_local(vertex_site);
+        $ps_replay_vertex_figure = is_undef(vertex_site) ? undef : ps_vertex_site_vertex_figure(vertex_site);
+        $ps_replay_vertex_figure_faces_idx = is_undef($ps_replay_vertex_figure) ? undef : ps_vertex_figure_faces_idx($ps_replay_vertex_figure);
+        $ps_replay_vertex_figure_edges_idx = is_undef($ps_replay_vertex_figure) ? undef : ps_vertex_figure_edges_idx($ps_replay_vertex_figure);
+        $ps_replay_vertex_figure_neighbors_idx = is_undef($ps_replay_vertex_figure) ? undef : ps_vertex_figure_neighbors_idx($ps_replay_vertex_figure);
         $ps_replay_intrusion_segment2d_local = ps_replay_site_intrusion_segment2d_local(site);
         $ps_replay_intrusion_dihedral = ps_replay_site_intrusion_dihedral(site);
         $ps_replay_intrusion_confidence = ps_replay_site_intrusion_confidence(site);
@@ -1505,6 +1513,10 @@ module place_on_face_foreign_proxy_sites(
                     $ps_vertex_valence            = ps_vertex_site_valence(vertex_site);
                     $ps_vertex_neighbors_idx      = ps_vertex_site_neighbors_idx(vertex_site);
                     $ps_vertex_neighbor_pts_local = ps_vertex_site_neighbor_pts_local(vertex_site);
+                    $ps_vertex_figure             = ps_vertex_site_vertex_figure(vertex_site);
+                    $ps_vertex_figure_faces_idx   = is_undef($ps_vertex_figure) ? undef : ps_vertex_figure_faces_idx($ps_vertex_figure);
+                    $ps_vertex_figure_edges_idx   = is_undef($ps_vertex_figure) ? undef : ps_vertex_figure_edges_idx($ps_vertex_figure);
+                    $ps_vertex_figure_neighbors_idx = is_undef($ps_vertex_figure) ? undef : ps_vertex_figure_neighbors_idx($ps_vertex_figure);
                     $ps_edge_len                  = ps_vertex_site_edge_len(vertex_site);
                     $ps_vert_radius               = ps_vertex_site_radius(vertex_site);
                     $ps_poly_center_local         = ps_vertex_site_poly_center_local(vertex_site);
