@@ -389,6 +389,25 @@ foreign source kind. With `coords="parent"`, children remain in the current
 target face-local frame and should use the `$ps_replay_*` or `$ps_proxy_*`
 metadata directly.
 
+`place_on_face_foreign_proxy_sites(...)` exposes both `$ps_proxy_*` and
+`$ps_replay_*` aliases for replay metadata. For foreign vertex proxy sites, the
+vertex-specific fields include:
+
+| Variable | Meaning |
+| --- | --- |
+| `$ps_proxy_vertex_valence`, `$ps_replay_vertex_valence` | Number of incident source edges for the foreign vertex, or `undef` when the current proxy site is not a vertex. |
+| `$ps_proxy_vertex_neighbors_idx`, `$ps_replay_vertex_neighbors_idx` | Adjacent source vertex indices for the foreign vertex, or `undef`. Closed vertex fans use cyclic order anchored at the lowest neighbour index; boundary or singular replay sites use edge-scan order. |
+| `$ps_proxy_vertex_neighbor_pts_local`, `$ps_replay_vertex_neighbor_pts_local` | Adjacent vertex positions in replayed vertex-local coordinates, aligned with the corresponding neighbour index list, or `undef`. |
+| `$ps_proxy_vertex_figure`, `$ps_replay_vertex_figure` | Abstract vertex figure record for a closed simple foreign vertex fan, or `undef` for non-vertex, boundary, singular, or partial replay sites. |
+| `$ps_proxy_vertex_figure_faces_idx`, `$ps_replay_vertex_figure_faces_idx` | Incident face indices from the abstract vertex figure, or `undef`. |
+| `$ps_proxy_vertex_figure_edges_idx`, `$ps_replay_vertex_figure_edges_idx` | Incident edge indices from the abstract vertex figure, or `undef`. |
+| `$ps_proxy_vertex_figure_neighbors_idx`, `$ps_replay_vertex_figure_neighbors_idx` | Adjacent vertex indices from the abstract vertex figure, or `undef`. |
+
+When `coords="element"` and the selected child is a foreign vertex child, the
+same abstract vertex figure is also mirrored into the normal vertex placement
+variables: `$ps_vertex_figure`, `$ps_vertex_figure_faces_idx`,
+`$ps_vertex_figure_edges_idx`, and `$ps_vertex_figure_neighbors_idx`.
+
 The internal proxy replay builder also seeds private candidate records with the
 kind string `"face_plane_cut_candidate"` when it derives edge/vertex provenance
 from an exact face intrusion. Those candidates are helper records, not a public
