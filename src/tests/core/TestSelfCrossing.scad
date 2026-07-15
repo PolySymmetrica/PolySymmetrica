@@ -1249,6 +1249,16 @@ module _test_assert_triangle_proxy_vertex_child(expected_child_idx) {
     assert_int_eq($ps_vertex_idx, $ps_proxy_source_idx, "triangle vertex proxy child vertex id");
     assert_int_eq($ps_vertex_valence, $ps_proxy_vertex_valence, "triangle vertex proxy child valence");
     assert_list_eq($ps_vertex_neighbors_idx, $ps_proxy_vertex_neighbors_idx, "triangle vertex proxy child neighbors");
+    assert(!is_undef($ps_vertex_figure), "triangle vertex proxy child should expose vertex figure");
+    assert_list_eq($ps_vertex_figure, $ps_proxy_vertex_figure, "triangle vertex proxy child vertex figure");
+    assert_list_eq($ps_vertex_figure, $ps_replay_vertex_figure, "triangle vertex replay child vertex figure");
+    assert_list_eq($ps_vertex_figure_faces_idx, $ps_proxy_vertex_figure_faces_idx, "triangle vertex proxy child figure faces");
+    assert_list_eq($ps_vertex_figure_edges_idx, $ps_proxy_vertex_figure_edges_idx, "triangle vertex proxy child figure edges");
+    assert_list_eq($ps_vertex_figure_neighbors_idx, $ps_proxy_vertex_figure_neighbors_idx, "triangle vertex proxy child figure neighbors");
+    assert_list_eq($ps_vertex_figure_faces_idx, $ps_replay_vertex_figure_faces_idx, "triangle vertex replay child figure faces");
+    assert_list_eq($ps_vertex_figure_edges_idx, $ps_replay_vertex_figure_edges_idx, "triangle vertex replay child figure edges");
+    assert_list_eq($ps_vertex_figure_neighbors_idx, $ps_replay_vertex_figure_neighbors_idx, "triangle vertex replay child figure neighbors");
+    assert_list_eq($ps_vertex_figure_neighbors_idx, $ps_vertex_neighbors_idx, "triangle vertex proxy figure neighbors should match vertex neighbors");
     assert_near(norm($ps_proxy_ex_local), 1, EPS, "triangle vertex proxy ex unit");
     assert_near(norm($ps_proxy_ey_local), 1, EPS, "triangle vertex proxy ey unit");
     assert_near(norm($ps_proxy_ez_local), 1, EPS, "triangle vertex proxy ez unit");

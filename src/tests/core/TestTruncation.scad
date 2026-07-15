@@ -66,8 +66,18 @@ function _skew_quad_prism() =
     )
     poly_make(v, f);
 
-function _regular_2d_points(angles) =
-    [for (a = angles) [cos(a), sin(a), 0]];
+function _star_fan_pyramid() =
+    let(
+        s = [1, 3, 5, 2, 4],
+        base = [for (i = [0:1:4]) [cos(90 + i * 72), sin(90 + i * 72), 0]],
+        verts = concat([[0, 0, 1]], base),
+        side_faces = [
+            for (i = [0:1:len(s)-1])
+                [0, s[i], s[(i + 1) % len(s)]]
+        ],
+        base_face = [for (i = [len(s)-1:-1:0]) s[i]]
+    )
+    poly_make(verts, concat(side_faces, [base_face]), 1);
 
 
 // point eq / find / unique
@@ -129,15 +139,6 @@ module test_poly_truncate__miswound_input_uses_oriented_fan() {
     assert_int_eq(len(poly_faces(q)), 8, "miswound trunc tetra faces=8");
 }
 
-module test__ps_tr_vertex_cap_is_simple__detects_star_loop() {
-    pentagon = _regular_2d_points([90, 162, 234, 306, 18]);
-    pentagram = _regular_2d_points([90, 234, 18, 162, 306]);
-
-    assert(_ps_tr_vertex_cap_is_simple(pentagon), "ordinary pentagonal cap should be simple");
-    assert(!_ps_tr_vertex_cap_is_simple(pentagram), "pentagram cap should be detected as self-crossing");
-}
-
-
 // truncation t=0: counts preserved (geometry changes because of dedup path; still should match input)
 module test_poly_truncate__t_zero_counts_preserved() {
     p=_tetra_poly();
@@ -175,6 +176,26 @@ module test_poly_rectify__tetra_counts() {
     assert(len(poly_verts(q)) == 6, "rectify tetra verts");
     assert(len(poly_faces(q)) == 8, "rectify tetra faces");
     assert(_count_faces_of_size(q,3) == 8, "rectify tetra: 8 triangles");
+}
+
+module test_poly_truncate__star_vertex_cap_allowed() {
+    p = _star_fan_pyramid();
+    q = poly_truncate(p, 0.2);
+    apex_cap = poly_faces(q)[len(poly_faces(p))];
+
+    assert(poly_valid(q, "star_ok"), "truncated star-fan pyramid should be valid in star_ok mode");
+    assert_int_eq(len(apex_cap), 5, "truncated star-fan apex cap should be pentagonal");
+    assert(_ps_face_self_intersections(poly_verts(q), apex_cap) > 0, "truncated star-fan apex cap should retain star crossing");
+}
+
+module test_poly_rectify__star_vertex_cap_allowed() {
+    p = _star_fan_pyramid();
+    q = poly_rectify(p);
+    apex_cap = poly_faces(q)[len(poly_faces(p))];
+
+    assert(poly_valid(q, "star_ok"), "rectified star-fan pyramid should be valid in star_ok mode");
+    assert_int_eq(len(apex_cap), 5, "rectified star-fan apex cap should be pentagonal");
+    assert(_ps_face_self_intersections(poly_verts(q), apex_cap) > 0, "rectified star-fan apex cap should retain star crossing");
 }
 
 module test_poly_cantitruncate__tetra_counts() {
@@ -726,11 +747,12 @@ module run_TestTruncation() {
 
     test_poly_truncate__tetra_counts_at_one_third();
     test_poly_truncate__miswound_input_uses_oriented_fan();
-    test__ps_tr_vertex_cap_is_simple__detects_star_loop();
     test_poly_truncate__t_zero_counts_preserved();
     test_poly_chamfer__cube_face_counts();
     test_poly_truncate_then_dual__counts_relations();
     test_poly_rectify__tetra_counts();
+    test_poly_truncate__star_vertex_cap_allowed();
+    test_poly_rectify__star_vertex_cap_allowed();
     test_poly_cantitruncate__tetra_counts();
     test_poly_cantellate__profile_face_df_and_c();
     test_poly_cantitruncate__unsupported_profile_ignored();

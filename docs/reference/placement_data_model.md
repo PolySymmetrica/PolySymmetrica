@@ -309,6 +309,7 @@ Vertex site accessors:
 | `ps_vertex_site_valence(site)` | Number of incident source edges. |
 | `ps_vertex_site_neighbors_idx(site)` | Adjacent vertex indices. Closed vertex fans use cyclic order anchored at the lowest neighbour index; boundary or partial proxy/replay sites use edge-scan order. |
 | `ps_vertex_site_neighbor_pts_local(site)` | Adjacent vertex positions in vertex-local coordinates, aligned with `ps_vertex_site_neighbors_idx(site)`. |
+| `ps_vertex_site_vertex_figure(site)` | Abstract vertex figure record for closed simple vertex fans, or `undef` for boundary, singular, or partial replay sites. |
 | `ps_vertex_site_family_id(site)` | Classification family id, or `undef`. |
 | `ps_vertex_site_face_family_count(site)` | Number of face families, or `undef`. |
 | `ps_vertex_site_edge_family_count(site)` | Number of edge families, or `undef`. |
@@ -318,6 +319,11 @@ Vertex site accessors:
 to each site record. `place_on_vertices(...)` exposes the same semantic data as
 `$ps_vertex_*` and `$ps_vertex_frame`; center/axis accessors derive from the
 stored frame.
+
+The vertex figure is an abstract/topological object. Its vertices are the
+source edges incident to the placement vertex, its sides are the incident source
+faces, and its neighbour list records the adjacent source vertices in the same
+cyclic order. It is not a metric cross-section through the vertex.
 
 Describe example:
 
@@ -382,6 +388,25 @@ site's frame and expose the usual face/edge/vertex `$ps_*` metadata for that
 foreign source kind. With `coords="parent"`, children remain in the current
 target face-local frame and should use the `$ps_replay_*` or `$ps_proxy_*`
 metadata directly.
+
+`place_on_face_foreign_proxy_sites(...)` exposes both `$ps_proxy_*` and
+`$ps_replay_*` aliases for replay metadata. For foreign vertex proxy sites, the
+vertex-specific fields include:
+
+| Variable | Meaning |
+| --- | --- |
+| `$ps_proxy_vertex_valence`, `$ps_replay_vertex_valence` | Number of incident source edges for the foreign vertex, or `undef` when the current proxy site is not a vertex. |
+| `$ps_proxy_vertex_neighbors_idx`, `$ps_replay_vertex_neighbors_idx` | Adjacent source vertex indices for the foreign vertex, or `undef`. Closed vertex fans use cyclic order anchored at the lowest neighbour index; boundary or singular replay sites use edge-scan order. |
+| `$ps_proxy_vertex_neighbor_pts_local`, `$ps_replay_vertex_neighbor_pts_local` | Adjacent vertex positions in replayed vertex-local coordinates, aligned with the corresponding neighbour index list, or `undef`. |
+| `$ps_proxy_vertex_figure`, `$ps_replay_vertex_figure` | Abstract vertex figure record for a closed simple foreign vertex fan, or `undef` for non-vertex, boundary, singular, or partial replay sites. |
+| `$ps_proxy_vertex_figure_faces_idx`, `$ps_replay_vertex_figure_faces_idx` | Incident face indices from the abstract vertex figure, or `undef`. |
+| `$ps_proxy_vertex_figure_edges_idx`, `$ps_replay_vertex_figure_edges_idx` | Incident edge indices from the abstract vertex figure, or `undef`. |
+| `$ps_proxy_vertex_figure_neighbors_idx`, `$ps_replay_vertex_figure_neighbors_idx` | Adjacent vertex indices from the abstract vertex figure, or `undef`. |
+
+When `coords="element"` and the selected child is a foreign vertex child, the
+same abstract vertex figure is also mirrored into the normal vertex placement
+variables: `$ps_vertex_figure`, `$ps_vertex_figure_faces_idx`,
+`$ps_vertex_figure_edges_idx`, and `$ps_vertex_figure_neighbors_idx`.
 
 The internal proxy replay builder also seeds private candidate records with the
 kind string `"face_plane_cut_candidate"` when it derives edge/vertex provenance
