@@ -7,6 +7,7 @@
 include <../../common/regression_common.scad>
 
 use <../../../../polysymmetrica/core/duals.scad>
+use <../../../../polysymmetrica/core/funcs.scad>
 use <../../../../polysymmetrica/core/prisms.scad>
 use <../../../../polysymmetrica/core/solvers.scad>
 use <../../../../polysymmetrica/core/truncation.scad>
@@ -33,7 +34,8 @@ TESTS = [
             c = 0,
             profile = solve_cantitruncate_dominant_edges_profile_rows(cuboctahedron(), 4)
         )
-    ]
+    ],
+    ["star_fan_truncate", function() poly_truncate(_tm_star_fan_pyramid(), t = 0.2)]
 ];
 
 T_MAX = len(TESTS);
@@ -46,6 +48,19 @@ function _tm_ap7_rows() = [
     ["face", "family", 0, ["df", 0.30]],
     ["face", "family", 1, ["df", 0.30]]
 ];
+
+function _tm_star_fan_pyramid() =
+    let(
+        s = [1, 3, 5, 2, 4],
+        base = [for (i = [0:1:4]) [cos(90 + i * 72), sin(90 + i * 72), 0]],
+        verts = concat([[0, 0, 1]], base),
+        side_faces = [
+            for (i = [0:1:len(s)-1])
+                [0, s[i], s[(i + 1) % len(s)]]
+        ],
+        base_face = [for (i = [len(s)-1:-1:0]) s[i]]
+    )
+    poly_make(verts, concat(side_faces, [base_face]), 1);
 
 if (REG_LIST) {
     reg_list_tests(TESTS);

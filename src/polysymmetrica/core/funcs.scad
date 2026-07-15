@@ -1903,6 +1903,81 @@ function ps_vertex_fan_neighbors_idx(fan) = fan[2];
 //   fan = vertex fan record
 function ps_vertex_fan_edges_idx(fan) = fan[3];
 
+function _ps_vertex_figure_from_fan(fan) =
+    [
+        ps_vertex_fan_idx(fan),
+        ps_vertex_fan_faces_idx(fan),
+        ps_vertex_fan_edges_idx(fan),
+        ps_vertex_fan_neighbors_idx(fan)
+    ];
+
+// Function: ps_vertex_figure()
+// Usage:
+//   result = ps_vertex_figure(poly, vertex_idx, edges, edge_faces);
+// Description:
+//   Build the abstract vertex figure for one source vertex.
+//   .
+//   The vertex figure is topological, not metric: its vertices are the source
+//   edges incident to `vertex_idx`, its sides are the source faces incident to
+//   `vertex_idx`, and its neighbour list records the opposite endpoint of each
+//   figure vertex. Ordering is the same cyclic order as `ps_vertex_fan(...)`,
+//   anchored at the lowest neighbour index.
+//   .
+//   - Returns: vertex figure record `[vertex_idx, faces_idx, edges_idx, neighbors_idx]`
+//   .
+//   - Limitations/Gotchas: assumes a closed manifold local vertex neighbourhood
+// Arguments:
+//   poly = poly descriptor
+//   vertex_idx = source vertex index
+//   edges = optional edge list for reuse
+//   edge_faces = optional edge-face table for reuse
+function ps_vertex_figure(poly, vertex_idx, edges=undef, edge_faces=undef) =
+    _ps_vertex_figure_from_fan(ps_vertex_fan(poly, vertex_idx, edges, edge_faces));
+
+// Function: ps_vertex_figure_idx()
+// Usage:
+//   result = ps_vertex_figure_idx(fig);
+// Description:
+//   Get the source vertex index from a vertex figure.
+//   .
+//   - Returns: vertex index
+// Arguments:
+//   fig = vertex figure record
+function ps_vertex_figure_idx(fig) = fig[0];
+
+// Function: ps_vertex_figure_faces_idx()
+// Usage:
+//   result = ps_vertex_figure_faces_idx(fig);
+// Description:
+//   Get cyclic incident face indices from a vertex figure.
+//   .
+//   - Returns: face indices
+// Arguments:
+//   fig = vertex figure record
+function ps_vertex_figure_faces_idx(fig) = fig[1];
+
+// Function: ps_vertex_figure_edges_idx()
+// Usage:
+//   result = ps_vertex_figure_edges_idx(fig);
+// Description:
+//   Get cyclic incident edge indices from a vertex figure.
+//   .
+//   - Returns: edge indices
+// Arguments:
+//   fig = vertex figure record
+function ps_vertex_figure_edges_idx(fig) = fig[2];
+
+// Function: ps_vertex_figure_neighbors_idx()
+// Usage:
+//   result = ps_vertex_figure_neighbors_idx(fig);
+// Description:
+//   Get cyclic adjacent vertex indices from a vertex figure.
+//   .
+//   - Returns: neighbour vertex indices
+// Arguments:
+//   fig = vertex figure record
+function ps_vertex_figure_neighbors_idx(fig) = fig[3];
+
 
 ///////////////////////////////////////
 // ---- Frame/placement helpers ----

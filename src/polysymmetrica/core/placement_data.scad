@@ -961,6 +961,17 @@ function ps_vertex_site_vertex_family_count(site) = site[10];
 //   site = vertex placement site record
 function ps_vertex_site_frame(site) = site[11];
 
+// Function: ps_vertex_site_vertex_figure()
+// Usage:
+//   result = ps_vertex_site_vertex_figure(site);
+// Description:
+//   Get the abstract vertex figure from a vertex placement site.
+//   .
+//   - Returns: vertex figure record, or `undef` for boundary, singular, or partial replay sites
+// Arguments:
+//   site = vertex placement site record
+function ps_vertex_site_vertex_figure(site) = site[12];
+
 // Function: ps_proxy_volume_group_describe_str()
 // Usage:
 //   result = ps_proxy_volume_group_describe_str(group, detail, kvpair_to_str, field_sep);
@@ -1198,6 +1209,7 @@ function ps_vertex_site_describe_str(site, detail=0, kvpair_to_str=undef, field_
             ps_describe_kvpair_str("poly_center_local", ps_vertex_site_poly_center_local(site), kvpair_to_str),
             ps_describe_kvpair_str("neighbors_idx", ps_vertex_site_neighbors_idx(site), kvpair_to_str),
             ps_describe_kvpair_str("neighbor_pts_local", ps_vertex_site_neighbor_pts_local(site), kvpair_to_str),
+            ps_describe_kvpair_str("vertex_figure", ps_vertex_site_vertex_figure(site), kvpair_to_str),
             ps_describe_kvpair_str("face_family_count", ps_vertex_site_face_family_count(site), kvpair_to_str),
             ps_describe_kvpair_str("edge_family_count", ps_vertex_site_edge_family_count(site), kvpair_to_str),
             ps_describe_kvpair_str("vertex_family_count", ps_vertex_site_vertex_family_count(site), kvpair_to_str)

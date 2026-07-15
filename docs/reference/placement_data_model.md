@@ -309,6 +309,7 @@ Vertex site accessors:
 | `ps_vertex_site_valence(site)` | Number of incident source edges. |
 | `ps_vertex_site_neighbors_idx(site)` | Adjacent vertex indices. Closed vertex fans use cyclic order anchored at the lowest neighbour index; boundary or partial proxy/replay sites use edge-scan order. |
 | `ps_vertex_site_neighbor_pts_local(site)` | Adjacent vertex positions in vertex-local coordinates, aligned with `ps_vertex_site_neighbors_idx(site)`. |
+| `ps_vertex_site_vertex_figure(site)` | Abstract vertex figure record for closed simple vertex fans, or `undef` for boundary, singular, or partial replay sites. |
 | `ps_vertex_site_family_id(site)` | Classification family id, or `undef`. |
 | `ps_vertex_site_face_family_count(site)` | Number of face families, or `undef`. |
 | `ps_vertex_site_edge_family_count(site)` | Number of edge families, or `undef`. |
@@ -318,6 +319,11 @@ Vertex site accessors:
 to each site record. `place_on_vertices(...)` exposes the same semantic data as
 `$ps_vertex_*` and `$ps_vertex_frame`; center/axis accessors derive from the
 stored frame.
+
+The vertex figure is an abstract/topological object. Its vertices are the
+source edges incident to the placement vertex, its sides are the incident source
+faces, and its neighbour list records the adjacent source vertices in the same
+cyclic order. It is not a metric cross-section through the vertex.
 
 Describe example:
 

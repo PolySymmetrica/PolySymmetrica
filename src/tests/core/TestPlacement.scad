@@ -241,6 +241,7 @@ module test_ps_placement_site_describe_str__detail_includes_nested_context() {
     assert(len(search("adj_faces_idx=", edge_s)) > 0, "edge site detail should include adjacent faces");
     assert(len(search("VertexSite(", vertex_s)) > 0, "vertex site describe prefix");
     assert(len(search("neighbor_pts_local=", vertex_s)) > 0, "vertex site detail should include neighbor points");
+    assert(len(search("vertex_figure=", vertex_s)) > 0, "vertex site detail should include vertex figure");
 }
 
 module test_place_on_faces__exposes_stored_context_objects() {
@@ -379,7 +380,7 @@ module test_ps_vertex_sites__cube_records_match_vertex_structure() {
     for (site = sites) {
         vi = site[0];
 
-        assert_int_eq(len(site), 12, str("vertex site should store only the compact frame tail vi=", vi));
+        assert_int_eq(len(site), 13, str("vertex site should store the compact frame and vertex-figure tail vi=", vi));
         assert_int_eq(site[4], 3, "cube vertex valence should be 3");
         assert_int_eq(len(site[5]), site[4], "neighbor index count should match valence");
         assert_int_eq(len(site[6]), site[4], "neighbor point count should match valence");
@@ -392,6 +393,8 @@ module test_ps_vertex_sites__cube_records_match_vertex_structure() {
         assert_int_eq(site[9], counts[1], "site edge family count");
         assert_int_eq(site[10], counts[2], "site vertex family count");
         assert(site[11] == ps_vertex_site_frame(site), str("vertex site stored frame mismatch vi=", vi));
+        assert(site[12] == ps_vertex_site_vertex_figure(site), str("vertex site stored vertex figure mismatch vi=", vi));
+        assert(!is_undef(ps_vertex_site_vertex_figure(site)), str("closed cube vertex should expose a vertex figure vi=", vi));
     }
 }
 
@@ -420,6 +423,23 @@ module test_ps_vertex_fan__rhombicuboctahedron_neighbors_are_cyclic_and_anchored
             assert_int_eq(neighbors_idx[i], expected_neighbor, str("fan neighbor should match cyclic face successor vi=", vi, " i=", i));
             assert_int_eq(edges_idx[i], expected_edge, str("fan edge should match fan neighbor vi=", vi, " i=", i));
         }
+    }
+}
+
+module test_ps_vertex_figure__matches_fan_order() {
+    p = rhombicuboctahedron();
+    faces = poly_faces(p);
+    edges = _ps_edges_from_faces(faces);
+    edge_faces = ps_edge_faces_table(faces, edges);
+
+    for (vi = [0:1:len(poly_verts(p))-1]) {
+        fan = ps_vertex_fan(p, vi, edges, edge_faces);
+        fig = ps_vertex_figure(p, vi, edges, edge_faces);
+
+        assert_int_eq(ps_vertex_figure_idx(fig), ps_vertex_fan_idx(fan), str("vertex figure source id vi=", vi));
+        assert(ps_vertex_figure_faces_idx(fig) == ps_vertex_fan_faces_idx(fan), str("vertex figure faces should match fan vi=", vi));
+        assert(ps_vertex_figure_edges_idx(fig) == ps_vertex_fan_edges_idx(fan), str("vertex figure edges should match fan vi=", vi));
+        assert(ps_vertex_figure_neighbors_idx(fig) == ps_vertex_fan_neighbors_idx(fan), str("vertex figure neighbors should match fan vi=", vi));
     }
 }
 
@@ -470,6 +490,8 @@ module test_ps_vertex_sites__open_construction_outputs_remain_placeable() {
                 ps_vertex_site_neighbors_idx(site) == expected,
                 str("open vertex site neighbor order mismatch vi=", vi, " got=", ps_vertex_site_neighbors_idx(site), " expected=", expected)
             );
+            if (!_ps_vertex_site_has_closed_fan(faces, edges, edge_faces, vi))
+                assert(is_undef(ps_vertex_site_vertex_figure(site)), str("open boundary vertex should not expose a vertex figure vi=", vi));
         }
     }
 }
@@ -496,6 +518,7 @@ module test_ps_vertex_sites__hypertruncated_dodecahedron_t1_singular_vertices_re
             ps_vertex_site_neighbors_idx(sites[vi]) == expected,
             str("singular hypertruncated vertex should use edge-scan order vi=", vi, " got=", ps_vertex_site_neighbors_idx(sites[vi]), " expected=", expected)
         );
+        assert(is_undef(ps_vertex_site_vertex_figure(sites[vi])), str("singular hypertruncated vertex should not expose a vertex figure vi=", vi));
     }
 
     place_on_vertices(p, indices = singular_vertices[0])
@@ -518,6 +541,7 @@ module test_ps_vertex_site_from_local_poly__pinched_vertex_uses_edge_scan_order(
         ps_vertex_site_neighbors_idx(site) == expected,
         str("pinched local vertex site should use edge-scan order got=", ps_vertex_site_neighbors_idx(site), " expected=", expected)
     );
+    assert(is_undef(ps_vertex_site_vertex_figure(site)), "pinched local vertex site should not expose a vertex figure");
 }
 
 module test_ps_vertex_site_from_local_poly__closed_ring_uses_fan_order() {
@@ -533,6 +557,10 @@ module test_ps_vertex_site_from_local_poly__closed_ring_uses_fan_order() {
         assert(
             ps_vertex_site_neighbors_idx(site) == expected,
             str("closed local vertex site should expose fan order vi=", vi, " got=", ps_vertex_site_neighbors_idx(site), " expected=", expected)
+        );
+        assert(
+            ps_vertex_figure_neighbors_idx(ps_vertex_site_vertex_figure(site)) == expected,
+            str("closed local vertex site should expose vertex figure vi=", vi)
         );
     }
 }
@@ -552,6 +580,7 @@ module test_ps_vertex_site_from_local_poly__does_not_rebuild_local_poly() {
         ps_vertex_site_neighbors_idx(site) == expected,
         str("local vertex site should not rebuild/recenter replay-local poly got=", ps_vertex_site_neighbors_idx(site), " expected=", expected)
     );
+    assert(ps_vertex_figure_neighbors_idx(ps_vertex_site_vertex_figure(site)) == expected, "local vertex figure should use raw descriptor fan order");
 }
 
 module test_ps_vertex_site_from_local_poly__open_ring_uses_edge_scan_order() {
@@ -569,6 +598,7 @@ module test_ps_vertex_site_from_local_poly__open_ring_uses_edge_scan_order() {
                 ps_vertex_site_neighbors_idx(site) == expected,
                 str("open local vertex site should expose edge-scan order vi=", vi, " got=", ps_vertex_site_neighbors_idx(site), " expected=", expected)
             );
+            assert(is_undef(ps_vertex_site_vertex_figure(site)), str("open local vertex site should not expose a vertex figure vi=", vi));
         }
     }
 }
@@ -591,7 +621,8 @@ module test_ps_vertex_site_accessors__match_record_layout() {
             ["face_family_count", ps_vertex_site_face_family_count(site), site[8]],
             ["edge_family_count", ps_vertex_site_edge_family_count(site), site[9]],
             ["vertex_family_count", ps_vertex_site_vertex_family_count(site), site[10]],
-            ["frame", ps_vertex_site_frame(site), site[11]]
+            ["frame", ps_vertex_site_frame(site), site[11]],
+            ["vertex_figure", ps_vertex_site_vertex_figure(site), site[12]]
         ];
 
         for (field = fields)
@@ -668,6 +699,10 @@ module test_place_on_faces_edges_vertices__expose_stored_frame_objects() {
 
     place_on_vertices(p, indices = 0) {
         assert($ps_vertex_frame == ps_vertex_site_frame(vertex_site), "vertex placement should expose stored frame object");
+        assert($ps_vertex_figure == ps_vertex_site_vertex_figure(vertex_site), "vertex placement should expose stored vertex figure object");
+        assert($ps_vertex_figure_faces_idx == ps_vertex_figure_faces_idx($ps_vertex_figure), "vertex placement should expose figure face ids");
+        assert($ps_vertex_figure_edges_idx == ps_vertex_figure_edges_idx($ps_vertex_figure), "vertex placement should expose figure edge ids");
+        assert($ps_vertex_figure_neighbors_idx == ps_vertex_figure_neighbors_idx($ps_vertex_figure), "vertex placement should expose figure neighbor ids");
     }
 }
 
@@ -1129,6 +1164,7 @@ module run_TestPlacement() {
     test_ps_edge_sites__preserves_raw_edge_order_for_classify_ids();
     test_ps_vertex_sites__cube_records_match_vertex_structure();
     test_ps_vertex_fan__rhombicuboctahedron_neighbors_are_cyclic_and_anchored();
+    test_ps_vertex_figure__matches_fan_order();
     test_ps_vertex_sites__neighbors_match_vertex_fan_order();
     test_ps_vertex_sites__open_construction_outputs_remain_placeable();
     test_ps_vertex_sites__hypertruncated_dodecahedron_t1_singular_vertices_remain_placeable();

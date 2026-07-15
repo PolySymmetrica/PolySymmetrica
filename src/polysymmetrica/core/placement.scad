@@ -411,8 +411,10 @@ function _ps_vertex_site_from_local_poly(vertex_idx, faces, verts_local, poly_ce
         radial_raw = center - poly_center_parent,
         ez = (norm(radial_raw) <= eps) ? [0, 0, 1] : v_norm(radial_raw),
         closed_fan = _ps_vertex_site_has_closed_fan(faces, edges, edge_faces, vertex_idx),
+        fan = closed_fan ? ps_vertex_fan(local_poly, vertex_idx, edges, edge_faces) : undef,
+        vertex_figure = is_undef(fan) ? undef : _ps_vertex_figure_from_fan(fan),
         neighbors_idx = closed_fan
-            ? ps_vertex_fan_neighbors_idx(ps_vertex_fan(local_poly, vertex_idx, edges, edge_faces))
+            ? ps_vertex_fan_neighbors_idx(fan)
             : _ps_vertex_site_neighbors_idx(edges, vertex_idx),
         neighbor0 = len(neighbors_idx) == 0 ? undef : verts_local[neighbors_idx[0]],
         neighbor_dir = is_undef(neighbor0) ? undef : neighbor0 - center,
@@ -450,7 +452,8 @@ function _ps_vertex_site_from_local_poly(vertex_idx, faces, verts_local, poly_ce
         undef,
         undef,
         undef,
-        frame
+        frame,
+        vertex_figure
     ];
 
 // Function: _ps_proxy_edge_ids_from_face_record()
@@ -1833,7 +1836,7 @@ function ps_edge_sites(poly, inter_radius = 1, edge_len = undef, classify = unde
 // Description:
 //   Build vertex placement site records for `place_on_vertices(...)`.
 //   .
-//   - Returns: list of vertex site records `[vertex_idx, edge_len, vert_radius, poly_center_local, vertex_valence, vertex_neighbors_idx, vertex_neighbor_pts_local, vertex_family_id, face_family_count, edge_family_count, vertex_family_count, frame]`
+//   - Returns: list of vertex site records `[vertex_idx, edge_len, vert_radius, poly_center_local, vertex_valence, vertex_neighbors_idx, vertex_neighbor_pts_local, vertex_family_id, face_family_count, edge_family_count, vertex_family_count, frame, vertex_figure]`
 //   .
 //   - Limitations/Gotchas: simple closed-manifold vertices use cyclic fan order anchored at the lowest neighbour index; boundary and singular vertices keep edge-scan neighbour order so open construction outputs and degenerate construction results remain placeable
 // Arguments:
@@ -1863,8 +1866,10 @@ function ps_vertex_sites(poly, inter_radius = 1, edge_len = undef, classify = un
                 v0 = verts[vi] * scale,
                 ez = v_norm(v0),
                 closed_fan = _ps_vertex_site_has_closed_fan(faces, edges, edge_faces, vi),
+                fan = closed_fan ? ps_vertex_fan(poly, vi, edges, edge_faces) : undef,
+                vertex_figure = is_undef(fan) ? undef : _ps_vertex_figure_from_fan(fan),
                 neighbors_idx = closed_fan
-                    ? ps_vertex_fan_neighbors_idx(ps_vertex_fan(poly, vi, edges, edge_faces))
+                    ? ps_vertex_fan_neighbors_idx(fan)
                     : _ps_vertex_site_neighbors_idx(edges, vi),
                 ni = neighbors_idx[0],
                 v1 = verts[ni] * scale,
@@ -1895,7 +1900,8 @@ function ps_vertex_sites(poly, inter_radius = 1, edge_len = undef, classify = un
                 face_family_count,
                 edge_family_count,
                 vert_family_count,
-                frame
+                frame,
+                vertex_figure
             ]
     ];
 
@@ -1926,6 +1932,10 @@ module place_on_vertices(poly, inter_radius = 1, edge_len = undef, classify = un
             $ps_vertex_neighbors_idx      = ps_vertex_site_neighbors_idx(site);
             $ps_vertex_neighbor_pts_local = ps_vertex_site_neighbor_pts_local(site);
             $ps_vertex_frame              = ps_vertex_site_frame(site);
+            $ps_vertex_figure             = ps_vertex_site_vertex_figure(site);
+            $ps_vertex_figure_faces_idx   = is_undef($ps_vertex_figure) ? undef : ps_vertex_figure_faces_idx($ps_vertex_figure);
+            $ps_vertex_figure_edges_idx   = is_undef($ps_vertex_figure) ? undef : ps_vertex_figure_edges_idx($ps_vertex_figure);
+            $ps_vertex_figure_neighbors_idx = is_undef($ps_vertex_figure) ? undef : ps_vertex_figure_neighbors_idx($ps_vertex_figure);
 
             $ps_edge_len                  = ps_vertex_site_edge_len(site);      // (target edge length parameter)
             $ps_vert_radius               = ps_vertex_site_radius(site);
