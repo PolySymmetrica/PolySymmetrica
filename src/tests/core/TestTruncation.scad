@@ -44,6 +44,29 @@ function _self_crossing_face_count(poly, eps=1e-9) =
             (_ps_face_self_intersections(poly_verts(poly), f, eps) > 0) ? 1 : 0
     ]);
 
+function _irregular_valence4_bipyramid() =
+    poly_make(
+        [
+            [0, 0, 1.7],
+            [1.4, 0, 0],
+            [0.2, 1.1, 0.35],
+            [-1.0, 0.1, -0.15],
+            [-0.1, -1.4, 0.25],
+            [0.1, 0, -1.2]
+        ],
+        [
+            [0, 2, 1],
+            [0, 3, 2],
+            [0, 4, 3],
+            [0, 1, 4],
+            [5, 1, 2],
+            [5, 2, 3],
+            [5, 3, 4],
+            [5, 4, 1]
+        ],
+        1
+    );
+
 function _map_face_c(size, c_by_size, default=0) =
     let(idxs = [for (i = [0:1:len(c_by_size)-1]) if (c_by_size[i][0] == size) i])
     (len(idxs) == 0) ? default : c_by_size[idxs[0]][1];
@@ -210,6 +233,22 @@ module test_poly_truncate__star_antiprism_keeps_star_ok_output() {
 
     assert(poly_valid(q, "star_ok"), "truncated 5/2 antiprism should be valid in star_ok mode");
     assert(_self_crossing_face_count(q) > 0, "truncated 5/2 antiprism should retain self-crossing star loops");
+}
+
+module test_poly_truncate__planar_cap_mode_handles_irregular_valence4() {
+    p = _irregular_valence4_bipyramid();
+    q = poly_truncate(p, t = 0.22);
+    q_edge_fraction = poly_truncate(p, t = 0.22, cap_mode = "edge_fraction");
+
+    assert(
+        _ps_faces_max_planarity_err(poly_verts(q), poly_faces(q)) <= 1e-7,
+        str("planar cap truncation should keep all faces planar err=", _ps_faces_max_planarity_err(poly_verts(q), poly_faces(q)))
+    );
+    assert(poly_valid(q, "closed", 1e-7), "planar cap truncation should remain closed-valid");
+    assert(
+        _ps_faces_max_planarity_err(poly_verts(q_edge_fraction), poly_faces(q_edge_fraction)) > 1e-3,
+        "edge_fraction mode should expose the original irregular valence-4 non-planar cap"
+    );
 }
 
 module test_poly_rectify__star_prism_keeps_star_ok_output() {
@@ -775,6 +814,7 @@ module run_TestTruncation() {
     test_poly_truncate__star_vertex_cap_allowed();
     test_poly_rectify__star_vertex_cap_allowed();
     test_poly_truncate__star_antiprism_keeps_star_ok_output();
+    test_poly_truncate__planar_cap_mode_handles_irregular_valence4();
     test_poly_rectify__star_prism_keeps_star_ok_output();
     test_poly_cantitruncate__tetra_counts();
     test_poly_cantellate__profile_face_df_and_c();

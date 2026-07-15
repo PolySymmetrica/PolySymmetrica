@@ -47,6 +47,13 @@ For star or otherwise self-crossing inputs, `poly_truncate(...)` and
 can legitimately be self-crossing faces. Use `poly_valid(p, "star_ok")` for
 that class of output rather than convex/closed validation.
 
+For vertices with valence greater than 3, raw same-fraction edge cuts can make
+non-planar vertex caps when the incident edge lengths or directions vary.
+`poly_truncate(...)` therefore uses `cap_mode="planar"` by default: it derives
+the implicit cap plane from the requested edge-fraction cut, then intersects
+that plane with the incident edges. Use `cap_mode="edge_fraction"` only when
+you specifically want the raw legacy construction.
+
 ## API Catalogue
 
 The deployed API docs are the catalogue view:
