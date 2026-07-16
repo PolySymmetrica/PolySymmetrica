@@ -229,30 +229,26 @@ function _ps_index_of_min(list) =
 
 // --- Core operators ---
 
+_PS_TRUNCATE_CAP_MODES = ["planar_edge_fraction", "edge_fraction", "centric", "poly_centroidal"];
+
 function _ps_truncate_norm_to_t(poly, c) =
     _ps_truncate_default_t(poly) * c;
 
+function _ps_truncate_cap_mode_is_valid(cap_mode) =
+    is_string(cap_mode)
+        ? let(found = search([cap_mode], _PS_TRUNCATE_CAP_MODES))
+            len(found) > 0 && found[0] != []
+        : false;
+
 function _ps_truncate_cap_mode_ok(cap_mode) =
-    assert(
-        cap_mode == "planar_edge_fraction"
-            || cap_mode == "edge_fraction"
-            || cap_mode == "centric"
-            || cap_mode == "poly_centroidal",
-        "poly_truncate: cap_mode must be \"planar_edge_fraction\", \"edge_fraction\", \"centric\", or \"poly_centroidal\""
-    )
+    assert(_ps_truncate_cap_mode_is_valid(cap_mode))
     0;
 
 function _ps_truncate_cap_modes_ok(cap_modes) =
     let(
         bad = [
             for (i = [0:1:len(cap_modes)-1])
-                if (
-                    cap_modes[i] != "planar_edge_fraction"
-                        && cap_modes[i] != "edge_fraction"
-                        && cap_modes[i] != "centric"
-                        && cap_modes[i] != "poly_centroidal"
-                )
-                    i
+                if (!_ps_truncate_cap_mode_is_valid(cap_modes[i])) i
         ],
         _ok = assert(len(bad) == 0, str("poly_truncate: unsupported cap_mode at vertices ", bad))
     )
