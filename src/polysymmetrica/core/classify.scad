@@ -6,6 +6,7 @@
 
 // LibFile: polysymmetrica/core/classify.scad
 use <funcs.scad>
+use <vertex.scad>
 
 // Polyhedral element classification by families (faces / edges / vertices).
 // detail=0: topology only

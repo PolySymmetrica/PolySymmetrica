@@ -6,6 +6,7 @@
 
 // LibFile: polysymmetrica/core/truncation.scad
 use <funcs.scad>
+use <vertex.scad>
 use <classify.scad>
 use <transform.scad>
 use <transform_util.scad>
@@ -229,16 +230,11 @@ function _ps_index_of_min(list) =
 
 // --- Core operators ---
 
-_PS_TRUNCATE_CAP_MODES = ["planar_edge_fraction", "edge_fraction", "centric", "poly_centroidal"];
-
 function _ps_truncate_norm_to_t(poly, c) =
     _ps_truncate_default_t(poly) * c;
 
 function _ps_truncate_cap_mode_is_valid(cap_mode) =
-    is_string(cap_mode)
-        ? let(found = search([cap_mode], _PS_TRUNCATE_CAP_MODES))
-            len(found) > 0 && found[0] != []
-        : false;
+    ps_vertex_figure_cap_mode_is_valid(cap_mode);
 
 function _ps_truncate_cap_mode_ok(cap_mode) =
     assert(_ps_truncate_cap_mode_is_valid(cap_mode))

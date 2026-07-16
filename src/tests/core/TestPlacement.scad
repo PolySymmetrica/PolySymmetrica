@@ -8,6 +8,7 @@ use <../../polysymmetrica/core/placement.scad>
 use <../../polysymmetrica/core/classify.scad>
 use <../../polysymmetrica/core/construction.scad>
 use <../../polysymmetrica/core/funcs.scad>
+use <../../polysymmetrica/core/vertex.scad>
 use <../../polysymmetrica/core/prisms.scad>
 use <../../polysymmetrica/core/truncation.scad>
 use <../../polysymmetrica/models/platonics_all.scad>

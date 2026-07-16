@@ -5,6 +5,7 @@
  */
 
 use <../../polysymmetrica/core/funcs.scad>
+use <../../polysymmetrica/core/vertex.scad>
 
 function _pinched_vertex_poly() =
     poly_make(

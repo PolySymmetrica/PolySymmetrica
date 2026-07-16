@@ -6,6 +6,7 @@
 
 // LibFile: polysymmetrica/core/duals.scad
 use <funcs.scad>
+use <vertex.scad>
 use <profile.scad>
 
 
