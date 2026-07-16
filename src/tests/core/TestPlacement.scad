@@ -26,6 +26,9 @@ module assert_vec3_near(v, w, eps=1e-9, msg="") {
 function _test_points_max_diff(a, b) =
     max([for (i = [0:1:len(a)-1]) norm(a[i] - b[i])]);
 
+function _test_openscad_supports_current_placement_function_helpers() =
+    version()[0] >= 2026;
+
 module test_place_on_faces__family_ids_and_counts_from_classify() {
     p = rhombicuboctahedron();
     faces = poly_faces(p);
@@ -713,31 +716,35 @@ module test_place_on_faces_edges_vertices__expose_stored_frame_objects() {
 module test_place_on_vertices__current_vertex_figure_points_matches_local_helper() {
     p = rhombicuboctahedron();
 
-    place_on_vertices(p, indices = 0) {
-        pts = ps_current_vertex_figure_points(
-            t = 0.24,
-            cap_mode = "centric",
-            vertex_figure = $ps_vertex_figure,
-            neighbor_pts_local = $ps_vertex_neighbor_pts_local,
-            poly_center_local = $ps_poly_center_local
-        );
-        expected = ps_vertex_figure_points_local(
-            $ps_vertex_neighbor_pts_local,
-            t = 0.24,
-            cap_mode = "centric",
-            poly_center_local = $ps_poly_center_local
-        );
-        pts2d = ps_current_vertex_figure_points2d(
-            t = 0.24,
-            cap_mode = "centric",
-            vertex_figure = $ps_vertex_figure,
-            neighbor_pts_local = $ps_vertex_neighbor_pts_local,
-            poly_center_local = $ps_poly_center_local
-        );
+    if (_test_openscad_supports_current_placement_function_helpers()) {
+        place_on_vertices(p, indices = 0) {
+            pts = ps_current_vertex_figure_points(
+                t = 0.24,
+                cap_mode = "centric",
+                vertex_figure = $ps_vertex_figure,
+                neighbor_pts_local = $ps_vertex_neighbor_pts_local,
+                poly_center_local = $ps_poly_center_local
+            );
+            expected = ps_vertex_figure_points_local(
+                $ps_vertex_neighbor_pts_local,
+                t = 0.24,
+                cap_mode = "centric",
+                poly_center_local = $ps_poly_center_local
+            );
+            pts2d = ps_current_vertex_figure_points2d(
+                t = 0.24,
+                cap_mode = "centric",
+                vertex_figure = $ps_vertex_figure,
+                neighbor_pts_local = $ps_vertex_neighbor_pts_local,
+                poly_center_local = $ps_poly_center_local
+            );
 
-        assert(len(pts) == len($ps_vertex_figure_neighbors_idx), "current vertex figure points should match figure arity");
-        assert(_test_points_max_diff(pts, expected) < 1e-9, str("current vertex helper should match explicit local helper pts=", pts, " expected=", expected));
-        assert(pts2d == ps_xy(pts), str("current vertex 2d helper should project 3d helper pts2d=", pts2d, " pts=", pts));
+            assert(len(pts) == len($ps_vertex_figure_neighbors_idx), "current vertex figure points should match figure arity");
+            assert(_test_points_max_diff(pts, expected) < 1e-9, str("current vertex helper should match explicit local helper pts=", pts, " expected=", expected));
+            assert(pts2d == ps_xy(pts), str("current vertex 2d helper should project 3d helper pts2d=", pts2d, " pts=", pts));
+        }
+    } else {
+        echo("SKIP: ps_current_vertex_figure_points placement function helper requires OpenSCAD 2026 special-variable function semantics");
     }
 }
 
