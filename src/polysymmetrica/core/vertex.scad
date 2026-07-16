@@ -471,7 +471,8 @@ function ps_vertex_figure_points_local(
 
 // Function: ps_current_vertex_figure_points()
 // Usage:
-//   result = ps_current_vertex_figure_points(t, cap_mode, eps);
+//   result = ps_current_vertex_figure_points(t, cap_mode, eps, vertex_figure,
+//       neighbor_pts_local, poly_center_local);
 // Description:
 //   Realize the current `place_on_vertices(...)` vertex figure as local 3D
 //   points.
@@ -488,27 +489,34 @@ function ps_vertex_figure_points_local(
 //   t = edge fraction measured from the vertex towards each neighbor
 //   cap_mode = cap realization mode
 //   eps = geometric tolerance
+//   vertex_figure = current abstract vertex figure; defaults to `$ps_vertex_figure`
+//   neighbor_pts_local = current neighbor points; defaults to `$ps_vertex_neighbor_pts_local`
+//   poly_center_local = current poly center; defaults to `$ps_poly_center_local`
 function ps_current_vertex_figure_points(
     t=undef,
     cap_mode="planar_edge_fraction",
-    eps=1e-8
+    eps=1e-8,
+    vertex_figure=$ps_vertex_figure,
+    neighbor_pts_local=$ps_vertex_neighbor_pts_local,
+    poly_center_local=$ps_poly_center_local
 ) =
     let(
-        _fig_ok = assert(!is_undef($ps_vertex_figure), "ps_current_vertex_figure_points: current vertex has no closed simple vertex figure"),
-        _pts_ok = assert(!is_undef($ps_vertex_neighbor_pts_local), "ps_current_vertex_figure_points: $ps_vertex_neighbor_pts_local is undefined"),
-        _center_ok = assert(!is_undef($ps_poly_center_local), "ps_current_vertex_figure_points: $ps_poly_center_local is undefined")
+        _fig_ok = assert(!is_undef(vertex_figure), "ps_current_vertex_figure_points: current vertex has no closed simple vertex figure"),
+        _pts_ok = assert(!is_undef(neighbor_pts_local), "ps_current_vertex_figure_points: neighbor_pts_local is undefined"),
+        _center_ok = assert(!is_undef(poly_center_local), "ps_current_vertex_figure_points: poly_center_local is undefined")
     )
     ps_vertex_figure_points_local(
-        $ps_vertex_neighbor_pts_local,
+        neighbor_pts_local,
         t,
         cap_mode,
-        $ps_poly_center_local,
+        poly_center_local,
         eps
     );
 
 // Function: ps_current_vertex_figure_points2d()
 // Usage:
-//   result = ps_current_vertex_figure_points2d(t, cap_mode, eps);
+//   result = ps_current_vertex_figure_points2d(t, cap_mode, eps, vertex_figure,
+//       neighbor_pts_local, poly_center_local);
 // Description:
 //   Realize the current `place_on_vertices(...)` vertex figure as local 2D
 //   points.
@@ -522,12 +530,18 @@ function ps_current_vertex_figure_points(
 //   t = edge fraction measured from the vertex towards each neighbor
 //   cap_mode = cap realization mode
 //   eps = geometric tolerance
+//   vertex_figure = current abstract vertex figure; defaults to `$ps_vertex_figure`
+//   neighbor_pts_local = current neighbor points; defaults to `$ps_vertex_neighbor_pts_local`
+//   poly_center_local = current poly center; defaults to `$ps_poly_center_local`
 function ps_current_vertex_figure_points2d(
     t=undef,
     cap_mode="planar_edge_fraction",
-    eps=1e-8
+    eps=1e-8,
+    vertex_figure=$ps_vertex_figure,
+    neighbor_pts_local=$ps_vertex_neighbor_pts_local,
+    poly_center_local=$ps_poly_center_local
 ) =
-    ps_xy(ps_current_vertex_figure_points(t, cap_mode, eps));
+    ps_xy(ps_current_vertex_figure_points(t, cap_mode, eps, vertex_figure, neighbor_pts_local, poly_center_local));
 
 // Function: ps_vertex_figure_points()
 // Usage:

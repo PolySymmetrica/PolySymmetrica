@@ -714,14 +714,26 @@ module test_place_on_vertices__current_vertex_figure_points_matches_local_helper
     p = rhombicuboctahedron();
 
     place_on_vertices(p, indices = 0) {
-        pts = ps_current_vertex_figure_points(t = 0.24, cap_mode = "centric");
+        pts = ps_current_vertex_figure_points(
+            t = 0.24,
+            cap_mode = "centric",
+            vertex_figure = $ps_vertex_figure,
+            neighbor_pts_local = $ps_vertex_neighbor_pts_local,
+            poly_center_local = $ps_poly_center_local
+        );
         expected = ps_vertex_figure_points_local(
             $ps_vertex_neighbor_pts_local,
             t = 0.24,
             cap_mode = "centric",
             poly_center_local = $ps_poly_center_local
         );
-        pts2d = ps_current_vertex_figure_points2d(t = 0.24, cap_mode = "centric");
+        pts2d = ps_current_vertex_figure_points2d(
+            t = 0.24,
+            cap_mode = "centric",
+            vertex_figure = $ps_vertex_figure,
+            neighbor_pts_local = $ps_vertex_neighbor_pts_local,
+            poly_center_local = $ps_poly_center_local
+        );
 
         assert(len(pts) == len($ps_vertex_figure_neighbors_idx), "current vertex figure points should match figure arity");
         assert(_test_points_max_diff(pts, expected) < 1e-9, str("current vertex helper should match explicit local helper pts=", pts, " expected=", expected));
