@@ -6,6 +6,7 @@
 
 use <../../polysymmetrica/core/funcs.scad>
 use <../../polysymmetrica/core/duals.scad>
+use <../../polysymmetrica/core/prisms.scad>
 use <../../polysymmetrica/core/transform.scad>
 use <../../polysymmetrica/core/truncation.scad>
 use <../../polysymmetrica/core/solvers.scad>
@@ -36,6 +37,35 @@ function _edge_rel_spread(poly) =
         avg = (len(lens) == 0) ? 0 : (ps_sum(lens) / len(lens))
     )
     (len(lens) == 0 || avg == 0) ? 0 : ((max(lens) - min(lens)) / avg);
+
+function _self_crossing_face_count(poly, eps=1e-9) =
+    ps_sum([
+        for (f = poly_faces(poly))
+            (_ps_face_self_intersections(poly_verts(poly), f, eps) > 0) ? 1 : 0
+    ]);
+
+function _irregular_valence4_bipyramid() =
+    poly_make(
+        [
+            [0, 0, 1.7],
+            [1.4, 0, 0],
+            [0.2, 1.1, 0.35],
+            [-1.0, 0.1, -0.15],
+            [-0.1, -1.4, 0.25],
+            [0.1, 0, -1.2]
+        ],
+        [
+            [0, 2, 1],
+            [0, 3, 2],
+            [0, 4, 3],
+            [0, 1, 4],
+            [5, 1, 2],
+            [5, 2, 3],
+            [5, 3, 4],
+            [5, 4, 1]
+        ],
+        1
+    );
 
 function _map_face_c(size, c_by_size, default=0) =
     let(idxs = [for (i = [0:1:len(c_by_size)-1]) if (c_by_size[i][0] == size) i])
@@ -196,6 +226,68 @@ module test_poly_rectify__star_vertex_cap_allowed() {
     assert(poly_valid(q, "star_ok"), "rectified star-fan pyramid should be valid in star_ok mode");
     assert_int_eq(len(apex_cap), 5, "rectified star-fan apex cap should be pentagonal");
     assert(_ps_face_self_intersections(poly_verts(q), apex_cap) > 0, "rectified star-fan apex cap should retain star crossing");
+}
+
+module test_poly_truncate__star_antiprism_keeps_star_ok_output() {
+    q = poly_truncate(poly_antiprism(5, 2), t = 0.18);
+
+    assert(poly_valid(q, "star_ok"), "truncated 5/2 antiprism should be valid in star_ok mode");
+    assert(_self_crossing_face_count(q) > 0, "truncated 5/2 antiprism should retain self-crossing star loops");
+}
+
+module test_poly_truncate__planar_cap_mode_handles_irregular_valence4() {
+    p = _irregular_valence4_bipyramid();
+    q = poly_truncate(p, t = 0.22);
+    q_edge_fraction = poly_truncate(p, t = 0.22, cap_mode = "edge_fraction");
+
+    assert(
+        _ps_faces_max_planarity_err(poly_verts(q), poly_faces(q)) <= 1e-7,
+        str("planar cap truncation should keep all faces planar err=", _ps_faces_max_planarity_err(poly_verts(q), poly_faces(q)))
+    );
+    assert(poly_valid(q, "closed", 1e-7), "planar cap truncation should remain closed-valid");
+    assert(
+        _ps_faces_max_planarity_err(poly_verts(q_edge_fraction), poly_faces(q_edge_fraction)) > 1e-3,
+        "edge_fraction mode should expose the original irregular valence-4 non-planar cap"
+    );
+}
+
+module test_poly_truncate__alternate_cap_modes_handle_irregular_valence4() {
+    p = _irregular_valence4_bipyramid();
+    q_centric = poly_truncate(p, t = 0.18, cap_mode = "centric");
+    q_poly_centroidal = poly_truncate(p, t = 0.18, cap_mode = "poly_centroidal");
+
+    assert(
+        _ps_faces_max_planarity_err(poly_verts(q_centric), poly_faces(q_centric)) <= 1e-7,
+        str("centric cap mode should keep all faces planar err=", _ps_faces_max_planarity_err(poly_verts(q_centric), poly_faces(q_centric)))
+    );
+    assert(
+        _ps_faces_max_planarity_err(poly_verts(q_poly_centroidal), poly_faces(q_poly_centroidal)) <= 1e-7,
+        str("poly_centroidal cap mode should keep all faces planar err=", _ps_faces_max_planarity_err(poly_verts(q_poly_centroidal), poly_faces(q_poly_centroidal)))
+    );
+    assert(poly_valid(q_centric, "closed", 1e-7), "centric cap mode should remain closed-valid");
+    assert(poly_valid(q_poly_centroidal, "closed", 1e-7), "poly_centroidal cap mode should remain closed-valid");
+}
+
+module test_poly_truncate__cap_mode_profile_overrides_by_vertex() {
+    p = _irregular_valence4_bipyramid();
+    q = poly_truncate(
+        p,
+        t = 0.22,
+        profile = [["vert", "id", 0, ["cap_mode", "edge_fraction"]]]
+    );
+    apex_cap = poly_faces(q)[len(poly_faces(p))];
+
+    assert(
+        _ps_face_planarity_err(poly_verts(q), apex_cap) > 1e-3,
+        "vertex profile cap_mode=edge_fraction should preserve the raw skew cap at that vertex"
+    );
+}
+
+module test_poly_rectify__star_prism_keeps_star_ok_output() {
+    q = poly_rectify(poly_prism(5, 2));
+
+    assert(poly_valid(q, "star_ok"), "rectified 5/2 prism should be valid in star_ok mode");
+    assert(_self_crossing_face_count(q) > 0, "rectified 5/2 prism should retain self-crossing star loops");
 }
 
 module test_poly_cantitruncate__tetra_counts() {
@@ -753,6 +845,11 @@ module run_TestTruncation() {
     test_poly_rectify__tetra_counts();
     test_poly_truncate__star_vertex_cap_allowed();
     test_poly_rectify__star_vertex_cap_allowed();
+    test_poly_truncate__star_antiprism_keeps_star_ok_output();
+    test_poly_truncate__planar_cap_mode_handles_irregular_valence4();
+    test_poly_truncate__alternate_cap_modes_handle_irregular_valence4();
+    test_poly_truncate__cap_mode_profile_overrides_by_vertex();
+    test_poly_rectify__star_prism_keeps_star_ok_output();
     test_poly_cantitruncate__tetra_counts();
     test_poly_cantellate__profile_face_df_and_c();
     test_poly_cantitruncate__unsupported_profile_ignored();

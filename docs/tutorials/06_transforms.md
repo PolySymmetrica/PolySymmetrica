@@ -42,6 +42,21 @@ The important habit is to keep transforms separate from placed geometry. Build
 or transform the descriptor first, then pass the result into `place_on_faces`,
 `place_on_edges`, `place_on_vertices`, or `poly_render`.
 
+For star or otherwise self-crossing inputs, `poly_truncate(...)` and
+`poly_rectify(...)` build vertex caps from the source vertex figure. Those caps
+can legitimately be self-crossing faces. Use `poly_valid(p, "star_ok")` for
+that class of output rather than convex/closed validation.
+
+For vertices with valence greater than 3, raw same-fraction edge cuts can make
+non-planar vertex caps when the incident edge lengths or directions vary.
+`poly_truncate(...)` therefore uses `cap_mode="planar_edge_fraction"` by
+default: it derives the implicit cap plane from the requested edge-fraction
+cut, then intersects that plane with the incident edges. `cap_mode="centric"`
+uses the local edge-fraction cap centroid to orient the slice, and
+`cap_mode="poly_centroidal"` uses the source poly's vertex centroid. Use
+`cap_mode="edge_fraction"` only when you specifically want the raw legacy
+construction. `cap_mode` can also be overridden per vertex through `profile`.
+
 ## API Catalogue
 
 The deployed API docs are the catalogue view:

@@ -229,23 +229,141 @@ function _ps_index_of_min(list) =
 
 // --- Core operators ---
 
+_PS_TRUNCATE_CAP_MODES = ["planar_edge_fraction", "edge_fraction", "centric", "poly_centroidal"];
+
 function _ps_truncate_norm_to_t(poly, c) =
     _ps_truncate_default_t(poly) * c;
+
+function _ps_truncate_cap_mode_is_valid(cap_mode) =
+    is_string(cap_mode)
+        ? let(found = search([cap_mode], _PS_TRUNCATE_CAP_MODES))
+            len(found) > 0 && found[0] != []
+        : false;
+
+function _ps_truncate_cap_mode_ok(cap_mode) =
+    assert(_ps_truncate_cap_mode_is_valid(cap_mode))
+    0;
+
+function _ps_truncate_cap_modes_ok(cap_modes) =
+    let(
+        bad = [
+            for (i = [0:1:len(cap_modes)-1])
+                if (!_ps_truncate_cap_mode_is_valid(cap_modes[i])) i
+        ],
+        _ok = assert(len(bad) == 0, str("poly_truncate: unsupported cap_mode at vertices ", bad))
+    )
+    0;
+
+function _ps_truncate_points_centroid(pts) =
+    v_sum(pts) / len(pts);
+
+function _ps_truncate_edge_point_for_vertex(verts, edge, vi, t) =
+    let(
+        a = edge[0],
+        b = edge[1],
+        _has = assert(a == vi || b == vi, "poly_truncate: edge does not contain vertex"),
+        A = verts[vi],
+        B = verts[(a == vi) ? b : a]
+    )
+    A + t * (B - A);
+
+function _ps_truncate_raw_cap_points_for_vertex(verts, edges, t_by_vert, poly0, edge_faces, vi) =
+    let(
+        tv = t_by_vert[vi],
+        fig = ps_vertex_figure(poly0, vi, edges, edge_faces),
+        cap_edges = ps_vertex_figure_edges_idx(fig)
+    )
+    [
+        for (ei = cap_edges)
+            _ps_truncate_edge_point_for_vertex(verts, edges[ei], vi, tv)
+    ];
+
+function _ps_truncate_vertex_cut_plane(verts, edges, t_by_vert, poly0, edge_faces, vi, cap_mode, poly_center, eps) =
+    let(
+        pts = _ps_truncate_raw_cap_points_for_vertex(verts, edges, t_by_vert, poly0, edge_faces, vi),
+        n_raw = (cap_mode == "planar_edge_fraction")
+            ? let(idx = [for (i = [0:1:len(pts)-1]) i])
+                ps_face_frame_normal(pts, idx, eps)
+            : (cap_mode == "centric")
+                ? (_ps_truncate_points_centroid(pts) - verts[vi])
+                : (verts[vi] - poly_center),
+        n_len = norm(n_raw),
+        _n_ok = assert(n_len > eps, str("poly_truncate: cannot derive ", cap_mode, " cap plane for vertex ", vi)),
+        n = n_raw / n_len,
+        d = ps_sum([for (p = pts) v_dot(n, p)]) / len(pts)
+    )
+    [n, d];
+
+function _ps_truncate_vertex_cut_planes(verts, edges, t_by_vert, poly0, edge_faces, cap_mode_by_vert, eps) =
+    let(
+        poly_center = _ps_truncate_points_centroid(verts)
+    )
+    [
+        for (vi = [0:1:len(verts)-1])
+            (abs(t_by_vert[vi]) <= eps || cap_mode_by_vert[vi] == "edge_fraction")
+                ? undef
+                : _ps_truncate_vertex_cut_plane(verts, edges, t_by_vert, poly0, edge_faces, vi, cap_mode_by_vert[vi], poly_center, eps)
+    ];
+
+function _ps_truncate_plane_edge_point_for_vertex(verts, edge, vi, plane, eps) =
+    let(
+        a = edge[0],
+        b = edge[1],
+        _has = assert(a == vi || b == vi, "poly_truncate: edge does not contain vertex"),
+        A = verts[vi],
+        B = verts[(a == vi) ? b : a],
+        dir = B - A,
+        n = plane[0],
+        d = plane[1],
+        denom = v_dot(n, dir),
+        _denom_ok = assert(abs(denom) > eps, "poly_truncate: cap plane is parallel to incident edge"),
+        lambda = (d - v_dot(n, A)) / denom
+    )
+    A + lambda * dir;
+
+function _ps_truncate_edge_points_by_vert_cap_mode(verts, edges, t_by_vert, poly0, edge_faces, cap_mode_by_vert, eps) =
+    let(
+        _modes_ok = _ps_truncate_cap_modes_ok(cap_mode_by_vert),
+        planes = _ps_truncate_vertex_cut_planes(verts, edges, t_by_vert, poly0, edge_faces, cap_mode_by_vert, eps)
+    )
+    [
+        for (ei = [0:1:len(edges)-1])
+            let(
+                e = edges[ei],
+                a = e[0],
+                b = e[1]
+            )
+            [
+                is_undef(planes[a])
+                    ? _ps_truncate_edge_point_for_vertex(verts, e, a, t_by_vert[a])
+                    : _ps_truncate_plane_edge_point_for_vertex(verts, e, a, planes[a], eps),
+                is_undef(planes[b])
+                    ? _ps_truncate_edge_point_for_vertex(verts, e, b, t_by_vert[b])
+                    : _ps_truncate_plane_edge_point_for_vertex(verts, e, b, planes[b], eps)
+            ]
+    ];
 
 // Function: poly_truncate()
 // Usage:
 //   result = poly_truncate(poly, t=undef, c=undef, eps=1e-8, profile=undef,
-//       cleanup=false, cleanup_eps=1e-8);
+//       cap_mode="planar_edge_fraction", cleanup=false, cleanup_eps=1e-8);
 // Description:
 //   Truncate a poly by replacing each original vertex with a vertex face and
-//   each original edge with two edge points. `t` is the edge fraction from each
-//   endpoint, while `c` maps to `t` through the library default normalization.
+//   each original edge with two edge points. By default vertex caps are
+//   planarized: `t` first defines the intended edge-fraction cap, then that
+//   loop's implicit plane is intersected with the incident edges. This preserves
+//   regular and valence-3 behavior while keeping valence > 3 caps planar.
+//   `cap_mode="edge_fraction"` keeps the raw same-fraction-on-each-edge rule.
+//   `cap_mode="centric"` slices normal to the line from the vertex to the
+//   intended edge-fraction cap centroid. `cap_mode="poly_centroidal"` slices
+//   normal to the line from the source poly vertex centroid to the vertex.
 // Arguments:
 //   poly = source poly descriptor.
 //   t = explicit truncation fraction measured along each incident edge from the original vertex. `t=0` leaves the poly unchanged; `t=0.5` is invalid because opposite cuts collapse together.
 //   c = normalized truncation control mapped to `t` through the library default for this source poly; ignored when `t` is supplied.
 //   eps = geometric tolerance for zero-cut detection and transform construction.
-//   profile = optional vertex profile rows supporting `["t", value]` and `["c", value]` overrides.
+//   profile = optional vertex profile rows supporting `["t", value]`, `["c", value]`, and `["cap_mode", value]` overrides.
+//   cap_mode = vertex-figure realization: `"planar_edge_fraction"`, `"edge_fraction"`, `"centric"`, or `"poly_centroidal"`.
 //   cleanup = whether to run structural cleanup on the result.
 //   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_truncate(
@@ -254,15 +372,17 @@ function poly_truncate(
     c=undef,
     eps = 1e-8,
     profile=undef,
+    cap_mode="planar_edge_fraction",
     cleanup=false,
     cleanup_eps=1e-8
 ) =
     let(
+        _cap_mode_ok = _ps_truncate_cap_mode_ok(cap_mode),
         t_base = !is_undef(t)
             ? t
             : (!is_undef(c) ? _ps_truncate_norm_to_t(poly, c) : _ps_truncate_default_t(poly)),
         rows = is_undef(profile) ? [] : profile,
-        _pwarn = _ps_override_warn_unsupported(rows, "poly_truncate", [["vert", ["t", "c"]]])
+        _pwarn = _ps_override_warn_unsupported(rows, "poly_truncate", [["vert", ["t", "c", "cap_mode"]]])
     )
     let(
             base = _ps_poly_base(poly),
@@ -276,10 +396,12 @@ function poly_truncate(
                 : undef,
             params_compiled = (len(rows) == 0) ? undef : ps_profile_compile_specs(rows, [
                 ["vert", "t", len(verts), vert_fid],
-                ["vert", "c", len(verts), vert_fid]
+                ["vert", "c", len(verts), vert_fid],
+                ["vert", "cap_mode", len(verts), vert_fid]
             ]),
             vert_t_by_idx = is_undef(params_compiled) ? undef : params_compiled[0],
             vert_c_by_idx = is_undef(params_compiled) ? undef : params_compiled[1],
+            vert_cap_mode_by_idx = is_undef(params_compiled) ? undef : params_compiled[2],
             t_by_vert = [
                 for (vi = [0:1:len(verts)-1])
                     let(
@@ -290,6 +412,12 @@ function poly_truncate(
                         : !is_undef(c_ov) ? _ps_truncate_norm_to_t(poly, c_ov)
                         : t_base
             ],
+            cap_mode_by_vert = [
+                for (vi = [0:1:len(verts)-1])
+                    let(mode_ov = ps_compiled_param_get(vert_cap_mode_by_idx, vi))
+                    is_undef(mode_ov) ? cap_mode : mode_ov
+            ],
+            _cap_modes_ok = _ps_truncate_cap_modes_ok(cap_mode_by_vert),
             _t_ok = assert(min([for (tv = t_by_vert) (tv != 0.5) ? 1 : 0]) == 1, "poly_truncate: t=0.5 is not allowed"),
             transform_orientation = (min(t_by_vert) < -eps || max(t_by_vert) > 0.5 + eps)
                 ? "semantic"
@@ -300,7 +428,7 @@ function poly_truncate(
             q = all_zero
             ? poly
             : let(
-                edge_pts = _ps_edge_points_by_vert_t(verts, edges, t_by_vert),
+                edge_pts = _ps_truncate_edge_points_by_vert_cap_mode(verts, edges, t_by_vert, poly0, edge_faces, cap_mode_by_vert, eps),
                 sites = [
                     for (ei = [0:1:len(edges)-1])
                         each [[ei, edges[ei][0]], [ei, edges[ei][1]]]
