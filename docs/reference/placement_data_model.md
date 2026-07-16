@@ -325,6 +325,25 @@ source edges incident to the placement vertex, its sides are the incident source
 faces, and its neighbour list records the adjacent source vertices in the same
 cyclic order. It is not a metric cross-section through the vertex.
 
+To draw the current vertex figure inside `place_on_vertices(...)`, use
+`ps_current_vertex_figure_points2d(...)` from `core/vertex.scad`:
+
+```scad
+use <polysymmetrica/core/placement.scad>
+use <polysymmetrica/core/vertex.scad>
+
+place_on_vertices(poly, inter_radius = 30)
+    linear_extrude(height = 0.4)
+        polygon(points = ps_current_vertex_figure_points2d(
+            t = 0.3,
+            cap_mode = "planar_edge_fraction"
+        ));
+```
+
+The helper asserts if the current vertex has no closed simple
+`$ps_vertex_figure`, so boundary and singular fallback vertices do not silently
+produce edge-scan polygons.
+
 Describe example:
 
 ```scad
@@ -406,7 +425,16 @@ vertex-specific fields include:
 When `coords="element"` and the selected child is a foreign vertex child, the
 same abstract vertex figure is also mirrored into the normal vertex placement
 variables: `$ps_vertex_figure`, `$ps_vertex_figure_faces_idx`,
-`$ps_vertex_figure_edges_idx`, and `$ps_vertex_figure_neighbors_idx`.
+`$ps_vertex_figure_edges_idx`, and `$ps_vertex_figure_neighbors_idx`, so
+`ps_current_vertex_figure_points(...)` and
+`ps_current_vertex_figure_points2d(...)` work there too.
+
+When proxy replay runs in parent coordinates, the normal `$ps_vertex_*`
+placement variables are not rebound. Use the lower-level
+`ps_vertex_figure_points_local(...)` with `$ps_proxy_vertex_neighbor_pts_local`
+or `$ps_replay_vertex_neighbor_pts_local`, plus the corresponding
+`$ps_proxy_poly_center_local` or `$ps_replay_poly_center_local`, when you need
+to realize a foreign vertex polygon in that parent-coordinate context.
 
 The internal proxy replay builder also seeds private candidate records with the
 kind string `"face_plane_cut_candidate"` when it derives edge/vertex provenance
