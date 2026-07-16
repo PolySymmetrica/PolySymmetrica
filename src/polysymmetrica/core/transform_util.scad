@@ -11,6 +11,7 @@
 // Shared helpers for transform-style operators.
 
 use <funcs.scad>
+use <vertex.scad>
 use <cleanup.scad>
 
 // Function: ps_finalize_poly()

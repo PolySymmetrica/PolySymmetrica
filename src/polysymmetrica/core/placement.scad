@@ -6,6 +6,7 @@
 
 // LibFile: polysymmetrica/core/placement.scad
 use <funcs.scad>
+use <vertex.scad>
 include <placement_data.scad>
 include <segments.scad>
 use <classify.scad>

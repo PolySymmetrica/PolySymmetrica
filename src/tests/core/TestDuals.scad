@@ -5,6 +5,7 @@
  */
 
 use <../../polysymmetrica/core/funcs.scad>
+use <../../polysymmetrica/core/vertex.scad>
 use <../../polysymmetrica/core/duals.scad>
 use <../../polysymmetrica/core/truncation.scad>
 use <../../polysymmetrica/core/validate.scad>

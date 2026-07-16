@@ -5,6 +5,7 @@
  */
 
 use <core/TestFuncs.scad>
+use <core/TestVertex.scad>
 use <core/TestDuals.scad>
 use <core/TestCantellation.scad>
 use <core/TestTruncation.scad>
@@ -22,6 +23,7 @@ use <core/TestConstruction.scad>
 echo("=== PolySymmetrica tests: START ===");
 
 run_TestFuncs();
+run_TestVertex();
 run_TestDuals();
 run_TestCantellation();
 run_TestTruncation();

@@ -133,6 +133,7 @@ module.
 
 - [Face, edge, vertex, and proxy placement]($(api_link "core/placement.scad.md"))
 - [Placement data records]($(api_link "core/placement_data.scad.md"))
+- [Vertex fans and vertex figures]($(api_link "core/vertex.scad.md"))
 
 ## Classification And Profiles
 
