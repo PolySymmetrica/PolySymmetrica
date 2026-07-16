@@ -20,7 +20,7 @@ _PS_VERTEX_FIGURE_CAP_MODES = ["planar_edge_fraction", "edge_fraction", "centric
 //   face = face index loop
 //   vi = vertex index
 function _ps_face_vertex_count(face, vi) =
-    len([for (k = [0 : len(face)-1]) if (face[k] == vi) 1]);
+    len(search(vi, face, 0));
 
 // Function: _ps_vertex_incident_face_indices()
 // Usage:
@@ -34,7 +34,7 @@ function _ps_face_vertex_count(face, vi) =
 //   vi = vertex index
 function _ps_vertex_incident_face_indices(faces, vi) =
     [
-        for (fi = [0 : len(faces)-1])
+        for (fi = [0 : 1 : len(faces)-1])
             if (_ps_face_vertex_count(faces[fi], vi) > 0) fi
     ];
 
@@ -71,9 +71,8 @@ function _ps_next_face_around_vertex(v, f_cur, f_prev, faces, edges, edge_faces)
     let(
         f = faces[f_cur],
         n = len(f),
-        pos = [for (k = [0 : n-1]) if (f[k] == v) k],
-        _has_v = assert(len(pos) == 1, str("_ps_next_face_around_vertex: face ", f_cur, " must contain vertex ", v, " exactly once")),
-        k0 = pos[0],
+        k0 = _ps_index_of(f, v),
+        _has_v = assert(k0 >= 0 && _ps_face_vertex_count(f, v) == 1, str("_ps_next_face_around_vertex: face ", f_cur, " must contain vertex ", v, " exactly once")),
         k_prev = (k0 - 1 + n) % n,
         k_next = (k0 + 1) % n,
         v_prev = f[k_prev],
