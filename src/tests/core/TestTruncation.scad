@@ -251,6 +251,38 @@ module test_poly_truncate__planar_cap_mode_handles_irregular_valence4() {
     );
 }
 
+module test_poly_truncate__alternate_cap_modes_handle_irregular_valence4() {
+    p = _irregular_valence4_bipyramid();
+    q_centric = poly_truncate(p, t = 0.18, cap_mode = "centric");
+    q_poly_centroidal = poly_truncate(p, t = 0.18, cap_mode = "poly_centroidal");
+
+    assert(
+        _ps_faces_max_planarity_err(poly_verts(q_centric), poly_faces(q_centric)) <= 1e-7,
+        str("centric cap mode should keep all faces planar err=", _ps_faces_max_planarity_err(poly_verts(q_centric), poly_faces(q_centric)))
+    );
+    assert(
+        _ps_faces_max_planarity_err(poly_verts(q_poly_centroidal), poly_faces(q_poly_centroidal)) <= 1e-7,
+        str("poly_centroidal cap mode should keep all faces planar err=", _ps_faces_max_planarity_err(poly_verts(q_poly_centroidal), poly_faces(q_poly_centroidal)))
+    );
+    assert(poly_valid(q_centric, "closed", 1e-7), "centric cap mode should remain closed-valid");
+    assert(poly_valid(q_poly_centroidal, "closed", 1e-7), "poly_centroidal cap mode should remain closed-valid");
+}
+
+module test_poly_truncate__cap_mode_profile_overrides_by_vertex() {
+    p = _irregular_valence4_bipyramid();
+    q = poly_truncate(
+        p,
+        t = 0.22,
+        profile = [["vert", "id", 0, ["cap_mode", "edge_fraction"]]]
+    );
+    apex_cap = poly_faces(q)[len(poly_faces(p))];
+
+    assert(
+        _ps_face_planarity_err(poly_verts(q), apex_cap) > 1e-3,
+        "vertex profile cap_mode=edge_fraction should preserve the raw skew cap at that vertex"
+    );
+}
+
 module test_poly_rectify__star_prism_keeps_star_ok_output() {
     q = poly_rectify(poly_prism(5, 2));
 
@@ -815,6 +847,8 @@ module run_TestTruncation() {
     test_poly_rectify__star_vertex_cap_allowed();
     test_poly_truncate__star_antiprism_keeps_star_ok_output();
     test_poly_truncate__planar_cap_mode_handles_irregular_valence4();
+    test_poly_truncate__alternate_cap_modes_handle_irregular_valence4();
+    test_poly_truncate__cap_mode_profile_overrides_by_vertex();
     test_poly_rectify__star_prism_keeps_star_ok_output();
     test_poly_cantitruncate__tetra_counts();
     test_poly_cantellate__profile_face_df_and_c();

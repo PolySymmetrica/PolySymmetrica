@@ -49,10 +49,13 @@ that class of output rather than convex/closed validation.
 
 For vertices with valence greater than 3, raw same-fraction edge cuts can make
 non-planar vertex caps when the incident edge lengths or directions vary.
-`poly_truncate(...)` therefore uses `cap_mode="planar"` by default: it derives
-the implicit cap plane from the requested edge-fraction cut, then intersects
-that plane with the incident edges. Use `cap_mode="edge_fraction"` only when
-you specifically want the raw legacy construction.
+`poly_truncate(...)` therefore uses `cap_mode="planar_edge_fraction"` by
+default: it derives the implicit cap plane from the requested edge-fraction
+cut, then intersects that plane with the incident edges. `cap_mode="centric"`
+uses the local edge-fraction cap centroid to orient the slice, and
+`cap_mode="poly_centroidal"` uses the source poly's vertex centroid. Use
+`cap_mode="edge_fraction"` only when you specifically want the raw legacy
+construction. `cap_mode` can also be overridden per vertex through `profile`.
 
 ## API Catalogue
 
