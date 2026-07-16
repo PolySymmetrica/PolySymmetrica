@@ -9,7 +9,7 @@ include <../../common/regression_common.scad>
 use <../../../../polysymmetrica/core/funcs.scad>
 use <../../../../polysymmetrica/core/truncation.scad>
 
-T_VALUES = [-0.3, 0.12, 0.22, 0.34];
+T_VALUES = [-0.4, 0.2, 0.4, 0.6];
 
 TESTS = [
     ["planar_edge_fraction_t_sweep", "mode", "planar_edge_fraction"],
@@ -20,7 +20,7 @@ TESTS = [
 ];
 
 T_MAX = len(TESTS);
-T = is_undef(T) ? 0 : T;
+T = is_undef(T) ? 4 : T;
 REG_LIST = is_undef(REG_LIST) ? false : REG_LIST;
 
 assert(T >= 0 && T < T_MAX, str("T out of range: ", T));
@@ -56,50 +56,54 @@ function _profile_cap_poly() =
             ["vert", "id", 5, ["cap_mode", "poly_centroidal"]]
         ]
     )
-    poly_truncate(p, t = 0.22, cap_mode = "planar_edge_fraction", profile = profile);
+    poly_truncate(p, t = 0.3, cap_mode = "planar_edge_fraction", profile = profile);
 
-module _render_poly_at(poly, x, label, ir = 10) {
-    translate([x, 0, 0])
+module _render_poly_at(poly, pos, label, ir = 13) {
+    translate(pos)
         reg_poly_preview(poly, ir = ir);
 
-    translate([x, -26, -16])
-        reg_text_label(label, size = 2.3, h = 0.12);
+    translate(pos + [0, -13, -9])
+        reg_text_label(label, size = 2.5, h = 0.12);
 }
 
 module _render_mode_sweep(cap_mode) {
     base = _irregular_valence4_bipyramid();
-    spacing = 36;
+    positions = [
+        [-28, 23, 0],
+        [28, 23, 0],
+        [-28, -23, 0],
+        [28, -23, 0]
+    ];
 
     for (i = [0:1:len(T_VALUES) - 1]) {
         t = T_VALUES[i];
-        x = (i - (len(T_VALUES) - 1) / 2) * spacing;
         _render_poly_at(
             poly_truncate(base, t = t, cap_mode = cap_mode),
-            x,
+            positions[i],
             str("t=", t)
         );
     }
 
-    translate([0, -31, -22])
+    translate([0, -51, -20])
         reg_panel_label(TESTS[T][0], y = 0, z = 0, size = 2.7, h = 0.14);
 }
 
 module _render_profile() {
     _render_poly_at(
-        poly_truncate(_irregular_valence4_bipyramid(), t = 0.22, cap_mode = "planar_edge_fraction"),
-        -22,
+        poly_truncate(_irregular_valence4_bipyramid(), t = 0.3, cap_mode = "planar_edge_fraction"),
+        [-15, 0, 0],
         "default",
-        ir = 13
+        ir = 15
     );
 
     _render_poly_at(
         _profile_cap_poly(),
-        22,
+        [15, 0, 0],
         "v0=edge v5=poly",
-        ir = 13
+        ir = 15
     );
 
-    translate([0, -31, -22])
+    translate([0, -32, -18])
         reg_panel_label("profile overrides", y = 0, z = 0, size = 2.7, h = 0.14);
 }
 
