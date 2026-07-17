@@ -233,110 +233,56 @@ function _ps_index_of_min(list) =
 function _ps_truncate_norm_to_t(poly, c) =
     _ps_truncate_default_t(poly) * c;
 
-function _ps_truncate_cap_mode_is_valid(cap_mode) =
-    ps_vertex_figure_cap_mode_is_valid(cap_mode);
-
 function _ps_truncate_cap_mode_ok(cap_mode) =
-    assert(_ps_truncate_cap_mode_is_valid(cap_mode))
+    assert(ps_vertex_figure_cap_mode_is_valid(cap_mode))
     0;
 
 function _ps_truncate_cap_modes_ok(cap_modes) =
     let(
         bad = [
             for (i = [0:1:len(cap_modes)-1])
-                if (!_ps_truncate_cap_mode_is_valid(cap_modes[i])) i
+                if (!ps_vertex_figure_cap_mode_is_valid(cap_modes[i])) i
         ],
         _ok = assert(len(bad) == 0, str("poly_truncate: unsupported cap_mode at vertices ", bad))
     )
     0;
 
-function _ps_truncate_points_centroid(pts) =
-    v_sum(pts) / len(pts);
-
-function _ps_truncate_edge_point_for_vertex(verts, edge, vi, t) =
+function _ps_truncate_vertex_cap_data(poly0, vi, edges, edge_faces, t_by_vert, cap_mode_by_vert, eps) =
     let(
-        a = edge[0],
-        b = edge[1],
-        _has = assert(a == vi || b == vi, "poly_truncate: edge does not contain vertex"),
-        A = verts[vi],
-        B = verts[(a == vi) ? b : a]
-    )
-    A + t * (B - A);
-
-function _ps_truncate_raw_cap_points_for_vertex(verts, edges, t_by_vert, poly0, edge_faces, vi) =
-    let(
-        tv = t_by_vert[vi],
         fig = ps_vertex_figure(poly0, vi, edges, edge_faces),
-        cap_edges = ps_vertex_figure_edges_idx(fig)
+        cap_edges = ps_vertex_figure_edges_idx(fig),
+        cap_points = ps_vertex_figure_points(poly0, vi, t_by_vert[vi], cap_mode_by_vert[vi], edges, edge_faces, eps)
     )
-    [
-        for (ei = cap_edges)
-            _ps_truncate_edge_point_for_vertex(verts, edges[ei], vi, tv)
-    ];
+    [cap_edges, cap_points];
 
-function _ps_truncate_vertex_cut_plane(verts, edges, t_by_vert, poly0, edge_faces, vi, cap_mode, poly_center, eps) =
+function _ps_truncate_vertex_cap_point_for_edge(vertex_cap_data, edge_idx) =
     let(
-        pts = _ps_truncate_raw_cap_points_for_vertex(verts, edges, t_by_vert, poly0, edge_faces, vi),
-        n_raw = (cap_mode == "planar_edge_fraction")
-            ? let(idx = [for (i = [0:1:len(pts)-1]) i])
-                ps_face_frame_normal(pts, idx, eps)
-            : (cap_mode == "centric")
-                ? (_ps_truncate_points_centroid(pts) - verts[vi])
-                : (verts[vi] - poly_center),
-        n_len = norm(n_raw),
-        _n_ok = assert(n_len > eps, str("poly_truncate: cannot derive ", cap_mode, " cap plane for vertex ", vi)),
-        n = n_raw / n_len,
-        d = ps_sum([for (p = pts) v_dot(n, p)]) / len(pts)
+        cap_edges = vertex_cap_data[0],
+        cap_points = vertex_cap_data[1],
+        idx = _ps_index_of(cap_edges, edge_idx)
     )
-    [n, d];
+    (idx < 0) ? undef : cap_points[idx];
 
-function _ps_truncate_vertex_cut_planes(verts, edges, t_by_vert, poly0, edge_faces, cap_mode_by_vert, eps) =
-    let(
-        poly_center = _ps_truncate_points_centroid(verts)
-    )
-    [
-        for (vi = [0:1:len(verts)-1])
-            (abs(t_by_vert[vi]) <= eps || cap_mode_by_vert[vi] == "edge_fraction")
-                ? undef
-                : _ps_truncate_vertex_cut_plane(verts, edges, t_by_vert, poly0, edge_faces, vi, cap_mode_by_vert[vi], poly_center, eps)
-    ];
-
-function _ps_truncate_plane_edge_point_for_vertex(verts, edge, vi, plane, eps) =
-    let(
-        a = edge[0],
-        b = edge[1],
-        _has = assert(a == vi || b == vi, "poly_truncate: edge does not contain vertex"),
-        A = verts[vi],
-        B = verts[(a == vi) ? b : a],
-        dir = B - A,
-        n = plane[0],
-        d = plane[1],
-        denom = v_dot(n, dir),
-        _denom_ok = assert(abs(denom) > eps, "poly_truncate: cap plane is parallel to incident edge"),
-        lambda = (d - v_dot(n, A)) / denom
-    )
-    A + lambda * dir;
-
-function _ps_truncate_edge_points_by_vert_cap_mode(verts, edges, t_by_vert, poly0, edge_faces, cap_mode_by_vert, eps) =
+function _ps_truncate_edge_points_by_vert_cap_mode(vert_count, edges, t_by_vert, poly0, edge_faces, cap_mode_by_vert, eps) =
     let(
         _modes_ok = _ps_truncate_cap_modes_ok(cap_mode_by_vert),
-        planes = _ps_truncate_vertex_cut_planes(verts, edges, t_by_vert, poly0, edge_faces, cap_mode_by_vert, eps)
+        vertex_cap_data = [
+            for (vi = [0:1:vert_count-1])
+                _ps_truncate_vertex_cap_data(poly0, vi, edges, edge_faces, t_by_vert, cap_mode_by_vert, eps)
+        ]
     )
     [
         for (ei = [0:1:len(edges)-1])
             let(
                 e = edges[ei],
                 a = e[0],
-                b = e[1]
+                b = e[1],
+                pa = _ps_truncate_vertex_cap_point_for_edge(vertex_cap_data[a], ei),
+                pb = _ps_truncate_vertex_cap_point_for_edge(vertex_cap_data[b], ei),
+                _pa_ok = assert(!is_undef(pa), str("poly_truncate: vertex ", a, " has no cap point for edge ", ei)),
+                _pb_ok = assert(!is_undef(pb), str("poly_truncate: vertex ", b, " has no cap point for edge ", ei))
             )
-            [
-                is_undef(planes[a])
-                    ? _ps_truncate_edge_point_for_vertex(verts, e, a, t_by_vert[a])
-                    : _ps_truncate_plane_edge_point_for_vertex(verts, e, a, planes[a], eps),
-                is_undef(planes[b])
-                    ? _ps_truncate_edge_point_for_vertex(verts, e, b, t_by_vert[b])
-                    : _ps_truncate_plane_edge_point_for_vertex(verts, e, b, planes[b], eps)
-            ]
+            [pa, pb]
     ];
 
 // Function: poly_truncate()
@@ -424,7 +370,7 @@ function poly_truncate(
             q = all_zero
             ? poly
             : let(
-                edge_pts = _ps_truncate_edge_points_by_vert_cap_mode(verts, edges, t_by_vert, poly0, edge_faces, cap_mode_by_vert, eps),
+                edge_pts = _ps_truncate_edge_points_by_vert_cap_mode(len(verts), edges, t_by_vert, poly0, edge_faces, cap_mode_by_vert, eps),
                 sites = [
                     for (ei = [0:1:len(edges)-1])
                         each [[ei, edges[ei][0]], [ei, edges[ei][1]]]

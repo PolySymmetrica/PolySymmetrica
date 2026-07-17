@@ -9,6 +9,7 @@ use <../../polysymmetrica/core/duals.scad>
 use <../../polysymmetrica/core/prisms.scad>
 use <../../polysymmetrica/core/transform.scad>
 use <../../polysymmetrica/core/truncation.scad>
+use <../../polysymmetrica/core/vertex.scad>
 use <../../polysymmetrica/core/solvers.scad>
 use <../../polysymmetrica/core/validate.scad>
 use <../../polysymmetrica/models/platonics_all.scad>
@@ -78,6 +79,11 @@ function _max_vertex_diff(p1, p2) =
         n = min(len(v1), len(v2))
     )
     (n == 0) ? 0 : max([for (i = [0:1:n-1]) norm(v1[i] - v2[i])]);
+
+function _points_max_diff(a, b) =
+    (len(a) != len(b)) ? 1e99
+        : (len(a) == 0) ? 0
+        : max([for (i = [0:1:len(a)-1]) norm(a[i] - b[i])]);
 
 function _skew_quad_prism() =
     let(
@@ -280,6 +286,55 @@ module test_poly_truncate__cap_mode_profile_overrides_by_vertex() {
     assert(
         _ps_face_planarity_err(poly_verts(q), apex_cap) > 1e-3,
         "vertex profile cap_mode=edge_fraction should preserve the raw skew cap at that vertex"
+    );
+}
+
+module test_poly_truncate__cap_points_match_vertex_figure_helper() {
+    p = _irregular_valence4_bipyramid();
+    verts = poly_verts(p);
+    edges = _ps_edges_from_faces(poly_faces(p));
+    edge_faces = ps_edge_faces_table(poly_faces(p), edges);
+    poly0 = p;
+    modes = ps_vertex_figure_cap_modes();
+
+    for (mode = modes) {
+        actual_by_edge = _ps_truncate_edge_points_by_vert_cap_mode(
+            len(verts),
+            edges,
+            [for (vi = [0:1:len(verts)-1]) 0.22],
+            poly0,
+            edge_faces,
+            [for (vi = [0:1:len(verts)-1]) mode],
+            EPS
+        );
+        fig = ps_vertex_figure(poly0, 0, edges, edge_faces);
+        cap_edges = ps_vertex_figure_edges_idx(fig);
+        actual = [for (ei = cap_edges) actual_by_edge[ei][edges[ei][0] == 0 ? 0 : 1]];
+        expected = ps_vertex_figure_points(poly0, 0, t = 0.22, cap_mode = mode, edges = edges, edge_faces = edge_faces);
+
+        assert(
+            _points_max_diff(actual, expected) < 1e-8,
+            str("poly_truncate cap points should match shared helper for mode ", mode, " actual=", actual, " expected=", expected)
+        );
+    }
+
+    actual_profile_by_edge = _ps_truncate_edge_points_by_vert_cap_mode(
+        len(verts),
+        edges,
+        [for (vi = [0:1:len(verts)-1]) 0.22],
+        poly0,
+        edge_faces,
+        concat(["edge_fraction"], [for (vi = [1:1:len(verts)-1]) "planar_edge_fraction"]),
+        EPS
+    );
+    fig_profile = ps_vertex_figure(poly0, 0, edges, edge_faces);
+    cap_edges_profile = ps_vertex_figure_edges_idx(fig_profile);
+    actual_profile = [for (ei = cap_edges_profile) actual_profile_by_edge[ei][edges[ei][0] == 0 ? 0 : 1]];
+    expected_profile = ps_vertex_figure_points(poly0, 0, t = 0.22, cap_mode = "edge_fraction", edges = edges, edge_faces = edge_faces);
+
+    assert(
+        _points_max_diff(actual_profile, expected_profile) < 1e-8,
+        str("poly_truncate profile cap_mode override should match shared helper actual=", actual_profile, " expected=", expected_profile)
     );
 }
 
@@ -849,6 +904,7 @@ module run_TestTruncation() {
     test_poly_truncate__planar_cap_mode_handles_irregular_valence4();
     test_poly_truncate__alternate_cap_modes_handle_irregular_valence4();
     test_poly_truncate__cap_mode_profile_overrides_by_vertex();
+    test_poly_truncate__cap_points_match_vertex_figure_helper();
     test_poly_rectify__star_prism_keeps_star_ok_output();
     test_poly_cantitruncate__tetra_counts();
     test_poly_cantellate__profile_face_df_and_c();
