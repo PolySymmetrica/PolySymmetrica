@@ -285,6 +285,112 @@ function _ps_truncate_edge_points_by_vert_cap_mode(vert_count, edges, t_by_vert,
             [pa, pb]
     ];
 
+function _ps_rectify_style_ok(style) =
+    assert(style == "strict" || style == "planarized", "poly_rectify: style must be \"strict\" or \"planarized\"")
+    0;
+
+function _ps_rectify_cap_mode_for_style(style, cap_mode) =
+    is_undef(cap_mode)
+        ? (style == "strict" ? "edge_fraction" : "planar_edge_fraction")
+        : cap_mode;
+
+function _ps_vertex_figure_edge_fraction(vertex_pt, neighbor_pt, point, eps) =
+    let(
+        dir = neighbor_pt - vertex_pt,
+        denom = v_dot(dir, dir),
+        _denom_ok = assert(denom > eps * eps, "poly_rectify: zero-length incident edge")
+    )
+    v_dot(point - vertex_pt, dir) / denom;
+
+function _ps_rectify_planarized_t_for_vertex(poly0, vi, edges, edge_faces, cap_mode, eps) =
+    let(
+        verts = poly_verts(poly0),
+        fig = ps_vertex_figure(poly0, vi, edges, edge_faces),
+        neighbors_idx = ps_vertex_figure_neighbors_idx(fig),
+        pts_at_one = ps_vertex_figure_points(poly0, vi, t=1, cap_mode=cap_mode, edges=edges, edge_faces=edge_faces, eps=eps),
+        lambdas = [
+            for (i = [0:1:len(neighbors_idx)-1])
+                _ps_vertex_figure_edge_fraction(verts[vi], verts[neighbors_idx[i]], pts_at_one[i], eps)
+        ],
+        max_lambda = max(lambdas),
+        min_lambda = min(lambdas),
+        _forward_ok = assert(
+            min_lambda > eps,
+            str("poly_rectify: planarized cap mode has non-forward edge intersection at vertex ", vi, " lambdas=", lambdas)
+        )
+    )
+    0.5 / max_lambda;
+
+function _ps_rectify_planarized_profile(poly, cap_mode, eps) =
+    let(
+        base = _ps_poly_base(poly),
+        verts = base[0],
+        edges = base[2],
+        edge_faces = base[3],
+        poly0 = base[5]
+    )
+    [
+        for (vi = [0:1:len(verts)-1])
+            [
+                "vert",
+                "id",
+                vi,
+                ["t", _ps_rectify_planarized_t_for_vertex(poly0, vi, edges, edge_faces, cap_mode, eps)]
+            ]
+    ];
+
+function _ps_rectify_strict(poly, eps=1e-8, cleanup=false, cleanup_eps=1e-8) =
+    let(
+        base = _ps_poly_base(poly),
+        verts = base[0],
+        faces0 = base[1],
+        edges = base[2],
+        edge_faces = base[3],
+        poly0 = base[5],
+        edge_mid = [
+            for (e = edges)
+                (verts[e[0]] + verts[e[1]]) / 2
+        ],
+        face_faces = [
+            for (f = faces0)
+                let(n = len(f))
+                [
+                    for (k = [0:1:n-1])
+                        let(
+                            a = f[k],
+                            b = f[(k+1)%n],
+                            ei = ps_find_edge_index(edges, a, b)
+                        )
+                        ei
+                ]
+        ],
+        vert_faces = [
+            for (vi = [0:1:len(verts)-1])
+                let(
+                    fig = ps_vertex_figure(poly0, vi, edges, edge_faces),
+                    cap_edges = ps_vertex_figure_edges_idx(fig)
+                )
+                [
+                    for (ei = cap_edges)
+                        ei
+                ]
+        ],
+        faces_idx = concat(face_faces, vert_faces),
+        cycles_all = [
+            for (f = faces_idx)
+                [ for (ei = f) [1, ei] ]
+        ],
+        q = ps_poly_transform_from_sites(
+            verts,
+            [for (i = [0:1:len(edge_mid)-1]) [i]],
+            edge_mid,
+            cycles_all,
+            eps,
+            eps
+        )
+    )
+    ps_finalize_poly(q, cleanup, cleanup_eps);
+
 // Function: poly_truncate()
 // Usage:
 //   result = poly_truncate(poly, t=undef, c=undef, eps=1e-8, profile=undef,
@@ -301,7 +407,7 @@ function _ps_truncate_edge_points_by_vert_cap_mode(vert_count, edges, t_by_vert,
 //   normal to the line from the source poly vertex centroid to the vertex.
 // Arguments:
 //   poly = source poly descriptor.
-//   t = explicit truncation fraction measured along each incident edge from the original vertex. `t=0` leaves the poly unchanged; `t=0.5` is invalid because opposite cuts collapse together.
+//   t = explicit truncation fraction measured along each incident edge from the original vertex. `t=0` leaves the poly unchanged; with `cap_mode="edge_fraction"`, `t=0.5` makes opposite cuts meet at edge midpoints.
 //   c = normalized truncation control mapped to `t` through the library default for this source poly; ignored when `t` is supplied.
 //   eps = geometric tolerance for zero-cut detection and transform construction.
 //   profile = optional vertex profile rows supporting `["t", value]`, `["c", value]`, and `["cap_mode", value]` overrides.
@@ -360,7 +466,6 @@ function poly_truncate(
                     is_undef(mode_ov) ? cap_mode : mode_ov
             ],
             _cap_modes_ok = _ps_truncate_cap_modes_ok(cap_mode_by_vert),
-            _t_ok = assert(min([for (tv = t_by_vert) (tv != 0.5) ? 1 : 0]) == 1, "poly_truncate: t=0.5 is not allowed"),
             transform_orientation = (min(t_by_vert) < -eps || max(t_by_vert) > 0.5 + eps)
                 ? "semantic"
                 : "global",
@@ -414,73 +519,62 @@ function poly_truncate(
 
 // Function: poly_rectify()
 // Usage:
-//   result = poly_rectify(poly, profile=undef, cleanup=false, cleanup_eps=1e-8);
+//   result = poly_rectify(poly, style="strict", cap_mode=undef, eps=1e-8,
+//       profile=undef, cleanup=false, cleanup_eps=1e-8);
 // Description:
-//   Rectify a poly by replacing each original vertex with the cycle of incident
-//   edge midpoints.
+//   Rectify a poly.
+//   .
+//   `style="strict"` is classic rectification: source-edge cuts meet at shared
+//   midpoints, equivalent to truncation at `t=0.5` with
+//   `cap_mode="edge_fraction"`.
+//   .
+//   `style="planarized"` keeps split edge sites and chooses a per-vertex
+//   truncation depth so the farthest realized cap point reaches an incident
+//   edge midpoint while the other realized cap points do not pass their
+//   midpoints.
+//   This can preserve planar vertex caps for irregular vertices, but it is not
+//   classic shared-midpoint rectification.
 // Arguments:
 //   poly = source poly descriptor.
+//   style = `"strict"` for shared midpoint rectification, or `"planarized"` for split-edge planarized rectification.
+//   cap_mode = vertex-figure realization mode for `style="planarized"`; defaults to `"planar_edge_fraction"`. For `style="strict"`, only `undef` or `"edge_fraction"` is supported.
+//   eps = geometric tolerance for truncation and planarized depth solving.
 //   profile = reserved for future extensions; currently unsupported and must be empty/`undef`.
 //   cleanup = whether to run structural cleanup on the result.
 //   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_rectify(
     poly,
+    style="strict",
+    cap_mode=undef,
+    eps=1e-8,
     profile=undef,
     cleanup=false,
     cleanup_eps=1e-8
 ) =
     let(
-        _p_ok = assert(ps_profile_row_count(profile) == 0, "poly_rectify: profile not supported")
+        _style_ok = _ps_rectify_style_ok(style),
+        cap_mode_eff = _ps_rectify_cap_mode_for_style(style, cap_mode),
+        _cap_mode_ok = _ps_truncate_cap_mode_ok(cap_mode_eff),
+        _strict_cap_ok = assert(
+            style != "strict" || cap_mode_eff == "edge_fraction",
+            "poly_rectify: strict style only supports cap_mode=\"edge_fraction\""
+        ),
+        _p_ok = assert(ps_profile_row_count(profile) == 0, "poly_rectify: profile not supported"),
+        profile_eff = (style == "planarized")
+            ? _ps_rectify_planarized_profile(poly, cap_mode_eff, eps)
+            : undef
     )
-    let(
-        base = _ps_poly_base(poly),
-        verts = base[0],
-        faces0 = base[1],
-        edges = base[2],
-        edge_faces = base[3],
-        poly0 = base[5],
-
-        edge_mid = [
-            for (e = edges)
-                (verts[e[0]] + verts[e[1]]) / 2
-        ],
-
-        // Faces corresponding to original faces: walk edges in face order.
-        face_faces = [
-            for (f = faces0)
-                let(n = len(f))
-                [
-                    for (k = [0:1:n-1])
-                        let(
-                            a = f[k],
-                            b = f[(k+1)%n],
-                            ei = ps_find_edge_index(edges, a, b)
-                        )
-                        ei
-                ]
-        ],
-
-        // Faces corresponding to original vertices: cycle around the vertex.
-        vert_faces = [
-            for (vi = [0:1:len(verts)-1])
-                let(
-                    fig = ps_vertex_figure(poly0, vi, edges, edge_faces),
-                    cap_edges = ps_vertex_figure_edges_idx(fig)
-                )
-                [
-                    for (ei = cap_edges)
-                        ei
-                ]
-        ],
-
-        faces_idx = concat(face_faces, vert_faces),
-        cycles_all = [
-            for (f = faces_idx)
-                [ for (ei = f) [1, ei] ]
-        ]
-    )
-    let(q = ps_poly_transform_from_sites(verts, [for (i = [0:1:len(edge_mid)-1]) [i]], edge_mid, cycles_all))
-    ps_finalize_poly(q, cleanup, cleanup_eps);
+    (style == "strict")
+        ? _ps_rectify_strict(poly, eps, cleanup, cleanup_eps)
+        : poly_truncate(
+            poly,
+            t=0.5,
+            eps=eps,
+            profile=profile_eff,
+            cap_mode=cap_mode_eff,
+            cleanup=cleanup,
+            cleanup_eps=cleanup_eps
+        );
 
 // Function: poly_chamfer()
 // Usage:

@@ -14,6 +14,7 @@ use <../../polysymmetrica/core/solvers.scad>
 use <../../polysymmetrica/core/validate.scad>
 use <../../polysymmetrica/models/platonics_all.scad>
 use <../../polysymmetrica/models/archimedians_all.scad>
+use <../../polysymmetrica/models/catalans_all.scad>
 use <../testing_util.scad>
 
 EPS = 1e-7;
@@ -79,6 +80,20 @@ function _max_vertex_diff(p1, p2) =
         n = min(len(v1), len(v2))
     )
     (n == 0) ? 0 : max([for (i = [0:1:n-1]) norm(v1[i] - v2[i])]);
+
+function _point_set_max_nearest_diff(a, b) =
+    (len(a) != len(b)) ? 1e99
+        : (len(a) == 0) ? 0
+        : max([
+            for (pa = a)
+                min([for (pb = b) norm(pa - pb)])
+        ]);
+
+function _poly_vertex_set_max_diff(p1, p2) =
+    max(
+        _point_set_max_nearest_diff(poly_verts(p1), poly_verts(p2)),
+        _point_set_max_nearest_diff(poly_verts(p2), poly_verts(p1))
+    );
 
 function _points_max_diff(a, b) =
     (len(a) != len(b)) ? 1e99
@@ -212,6 +227,29 @@ module test_poly_rectify__tetra_counts() {
     assert(len(poly_verts(q)) == 6, "rectify tetra verts");
     assert(len(poly_faces(q)) == 8, "rectify tetra faces");
     assert(_count_faces_of_size(q,3) == 8, "rectify tetra: 8 triangles");
+}
+
+module test_poly_truncate__t_half_edge_fraction_matches_strict_rectify() {
+    p = octahedron();
+    q = poly_truncate(p, t = 0.5, cap_mode = "edge_fraction");
+    r = poly_rectify(p);
+
+    assert(poly_valid(q, "closed", 1e-7), "truncate t=0.5 edge_fraction should produce closed rectification");
+    assert_int_eq(len(poly_verts(q)), len(poly_verts(r)), "t=0.5 truncate verts should match strict rectify");
+    assert_int_eq(len(poly_faces(q)), len(poly_faces(r)), "t=0.5 truncate faces should match strict rectify");
+    assert(_poly_vertex_set_max_diff(q, r) < 1e-8, "t=0.5 edge_fraction should match strict rectification coordinates");
+}
+
+module test_poly_rectify__planarized_keeps_tetrakis_hexahedron_faces_planar() {
+    p = tetrakis_hexahedron();
+    strict = poly_rectify(p);
+    planarized = poly_rectify(p, style = "planarized");
+    strict_err = _ps_faces_max_planarity_err(poly_verts(strict), poly_faces(strict));
+    planar_err = _ps_faces_max_planarity_err(poly_verts(planarized), poly_faces(planarized));
+
+    assert(strict_err > 1e-4, str("strict midpoint rectification should expose non-planar tetrakis caps err=", strict_err));
+    assert(planar_err <= 1e-7, str("planarized rectification should keep tetrakis faces planar err=", planar_err));
+    assert(poly_valid(planarized, "closed", 1e-7), "planarized tetrakis rectification should remain closed-valid");
 }
 
 module test_poly_truncate__star_vertex_cap_allowed() {
@@ -898,6 +936,8 @@ module run_TestTruncation() {
     test_poly_chamfer__cube_face_counts();
     test_poly_truncate_then_dual__counts_relations();
     test_poly_rectify__tetra_counts();
+    test_poly_truncate__t_half_edge_fraction_matches_strict_rectify();
+    test_poly_rectify__planarized_keeps_tetrakis_hexahedron_faces_planar();
     test_poly_truncate__star_vertex_cap_allowed();
     test_poly_rectify__star_vertex_cap_allowed();
     test_poly_truncate__star_antiprism_keeps_star_ok_output();

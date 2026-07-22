@@ -57,6 +57,13 @@ uses the local edge-fraction cap centroid to orient the slice, and
 `cap_mode="edge_fraction"` only when you specifically want the raw legacy
 construction. `cap_mode` can also be overridden per vertex through `profile`.
 
+`poly_rectify(...)` has two styles. The default `style="strict"` is classic
+shared-midpoint rectification, equivalent to edge-fraction truncation at
+`t=0.5`; on irregular valence-greater-than-3 sources those midpoint caps can be
+non-planar. `style="planarized"` keeps split edge sites and chooses a
+per-vertex depth so the farthest realized cap point reaches an incident
+midpoint without the others passing theirs.
+
 ## API Catalogue
 
 The deployed API docs are the catalogue view:
