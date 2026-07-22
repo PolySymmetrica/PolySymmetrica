@@ -285,6 +285,33 @@ function _ps_truncate_edge_points_by_vert_cap_mode(vert_count, edges, t_by_vert,
             [pa, pb]
     ];
 
+function _ps_truncate_realized_edge_fraction(verts, edge, near_v, point, eps) =
+    let(
+        a = edge[0],
+        b = edge[1],
+        vertex_pt = verts[near_v],
+        neighbor_pt = verts[(near_v == a) ? b : a]
+    )
+    _ps_vertex_figure_edge_fraction(vertex_pt, neighbor_pt, point, eps);
+
+function _ps_truncate_overlapping_edge_cuts(verts, edges, edge_pts, t_by_vert, eps) =
+    [
+        for (ei = [0:1:len(edges)-1])
+            let(
+                e = edges[ei],
+                a = e[0],
+                b = e[1],
+                fa = _ps_truncate_realized_edge_fraction(verts, e, a, edge_pts[ei][0], eps),
+                fb = _ps_truncate_realized_edge_fraction(verts, e, b, edge_pts[ei][1], eps)
+            )
+            if (
+                t_by_vert[a] <= 0.5 + eps &&
+                t_by_vert[b] <= 0.5 + eps &&
+                fa + fb > 1 + eps
+            )
+                [ei, e, fa, fb]
+    ];
+
 function _ps_rectify_style_ok(style) =
     assert(style == "strict" || style == "planarized", "poly_rectify: style must be \"strict\" or \"planarized\"")
     0;
@@ -476,6 +503,15 @@ function poly_truncate(
             ? poly
             : let(
                 edge_pts = _ps_truncate_edge_points_by_vert_cap_mode(len(verts), edges, t_by_vert, poly0, edge_faces, cap_mode_by_vert, eps),
+                overlapping_edges = _ps_truncate_overlapping_edge_cuts(verts, edges, edge_pts, t_by_vert, eps),
+                _overlap_ok = assert(
+                    len(overlapping_edges) == 0,
+                    str(
+                        "poly_truncate: realized cap points overlap before half-edge on edges ",
+                        overlapping_edges,
+                        "; use cap_mode=\"edge_fraction\" for strict midpoint truncation or a smaller planarized t"
+                    )
+                ),
                 sites = [
                     for (ei = [0:1:len(edges)-1])
                         each [[ei, edges[ei][0]], [ei, edges[ei][1]]]
