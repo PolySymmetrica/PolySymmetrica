@@ -305,8 +305,8 @@ function _ps_truncate_overlapping_edge_cuts(verts, edges, edge_pts, t_by_vert, e
                 fb = _ps_truncate_realized_edge_fraction(verts, e, b, edge_pts[ei][1], eps)
             )
             if (
-                t_by_vert[a] <= 0.5 + eps &&
-                t_by_vert[b] <= 0.5 + eps &&
+                abs(t_by_vert[a] - 0.5) <= eps &&
+                abs(t_by_vert[b] - 0.5) <= eps &&
                 fa + fb > 1 + eps
             )
                 [ei, e, fa, fb]
@@ -507,7 +507,7 @@ function poly_truncate(
                 _overlap_ok = assert(
                     len(overlapping_edges) == 0,
                     str(
-                        "poly_truncate: realized cap points overlap before half-edge on edges ",
+                        "poly_truncate: realized cap points overlap for t=0.5 on edges ",
                         overlapping_edges,
                         "; use cap_mode=\"edge_fraction\" for strict midpoint truncation or a smaller planarized t"
                     )
