@@ -3,7 +3,8 @@
 
 # PolySymmetrica
 
-PolySymmetrica is a polyhedral modelling library for OpenSCAD.
+PolySymmetrica is a polyhedral modelling library for OpenSCAD, aimed at making
+beautiful 3d printed models.
 
 It gives you named solids, geometric transforms, placement tools, and topology
 helpers for building structured polyhedral models without hand-writing the
@@ -25,12 +26,10 @@ polyhedral structure, local frames, and metadata.
 
 PolySymmetrica targets the current OpenSCAD development snapshots, not the 2021
 release. Install a snapshot build from the
-[OpenSCAD downloads page](https://openscad.org/downloads.html#snapshots). On
-Linux, the Snap package is:
+[OpenSCAD downloads page](https://openscad.org/downloads.html#snapshots).
 
-```bash
-sudo snap install openscad-nightly
-```
+[Note that this is commonly recommended anyway as the 2026 OpenSCAD releases are wildly 
+faster than the 2021 stable release, and when it is released, we'll change these instructions.]
 
 The examples below assume the `polysymmetrica/` library path is configured and
 can be rendered with `openscad-nightly`.
