@@ -40,9 +40,6 @@ function _test_punch_poly_angle0() =
 function _test_penta_punch_poly() =
     poly_antiprism(5, 2, angle = 15);
 
-function _test_openscad_supports_current_placement_function_helpers() =
-    version()[0] >= 2026;
-
 function _test_antitet_poly() =
     poly_truncate(tetrahedron(), t = -0.5);
 
@@ -1263,15 +1260,13 @@ module _test_assert_triangle_proxy_vertex_child(expected_child_idx) {
     assert_list_eq($ps_vertex_figure_edges_idx, $ps_replay_vertex_figure_edges_idx, "triangle vertex replay child figure edges");
     assert_list_eq($ps_vertex_figure_neighbors_idx, $ps_replay_vertex_figure_neighbors_idx, "triangle vertex replay child figure neighbors");
     assert_list_eq($ps_vertex_figure_neighbors_idx, $ps_vertex_neighbors_idx, "triangle vertex proxy figure neighbors should match vertex neighbors");
-    if (_test_openscad_supports_current_placement_function_helpers()) {
-        pts = ps_current_vertex_figure_points(
-            t = 0.18,
-            vertex_figure = $ps_vertex_figure,
-            neighbor_pts_local = $ps_vertex_neighbor_pts_local,
-            poly_center_local = $ps_poly_center_local
-        );
-        assert_int_eq(len(pts), len($ps_vertex_figure_neighbors_idx), "triangle vertex proxy child current vertex polygon arity");
-    }
+    pts = ps_current_vertex_figure_points(
+        t = 0.18,
+        vertex_figure = $ps_vertex_figure,
+        neighbor_pts_local = $ps_vertex_neighbor_pts_local,
+        poly_center_local = $ps_poly_center_local
+    );
+    assert_int_eq(len(pts), len($ps_vertex_figure_neighbors_idx), "triangle vertex proxy child current vertex polygon arity");
     assert_near(norm($ps_proxy_ex_local), 1, EPS, "triangle vertex proxy ex unit");
     assert_near(norm($ps_proxy_ey_local), 1, EPS, "triangle vertex proxy ey unit");
     assert_near(norm($ps_proxy_ez_local), 1, EPS, "triangle vertex proxy ez unit");

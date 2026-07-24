@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NEG_DIR="${ROOT_DIR}/negative"
 OUT_STL="/tmp/ps-neg.stl"
 OUT_LOG="/tmp/ps-neg.out"
+OPENSCAD_BIN="${OPENSCAD_BIN:-openscad-nightly}"
 
 shopt -s nullglob
 files=("${NEG_DIR}"/*.scad)
@@ -18,7 +19,7 @@ failures=0
 
 for f in "${files[@]}"; do
     echo "== $(basename "$f") =="
-    if openscad -o "${OUT_STL}" "$f" >"${OUT_LOG}" 2>&1; then
+    if "${OPENSCAD_BIN}" -o "${OUT_STL}" "$f" >"${OUT_LOG}" 2>&1; then
         echo "FAIL: expected failure but command succeeded"
         failures=$((failures + 1))
         continue
@@ -41,4 +42,3 @@ if [ "${failures}" -ne 0 ]; then
 fi
 
 echo "All negative tests passed."
-

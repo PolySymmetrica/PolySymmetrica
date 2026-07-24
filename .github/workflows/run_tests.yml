@@ -23,20 +23,18 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v6
 
-      # Installs Openscad using apt
+      # Installs the OpenSCAD development snapshot and supporting tools.
       - name: Install OpenSCAD, docsgen etc
         shell: bash
         run: |
           printf '%s\t%s\n' \
-            apt  'sudo apt-get update && sudo apt-get install -y openscad imagemagick xvfb ripgrep' \
+            apt  'sudo apt-get update && sudo apt-get install -y imagemagick xvfb ripgrep' \
             snap 'sudo snap install openscad-nightly' \
             pip  'python3 -m pip install --user openscad-docsgen' |
           parallel --colsep '\t' --line-buffer --halt soon,fail=1 --tagstring '{1}' '{2}'
 
-      # Runs 
-      - name: Check Openscad Versions
+      - name: Check OpenSCAD version
         run: |
-          openscad --version
           openscad-nightly --version
 
           # ensure the SNAP version's PNG generation is "warmed up"
@@ -52,11 +50,7 @@ jobs:
           openscad-nightly -o target/openscad-nightly-warmup.png target/openscad-nightly-warmup.scad
           rm -f target/openscad-nightly-warmup.scad target/openscad-nightly-warmup.png
           
-          printf '%s\t%s\t%s\n' \
-            openscad-2021 openscad target/unit-tests/passed-openscad.stl \
-            openscad-2026 openscad-nightly target/unit-tests/passed-openscad-nightly.stl |
-          parallel --colsep '\t' --line-buffer --tagstring '{1}' \
-            '{2} -o {3} src/tests/run_all.scad'
+          openscad-nightly -o target/unit-tests/passed-openscad-nightly.stl src/tests/run_all.scad
 
       - name: Check API docs build
         run: |
