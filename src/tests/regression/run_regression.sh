@@ -255,6 +255,45 @@ print_regression_result_summary() {
     print_result_group "ERROR" "Execution errors"
 }
 
+aggregate_status() {
+    local fail_count="$1"
+    local error_count="$2"
+
+    if [[ "${error_count}" -gt 0 ]]; then
+        echo "ERROR"
+    elif [[ "${fail_count}" -gt 0 ]]; then
+        echo "FAIL"
+    else
+        echo "PASS"
+    fi
+}
+
+status_label() {
+    local status="$1"
+
+    case "${status}" in
+        PASS) pass_label ;;
+        FAIL) fail_label ;;
+        ERROR) error_label ;;
+        *) printf '%s' "${status}" ;;
+    esac
+}
+
+print_status_banner() {
+    local status="$1"
+
+    echo
+    echo "======================================================================"
+    echo "STATUS: $(status_label "${status}")"
+    echo "======================================================================"
+}
+
+openscad_log_has_error() {
+    local log="$1"
+
+    rg -q '(^|[[:space:]])ERROR:' "${log}"
+}
+
 has_gnu_parallel() {
     local parallel_bin="$1"
 
@@ -373,6 +412,13 @@ list_case_tests() {
         return 1
     fi
 
+    if openscad_log_has_error "${log}"; then
+        echo "$(error_label): OpenSCAD reported errors while listing regression tests for ${rel}" >&2
+        sed 's/^/      /' "${log}" >&2
+        record_regression_result "ERROR" "${case_file}" "LIST" "list" "OpenSCAD reported errors while listing tests; see ${log}"
+        return 1
+    fi
+
     render_args="$(sed -n 's/.*REGRESSION_RENDER_ARGS=\([^"]*\).*/\1/p' "${log}" | tail -n 1)"
     render_args="${render_args:---projection=o --autocenter --viewall --render}"
     printf '%s\n' "${render_args}" >"${render_args_file}"
@@ -410,6 +456,12 @@ render_case_test() {
         -D "T=${idx}" \
         "${case_file}" >"${log}" 2>&1; then
         echo "$(error_label): render failed for ${rel} T=${idx} (${name})"
+        sed 's/^/      /' "${log}"
+        return 1
+    fi
+
+    if openscad_log_has_error "${log}"; then
+        echo "$(error_label): OpenSCAD reported errors for ${rel} T=${idx} (${name})"
         sed 's/^/      /' "${log}"
         return 1
     fi
@@ -562,7 +614,7 @@ if [[ "${failures}" -eq 0 ]]; then
         rm -f "${parallel_log}"
         export CASE_ROOT TARGET_REG_ROOT BASELINE_ROOT ACTUAL_ROOT DIFF_ROOT LOG_ROOT RESULT_ROOT OPENSCAD_BIN IMG_SIZE
         export MODE FUZZ MAX_CHANGED_PIXELS COMPARE_BIN COMPARE_STYLE use_color
-        export -f color_label pass_label fail_label error_label
+        export -f color_label pass_label fail_label error_label openscad_log_has_error
         export -f case_rel_path result_status_file record_regression_result render_case_test compare_images run_regression_test
 
         echo "Running regression ${MODE} jobs with ${PARALLEL_BIN} -j ${REGRESSION_JOBS}"
@@ -597,6 +649,12 @@ fi
 image_failures="$(result_count "FAIL")"
 execution_errors="$(result_count "ERROR")"
 total_failures=$((image_failures + execution_errors))
+status="$(aggregate_status "${image_failures}" "${execution_errors}")"
+if [[ "${total_failures}" -eq 0 && "${failures}" -ne 0 ]]; then
+    status="ERROR"
+fi
+
+print_status_banner "${status}"
 
 if [[ "${total_failures}" -ne 0 ]]; then
     print_regression_result_summary

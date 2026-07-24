@@ -39,7 +39,10 @@ version to `target/regression-tests/version.properties`; on a regression
 failure, the runner prints both versions and warns loudly when they differ.
 The runner prints `FAIL` for image differences and `ERROR` for discovery,
 render/assertion, missing-baseline, or ImageMagick execution errors. On
-non-success, the final summary lists the exact tests in each group.
+non-success, the final summary lists the exact tests in each group. After all
+jobs finish, an aggregate `STATUS: PASS`, `STATUS: FAIL`, or `STATUS: ERROR`
+banner is printed before the counts; execution errors take precedence over
+image diffs.
 
 Render/compare jobs run with GNU `parallel` when it is available. Other
 commands named `parallel`, such as moreutils parallel, are ignored. The default
