@@ -1,3 +1,4 @@
+![Icosahedral models](docs/images/Banner_readme.png)
 [![Run Tests under OpenSCAD](https://github.com/susanw1/PolySymmetrica/actions/workflows/run_tests.yml/badge.svg)](https://github.com/susanw1/PolySymmetrica/actions/workflows/run_tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
