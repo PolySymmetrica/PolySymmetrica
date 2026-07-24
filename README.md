@@ -21,6 +21,20 @@ PolySymmetrica is still OpenSCAD: the output is ordinary OpenSCAD geometry, and
 your child modules can be regular OpenSCAD modules. The library supplies the
 polyhedral structure, local frames, and metadata.
 
+## OpenSCAD Version
+
+PolySymmetrica targets the current OpenSCAD development snapshots, not the 2021
+release. Install a snapshot build from the
+[OpenSCAD downloads page](https://openscad.org/downloads.html#snapshots). On
+Linux, the Snap package is:
+
+```bash
+sudo snap install openscad-nightly
+```
+
+The examples below assume the `polysymmetrica/` library path is configured and
+can be rendered with `openscad-nightly`.
+
 ## The Core Idea
 
 OpenSCAD is good at describing a piece of geometry. It is less pleasant when
@@ -141,3 +155,6 @@ Reference and design notes:
 ## License
 
 PolySymmetrica is released under the MIT license.
+
+Follow project updates on Bluesky:
+[`@polysymmetrica.bsky.social`](https://bsky.app/profile/polysymmetrica.bsky.social).

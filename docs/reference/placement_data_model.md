@@ -342,10 +342,8 @@ place_on_vertices(poly, inter_radius = 30)
 
 The helper asserts if the current vertex has no closed simple
 `$ps_vertex_figure`, so boundary and singular fallback vertices do not silently
-produce edge-scan polygons. It relies on OpenSCAD 2026 placement
-special-variable semantics; OpenSCAD 2021 can expose the `$ps_vertex_*`
-metadata to child modules but not reliably to helper functions called from
-those children.
+produce edge-scan polygons. It relies on current OpenSCAD development-snapshot
+placement special-variable semantics.
 
 Describe example:
 

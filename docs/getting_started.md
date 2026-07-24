@@ -4,7 +4,16 @@ This guide gets from a checkout of PolySymmetrica to a rendered OpenSCAD model.
 
 ## Prerequisites
 
-You need OpenSCAD installed and available as `openscad`.
+You need a current OpenSCAD development snapshot. PolySymmetrica does not target
+the 2021 release.
+
+Install a snapshot build from the
+[OpenSCAD downloads page](https://openscad.org/downloads.html#snapshots). On
+Linux, the Snap package is:
+
+```bash
+sudo snap install openscad-nightly
+```
 
 PolySymmetrica is an OpenSCAD source library. There is no package manager or
 library descriptor yet, so setup means making the directory that contains
@@ -65,7 +74,7 @@ When working directly from this repository, use a scoped `OPENSCADPATH` for the
 render command:
 
 ```bash
-OPENSCADPATH="$PWD/src" openscad -o /tmp/ps-first.stl first.scad
+OPENSCADPATH="$PWD/src" openscad-nightly -o /tmp/ps-first.stl first.scad
 ```
 
 This tells OpenSCAD that `src/` is a library root for that one command. The
@@ -108,7 +117,7 @@ color("gold")
 Render it:
 
 ```bash
-OPENSCADPATH="$PWD/src" openscad -o /tmp/ps-first.stl first.scad
+OPENSCADPATH="$PWD/src" openscad-nightly -o /tmp/ps-first.stl first.scad
 ```
 
 This does three things:

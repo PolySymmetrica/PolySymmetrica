@@ -22,12 +22,12 @@ and move feature-specific design notes to `docs/`.
 ## Commands
 
 - Render an example:
-  `openscad -o /tmp/ps-preview.stl src/polysymmetrica/examples/basics/main-basics.scad`
+  `openscad-nightly -o /tmp/ps-preview.stl src/polysymmetrica/examples/basics/main_basics.scad`
 - Run full tests:
-  `openscad -o /tmp/ps-tests.stl src/tests/run_all.scad`
+  `openscad-nightly -o /tmp/ps-tests.stl src/tests/run_all.scad`
 - Run negative tests:
   `src/tests/run_negative_all.sh`
-- Prefer `openscad-nightly` when available, though it's snap-sandboxed, so on this machine, use the watcher
+- Use `openscad-nightly`, though it's snap-sandboxed, so on this machine, use the watcher
   bridge in `.tmp/openscad_nightly_render.spec` and inspect it with:
   `.tmp/openscad_nightly_status.sh` - don't vary the commands unnecessarily, to avoid repeated permission requests.
 
