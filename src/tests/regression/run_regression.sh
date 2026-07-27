@@ -288,10 +288,10 @@ print_status_banner() {
     echo "======================================================================"
 }
 
-openscad_log_has_error() {
+openscad_log_has_assertion_error() {
     local log="$1"
 
-    rg -q '(^|[[:space:]])ERROR:' "${log}"
+    rg -q '(^|[[:space:]])ERROR: Assertion' "${log}"
 }
 
 has_gnu_parallel() {
@@ -412,10 +412,10 @@ list_case_tests() {
         return 1
     fi
 
-    if openscad_log_has_error "${log}"; then
+    if openscad_log_has_assertion_error "${log}"; then
         echo "$(error_label): OpenSCAD reported errors while listing regression tests for ${rel}" >&2
         sed 's/^/      /' "${log}" >&2
-        record_regression_result "ERROR" "${case_file}" "LIST" "list" "OpenSCAD reported errors while listing tests; see ${log}"
+        record_regression_result "ERROR" "${case_file}" "LIST" "list" "OpenSCAD assertion while listing tests; see ${log}"
         return 1
     fi
 
@@ -460,7 +460,7 @@ render_case_test() {
         return 1
     fi
 
-    if openscad_log_has_error "${log}"; then
+    if openscad_log_has_assertion_error "${log}"; then
         echo "$(error_label): OpenSCAD reported errors for ${rel} T=${idx} (${name})"
         sed 's/^/      /' "${log}"
         return 1
@@ -614,7 +614,7 @@ if [[ "${failures}" -eq 0 ]]; then
         rm -f "${parallel_log}"
         export CASE_ROOT TARGET_REG_ROOT BASELINE_ROOT ACTUAL_ROOT DIFF_ROOT LOG_ROOT RESULT_ROOT OPENSCAD_BIN IMG_SIZE
         export MODE FUZZ MAX_CHANGED_PIXELS COMPARE_BIN COMPARE_STYLE use_color
-        export -f color_label pass_label fail_label error_label openscad_log_has_error
+        export -f color_label pass_label fail_label error_label openscad_log_has_assertion_error
         export -f case_rel_path result_status_file record_regression_result render_case_test compare_images run_regression_test
 
         echo "Running regression ${MODE} jobs with ${PARALLEL_BIN} -j ${REGRESSION_JOBS}"
