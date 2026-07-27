@@ -16,11 +16,18 @@ REG_SOLID_COLOR = "gainsboro";
 REG_LABEL_SIZE = 2.4;
 REG_LABEL_H = 0.12;
 REG_LABEL_FONT = "Liberation Sans:style=Bold";
+REG_RENDER_ARGS_POLY_SINGLE = "--projection=o --camera=0,0,0,55,0,25,220 --render";
+REG_RENDER_ARGS_POLY_ROW = "--projection=o --camera=0,0,0,55,0,25,360 --render";
+REG_RENDER_ARGS_POLY_GRID = "--projection=o --camera=0,0,0,55,0,25,330 --render";
+REG_RENDER_ARGS_FLAT = "--projection=o --camera=0,0,0,0,0,0,320 --render";
 
-module reg_list_tests(tests) {
+module reg_list_tests(tests, render_args = undef) {
     echo(str("REGRESSION_T_MAX=", len(tests)));
     for (i = [0:1:len(tests) - 1])
         echo(str("REGRESSION_TEST=", i, " ", tests[i][0]));
+
+    if (!is_undef(render_args))
+        echo(str("REGRESSION_RENDER_ARGS=", render_args));
 
     cube([0.01, 0.01, 0.01], center = true);
 }

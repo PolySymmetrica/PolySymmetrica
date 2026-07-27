@@ -83,8 +83,8 @@ place_all_sites_09_trunc_ico.png
 
 Each case file must support two modes:
 
-- `REG_LIST=true`: call `reg_list_tests(TESTS)` so the Bash runner can discover
-  every `T` value and output name.
+- `REG_LIST=true`: call `reg_list_tests(TESTS, render_args = ...)` so the Bash
+  runner can discover every `T` value, output name, and fixed camera args.
 - Normal render mode: validate `T`, select data from `TESTS[T]` (often via
   `spec = TESTS[T]`), and render the selected scene.
 
@@ -95,8 +95,21 @@ default render framing. The default is:
 --projection=o --autocenter --viewall --render
 ```
 
-Use explicit camera args for scenes where text or other renderer-dependent
-geometry would otherwise perturb `--viewall` framing.
+Prefer explicit camera args for committed regression cases. `--viewall` is
+convenient for ad hoc previews, but it makes the camera depend on the rendered
+bounding box: small size or placement changes can rescale or recenter the whole
+image, and genuine size changes can be normalized away. The shared
+`common/regression_common.scad` presets cover the usual scene layouts:
+
+```scad
+reg_list_tests(TESTS, render_args = REG_RENDER_ARGS_POLY_SINGLE);
+reg_list_tests(TESTS, render_args = REG_RENDER_ARGS_POLY_ROW);
+reg_list_tests(TESTS, render_args = REG_RENDER_ARGS_POLY_GRID);
+reg_list_tests(TESTS, render_args = REG_RENDER_ARGS_FLAT);
+```
+
+Keep the default `--autocenter --viewall` only for a case that intentionally
+tests renderer auto-framing.
 
 Prefer putting the test definition in the `TESTS` entry rather than writing a
 large `if (T == ...)` cascade. The first field is always the stable test name
@@ -158,7 +171,8 @@ Keep scenes small and diagnostic:
 1. Add or edit a `.scad` case under `cases/<topic>/`.
 2. Include `../../common/regression_common.scad`.
 3. Define `TESTS`, `T_MAX`, `T`, `REG_LIST`, and an explicit range assert.
-4. Ensure `REG_LIST` calls `reg_list_tests(TESTS)`.
+4. Ensure `REG_LIST` calls `reg_list_tests(TESTS, render_args = ...)` with a
+   fixed-camera preset unless auto-framing is intentional.
 5. Render the selected `T` using data from `TESTS[T]`.
 6. Run `src/tests/regression/run_regression.sh generate` to update baselines.
 7. Run `src/tests/regression/run_regression.sh diff --tolerance strict` when

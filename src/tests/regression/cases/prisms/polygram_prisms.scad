@@ -114,8 +114,7 @@ module _pp_edge_overlay(poly, n, selected_top = undef) {
 }
 
 if (REG_LIST) {
-    reg_list_tests(TESTS);
-    echo("REGRESSION_RENDER_ARGS=--projection=o --camera=0,0,0,0,0,0,320 --render");
+    reg_list_tests(TESTS, render_args = REG_RENDER_ARGS_FLAT);
 } else {
     spec = TESTS[T];
     _pp_edge_overlay(spec[1](), spec[2], spec[3]);
