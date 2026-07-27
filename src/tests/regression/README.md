@@ -20,10 +20,13 @@ src/tests/regression/run_regression.sh diff --tolerance strict
 src/tests/regression/run_regression.sh diff --tolerance loose
 ```
 
-Generated local outputs are written under `.tmp/regression/`.
+Generated local outputs are written under `target/regression-tests/`.
 
 The default output size is `1280,960`. Override it with `IMG_SIZE=WIDTH,HEIGHT`
 when needed.
+Status labels are colored when output is a terminal. Use
+`REGRESSION_COLOR=always` to force ANSI color in CI logs, or
+`REGRESSION_COLOR=never` for plain output.
 
 The default OpenSCAD command is `openscad-nightly`. Override it with
 `OPENSCAD_BIN=openscad` only when deliberately checking another renderer.
@@ -34,6 +37,12 @@ The committed baseline set records the renderer version in
 `baselines/openscad/version.properties`. Each run writes the current renderer
 version to `target/regression-tests/version.properties`; on a regression
 failure, the runner prints both versions and warns loudly when they differ.
+The runner prints `FAIL` for image differences and `ERROR` for discovery,
+render/assertion, missing-baseline, or ImageMagick execution errors. On
+non-success, the final summary lists the exact tests in each group. After all
+jobs finish, an aggregate `STATUS: PASS`, `STATUS: FAIL`, or `STATUS: ERROR`
+banner is printed before the counts; execution errors take precedence over
+image diffs.
 
 Render/compare jobs run with GNU `parallel` when it is available. Other
 commands named `parallel`, such as moreutils parallel, are ignored. The default
@@ -55,9 +64,9 @@ budget for renderer antialiasing drift; `strict` allows no changed pixels.
 - `cases/`: source `.scad` files. Subdirectories become output subdirectories.
 - `common/`: shared rendering helpers, labels, colors, and portable digits.
 - `baselines/openscad/`: committed expected PNGs and renderer version marker.
-- `.tmp/regression/actual/`: generated images in `diff` mode.
-- `.tmp/regression/diff/`: ImageMagick difference images in `diff` mode.
-- `.tmp/regression/logs/`: OpenSCAD render and list logs.
+- `target/regression-tests/actual/`: generated images in `diff` mode.
+- `target/regression-tests/diff/`: ImageMagick difference images in `diff` mode.
+- `target/regression-tests/logs/`: OpenSCAD render, list, compare, and status logs.
 
 Do not commit `.tmp/` outputs or OpenSCAD `.log` sidecars. Commit only case
 files, shared helpers, runner changes, and intentional baseline PNG updates.
@@ -160,8 +169,8 @@ Keep scenes small and diagnostic:
 When investigating a diff failure, compare:
 
 - `baselines/openscad/...`: expected image.
-- `.tmp/regression/actual/...`: newly rendered image.
-- `.tmp/regression/diff/...`: red-on-white changed pixels from ImageMagick.
+- `target/regression-tests/actual/...`: newly rendered image.
+- `target/regression-tests/diff/...`: red-on-white changed pixels from ImageMagick.
 
 If the diff image looks like a faint copy of the whole object, suspect renderer
 or antialiasing drift first. If only local features move, suspect a real

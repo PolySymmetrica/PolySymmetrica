@@ -9,14 +9,52 @@ BASELINE_ROOT="${BASELINE_ROOT:-${SCRIPT_DIR}/baselines/openscad}"
 ACTUAL_ROOT="${ACTUAL_ROOT:-${TARGET_REG_ROOT}/actual}"
 DIFF_ROOT="${DIFF_ROOT:-${TARGET_REG_ROOT}/diff}"
 LOG_ROOT="${TARGET_REG_ROOT}/logs"
+RESULT_ROOT="${LOG_ROOT}/status"
 OPENSCAD_BIN="${OPENSCAD_BIN:-openscad-nightly}"
 BASELINE_VERSION_FILE="${BASELINE_ROOT}/version.properties"
 CURRENT_VERSION_FILE="${TARGET_REG_ROOT}/version.properties"
 IMG_SIZE="${IMG_SIZE:-1280,960}"
 REGRESSION_JOBS="${REGRESSION_JOBS:-4}"
 PARALLEL_BIN="${PARALLEL_BIN:-parallel}"
+REGRESSION_COLOR="${REGRESSION_COLOR:-auto}"
 MODE="${1:-}"
 TOLERANCE="normal"
+
+case "${REGRESSION_COLOR}" in
+    auto|always|never) ;;
+    *)
+        echo "Invalid REGRESSION_COLOR: ${REGRESSION_COLOR}. Expected auto, always, or never." >&2
+        exit 2
+        ;;
+esac
+
+use_color=false
+if [[ "${REGRESSION_COLOR}" == "always" || ( "${REGRESSION_COLOR}" == "auto" && -t 1 ) ]]; then
+    use_color=true
+fi
+
+color_label() {
+    local code="$1"
+    local label="$2"
+
+    if [[ "${use_color}" == true ]]; then
+        printf '\033[%sm%s\033[0m' "${code}" "${label}"
+    else
+        printf '%s' "${label}"
+    fi
+}
+
+pass_label() {
+    color_label "32" "PASS"
+}
+
+fail_label() {
+    color_label "91" "FAIL"
+}
+
+error_label() {
+    color_label "91" "ERROR"
+}
 
 usage() {
     cat <<EOF
@@ -28,6 +66,8 @@ Environment:
   REGRESSION_JOBS
                 Parallel render/compare jobs to run when GNU parallel is
                 available (default: 4)
+  REGRESSION_COLOR
+                Color labels: auto, always, or never (default: auto)
 EOF
 }
 
@@ -126,10 +166,132 @@ if [[ "${MODE}" == "diff" && -z "${COMPARE_BIN}" ]]; then
 fi
 
 mkdir -p "${ACTUAL_ROOT}" "${DIFF_ROOT}" "${LOG_ROOT}" "${BASELINE_ROOT}"
+rm -rf "${RESULT_ROOT}"
+mkdir -p "${RESULT_ROOT}"
 
 case_rel_path() {
     local case_file="$1"
     realpath --relative-to="${CASE_ROOT}" "${case_file}"
+}
+
+result_status_file() {
+    local case_file="$1"
+    local idx="$2"
+    local name="$3"
+    local rel base dir stem suffix
+
+    rel="$(case_rel_path "${case_file}")"
+    base="${rel%.scad}"
+    dir="$(dirname "${base}")"
+    stem="$(basename "${base}")"
+    if [[ "${idx}" == "LIST" ]]; then
+        suffix="list"
+    else
+        suffix="$(printf '%02d' "${idx}")_${name}"
+    fi
+
+    printf '%s/%s/%s_%s.status\n' "${RESULT_ROOT}" "${dir}" "${stem}" "${suffix}"
+}
+
+record_regression_result() {
+    local kind="$1"
+    local case_file="$2"
+    local idx="$3"
+    local name="$4"
+    local detail="$5"
+    local rel status_file
+
+    rel="$(case_rel_path "${case_file}")"
+    status_file="$(result_status_file "${case_file}" "${idx}" "${name}")"
+    mkdir -p "$(dirname "${status_file}")"
+    printf '%s\t%s\t%s\t%s\t%s\n' "${kind}" "${rel}" "${idx}" "${name}" "${detail}" >"${status_file}"
+}
+
+result_count() {
+    local kind="$1"
+    local count status_files
+
+    status_files="$(find "${RESULT_ROOT}" -type f -name '*.status' -print)"
+    if [[ -z "${status_files}" ]]; then
+        echo 0
+        return
+    fi
+
+    count="$(
+        printf '%s\n' "${status_files}" |
+            xargs awk -F '\t' -v kind="${kind}" '$1 == kind { n++ } END { print n + 0 }'
+    )"
+    printf '%s\n' "${count:-0}"
+}
+
+print_result_group() {
+    local kind="$1"
+    local title="$2"
+
+    if [[ "$(result_count "${kind}")" -eq 0 ]]; then
+        return
+    fi
+
+    echo "${title}:"
+    find "${RESULT_ROOT}" -type f -name '*.status' -print0 |
+        xargs -0r awk -F '\t' -v kind="${kind}" '
+            $1 == kind {
+                label = ($3 == "LIST") ? ($2 " discovery") : ($2 " T=" $3 " (" $4 ")")
+                print "  - " label ": " $5
+            }
+        ' |
+        sort
+}
+
+print_regression_result_summary() {
+    local fail_count error_count
+
+    fail_count="$(result_count "FAIL")"
+    error_count="$(result_count "ERROR")"
+
+    echo "Regression image diffs: ${fail_count}"
+    echo "Regression execution errors: ${error_count}"
+    print_result_group "FAIL" "Image diffs"
+    print_result_group "ERROR" "Execution errors"
+}
+
+aggregate_status() {
+    local fail_count="$1"
+    local error_count="$2"
+
+    if [[ "${error_count}" -gt 0 ]]; then
+        echo "ERROR"
+    elif [[ "${fail_count}" -gt 0 ]]; then
+        echo "FAIL"
+    else
+        echo "PASS"
+    fi
+}
+
+status_label() {
+    local status="$1"
+
+    case "${status}" in
+        PASS) pass_label ;;
+        FAIL) fail_label ;;
+        ERROR) error_label ;;
+        *) printf '%s' "${status}" ;;
+    esac
+}
+
+print_status_banner() {
+    local status="$1"
+
+    echo
+    echo "======================================================================"
+    echo "STATUS: $(status_label "${status}")"
+    echo "======================================================================"
+}
+
+openscad_log_has_assertion_error() {
+    local log="$1"
+
+    rg -q '(^|[[:space:]])ERROR: Assertion' "${log}"
 }
 
 has_gnu_parallel() {
@@ -244,8 +406,16 @@ list_case_tests() {
         -D REG_LIST=true \
         -D T=0 \
         "${case_file}" >"${log}" 2>&1; then
-        echo "FAIL: could not list regression tests for ${rel}" >&2
+        echo "$(error_label): could not list regression tests for ${rel}" >&2
         sed 's/^/      /' "${log}" >&2
+        record_regression_result "ERROR" "${case_file}" "LIST" "list" "could not list tests; see ${log}"
+        return 1
+    fi
+
+    if openscad_log_has_assertion_error "${log}"; then
+        echo "$(error_label): OpenSCAD reported errors while listing regression tests for ${rel}" >&2
+        sed 's/^/      /' "${log}" >&2
+        record_regression_result "ERROR" "${case_file}" "LIST" "list" "OpenSCAD assertion while listing tests; see ${log}"
         return 1
     fi
 
@@ -285,7 +455,13 @@ render_case_test() {
         "${render_args_arr[@]}" \
         -D "T=${idx}" \
         "${case_file}" >"${log}" 2>&1; then
-        echo "FAIL: render failed for ${rel} T=${idx} (${name})"
+        echo "$(error_label): render failed for ${rel} T=${idx} (${name})"
+        sed 's/^/      /' "${log}"
+        return 1
+    fi
+
+    if openscad_log_has_assertion_error "${log}"; then
+        echo "$(error_label): OpenSCAD reported errors for ${rel} T=${idx} (${name})"
         sed 's/^/      /' "${log}"
         return 1
     fi
@@ -296,6 +472,9 @@ compare_images() {
     local actual="$2"
     local diff="$3"
     local metric_log="$4"
+    local case_file="$5"
+    local idx="$6"
+    local name="$7"
     local changed rc
 
     mkdir -p "$(dirname "${diff}")" "$(dirname "${metric_log}")"
@@ -327,18 +506,20 @@ compare_images() {
     changed="${changed:-0}"
 
     if [[ "${rc}" -gt 1 ]]; then
-        echo "FAIL: ImageMagick compare failed for ${actual}"
+        echo "$(error_label): ImageMagick compare failed for ${actual}"
         sed 's/^/      /' "${metric_log}"
+        record_regression_result "ERROR" "${case_file}" "${idx}" "${name}" "image compare failed; see ${metric_log}"
         return 1
     fi
 
     if [[ "${changed}" -gt "${MAX_CHANGED_PIXELS}" ]]; then
-        echo "FAIL: ${actual}"
+        echo "$(fail_label): ${actual}"
         echo "      changed_pixels=${changed}, allowed=${MAX_CHANGED_PIXELS}, fuzz=${FUZZ}"
+        record_regression_result "FAIL" "${case_file}" "${idx}" "${name}" "image differs; actual=${actual}; diff=${diff}"
         return 1
     fi
 
-    echo "PASS: ${actual} changed_pixels=${changed}"
+    echo "$(pass_label): ${actual} changed_pixels=${changed}"
 }
 
 run_regression_test() {
@@ -347,17 +528,24 @@ run_regression_test() {
     local name="$3"
     local rel base dir stem file expected actual diff metric_log
 
-    if [[ "${MODE}" == "generate" ]]; then
-        render_case_test "${case_file}" "${idx}" "${name}" "${BASELINE_ROOT}"
-        return
-    fi
-
-    render_case_test "${case_file}" "${idx}" "${name}" "${ACTUAL_ROOT}" || return 1
-
     rel="$(case_rel_path "${case_file}")"
     base="${rel%.scad}"
     dir="$(dirname "${base}")"
     stem="$(basename "${base}")"
+
+    if [[ "${MODE}" == "generate" ]]; then
+        if ! render_case_test "${case_file}" "${idx}" "${name}" "${BASELINE_ROOT}"; then
+            record_regression_result "ERROR" "${case_file}" "${idx}" "${name}" "render failed while generating baseline"
+            return 1
+        fi
+        return
+    fi
+
+    if ! render_case_test "${case_file}" "${idx}" "${name}" "${ACTUAL_ROOT}"; then
+        record_regression_result "ERROR" "${case_file}" "${idx}" "${name}" "render failed; see ${LOG_ROOT}/${dir}/${stem}_$(printf '%02d' "${idx}")_${name}.render.log"
+        return 1
+    fi
+
     file="${dir}/${stem}_$(printf '%02d' "${idx}")_${name}.png"
     expected="${BASELINE_ROOT}/${file}"
     actual="${ACTUAL_ROOT}/${file}"
@@ -365,11 +553,12 @@ run_regression_test() {
     metric_log="${LOG_ROOT}/${file}.compare.log"
 
     if [[ ! -f "${expected}" ]]; then
-        echo "FAIL: missing baseline ${expected}"
+        echo "$(error_label): missing baseline ${expected}"
+        record_regression_result "ERROR" "${case_file}" "${idx}" "${name}" "missing baseline ${expected}"
         return 1
     fi
 
-    compare_images "${expected}" "${actual}" "${diff}" "${metric_log}"
+    compare_images "${expected}" "${actual}" "${diff}" "${metric_log}" "${case_file}" "${idx}" "${name}"
 }
 
 shopt -s nullglob globstar
@@ -397,7 +586,8 @@ for case_file in "${case_files[@]}"; do
     fi
 
     if [[ ! -s "${tests_file}" ]]; then
-        echo "FAIL: no regression tests discovered for ${rel}"
+        echo "$(error_label): no regression tests discovered for ${rel}"
+        record_regression_result "ERROR" "${case_file}" "LIST" "list" "no regression tests discovered"
         failures=$((failures + 1))
         continue
     fi
@@ -422,9 +612,10 @@ if [[ "${failures}" -eq 0 ]]; then
     if [[ "${use_parallel}" == true ]]; then
         parallel_log="${LOG_ROOT}/parallel-${MODE}.joblog"
         rm -f "${parallel_log}"
-        export CASE_ROOT TARGET_REG_ROOT BASELINE_ROOT ACTUAL_ROOT DIFF_ROOT LOG_ROOT OPENSCAD_BIN IMG_SIZE
-        export MODE FUZZ MAX_CHANGED_PIXELS COMPARE_BIN COMPARE_STYLE
-        export -f case_rel_path render_case_test compare_images run_regression_test
+        export CASE_ROOT TARGET_REG_ROOT BASELINE_ROOT ACTUAL_ROOT DIFF_ROOT LOG_ROOT RESULT_ROOT OPENSCAD_BIN IMG_SIZE
+        export MODE FUZZ MAX_CHANGED_PIXELS COMPARE_BIN COMPARE_STYLE use_color
+        export -f color_label pass_label fail_label error_label openscad_log_has_assertion_error
+        export -f case_rel_path result_status_file record_regression_result render_case_test compare_images run_regression_test
 
         echo "Running regression ${MODE} jobs with ${PARALLEL_BIN} -j ${REGRESSION_JOBS}"
         set +e
@@ -455,11 +646,27 @@ if [[ "${failures}" -eq 0 ]]; then
     fi
 fi
 
-if [[ "${failures}" -ne 0 ]]; then
-    echo "Regression image failures: ${failures}"
+image_failures="$(result_count "FAIL")"
+execution_errors="$(result_count "ERROR")"
+total_failures=$((image_failures + execution_errors))
+status="$(aggregate_status "${image_failures}" "${execution_errors}")"
+if [[ "${total_failures}" -eq 0 && "${failures}" -ne 0 ]]; then
+    status="ERROR"
+fi
+
+print_status_banner "${status}"
+
+if [[ "${total_failures}" -ne 0 ]]; then
+    print_regression_result_summary
     echo "Actual images: ${ACTUAL_ROOT}"
     echo "Diff images: ${DIFF_ROOT}"
     print_version_drift_notice
+    exit 1
+fi
+
+if [[ "${failures}" -ne 0 ]]; then
+    echo "Regression script errors: ${failures}"
+    echo "No per-test status records were written; inspect ${LOG_ROOT}."
     exit 1
 fi
 
