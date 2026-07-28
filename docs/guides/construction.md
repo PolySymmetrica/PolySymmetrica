@@ -148,7 +148,7 @@ retro = poly_pyramid(7, 4);
 
 Runnable demo:
 
-- `src/polysymmetrica/examples/basics/main_johnsons.scad`
+- `src/examples/basics/main_johnsons.scad`
 
 Negative coverage:
 

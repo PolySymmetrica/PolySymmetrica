@@ -78,12 +78,11 @@ PolySymmetrica/
 │   │   │   ├─ tetrahedron.scad
 │   │   │   ├─ octahedron.scad
 │   │   │   └─ icosahedron.scad
-│   │   │
-│   │   └─ examples/
-│   │       ├─ basics/                 # core placement + archimedean/catalan demos
-│   │       ├─ truncation/             # trunc/rectify/cantellate/cantitruncate demos
-│   │       ├─ poly-frame/             # frame + mount experiments
-│   │       └─ printing/               # printable face/frame experiments
+│   ├─ examples/
+│   │   ├─ basics/                     # core placement + archimedean/catalan demos
+│   │   ├─ truncation/                 # trunc/rectify/cantellate/cantitruncate demos
+│   │   ├─ poly-frame/                 # frame + mount experiments
+│   │   └─ printing/                   # printable face/frame experiments
 │   └─ tests/...
 │
 └─ docs/
@@ -421,7 +420,7 @@ and read in O(1) with:
 For schema details, compile-spec format, and examples, see:
 
 - [profile.md](guides/profile.md)
-- [`src/polysymmetrica/examples/basics/main_profile.scad`](../src/polysymmetrica/examples/basics/main_profile.scad)
+- [`src/examples/basics/main_profile.scad`](../src/examples/basics/main_profile.scad)
 
 When using family-targeted overrides (`"family"` rows), keep classification context consistent (`detail`, `radius`, `include_geom`) across all stages; best practice is to classify once and reuse that object.
 
@@ -452,7 +451,7 @@ poly_attach(
 See:
 
 - [attach.md](guides/attach.md)
-- [`src/polysymmetrica/examples/basics/main_attach.scad`](../src/polysymmetrica/examples/basics/main_attach.scad)
+- [`src/examples/basics/main_attach.scad`](../src/examples/basics/main_attach.scad)
 
 ### **3.12 Validation Modes**
 

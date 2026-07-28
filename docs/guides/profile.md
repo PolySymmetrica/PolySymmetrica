@@ -140,7 +140,7 @@ This avoids family-id drift between overrides, transforms, and placement.
 
 Runnable example:
 
-- [`src/polysymmetrica/examples/basics/main_profile.scad`](../../src/polysymmetrica/examples/basics/main_profile.scad)
+- [`src/examples/basics/main_profile.scad`](../../src/examples/basics/main_profile.scad)
 
 It demonstrates:
 - `face_fid` as family-id-by-face-index

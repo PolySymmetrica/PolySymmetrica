@@ -38,7 +38,7 @@ documentation structure for the release documentation work tracked by #25.
 
 ### Examples
 
-There are currently 37 `.scad` examples under `src/polysymmetrica/examples/`.
+There are currently 37 `.scad` examples under `src/examples/`.
 They fall into these groups:
 
 | Path | Current role | Proposed role |

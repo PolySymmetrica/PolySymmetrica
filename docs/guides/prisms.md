@@ -72,7 +72,7 @@ ap4 = poly_antiprism(7, p = 4);           // retrograde heptagrammic antiprism {
 
 Example scene:
 
-- `src/polysymmetrica/examples/basics/main_prisms.scad`
+- `src/examples/basics/main_prisms.scad`
 
 Negative-test runners (expected to fail with assertions):
 
@@ -97,4 +97,4 @@ Current workaround for visual/debug output:
 
 Repro/inspection scene:
 
-- `src/polysymmetrica/examples/basics/main_star_face_render.scad`
+- `src/examples/basics/main_star_face_render.scad`

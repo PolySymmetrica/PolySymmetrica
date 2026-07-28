@@ -8,7 +8,7 @@ and move feature-specific design notes to `docs/`.
 - `src/polysymmetrica/core/`: core math, topology, placement, construction,
   segmentation, and printing helpers.
 - `src/polysymmetrica/models/`: named polyhedra and model aggregates.
-- `src/polysymmetrica/examples/`: runnable OpenSCAD examples and demos.
+- `src/examples/`: runnable OpenSCAD examples and demos.
 - `src/tests/`: OpenSCAD tests, including `src/tests/core/` and
   `src/tests/negative/`.
 - `docs/`: design notes and API explanations. Start with:
@@ -22,7 +22,7 @@ and move feature-specific design notes to `docs/`.
 ## Commands
 
 - Render an example:
-  `openscad-nightly -o /tmp/ps-preview.stl src/polysymmetrica/examples/basics/main_basics.scad`
+  `openscad-nightly -o /tmp/ps-preview.stl src/examples/basics/main_basics.scad`
 - Run full tests:
   `openscad-nightly -o /tmp/ps-tests.stl src/tests/run_all.scad`
 - Run negative tests:
