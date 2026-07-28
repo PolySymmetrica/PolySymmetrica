@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/placement.scad>
-use <../../models/platonics_all.scad>
+use <../../polysymmetrica/core/placement.scad>
+use <../../polysymmetrica/models/platonics_all.scad>
 
 // Inter-radius - sets the size of the shapes
 IR = 30;

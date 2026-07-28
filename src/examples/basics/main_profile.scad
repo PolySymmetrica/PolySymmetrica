@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/profile.scad>
+use <../../polysymmetrica/core/profile.scad>
 
 /*
 Profile basics example.

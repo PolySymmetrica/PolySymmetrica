@@ -34,7 +34,7 @@ PolySymmetrica/
         polysymmetrica/
             core/
             models/
-            examples/
+        examples/
 ```
 
 The `src/` directory is a repository layout detail, not part of the public
@@ -51,7 +51,6 @@ my-model/
     polysymmetrica/
         core/
         models/
-        examples/
 ```
 
 That can be a copied directory, a release bundle, or a symlink/submodule that
@@ -161,7 +160,7 @@ Common examples:
 ## Where To Go Next
 
 - Work through the [tutorials](tutorials/index.md) for small runnable lessons.
-- Open `src/polysymmetrica/examples/basics/main_basics.scad` for the broadest
+- Open `src/examples/basics/main_basics.scad` for the broadest
   first demo.
 - Read [prisms and antiprisms](guides/prisms.md) for prism/polygram constructors.
 - Read [construction helpers](guides/construction.md) for delete/cap/slice/attach.

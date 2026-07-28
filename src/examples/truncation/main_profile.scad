@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/funcs.scad>
-use <../../core/truncation.scad>
-use <../../models/platonics_all.scad>
+use <../../polysymmetrica/core/funcs.scad>
+use <../../polysymmetrica/core/truncation.scad>
+use <../../polysymmetrica/models/platonics_all.scad>
 use <util_demo.scad>
 
 // Showcase selective profile on tetrahedron and cube.

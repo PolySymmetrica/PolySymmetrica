@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/construction.scad>
-use <../../core/classify.scad>
-use <../../core/funcs.scad>
-use <../../core/truncation.scad>
-use <../../models/platonics_all.scad>
+use <../../polysymmetrica/core/construction.scad>
+use <../../polysymmetrica/core/classify.scad>
+use <../../polysymmetrica/core/funcs.scad>
+use <../../polysymmetrica/core/truncation.scad>
+use <../../polysymmetrica/models/platonics_all.scad>
 use <../truncation/util_demo.scad>
 
 spacing = 120;

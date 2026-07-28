@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/funcs.scad>
+use <../../polysymmetrica/core/funcs.scad>
 
 // Module: apply_polygon_sym()
 // Usage:

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/prisms.scad>
-use <../../core/truncation.scad>
-use <../../core/duals.scad>
+use <../../polysymmetrica/core/prisms.scad>
+use <../../polysymmetrica/core/truncation.scad>
+use <../../polysymmetrica/core/duals.scad>
 
 use <util_demo.scad>
 

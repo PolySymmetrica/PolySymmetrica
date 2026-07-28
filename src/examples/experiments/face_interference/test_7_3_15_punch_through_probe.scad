@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../../core/face_regions.scad>
-use <../../../core/funcs.scad>
-use <../../../core/placement.scad>
-use <../../../core/prisms.scad>
-use <../../../core/segments.scad>
-use <../../../core/render.scad>
+use <../../../polysymmetrica/core/face_regions.scad>
+use <../../../polysymmetrica/core/funcs.scad>
+use <../../../polysymmetrica/core/placement.scad>
+use <../../../polysymmetrica/core/prisms.scad>
+use <../../../polysymmetrica/core/segments.scad>
+use <../../../polysymmetrica/core/render.scad>
 
 // Dedicated self-crossing punch-through probe for poly_antiprism(7, 3, angle=15).
 // This is a developer experiment, not a printable example. It keeps the target

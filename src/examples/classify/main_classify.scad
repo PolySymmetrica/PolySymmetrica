@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/truncation.scad>
-use <../../core/classify.scad>
-use <../../core/render.scad>
-use <../../models/platonics_all.scad>
-use <../../models/archimedians_all.scad>
-use <../../models/catalans_all.scad>
+use <../../polysymmetrica/core/truncation.scad>
+use <../../polysymmetrica/core/classify.scad>
+use <../../polysymmetrica/core/render.scad>
+use <../../polysymmetrica/models/platonics_all.scad>
+use <../../polysymmetrica/models/archimedians_all.scad>
+use <../../polysymmetrica/models/catalans_all.scad>
 use <../truncation/util_demo.scad>
 
 // Classification demo: shows face/edge/vertex family counts for a few shapes.

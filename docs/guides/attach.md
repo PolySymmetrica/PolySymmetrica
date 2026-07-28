@@ -85,7 +85,7 @@ p2 = [
 q = poly_attach(hexahedron(), p2, f1=0, f2=0, scale_mode="fit_edge");
 ```
 
-See runnable demo: `src/polysymmetrica/examples/basics/main_attach.scad`
+See runnable demo: `src/examples/basics/main_attach.scad`
 
 ## Notes
 

@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/funcs.scad>
-use <../../core/placement.scad>
-use <../../core/prisms.scad>
-use <../../core/segments.scad>
-use <../../core/render.scad>
-use <../../core/truncation.scad>
-use <../../models/dodecahedron.scad>
-use <../../models/tetrahedron.scad>
+use <../../polysymmetrica/core/funcs.scad>
+use <../../polysymmetrica/core/placement.scad>
+use <../../polysymmetrica/core/prisms.scad>
+use <../../polysymmetrica/core/segments.scad>
+use <../../polysymmetrica/core/render.scad>
+use <../../polysymmetrica/core/truncation.scad>
+use <../../polysymmetrica/models/dodecahedron.scad>
+use <../../polysymmetrica/models/tetrahedron.scad>
 
 // Boundary-model demo surface.
 // Shows the reconstructed filled boundary loops/spans for:

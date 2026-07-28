@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/truncation.scad>
-use <../../core/profile.scad>
-use <../../core/duals.scad>
-use <../../core/render.scad>
-use <../../models/platonics_all.scad>
+use <../../polysymmetrica/core/truncation.scad>
+use <../../polysymmetrica/core/profile.scad>
+use <../../polysymmetrica/core/duals.scad>
+use <../../polysymmetrica/core/render.scad>
+use <../../polysymmetrica/models/platonics_all.scad>
 use <../truncation/util_demo.scad>
 
 // Quick snub demo (snub cube + snub dodecahedron).

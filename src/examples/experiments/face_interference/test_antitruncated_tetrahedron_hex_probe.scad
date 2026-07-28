@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../../core/face_regions.scad>
-use <../../../core/funcs.scad>
-use <../../../core/placement.scad>
-use <../../../core/segments.scad>
-use <../../../core/truncation.scad>
-use <../../../core/render.scad>
-use <../../../models/tetrahedron.scad>
+use <../../../polysymmetrica/core/face_regions.scad>
+use <../../../polysymmetrica/core/funcs.scad>
+use <../../../polysymmetrica/core/placement.scad>
+use <../../../polysymmetrica/core/segments.scad>
+use <../../../polysymmetrica/core/truncation.scad>
+use <../../../polysymmetrica/core/render.scad>
+use <../../../polysymmetrica/models/tetrahedron.scad>
 
 // Canonical self-crossing stress case for the antitruncated tetrahedron.
 // The selected hex face has short end spans and long crossing spans whose

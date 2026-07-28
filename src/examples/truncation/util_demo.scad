@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/funcs.scad>
-use <../../core/placement.scad>
-use <../../core/duals.scad>
-use <../../core/render.scad>
-use <../../core/segments.scad>
+use <../../polysymmetrica/core/funcs.scad>
+use <../../polysymmetrica/core/placement.scad>
+use <../../polysymmetrica/core/duals.scad>
+use <../../polysymmetrica/core/render.scad>
+use <../../polysymmetrica/core/segments.scad>
 
 IR = 30;
 T = 0.01;

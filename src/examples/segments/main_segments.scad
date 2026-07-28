@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/funcs.scad>
-use <../../core/placement.scad>
-use <../../core/prisms.scad>
-use <../../core/segments.scad>
+use <../../polysymmetrica/core/funcs.scad>
+use <../../polysymmetrica/core/placement.scad>
+use <../../polysymmetrica/core/prisms.scad>
+use <../../polysymmetrica/core/segments.scad>
 
 // Segments demo surface.
 // Shows the main face-local segment-analysis modules on one star antiprism:

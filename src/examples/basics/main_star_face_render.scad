@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/prisms.scad>
-use <../../core/render.scad>
-use <../../core/placement.scad>
-use <../../core/segments.scad>
-use <../../core/funcs.scad>
+use <../../polysymmetrica/core/prisms.scad>
+use <../../polysymmetrica/core/render.scad>
+use <../../polysymmetrica/core/placement.scad>
+use <../../polysymmetrica/core/segments.scad>
+use <../../polysymmetrica/core/funcs.scad>
 use <../truncation/util_demo.scad>
 
 // Focused repro/inspection scene for star-faced rendering behavior.

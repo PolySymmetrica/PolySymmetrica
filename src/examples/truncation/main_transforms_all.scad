@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/truncation.scad>
-use <../../core/solvers.scad>
+use <../../polysymmetrica/core/truncation.scad>
+use <../../polysymmetrica/core/solvers.scad>
 
-use <../../models/platonics_all.scad>
-use <../../models/archimedians_all.scad>
+use <../../polysymmetrica/models/platonics_all.scad>
+use <../../polysymmetrica/models/archimedians_all.scad>
 
 use <util_demo.scad>
 

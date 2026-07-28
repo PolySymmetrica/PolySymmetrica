@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/face_regions.scad>
-use <../../core/funcs.scad>
-use <../../core/loop_shells.scad>
-use <../../core/placement.scad>
-use <../../core/prisms.scad>
-use <../../core/segments.scad>
-use <../../core/truncation.scad>
-use <../../models/platonics_all.scad>
+use <../../polysymmetrica/core/face_regions.scad>
+use <../../polysymmetrica/core/funcs.scad>
+use <../../polysymmetrica/core/loop_shells.scad>
+use <../../polysymmetrica/core/placement.scad>
+use <../../polysymmetrica/core/prisms.scad>
+use <../../polysymmetrica/core/segments.scad>
+use <../../polysymmetrica/core/truncation.scad>
+use <../../polysymmetrica/models/platonics_all.scad>
 
 // Face anti-interference volume demo.
 // Shows the positive face-local shell built from filled boundary spans for:

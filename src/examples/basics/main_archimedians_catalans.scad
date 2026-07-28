@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/render.scad>
-use <../../models/archimedians_all.scad>
-use <../../models/catalans_all.scad>
+use <../../polysymmetrica/core/render.scad>
+use <../../polysymmetrica/models/archimedians_all.scad>
+use <../../polysymmetrica/models/catalans_all.scad>
 use <../truncation/util_demo.scad>
 
 // Archimedean + combo + Catalan display

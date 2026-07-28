@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/placement.scad>
-use <../../models/tetrahedron.scad>
-use <../../models/octahedron.scad>
-use <../../models/icosahedron.scad>
+use <../../polysymmetrica/core/placement.scad>
+use <../../polysymmetrica/models/tetrahedron.scad>
+use <../../polysymmetrica/models/octahedron.scad>
+use <../../polysymmetrica/models/icosahedron.scad>
 
-use <../../core/duals.scad>
-use <../../core/truncation.scad>
+use <../../polysymmetrica/core/duals.scad>
+use <../../polysymmetrica/core/truncation.scad>
 
 //// examples in README / dev-guide
 

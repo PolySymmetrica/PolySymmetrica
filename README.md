@@ -115,17 +115,17 @@ specialized face-region and proxy-interaction workflows.
 
 Start here:
 
-- `src/polysymmetrica/examples/basics/main_basics.scad`
-- `src/polysymmetrica/examples/basics/main_prisms.scad`
-- `src/polysymmetrica/examples/basics/main_attach.scad`
-- `src/polysymmetrica/examples/truncation/main_transforms_all.scad`
-- `src/polysymmetrica/examples/classify/main_classify.scad`
+- `src/examples/basics/main_basics.scad`
+- `src/examples/basics/main_prisms.scad`
+- `src/examples/basics/main_attach.scad`
+- `src/examples/truncation/main_transforms_all.scad`
+- `src/examples/classify/main_classify.scad`
 
 More advanced demos live under:
 
-- `src/polysymmetrica/examples/segments/`
-- `src/polysymmetrica/examples/printing/`
-- `src/polysymmetrica/examples/poly-frame/`
+- `src/examples/segments/`
+- `src/examples/printing/`
+- `src/examples/poly-frame/`
 
 ## Documentation
 

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/placement.scad>
-use <../../models/platonics_all.scad>
+use <../../polysymmetrica/core/placement.scad>
+use <../../polysymmetrica/models/platonics_all.scad>
 
 
 // Demonstrates the place_on_faces(), place_on_vertices(), place_on_edges() modules for the five regular polyhedra.

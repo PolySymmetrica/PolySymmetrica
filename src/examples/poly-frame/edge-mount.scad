@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/funcs.scad>
+use <../../polysymmetrica/core/funcs.scad>
 use <polygon-sym.scad>
 
 // Tools and examples for building various face styles

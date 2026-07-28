@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/truncation.scad>
-use <../../core/solvers.scad>
-use <../../core/render.scad>
-use <../../models/platonics_all.scad>
+use <../../polysymmetrica/core/truncation.scad>
+use <../../polysymmetrica/core/solvers.scad>
+use <../../polysymmetrica/core/render.scad>
+use <../../polysymmetrica/models/platonics_all.scad>
 use <util_demo.scad>
 
 // Cantitruncate with per-face-family c values (dominant family).

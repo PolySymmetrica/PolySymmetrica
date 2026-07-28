@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/render.scad>
-use <../../models/archimedians_all.scad>
+use <../../polysymmetrica/core/render.scad>
+use <../../polysymmetrica/models/archimedians_all.scad>
 use <../truncation/util_demo.scad>
 
 // Render all Archimedean solids.

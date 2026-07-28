@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../models/platonics_all.scad>
+use <../../polysymmetrica/models/platonics_all.scad>
 use <edge-mount.scad>
 
 

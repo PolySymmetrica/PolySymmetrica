@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../core/construction.scad>
-use <../../core/render.scad>
-use <../../models/johnsons_all.scad>
+use <../../polysymmetrica/core/construction.scad>
+use <../../polysymmetrica/core/render.scad>
+use <../../polysymmetrica/models/johnsons_all.scad>
 use <../truncation/util_demo.scad>
 
 // Johnson previews and direct construction examples.
