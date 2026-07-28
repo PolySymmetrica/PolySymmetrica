@@ -63,7 +63,7 @@ function _tm_star_fan_pyramid() =
     poly_make(verts, concat(side_faces, [base_face]), 1);
 
 if (REG_LIST) {
-    reg_list_tests(TESTS);
+    reg_list_tests(TESTS, render_args = REG_RENDER_ARGS_POLY_SINGLE);
 } else {
     spec = TESTS[T];
     reg_poly_preview(spec[1](), ir = 28, show_face_ids = true);

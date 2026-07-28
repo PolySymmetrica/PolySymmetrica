@@ -70,7 +70,7 @@ module render_scene(poly) {
 }
 
 if (REG_LIST) {
-    reg_list_tests(TESTS);
+    reg_list_tests(TESTS, render_args = REG_RENDER_ARGS_POLY_SINGLE);
 } else {
     render_scene(P);
 }

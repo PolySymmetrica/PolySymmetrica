@@ -330,7 +330,7 @@ module _render_test(spec) {
 }
 
 if (REG_LIST) {
-    reg_list_tests(TESTS);
+    reg_list_tests(TESTS, render_args = REG_RENDER_ARGS_POLY_SINGLE);
 } else {
     _render_test(TESTS[T]);
 }

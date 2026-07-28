@@ -111,7 +111,7 @@ REG_LIST = is_undef(REG_LIST) ? false : REG_LIST;
 assert(T >= 0 && T < T_MAX, str("T out of range: ", T));
 
 if (REG_LIST) {
-    reg_list_tests(TESTS);
+    reg_list_tests(TESTS, render_args = REG_RENDER_ARGS_POLY_SINGLE);
 } else {
     spec = TESTS[T];
     reg_poly_preview(spec[1](), ir = 28, show_face_ids = true);

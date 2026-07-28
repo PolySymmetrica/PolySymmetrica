@@ -100,7 +100,7 @@ module _volume_panel(poly, face_idx, label_s, boundary_inset = 0) {
 }
 
 if (REG_LIST) {
-    reg_list_tests(TESTS);
+    reg_list_tests(TESTS, render_args = REG_RENDER_ARGS_POLY_SINGLE);
 } else {
     spec = TESTS[T];
     _volume_panel(spec[1](), spec[2], spec[0], boundary_inset = spec[3]);
