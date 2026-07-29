@@ -436,9 +436,13 @@ function _ps_fr_span_end_source_vertex_idx(site, face, eps=1e-8) =
         source_edge_idx = ps_boundary_span_site_source_edge_idx(site),
         source_t1 = ps_boundary_span_site_source_t1(site)
     )
-    (is_undef(source_edge_idx) || source_edge_idx < 0 || source_edge_idx >= len(face) || source_t1 < 1 - eps)
+    (is_undef(source_edge_idx) || source_edge_idx < 0 || source_edge_idx >= len(face))
         ? undef
-        : face[(source_edge_idx + 1) % len(face)];
+        : (abs(source_t1 - 1) <= eps)
+            ? face[(source_edge_idx + 1) % len(face)]
+            : (abs(source_t1) <= eps)
+                ? face[source_edge_idx]
+                : undef;
 
 function _ps_fr_vertex_raw_cap_points(poly_verts_local, vertex_idx, neighbors_idx, inset, eps=1e-8) =
     let(vertex_pt = poly_verts_local[vertex_idx])

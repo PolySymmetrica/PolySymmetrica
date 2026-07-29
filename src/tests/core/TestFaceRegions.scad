@@ -119,6 +119,17 @@ module test_ps_face_region_loop_shells__cubocta_high_valence_vertex_clips_triang
     assert(_test_shell_caps_are_simple(shells1[0]), "cubocta clipped triangle caps should be simple");
 }
 
+module test_ps_face_region_span_end_source_vertex_idx__recognizes_reversed_endpoint() {
+    face = [10, 11, 12, 13];
+    forward_site = [0, undef, 0, undef, 0, 2, 0, 1];
+    reversed_site = [0, undef, 0, undef, 0, 2, 1, 0];
+    partial_site = [0, undef, 0, undef, 0, 2, 0.25, 0.75];
+
+    assert_int_eq(_ps_fr_span_end_source_vertex_idx(forward_site, face), 13, "forward source edge endpoint should map to face[i+1]");
+    assert_int_eq(_ps_fr_span_end_source_vertex_idx(reversed_site, face), 12, "reversed source edge endpoint should map to face[i]");
+    assert(is_undef(_ps_fr_span_end_source_vertex_idx(partial_site, face)), "partial source edge endpoint should not map to a source vertex");
+}
+
 module test_ps_face_region_loop_shells__site_context_matches_raw_context_builder() {
     p = hexahedron();
     site = _test_face_site(p, 0);
@@ -285,6 +296,7 @@ module run_TestFaceRegions() {
     test_ps_loop_shell_describe_str__summary();
     test_ps_face_region_loop_shells__boundary_inset_shrinks_shell();
     test_ps_face_region_loop_shells__cubocta_high_valence_vertex_clips_triangle_corners();
+    test_ps_face_region_span_end_source_vertex_idx__recognizes_reversed_endpoint();
     test_ps_face_region_loop_shells__site_context_matches_raw_context_builder();
     test_ps_face_region_loop_shells__side_inset_compensates_face_offset();
     test_ps_face_region_loop_shells__matches_boundary_loop_count();
