@@ -384,7 +384,10 @@ function _ps_vertex_figure_cut_plane(vertex_pt, raw_pts, cap_mode, poly_center, 
 
 function _ps_vertex_figure_plane_point_on_ray(vertex_pt, neighbor_pt, plane, eps) =
     let(
-        dir = neighbor_pt - vertex_pt,
+        dir_raw = neighbor_pt - vertex_pt,
+        dir_len = norm(dir_raw),
+        _dir_ok = assert(dir_len > eps, "ps_vertex_figure_points: cannot derive incident edge ray"),
+        dir = dir_raw / dir_len,
         n = plane[0],
         d = plane[1],
         denom = v_dot(n, dir),

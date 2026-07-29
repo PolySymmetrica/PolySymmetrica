@@ -136,6 +136,27 @@ module test_ps_vertex_figure_points_from_raw__matches_neighbor_helper_raw_loop()
     assert(_points_max_diff(pts1, pts2) <= EPS, str("raw helper should match neighbor helper for raw edge-fraction loop pts1=", pts1, " pts2=", pts2));
 }
 
+module test_ps_vertex_figure_points_from_neighbors__small_t_parallel_check_uses_ray_angle() {
+    vertex_pt = [1, 0, 0];
+    neighbor_pts = [[2, 0.1, 0], [2, -0.1, 0], [2, 0, 0.1]];
+    t = 1e-9;
+    pts = ps_vertex_figure_points_from_neighbors(
+        vertex_pt,
+        neighbor_pts,
+        t,
+        cap_mode = "poly_centroidal",
+        poly_center = [0, 0, 0]
+    );
+    lambdas = [
+        for (i = [0:1:len(pts)-1])
+            _ray_lambda(vertex_pt, neighbor_pts[i], pts[i])
+    ];
+
+    assert_int_eq(len(pts), len(neighbor_pts), "small-t vertex figure point count");
+    assert(min(lambdas) > 0, str("small-t realized points should remain on incident rays lambdas=", lambdas, " pts=", pts));
+    assert(max(lambdas) < 2e-9, str("small-t realized points should stay near the requested cut lambdas=", lambdas, " pts=", pts));
+}
+
 module run_TestVertex() {
     test_ps_vertex_figure_cap_modes__recognizes_supported_modes();
     test_ps_vertex_figure_points__edge_fraction_matches_raw_edge_points();
@@ -144,6 +165,7 @@ module run_TestVertex() {
     test_ps_vertex_figure_points__anti_trunc_points_are_on_opposite_rays();
     test_ps_vertex_figure_points__local_matches_neighbor_helper();
     test_ps_vertex_figure_points_from_raw__matches_neighbor_helper_raw_loop();
+    test_ps_vertex_figure_points_from_neighbors__small_t_parallel_check_uses_ray_angle();
 }
 
 run_TestVertex();
