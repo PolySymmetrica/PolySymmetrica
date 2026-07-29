@@ -487,14 +487,14 @@ module test_ps_vertex_sites__open_construction_outputs_remain_placeable() {
 
         for (site = sites) {
             vi = ps_vertex_site_idx(site);
-            expected = !_ps_vertex_site_has_closed_fan(faces, edges, edge_faces, vi)
+            expected = !_ps_vertex_has_closed_fan(faces, edges, edge_faces, vi)
                 ? _ps_vertex_site_neighbors_idx(edges, vi)
                 : ps_vertex_fan_neighbors_idx(ps_vertex_fan(p, vi, edges, edge_faces));
             assert(
                 ps_vertex_site_neighbors_idx(site) == expected,
                 str("open vertex site neighbor order mismatch vi=", vi, " got=", ps_vertex_site_neighbors_idx(site), " expected=", expected)
             );
-            if (!_ps_vertex_site_has_closed_fan(faces, edges, edge_faces, vi))
+            if (!_ps_vertex_has_closed_fan(faces, edges, edge_faces, vi))
                 assert(is_undef(ps_vertex_site_vertex_figure(site)), str("open boundary vertex should not expose a vertex figure vi=", vi));
         }
     }
@@ -509,7 +509,7 @@ module test_ps_vertex_sites__hypertruncated_dodecahedron_t1_singular_vertices_re
     sites = ps_vertex_sites(p);
     singular_vertices = [
         for (vi = [0:1:len(verts)-1])
-            if (!_ps_vertex_site_has_closed_fan(faces, edges, edge_faces, vi))
+            if (!_ps_vertex_has_closed_fan(faces, edges, edge_faces, vi))
                 vi
     ];
 
@@ -540,7 +540,7 @@ module test_ps_vertex_site_from_local_poly__pinched_vertex_uses_edge_scan_order(
     site = _ps_vertex_site_from_local_poly(0, faces, verts);
     expected = _ps_vertex_site_neighbors_idx(edges, 0);
 
-    assert(!_ps_vertex_site_has_closed_fan(faces, edges, edge_faces, 0), "pinched vertex should not be classified as a simple closed fan");
+    assert(!_ps_vertex_has_closed_fan(faces, edges, edge_faces, 0), "pinched vertex should not be classified as a simple closed fan");
     assert(
         ps_vertex_site_neighbors_idx(site) == expected,
         str("pinched local vertex site should use edge-scan order got=", ps_vertex_site_neighbors_idx(site), " expected=", expected)

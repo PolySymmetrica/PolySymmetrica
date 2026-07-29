@@ -11,6 +11,7 @@ use <../../polysymmetrica/core/placement.scad>
 use <../../polysymmetrica/core/prisms.scad>
 use <../../polysymmetrica/core/segments.scad>
 use <../../polysymmetrica/core/truncation.scad>
+use <../../polysymmetrica/core/construction.scad>
 use <../../polysymmetrica/models/archimedians_all.scad>
 use <../../polysymmetrica/models/platonics_all.scad>
 use <../../polysymmetrica/models/tetrahedron.scad>
@@ -128,6 +129,17 @@ module test_ps_face_region_span_end_source_vertex_idx__recognizes_reversed_endpo
     assert_int_eq(_ps_fr_span_end_source_vertex_idx(forward_site, face), 13, "forward source edge endpoint should map to face[i+1]");
     assert_int_eq(_ps_fr_span_end_source_vertex_idx(reversed_site, face), 12, "reversed source edge endpoint should map to face[i]");
     assert(is_undef(_ps_fr_span_end_source_vertex_idx(partial_site, face)), "partial source edge endpoint should not map to a source vertex");
+}
+
+module test_ps_face_region_loop_shells__open_boundary_vertex_skips_fan_clip() {
+    p = poly_delete_faces(hexahedron(), 0, cap=false, cleanup=false);
+    site = _test_face_site(p, 0);
+    face_ctx = ps_face_site_face_local_context(site);
+    shells = ps_face_region_loop_shells(face_ctx, -0.05, 0.05, boundary_inset = 0.05);
+
+    assert_int_eq(len(shells), 1, "open cube face should still produce an inset shell");
+    assert_int_eq(len(ps_loop_shell_bottom_loop2d(shells[0])), 4, "open boundary vertices should not add vertex-fan clip sides");
+    assert(_test_shell_caps_are_simple(shells[0]), "open cube inset shell caps should be simple");
 }
 
 module test_ps_face_region_loop_shells__site_context_matches_raw_context_builder() {
@@ -297,6 +309,7 @@ module run_TestFaceRegions() {
     test_ps_face_region_loop_shells__boundary_inset_shrinks_shell();
     test_ps_face_region_loop_shells__cubocta_high_valence_vertex_clips_triangle_corners();
     test_ps_face_region_span_end_source_vertex_idx__recognizes_reversed_endpoint();
+    test_ps_face_region_loop_shells__open_boundary_vertex_skips_fan_clip();
     test_ps_face_region_loop_shells__site_context_matches_raw_context_builder();
     test_ps_face_region_loop_shells__side_inset_compensates_face_offset();
     test_ps_face_region_loop_shells__matches_boundary_loop_count();
@@ -309,3 +322,5 @@ module run_TestFaceRegions() {
 }
 
 run_TestFaceRegions();
+
+cube([0.01, 0.01, 0.01], center = true);

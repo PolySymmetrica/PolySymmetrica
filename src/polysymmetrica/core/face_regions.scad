@@ -460,13 +460,14 @@ function _ps_fr_vertex_clip_line(poly_faces_idx, poly_verts_local, edges, edge_f
     (is_undef(vertex_idx) || boundary_inset <= eps) ? undef :
     let(
         poly_local = [poly_verts_local, poly_faces_idx, 1],
-        fig = ps_vertex_figure(poly_local, vertex_idx, edges, edge_faces),
-        faces_idx = ps_vertex_figure_faces_idx(fig),
-        neighbors_idx = ps_vertex_figure_neighbors_idx(fig),
+        closed_fan = _ps_vertex_has_closed_fan(poly_faces_idx, edges, edge_faces, vertex_idx),
+        fig = closed_fan ? ps_vertex_figure(poly_local, vertex_idx, edges, edge_faces) : undef,
+        faces_idx = closed_fan ? ps_vertex_figure_faces_idx(fig) : [],
+        neighbors_idx = closed_fan ? ps_vertex_figure_neighbors_idx(fig) : [],
         valence = len(neighbors_idx),
         face_pos = _ps_index_of(faces_idx, face_idx)
     )
-    (valence <= 3 || face_pos < 0) ? undef :
+    (!closed_fan || valence <= 3 || face_pos < 0) ? undef :
     let(
         vertex_pt = poly_verts_local[vertex_idx],
         raw_pts = _ps_fr_vertex_raw_cap_points(poly_verts_local, vertex_idx, neighbors_idx, boundary_inset, eps),
