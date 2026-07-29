@@ -393,6 +393,45 @@ function _ps_vertex_figure_plane_point_on_ray(vertex_pt, neighbor_pt, plane, eps
     )
     vertex_pt + lambda * dir;
 
+// Function: ps_vertex_figure_points_from_raw()
+// Usage:
+//   result = ps_vertex_figure_points_from_raw(vertex_pt, raw_pts, cap_mode,
+//       poly_center, eps);
+// Description:
+//   Realize a vertex figure from already-positioned raw cap points.
+//   .
+//   `edge_fraction` returns `raw_pts` unchanged. Other modes derive a cap plane
+//   from `raw_pts`, then intersect that plane with the rays from `vertex_pt`
+//   through each raw point. This is the shared realization layer used by
+//   edge-fraction vertex figures and callers that already have metric candidate
+//   points.
+//   .
+//   - Returns: ordered 3D cap points
+// Arguments:
+//   vertex_pt = source vertex point
+//   raw_pts = cyclic candidate cap points on rays from `vertex_pt`
+//   cap_mode = cap realization mode
+//   poly_center = source poly centroid for `poly_centroidal`; defaults to `[0,0,0]`
+//   eps = geometric tolerance
+function ps_vertex_figure_points_from_raw(
+    vertex_pt,
+    raw_pts,
+    cap_mode="planar_edge_fraction",
+    poly_center=undef,
+    eps=1e-8
+) =
+    let(
+        _mode_ok = _ps_vertex_figure_cap_mode_ok(cap_mode),
+        center = is_undef(poly_center) ? [0, 0, 0] : poly_center
+    )
+    (cap_mode == "edge_fraction")
+        ? raw_pts
+        : let(plane = _ps_vertex_figure_cut_plane(vertex_pt, raw_pts, cap_mode, center, eps))
+            [
+                for (p = raw_pts)
+                    _ps_vertex_figure_plane_point_on_ray(vertex_pt, p, plane, eps)
+            ];
+
 // Function: ps_vertex_figure_points_from_neighbors()
 // Usage:
 //   result = ps_vertex_figure_points_from_neighbors(vertex_pt, neighbor_pts, t,
@@ -425,17 +464,11 @@ function ps_vertex_figure_points_from_neighbors(
 ) =
     let(
         _t_ok = assert(!is_undef(t), "ps_vertex_figure_points_from_neighbors: t is required"),
-        _mode_ok = _ps_vertex_figure_cap_mode_ok(cap_mode),
-        raw_pts = _ps_vertex_figure_raw_points(vertex_pt, neighbor_pts, t),
-        center = is_undef(poly_center) ? [0, 0, 0] : poly_center
+        raw_pts = _ps_vertex_figure_raw_points(vertex_pt, neighbor_pts, t)
     )
-    (abs(t) <= eps || cap_mode == "edge_fraction")
+    (abs(t) <= eps)
         ? raw_pts
-        : let(plane = _ps_vertex_figure_cut_plane(vertex_pt, raw_pts, cap_mode, center, eps))
-            [
-                for (p = neighbor_pts)
-                    _ps_vertex_figure_plane_point_on_ray(vertex_pt, p, plane, eps)
-            ];
+        : ps_vertex_figure_points_from_raw(vertex_pt, raw_pts, cap_mode, poly_center, eps);
 
 // Function: ps_vertex_figure_points_local()
 // Usage:

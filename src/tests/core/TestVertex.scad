@@ -125,6 +125,17 @@ module test_ps_vertex_figure_points__local_matches_neighbor_helper() {
     assert(_points_max_diff(pts1, pts2) <= EPS, str("local helper should match neighbor helper pts1=", pts1, " pts2=", pts2));
 }
 
+module test_ps_vertex_figure_points_from_raw__matches_neighbor_helper_raw_loop() {
+    vertex_pt = [0.2, -0.1, 0.3];
+    neighbor_pts = [[1.2, 0.0, 0.1], [0.4, 1.1, 0.7], [-0.8, 0.2, -0.2], [0.0, -1.0, 0.6]];
+    raw_pts = [for (p = neighbor_pts) vertex_pt + 0.31 * (p - vertex_pt)];
+    poly_center = [-0.4, 0.2, -1.1];
+    pts1 = ps_vertex_figure_points_from_raw(vertex_pt, raw_pts, "planar_edge_fraction", poly_center);
+    pts2 = ps_vertex_figure_points_from_neighbors(vertex_pt, neighbor_pts, 0.31, "planar_edge_fraction", poly_center);
+
+    assert(_points_max_diff(pts1, pts2) <= EPS, str("raw helper should match neighbor helper for raw edge-fraction loop pts1=", pts1, " pts2=", pts2));
+}
+
 module run_TestVertex() {
     test_ps_vertex_figure_cap_modes__recognizes_supported_modes();
     test_ps_vertex_figure_points__edge_fraction_matches_raw_edge_points();
@@ -132,6 +143,7 @@ module run_TestVertex() {
     test_ps_vertex_figure_points__edge_fraction_preserves_skew_irregular_valence4();
     test_ps_vertex_figure_points__anti_trunc_points_are_on_opposite_rays();
     test_ps_vertex_figure_points__local_matches_neighbor_helper();
+    test_ps_vertex_figure_points_from_raw__matches_neighbor_helper_raw_loop();
 }
 
 run_TestVertex();

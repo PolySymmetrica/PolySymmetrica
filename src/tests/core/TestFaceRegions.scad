@@ -11,6 +11,7 @@ use <../../polysymmetrica/core/placement.scad>
 use <../../polysymmetrica/core/prisms.scad>
 use <../../polysymmetrica/core/segments.scad>
 use <../../polysymmetrica/core/truncation.scad>
+use <../../polysymmetrica/models/archimedians_all.scad>
 use <../../polysymmetrica/models/platonics_all.scad>
 use <../../polysymmetrica/models/tetrahedron.scad>
 
@@ -59,6 +60,10 @@ function _test_shell_caps_are_simple(shell, eps=EPS) =
     len(_test_loop_self_hits(ps_loop_shell_bottom_loop2d(shell), eps)) == 0
         && len(_test_loop_self_hits(ps_loop_shell_top_loop2d(shell), eps)) == 0;
 
+function _test_first_face_idx_by_n(poly, n, i=0) =
+    (i >= len(poly_faces(poly))) ? undef :
+    (len(poly_faces(poly)[i]) == n) ? i : _test_first_face_idx_by_n(poly, n, i + 1);
+
 module test_ps_face_region_loop_shells__cube_face_single_quad_shell() {
     p = hexahedron();
     site = _test_face_site(p, 0);
@@ -97,6 +102,21 @@ module test_ps_face_region_loop_shells__boundary_inset_shrinks_shell() {
     assert(abs(_ps_seg_poly_area2(ps_loop_shell_bottom_loop2d(shells1[0]))) < abs(_ps_seg_poly_area2(ps_loop_shell_bottom_loop2d(shells0[0]))), "boundary inset should shrink z0 cap");
     assert(abs(_ps_seg_poly_area2(ps_loop_shell_top_loop2d(shells1[0]))) < abs(_ps_seg_poly_area2(ps_loop_shell_top_loop2d(shells0[0]))), "boundary inset should shrink z1 cap");
     assert_int_eq(len(ps_loop_shell_top_loop2d(shells1[0])), 4, "top loop accessor should expose inset cap loop");
+}
+
+module test_ps_face_region_loop_shells__cubocta_high_valence_vertex_clips_triangle_corners() {
+    p = cuboctahedron();
+    face_idx = _test_first_face_idx_by_n(p, 3);
+    site = _test_face_site(p, face_idx);
+    face_ctx = ps_face_site_face_local_context(site);
+    shells0 = ps_face_region_loop_shells(face_ctx, -0.05, 0.05, boundary_inset = 0);
+    shells1 = ps_face_region_loop_shells(face_ctx, -0.05, 0.05, boundary_inset = 0.05);
+
+    assert_int_eq(len(shells0), 1, "cubocta triangle should produce one base shell");
+    assert_int_eq(len(shells1), 1, "cubocta triangle should produce one clipped shell");
+    assert_int_eq(len(ps_loop_shell_bottom_loop2d(shells0[0])), 3, "unclipped cubocta triangle should have three cap vertices");
+    assert_int_eq(len(ps_loop_shell_bottom_loop2d(shells1[0])), 6, "high-valence vertex clips should add one side at each triangle corner");
+    assert(_test_shell_caps_are_simple(shells1[0]), "cubocta clipped triangle caps should be simple");
 }
 
 module test_ps_face_region_loop_shells__site_context_matches_raw_context_builder() {
@@ -264,6 +284,7 @@ module run_TestFaceRegions() {
     test_ps_face_region_loop_shells__cube_face_single_quad_shell();
     test_ps_loop_shell_describe_str__summary();
     test_ps_face_region_loop_shells__boundary_inset_shrinks_shell();
+    test_ps_face_region_loop_shells__cubocta_high_valence_vertex_clips_triangle_corners();
     test_ps_face_region_loop_shells__site_context_matches_raw_context_builder();
     test_ps_face_region_loop_shells__side_inset_compensates_face_offset();
     test_ps_face_region_loop_shells__matches_boundary_loop_count();

@@ -13,6 +13,7 @@
 use <funcs.scad>
 use <loop_shells.scad>
 use <segments.scad>
+use <vertex.scad>
 
 // Function: _ps_fr_orient2()
 // Usage:
@@ -430,6 +431,91 @@ function _ps_fr_project_span_line(face_pts3d_local, site, z, input_sign, cell_wi
         ps_boundary_span_site_source_edge_idx(site)
     ];
 
+function _ps_fr_span_end_source_vertex_idx(site, face, eps=1e-8) =
+    let(
+        source_edge_idx = ps_boundary_span_site_source_edge_idx(site),
+        source_t1 = ps_boundary_span_site_source_t1(site)
+    )
+    (is_undef(source_edge_idx) || source_edge_idx < 0 || source_edge_idx >= len(face) || source_t1 < 1 - eps)
+        ? undef
+        : face[(source_edge_idx + 1) % len(face)];
+
+function _ps_fr_vertex_raw_cap_points(poly_verts_local, vertex_idx, neighbors_idx, inset, eps=1e-8) =
+    let(vertex_pt = poly_verts_local[vertex_idx])
+    [
+        for (ni = neighbors_idx)
+            let(
+                dir = poly_verts_local[ni] - vertex_pt,
+                len_dir = norm(dir),
+                _len = assert(len_dir > eps, str("ps_face_region_loop_shells: zero-length vertex fan edge at vertex ", vertex_idx))
+            )
+            vertex_pt + dir / len_dir * inset
+    ];
+
+function _ps_fr_vertex_clip_line(poly_faces_idx, poly_verts_local, edges, edge_faces, face_idx, vertex_idx, prev_span_line, next_span_line, boundary_inset=0, eps=1e-8) =
+    (is_undef(vertex_idx) || boundary_inset <= eps) ? undef :
+    let(
+        poly_local = [poly_verts_local, poly_faces_idx, 1],
+        fig = ps_vertex_figure(poly_local, vertex_idx, edges, edge_faces),
+        faces_idx = ps_vertex_figure_faces_idx(fig),
+        neighbors_idx = ps_vertex_figure_neighbors_idx(fig),
+        valence = len(neighbors_idx),
+        face_pos = _ps_index_of(faces_idx, face_idx)
+    )
+    (valence <= 3 || face_pos < 0) ? undef :
+    let(
+        vertex_pt = poly_verts_local[vertex_idx],
+        raw_pts = _ps_fr_vertex_raw_cap_points(poly_verts_local, vertex_idx, neighbors_idx, boundary_inset, eps),
+        cap_pts = ps_vertex_figure_points_from_raw(
+            vertex_pt,
+            raw_pts,
+            "planar_edge_fraction",
+            v_sum(poly_verts_local) / len(poly_verts_local),
+            eps
+        ),
+        prev_i = (face_pos - 1 + valence) % valence,
+        next_i = face_pos,
+        p0 = ps_xy([cap_pts[prev_i]])[0],
+        p1 = ps_xy([cap_pts[next_i]])[0],
+        dir = p1 - p0,
+        len_dir = norm(dir),
+        miter = _ps_fr_line_intersection(prev_span_line, next_span_line, eps),
+        vertex2d = ps_xy([vertex_pt])[0],
+        inset_vec = is_undef(miter) ? undef : miter - vertex2d,
+        inset_len = is_undef(inset_vec) ? 0 : norm(inset_vec),
+        line_point = (inset_len <= eps)
+            ? p0
+            : miter + inset_vec / inset_len * boundary_inset
+    )
+    (len_dir <= eps) ? undef :
+    [
+        line_point,
+        dir / len_dir,
+        false,
+        str("vertex:", vertex_idx)
+    ];
+
+function _ps_fr_projected_lines_with_vertex_clips(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z, input_sign, cell_winding_signs, max_project=undef, boundary_inset=0, boundary_inset_mode="side", eps=1e-8) =
+    let(
+        face = poly_faces_idx[face_idx],
+        span_lines = [
+            for (site = loop_sites)
+                _ps_fr_project_span_line(face_pts3d_local, site, z, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps)
+        ],
+        n = len(loop_sites)
+    )
+    [
+        for (i = [0:1:n-1])
+            let(
+                site = loop_sites[i],
+                span_line = span_lines[i],
+                vertex_idx = _ps_fr_span_end_source_vertex_idx(site, face, eps),
+                next_span_line = span_lines[(i + 1) % n],
+                vertex_line = _ps_fr_vertex_clip_line(poly_faces_idx, poly_verts_local, edges, edge_faces, face_idx, vertex_idx, span_line, next_span_line, boundary_inset, eps)
+            )
+            each (is_undef(vertex_line) ? [span_line] : [span_line, vertex_line])
+    ];
+
 // Function: _ps_fr_projected_loop()
 // Usage:
 //   result = _ps_fr_projected_loop(lines, eps);
@@ -542,10 +628,10 @@ function _ps_fr_side_faces(n, loop_area_sign) =
 //   boundary_inset = positive shift toward filled side
 //   boundary_inset_mode = `"side"` or `"face"`
 //   eps = tolerance
-function _ps_fr_loop_shell(face_pts3d_local, loop_sites, loop_idx, z0, z1, input_sign, cell_winding_signs, max_project=undef, boundary_inset=0, boundary_inset_mode="side", eps=1e-8) =
+function _ps_fr_loop_shell(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, loop_idx, z0, z1, input_sign, cell_winding_signs, max_project=undef, boundary_inset=0, boundary_inset_mode="side", eps=1e-8) =
     let(
-        lines0 = [for (site = loop_sites) _ps_fr_project_span_line(face_pts3d_local, site, z0, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps)],
-        lines1 = [for (site = loop_sites) _ps_fr_project_span_line(face_pts3d_local, site, z1, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps)],
+        lines0 = _ps_fr_projected_lines_with_vertex_clips(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z0, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps),
+        lines1 = _ps_fr_projected_lines_with_vertex_clips(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z1, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps),
         exposure_sign = _ps_fr_loop_exposure_sign(loop_sites, input_sign, cell_winding_signs),
         lineage = [for (site = loop_sites) ps_boundary_span_site_idx(site)]
     )
@@ -658,13 +744,15 @@ function _ps_face_region_loop_shells_from_fields(
             mode,
             eps
         ),
+        edges = _ps_edges_from_faces(poly_faces_idx),
+        edge_faces = ps_edge_faces_table(poly_faces_idx, edges),
         loop_ids = _ps_fr_unique_loop_ids(sites)
     )
     [
         for (loop_idx = loop_ids)
             let(
                 loop_sites = _ps_fr_sites_for_loop(sites, loop_idx),
-                shell = _ps_fr_loop_shell(face_pts3d_local, loop_sites, loop_idx, z0, z1, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps)
+                shell = _ps_fr_loop_shell(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, loop_idx, z0, z1, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps)
             )
             if (len(ps_loop_shell_points(shell)) >= 6 && len(ps_loop_shell_faces(shell)) >= 4)
                 shell

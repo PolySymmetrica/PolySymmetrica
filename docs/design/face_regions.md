@@ -25,7 +25,9 @@ that is allowed to exist and intersect user geometry with it.
   line toward the filled side before line intersections are computed. In the
   default `"side"` mode, the value is compensated so it measures clearance
   normal to the angled generated side wall; `"face"` mode uses the raw
-  face-plane offset.
+  face-plane offset. At source vertices with valence greater than three, the
+  same inset also adds a vertex-fan clip side so regions that only meet at a
+  high-valence vertex do not touch at the corner.
 - **Intrusion clearance profile:** A simple target-face-local 2D strip around
   an exact foreign intrusion segment. This is proxy geometry: useful for
   inspection and later boolean clearance, but not yet user-geometry-aware.
@@ -109,6 +111,14 @@ side plane, so sharp and shallow dihedrals get comparable clearance. With
 XY offset, which is simpler for inspection but produces different physical gaps
 for different side wall angles.
 
+After the edge-span inset is applied, source-vertex corners with valence
+greater than three get an extra projected clip line. The clip direction comes
+from the corresponding side of the local vertex figure for the current source
+face. Its position is measured from the already-inset adjacent-edge miter
+farther into the filled region. This keeps the vertex clip compatible with the
+edge-span inset instead of reusing the original source vertex as the clip
+origin.
+
 The anti-interference direction is the bisector between a selected current-face
 ray and the adjacent-face ray on the current face `+Z` branch. For filled atoms
 whose winding sign matches the source face loop, the current-face ray points
@@ -147,3 +157,5 @@ geometry is replayed and subtracted deliberately.
 - Each filled boundary loop becomes one shell. Do not rely on holed cap faces;
   use multiple shells for multiple loops.
 - The shell is an admissible region, not a finished printable face plate.
+- Vertex-fan clipping is applied at true source-vertex corners only. Generated
+  self-crossing split points still use only their projected boundary spans.
