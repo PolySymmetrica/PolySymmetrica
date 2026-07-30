@@ -554,6 +554,7 @@ function ps_vertex_figure_points_from_neighbors(
 ) =
     let(
         _t_ok = assert(!is_undef(t), "ps_vertex_figure_points_from_neighbors: t is required"),
+        _mode_ok = _ps_vertex_figure_cap_mode_ok(cap_mode),
         raw_pts = _ps_vertex_figure_raw_points(vertex_pt, neighbor_pts, t)
     )
     (abs(t) <= eps)
