@@ -476,7 +476,7 @@ function _ps_fr_vertex_clip_line(poly_faces_idx, poly_verts_local, edges, edge_f
             raw_pts,
             raw_pts,
             "planar_edge_fraction",
-            v_sum(poly_verts_local) / len(poly_verts_local),
+            undef,
             eps
         )
     )
@@ -486,7 +486,7 @@ function _ps_fr_vertex_clip_line(poly_faces_idx, poly_verts_local, edges, edge_f
             vertex_pt,
             raw_pts,
             "planar_edge_fraction",
-            v_sum(poly_verts_local) / len(poly_verts_local),
+            undef,
             eps
         ),
         prev_i = (face_pos - 1 + valence) % valence,
