@@ -12,6 +12,7 @@ use <../../../../polysymmetrica/core/placement.scad>
 use <../../../../polysymmetrica/core/prisms.scad>
 use <../../../../polysymmetrica/core/segments.scad>
 use <../../../../polysymmetrica/core/truncation.scad>
+use <../../../../polysymmetrica/models/archimedians_all.scad>
 use <../../../../polysymmetrica/models/dodecahedron.scad>
 use <../../../../polysymmetrica/models/tetrahedron.scad>
 
@@ -20,11 +21,16 @@ Z0 = -2.0;
 Z1 = 2.0;
 MAX_PROJECT = 40;
 
+function _first_face_idx_by_n(poly, n, i=0) =
+    (i >= len(poly_faces(poly))) ? undef :
+    (len(poly_faces(poly)[i]) == n) ? i : _first_face_idx_by_n(poly, n, i + 1);
+
 TESTS = [
     ["dodeca_volume_control", function() dodecahedron(), 0, 0],
     ["star_ap_volume", function() poly_antiprism(5, 2), 0, 0],
     ["atut_hex_volume", function() poly_truncate(tetrahedron(), t = -0.5), 0, 0],
-    ["atut_hex_volume_inset", function() poly_truncate(tetrahedron(), t = -0.5), 0, 1.2]
+    ["atut_hex_volume_inset", function() poly_truncate(tetrahedron(), t = -0.5), 0, 1.2],
+    ["cubocta_vertex_fan_clearance", function() cuboctahedron(), _first_face_idx_by_n(cuboctahedron(), 3), 1.0]
 ];
 
 T_MAX = len(TESTS);

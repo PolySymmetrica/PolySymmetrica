@@ -38,6 +38,82 @@ function _ps_vertex_incident_face_indices(faces, vi) =
             if (_ps_face_vertex_count(faces[fi], vi) > 0) fi
     ];
 
+function _ps_vertex_incident_edge_idxs(edges, vertex_idx) =
+    [
+        for (ei = [0:1:len(edges)-1])
+            if (edges[ei][0] == vertex_idx || edges[ei][1] == vertex_idx)
+                ei
+    ];
+
+function _ps_vertex_face_incident_edge_count(incident_edge_idxs, edge_faces, face_idx) =
+    len([
+        for (ei = incident_edge_idxs)
+            if (_ps_list_contains(edge_faces[ei], face_idx))
+                ei
+    ]);
+
+function _ps_vertex_adjacent_faces(incident_edge_idxs, edge_faces, face_idx) =
+    _ps_unique_values([
+        for (ei = incident_edge_idxs)
+            if (_ps_list_contains(edge_faces[ei], face_idx))
+                for (fi = edge_faces[ei])
+                    if (fi != face_idx)
+                        fi
+    ]);
+
+function _ps_vertex_reachable_faces(incident_edge_idxs, edge_faces, frontier, seen=[]) =
+    let(
+        seen1 = _ps_unique_values(concat(seen, frontier)),
+        next = _ps_unique_values([
+            for (fi = frontier)
+                for (adj = _ps_vertex_adjacent_faces(incident_edge_idxs, edge_faces, fi))
+                    if (!_ps_list_contains(seen1, adj))
+                        adj
+        ])
+    )
+    (len(next) == 0)
+        ? seen1
+        : _ps_vertex_reachable_faces(incident_edge_idxs, edge_faces, next, seen1);
+
+function _ps_vertex_has_closed_fan(faces, edges, edge_faces, vertex_idx) =
+    let(
+        incident_edge_idxs = _ps_vertex_incident_edge_idxs(edges, vertex_idx),
+        incident_face_idxs = _ps_vertex_incident_face_indices(faces, vertex_idx),
+        non_simple_faces = [
+            for (fi = incident_face_idxs)
+                if (_ps_face_vertex_count(faces[fi], vertex_idx) != 1)
+                    fi
+        ],
+        non_manifold = [
+            for (ei = incident_edge_idxs)
+                if (len(edge_faces[ei]) != 2)
+                    ei
+        ],
+        foreign_edge_faces = [
+            for (ei = incident_edge_idxs)
+                if (len(edge_faces[ei]) == 2)
+                    for (fi = edge_faces[ei])
+                        if (!_ps_list_contains(incident_face_idxs, fi))
+                            fi
+        ],
+        bad_face_degrees = [
+            for (fi = incident_face_idxs)
+                if (_ps_vertex_face_incident_edge_count(incident_edge_idxs, edge_faces, fi) != 2)
+                    fi
+        ],
+        reachable = (len(incident_face_idxs) == 0 || len(non_manifold) > 0)
+            ? []
+            : _ps_vertex_reachable_faces(incident_edge_idxs, edge_faces, [incident_face_idxs[0]])
+    )
+    len(incident_edge_idxs) > 0
+        && len(incident_face_idxs) > 0
+        && len(incident_edge_idxs) == len(incident_face_idxs)
+        && len(non_simple_faces) == 0
+        && len(non_manifold) == 0
+        && len(foreign_edge_faces) == 0
+        && len(bad_face_degrees) == 0
+        && len(reachable) == len(incident_face_idxs);
+
 // Function: ps_vertex_incident_faces()
 // Usage:
 //   result = ps_vertex_incident_faces(poly, vi);
@@ -367,7 +443,7 @@ function _ps_vertex_figure_raw_points(vertex_pt, neighbor_pts, t) =
             vertex_pt + t * (p - vertex_pt)
     ];
 
-function _ps_vertex_figure_cut_plane(vertex_pt, raw_pts, cap_mode, poly_center, eps) =
+function _ps_vertex_figure_cut_plane_or_undef(vertex_pt, raw_pts, cap_mode, poly_center, eps) =
     let(
         n_raw = (cap_mode == "planar_edge_fraction")
             ? let(idx = [for (i = [0:1:len(raw_pts)-1]) i])
@@ -375,16 +451,28 @@ function _ps_vertex_figure_cut_plane(vertex_pt, raw_pts, cap_mode, poly_center, 
             : (cap_mode == "centric")
                 ? (_ps_vertex_figure_points_centroid(raw_pts) - vertex_pt)
                 : (vertex_pt - poly_center),
-        n_len = norm(n_raw),
-        _n_ok = assert(n_len > eps, str("ps_vertex_figure_points: cannot derive ", cap_mode, " cap plane")),
+        n_len = norm(n_raw)
+    )
+    (n_len <= eps) ? undef :
+    let(
         n = n_raw / n_len,
         d = ps_sum([for (p = raw_pts) v_dot(n, p)]) / len(raw_pts)
     )
     [n, d];
 
+function _ps_vertex_figure_cut_plane(vertex_pt, raw_pts, cap_mode, poly_center, eps) =
+    let(
+        plane = _ps_vertex_figure_cut_plane_or_undef(vertex_pt, raw_pts, cap_mode, poly_center, eps),
+        _plane_ok = assert(!is_undef(plane), str("ps_vertex_figure_points: cannot derive ", cap_mode, " cap plane"))
+    )
+    plane;
+
 function _ps_vertex_figure_plane_point_on_ray(vertex_pt, neighbor_pt, plane, eps) =
     let(
-        dir = neighbor_pt - vertex_pt,
+        dir_raw = neighbor_pt - vertex_pt,
+        dir_len = norm(dir_raw),
+        _dir_ok = assert(dir_len > 0, "ps_vertex_figure_points: cannot derive incident edge ray"),
+        dir = dir_raw / dir_len,
         n = plane[0],
         d = plane[1],
         denom = v_dot(n, dir),
@@ -392,6 +480,84 @@ function _ps_vertex_figure_plane_point_on_ray(vertex_pt, neighbor_pt, plane, eps
         lambda = (d - v_dot(n, vertex_pt)) / denom
     )
     vertex_pt + lambda * dir;
+
+function _ps_vertex_figure_points_from_raw_on_rays(
+    vertex_pt,
+    raw_pts,
+    ray_pts,
+    cap_mode="planar_edge_fraction",
+    poly_center=undef,
+    eps=1e-8
+) =
+    let(
+        _mode_ok = _ps_vertex_figure_cap_mode_ok(cap_mode),
+        center = is_undef(poly_center) ? [0, 0, 0] : poly_center,
+        _rays_ok = assert(len(ray_pts) == len(raw_pts), "ps_vertex_figure_points: ray point count must match raw point count")
+    )
+    (cap_mode == "edge_fraction")
+        ? raw_pts
+        : let(plane = _ps_vertex_figure_cut_plane(vertex_pt, raw_pts, cap_mode, center, eps))
+            [
+                for (i = [0:1:len(raw_pts)-1])
+                    _ps_vertex_figure_plane_point_on_ray(vertex_pt, ray_pts[i], plane, eps)
+            ];
+
+function _ps_vertex_figure_points_from_raw_on_rays_realizable(
+    vertex_pt,
+    raw_pts,
+    ray_pts,
+    cap_mode="planar_edge_fraction",
+    poly_center=undef,
+    eps=1e-8
+) =
+    (cap_mode == "edge_fraction") ? true :
+    let(
+        center = is_undef(poly_center) ? [0, 0, 0] : poly_center,
+        plane = ps_vertex_figure_cap_mode_is_valid(cap_mode)
+            ? _ps_vertex_figure_cut_plane_or_undef(vertex_pt, raw_pts, cap_mode, center, eps)
+            : undef
+    )
+    !is_undef(plane)
+        && len(ray_pts) == len(raw_pts)
+        && len([
+            for (ray_pt = ray_pts)
+                let(
+                    dir_raw = ray_pt - vertex_pt,
+                    dir_len = norm(dir_raw),
+                    dir = (dir_len > 0) ? dir_raw / dir_len : [0, 0, 0]
+                )
+                if (dir_len <= 0 || abs(v_dot(plane[0], dir)) <= eps)
+                    1
+        ]) == 0;
+
+// Function: ps_vertex_figure_points_from_raw()
+// Usage:
+//   result = ps_vertex_figure_points_from_raw(vertex_pt, raw_pts, cap_mode,
+//       poly_center, eps);
+// Description:
+//   Realize a vertex figure from already-positioned raw cap points.
+//   .
+//   `edge_fraction` returns `raw_pts` unchanged. Other modes derive a cap plane
+//   from `raw_pts`, then intersect that plane with the rays from `vertex_pt`
+//   through each raw point. This is the shared realization layer used by
+//   edge-fraction vertex figures and callers that already have metric candidate
+//   points.
+//   .
+//   - Returns: ordered 3D cap points
+// Arguments:
+//   vertex_pt = source vertex point
+//   raw_pts = cyclic candidate cap points on rays from `vertex_pt`
+//   cap_mode = cap realization mode
+//   poly_center = source poly centroid for `poly_centroidal`; defaults to `[0,0,0]`
+//   eps = geometric tolerance
+function ps_vertex_figure_points_from_raw(
+    vertex_pt,
+    raw_pts,
+    cap_mode="planar_edge_fraction",
+    poly_center=undef,
+    eps=1e-8
+) =
+    _ps_vertex_figure_points_from_raw_on_rays(vertex_pt, raw_pts, raw_pts, cap_mode, poly_center, eps);
 
 // Function: ps_vertex_figure_points_from_neighbors()
 // Usage:
@@ -426,16 +592,11 @@ function ps_vertex_figure_points_from_neighbors(
     let(
         _t_ok = assert(!is_undef(t), "ps_vertex_figure_points_from_neighbors: t is required"),
         _mode_ok = _ps_vertex_figure_cap_mode_ok(cap_mode),
-        raw_pts = _ps_vertex_figure_raw_points(vertex_pt, neighbor_pts, t),
-        center = is_undef(poly_center) ? [0, 0, 0] : poly_center
+        raw_pts = _ps_vertex_figure_raw_points(vertex_pt, neighbor_pts, t)
     )
-    (abs(t) <= eps || cap_mode == "edge_fraction")
+    (abs(t) <= eps)
         ? raw_pts
-        : let(plane = _ps_vertex_figure_cut_plane(vertex_pt, raw_pts, cap_mode, center, eps))
-            [
-                for (p = neighbor_pts)
-                    _ps_vertex_figure_plane_point_on_ray(vertex_pt, p, plane, eps)
-            ];
+        : _ps_vertex_figure_points_from_raw_on_rays(vertex_pt, raw_pts, neighbor_pts, cap_mode, poly_center, eps);
 
 // Function: ps_vertex_figure_points_local()
 // Usage:

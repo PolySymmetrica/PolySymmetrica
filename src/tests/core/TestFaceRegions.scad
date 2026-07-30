@@ -11,6 +11,8 @@ use <../../polysymmetrica/core/placement.scad>
 use <../../polysymmetrica/core/prisms.scad>
 use <../../polysymmetrica/core/segments.scad>
 use <../../polysymmetrica/core/truncation.scad>
+use <../../polysymmetrica/core/construction.scad>
+use <../../polysymmetrica/models/archimedians_all.scad>
 use <../../polysymmetrica/models/platonics_all.scad>
 use <../../polysymmetrica/models/tetrahedron.scad>
 
@@ -59,6 +61,19 @@ function _test_shell_caps_are_simple(shell, eps=EPS) =
     len(_test_loop_self_hits(ps_loop_shell_bottom_loop2d(shell), eps)) == 0
         && len(_test_loop_self_hits(ps_loop_shell_top_loop2d(shell), eps)) == 0;
 
+function _test_first_face_idx_by_n(poly, n, i=0) =
+    (i >= len(poly_faces(poly))) ? undef :
+    (len(poly_faces(poly)[i]) == n) ? i : _test_first_face_idx_by_n(poly, n, i + 1);
+
+function _test_loop_perimeter(loop) =
+    ps_sum([
+        for (i = [0:1:len(loop)-1])
+            norm(loop[(i + 1) % len(loop)] - loop[i])
+    ]);
+
+function _test_loop_inradius(loop) =
+    abs(_ps_seg_poly_area2(loop)) / _test_loop_perimeter(loop);
+
 module test_ps_face_region_loop_shells__cube_face_single_quad_shell() {
     p = hexahedron();
     site = _test_face_site(p, 0);
@@ -97,6 +112,88 @@ module test_ps_face_region_loop_shells__boundary_inset_shrinks_shell() {
     assert(abs(_ps_seg_poly_area2(ps_loop_shell_bottom_loop2d(shells1[0]))) < abs(_ps_seg_poly_area2(ps_loop_shell_bottom_loop2d(shells0[0]))), "boundary inset should shrink z0 cap");
     assert(abs(_ps_seg_poly_area2(ps_loop_shell_top_loop2d(shells1[0]))) < abs(_ps_seg_poly_area2(ps_loop_shell_top_loop2d(shells0[0]))), "boundary inset should shrink z1 cap");
     assert_int_eq(len(ps_loop_shell_top_loop2d(shells1[0])), 4, "top loop accessor should expose inset cap loop");
+}
+
+module test_ps_face_region_loop_shells__cubocta_high_valence_vertex_clips_triangle_corners() {
+    p = cuboctahedron();
+    face_idx = _test_first_face_idx_by_n(p, 3);
+    site = _test_face_site(p, face_idx);
+    face_ctx = ps_face_site_face_local_context(site);
+    shells0 = ps_face_region_loop_shells(face_ctx, -0.05, 0.05, boundary_inset = 0);
+    shells1 = ps_face_region_loop_shells(face_ctx, -0.05, 0.05, boundary_inset = 0.05);
+
+    assert_int_eq(len(shells0), 1, "cubocta triangle should produce one base shell");
+    assert_int_eq(len(shells1), 1, "cubocta triangle should produce one clipped shell");
+    assert_int_eq(len(ps_loop_shell_bottom_loop2d(shells0[0])), 3, "unclipped cubocta triangle should have three cap vertices");
+    assert_int_eq(len(ps_loop_shell_bottom_loop2d(shells1[0])), 6, "high-valence vertex clips should add one side at each triangle corner");
+    assert(_test_shell_caps_are_simple(shells1[0]), "cubocta clipped triangle caps should be simple");
+}
+
+module test_ps_face_region_loop_shells__cubocta_high_valence_vertex_clip_inset_sweep_stays_simple() {
+    p = cuboctahedron();
+    face_idx = _test_first_face_idx_by_n(p, 3);
+    site = _test_face_site(p, face_idx);
+    face_ctx = ps_face_site_face_local_context(site);
+    pts2d = ps_face_site_pts2d(site);
+    inradius = _test_loop_inradius(pts2d);
+    inset_factors = [0.1, 0.25, 0.5, 0.75, 0.9];
+
+    for (f = inset_factors) {
+        inset = inradius * f;
+        shells = ps_face_region_loop_shells(face_ctx, -0.05, 0.05, boundary_inset = inset);
+
+        assert_int_eq(len(shells), 1, str("cubocta inset sweep should preserve shell count f=", f));
+        assert_int_eq(len(ps_loop_shell_bottom_loop2d(shells[0])), 6, str("cubocta inset sweep should keep vertex clips f=", f));
+        assert(_test_shell_caps_are_simple(shells[0]), str("cubocta inset sweep caps should stay simple f=", f));
+    }
+}
+
+module test_ps_face_region_span_end_source_vertex_idx__recognizes_reversed_endpoint() {
+    face = [10, 11, 12, 13];
+    forward_site = [0, undef, 0, undef, 0, 2, 0, 1];
+    reversed_site = [0, undef, 0, undef, 0, 2, 1, 0];
+    partial_site = [0, undef, 0, undef, 0, 2, 0.25, 0.75];
+
+    assert_int_eq(_ps_fr_span_end_source_vertex_idx(forward_site, face), 13, "forward source edge endpoint should map to face[i+1]");
+    assert_int_eq(_ps_fr_span_end_source_vertex_idx(reversed_site, face), 12, "reversed source edge endpoint should map to face[i]");
+    assert(is_undef(_ps_fr_span_end_source_vertex_idx(partial_site, face)), "partial source edge endpoint should not map to a source vertex");
+}
+
+module test_ps_face_region_loop_shells__open_boundary_vertex_skips_fan_clip() {
+    p = poly_delete_faces(hexahedron(), 0, cap=false, cleanup=false);
+    site = _test_face_site(p, 0);
+    face_ctx = ps_face_site_face_local_context(site);
+    shells = ps_face_region_loop_shells(face_ctx, -0.05, 0.05, boundary_inset = 0.05);
+
+    assert_int_eq(len(shells), 1, "open cube face should still produce an inset shell");
+    assert_int_eq(len(ps_loop_shell_bottom_loop2d(shells[0])), 4, "open boundary vertices should not add vertex-fan clip sides");
+    assert(_test_shell_caps_are_simple(shells[0]), "open cube inset shell caps should be simple");
+}
+
+module test_ps_face_region_vertex_clip_line__skips_unrealizable_cap_plane() {
+    verts = [
+        [0, 0, 0],
+        [1, 0, 0],
+        [0, 1, 1],
+        [-1, 0, 0],
+        [0, -1, 1]
+    ];
+    faces = [[0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 1], [1, 4, 3, 2]];
+    edges = _ps_edges_from_faces(faces);
+    edge_faces = ps_edge_faces_table(faces, edges);
+    clip_line = _ps_fr_vertex_clip_line(
+        faces,
+        verts,
+        edges,
+        edge_faces,
+        0,
+        0,
+        [[0, 0], [1, 0]],
+        [[0, 0], [0, 1]],
+        boundary_inset = 0.1
+    );
+
+    assert(is_undef(clip_line), "unrealizable high-valence fan clip should be skipped");
 }
 
 module test_ps_face_region_loop_shells__site_context_matches_raw_context_builder() {
@@ -264,6 +361,11 @@ module run_TestFaceRegions() {
     test_ps_face_region_loop_shells__cube_face_single_quad_shell();
     test_ps_loop_shell_describe_str__summary();
     test_ps_face_region_loop_shells__boundary_inset_shrinks_shell();
+    test_ps_face_region_loop_shells__cubocta_high_valence_vertex_clips_triangle_corners();
+    test_ps_face_region_loop_shells__cubocta_high_valence_vertex_clip_inset_sweep_stays_simple();
+    test_ps_face_region_span_end_source_vertex_idx__recognizes_reversed_endpoint();
+    test_ps_face_region_loop_shells__open_boundary_vertex_skips_fan_clip();
+    test_ps_face_region_vertex_clip_line__skips_unrealizable_cap_plane();
     test_ps_face_region_loop_shells__site_context_matches_raw_context_builder();
     test_ps_face_region_loop_shells__side_inset_compensates_face_offset();
     test_ps_face_region_loop_shells__matches_boundary_loop_count();
@@ -276,3 +378,5 @@ module run_TestFaceRegions() {
 }
 
 run_TestFaceRegions();
+
+cube([0.01, 0.01, 0.01], center = true);
