@@ -462,7 +462,7 @@ function _ps_vertex_figure_plane_point_on_ray(vertex_pt, neighbor_pt, plane, eps
     let(
         dir_raw = neighbor_pt - vertex_pt,
         dir_len = norm(dir_raw),
-        _dir_ok = assert(dir_len > eps, "ps_vertex_figure_points: cannot derive incident edge ray"),
+        _dir_ok = assert(dir_len > 0, "ps_vertex_figure_points: cannot derive incident edge ray"),
         dir = dir_raw / dir_len,
         n = plane[0],
         d = plane[1],
@@ -471,6 +471,27 @@ function _ps_vertex_figure_plane_point_on_ray(vertex_pt, neighbor_pt, plane, eps
         lambda = (d - v_dot(n, vertex_pt)) / denom
     )
     vertex_pt + lambda * dir;
+
+function _ps_vertex_figure_points_from_raw_on_rays(
+    vertex_pt,
+    raw_pts,
+    ray_pts,
+    cap_mode="planar_edge_fraction",
+    poly_center=undef,
+    eps=1e-8
+) =
+    let(
+        _mode_ok = _ps_vertex_figure_cap_mode_ok(cap_mode),
+        center = is_undef(poly_center) ? [0, 0, 0] : poly_center,
+        _rays_ok = assert(len(ray_pts) == len(raw_pts), "ps_vertex_figure_points: ray point count must match raw point count")
+    )
+    (cap_mode == "edge_fraction")
+        ? raw_pts
+        : let(plane = _ps_vertex_figure_cut_plane(vertex_pt, raw_pts, cap_mode, center, eps))
+            [
+                for (i = [0:1:len(raw_pts)-1])
+                    _ps_vertex_figure_plane_point_on_ray(vertex_pt, ray_pts[i], plane, eps)
+            ];
 
 // Function: ps_vertex_figure_points_from_raw()
 // Usage:
@@ -499,17 +520,7 @@ function ps_vertex_figure_points_from_raw(
     poly_center=undef,
     eps=1e-8
 ) =
-    let(
-        _mode_ok = _ps_vertex_figure_cap_mode_ok(cap_mode),
-        center = is_undef(poly_center) ? [0, 0, 0] : poly_center
-    )
-    (cap_mode == "edge_fraction")
-        ? raw_pts
-        : let(plane = _ps_vertex_figure_cut_plane(vertex_pt, raw_pts, cap_mode, center, eps))
-            [
-                for (p = raw_pts)
-                    _ps_vertex_figure_plane_point_on_ray(vertex_pt, p, plane, eps)
-            ];
+    _ps_vertex_figure_points_from_raw_on_rays(vertex_pt, raw_pts, raw_pts, cap_mode, poly_center, eps);
 
 // Function: ps_vertex_figure_points_from_neighbors()
 // Usage:
@@ -547,7 +558,7 @@ function ps_vertex_figure_points_from_neighbors(
     )
     (abs(t) <= eps)
         ? raw_pts
-        : ps_vertex_figure_points_from_raw(vertex_pt, raw_pts, cap_mode, poly_center, eps);
+        : _ps_vertex_figure_points_from_raw_on_rays(vertex_pt, raw_pts, neighbor_pts, cap_mode, poly_center, eps);
 
 // Function: ps_vertex_figure_points_local()
 // Usage:

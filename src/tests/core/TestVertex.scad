@@ -138,8 +138,8 @@ module test_ps_vertex_figure_points_from_raw__matches_neighbor_helper_raw_loop()
 
 module test_ps_vertex_figure_points_from_neighbors__small_t_parallel_check_uses_ray_angle() {
     vertex_pt = [1, 0, 0];
-    neighbor_pts = [[2, 0.1, 0], [2, -0.1, 0], [2, 0, 0.1]];
-    t = 1e-9;
+    neighbor_pts = [[1.1, 0.01, 0], [1.1, -0.01, 0], [1.1, 0, 0.01]];
+    t = 2e-8;
     pts = ps_vertex_figure_points_from_neighbors(
         vertex_pt,
         neighbor_pts,
@@ -154,7 +154,7 @@ module test_ps_vertex_figure_points_from_neighbors__small_t_parallel_check_uses_
 
     assert_int_eq(len(pts), len(neighbor_pts), "small-t vertex figure point count");
     assert(min(lambdas) > 0, str("small-t realized points should remain on incident rays lambdas=", lambdas, " pts=", pts));
-    assert(max(lambdas) < 2e-9, str("small-t realized points should stay near the requested cut lambdas=", lambdas, " pts=", pts));
+    assert(max(lambdas) < 4e-8, str("small-t realized points should stay near the requested cut lambdas=", lambdas, " pts=", pts));
 }
 
 module run_TestVertex() {
