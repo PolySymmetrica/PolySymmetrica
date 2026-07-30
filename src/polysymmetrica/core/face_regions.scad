@@ -496,12 +496,7 @@ function _ps_fr_vertex_clip_line(poly_faces_idx, poly_verts_local, edges, edge_f
         dir = p1 - p0,
         len_dir = norm(dir),
         miter = _ps_fr_line_intersection(prev_span_line, next_span_line, eps),
-        vertex2d = ps_xy([vertex_pt])[0],
-        inset_vec = is_undef(miter) ? undef : miter - vertex2d,
-        inset_len = is_undef(inset_vec) ? 0 : norm(inset_vec),
-        line_point = (inset_len <= eps)
-            ? p0
-            : miter + inset_vec / inset_len * boundary_inset
+        line_point = is_undef(miter) ? p0 : miter
     )
     (len_dir <= eps) ? undef :
     [
