@@ -443,7 +443,7 @@ function _ps_vertex_figure_raw_points(vertex_pt, neighbor_pts, t) =
             vertex_pt + t * (p - vertex_pt)
     ];
 
-function _ps_vertex_figure_cut_plane(vertex_pt, raw_pts, cap_mode, poly_center, eps) =
+function _ps_vertex_figure_cut_plane_or_undef(vertex_pt, raw_pts, cap_mode, poly_center, eps) =
     let(
         n_raw = (cap_mode == "planar_edge_fraction")
             ? let(idx = [for (i = [0:1:len(raw_pts)-1]) i])
@@ -451,12 +451,21 @@ function _ps_vertex_figure_cut_plane(vertex_pt, raw_pts, cap_mode, poly_center, 
             : (cap_mode == "centric")
                 ? (_ps_vertex_figure_points_centroid(raw_pts) - vertex_pt)
                 : (vertex_pt - poly_center),
-        n_len = norm(n_raw),
-        _n_ok = assert(n_len > eps, str("ps_vertex_figure_points: cannot derive ", cap_mode, " cap plane")),
+        n_len = norm(n_raw)
+    )
+    (n_len <= eps) ? undef :
+    let(
         n = n_raw / n_len,
         d = ps_sum([for (p = raw_pts) v_dot(n, p)]) / len(raw_pts)
     )
     [n, d];
+
+function _ps_vertex_figure_cut_plane(vertex_pt, raw_pts, cap_mode, poly_center, eps) =
+    let(
+        plane = _ps_vertex_figure_cut_plane_or_undef(vertex_pt, raw_pts, cap_mode, poly_center, eps),
+        _plane_ok = assert(!is_undef(plane), str("ps_vertex_figure_points: cannot derive ", cap_mode, " cap plane"))
+    )
+    plane;
 
 function _ps_vertex_figure_plane_point_on_ray(vertex_pt, neighbor_pt, plane, eps) =
     let(
@@ -492,6 +501,34 @@ function _ps_vertex_figure_points_from_raw_on_rays(
                 for (i = [0:1:len(raw_pts)-1])
                     _ps_vertex_figure_plane_point_on_ray(vertex_pt, ray_pts[i], plane, eps)
             ];
+
+function _ps_vertex_figure_points_from_raw_on_rays_realizable(
+    vertex_pt,
+    raw_pts,
+    ray_pts,
+    cap_mode="planar_edge_fraction",
+    poly_center=undef,
+    eps=1e-8
+) =
+    (cap_mode == "edge_fraction") ? true :
+    let(
+        center = is_undef(poly_center) ? [0, 0, 0] : poly_center,
+        plane = ps_vertex_figure_cap_mode_is_valid(cap_mode)
+            ? _ps_vertex_figure_cut_plane_or_undef(vertex_pt, raw_pts, cap_mode, center, eps)
+            : undef
+    )
+    !is_undef(plane)
+        && len(ray_pts) == len(raw_pts)
+        && len([
+            for (ray_pt = ray_pts)
+                let(
+                    dir_raw = ray_pt - vertex_pt,
+                    dir_len = norm(dir_raw),
+                    dir = (dir_len > 0) ? dir_raw / dir_len : [0, 0, 0]
+                )
+                if (dir_len <= 0 || abs(v_dot(plane[0], dir)) <= eps)
+                    1
+        ]) == 0;
 
 // Function: ps_vertex_figure_points_from_raw()
 // Usage:

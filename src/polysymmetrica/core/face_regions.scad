@@ -471,6 +471,17 @@ function _ps_fr_vertex_clip_line(poly_faces_idx, poly_verts_local, edges, edge_f
     let(
         vertex_pt = poly_verts_local[vertex_idx],
         raw_pts = _ps_fr_vertex_raw_cap_points(poly_verts_local, vertex_idx, neighbors_idx, boundary_inset, eps),
+        can_clip = _ps_vertex_figure_points_from_raw_on_rays_realizable(
+            vertex_pt,
+            raw_pts,
+            raw_pts,
+            "planar_edge_fraction",
+            v_sum(poly_verts_local) / len(poly_verts_local),
+            eps
+        )
+    )
+    (!can_clip) ? undef :
+    let(
         cap_pts = ps_vertex_figure_points_from_raw(
             vertex_pt,
             raw_pts,
