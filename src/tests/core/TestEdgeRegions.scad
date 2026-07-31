@@ -71,11 +71,44 @@ module test_ps_edge_region_shells__anti_tet_splits_some_edges() {
     assert(max(shell_counts) > 1, str("anti-truncated tetrahedron should split at least one edge into multiple atoms counts=", shell_counts));
 }
 
+module test_ps_edge_region_shells__crossing_side_constraints_split_z_range() {
+    p = poly_truncate(tetrahedron(), t = -1);
+    edge_count = len(ps_edge_sites(p));
+    shell_counts = [
+        for (ei = [0:1:edge_count-1])
+            len(ps_edge_region_shells(p, outset = 1.4, z0 = -1.2, z1 = 2, inter_radius = 26, edge_idx = ei))
+    ];
+
+    assert(max(shell_counts) > 1, str("crossing side constraints should split edge region shells counts=", shell_counts));
+}
+
+module test_ps_edge_region_shells__side_constraints_preserve_identity() {
+    constraints = [[0, -0.4], [0, 0.4]];
+    bottom_ys = _ps_er_side_ys_for_z(constraints, -1);
+    top_ys = _ps_er_side_ys_for_z(constraints, 1);
+
+    assert_near(bottom_ys[0], -0.4, EPS, "bottom left constraint should keep its source identity");
+    assert_near(bottom_ys[1], 0.4, EPS, "bottom right constraint should keep its source identity");
+    assert_near(top_ys[0], -0.4, EPS, "top left constraint should keep its source identity");
+    assert_near(top_ys[1], 0.4, EPS, "top right constraint should keep its source identity");
+}
+
+module test_ps_edge_region_shells__crossing_constraints_are_split_at_crossing_z() {
+    ranges = _ps_er_stable_z_ranges([1, -0.4], [-1, 0.4], -1, 1, EPS);
+
+    assert_int_eq(len(ranges), 2, "crossing constraints should split into two stable z ranges");
+    assert_near(ranges[0][1], 0.4, EPS, "first split should end at crossing z");
+    assert_near(ranges[1][0], 0.4, EPS, "second split should start at crossing z");
+}
+
 module run_TestEdgeRegions() {
     echo("Running TestEdgeRegions...");
     test_ps_edge_region_shells__tetra_edge_single_atom();
     test_ps_edge_region_shells__uses_edge_placement_context();
     test_ps_edge_region_shells__anti_tet_splits_some_edges();
+    test_ps_edge_region_shells__crossing_side_constraints_split_z_range();
+    test_ps_edge_region_shells__side_constraints_preserve_identity();
+    test_ps_edge_region_shells__crossing_constraints_are_split_at_crossing_z();
     echo("TestEdgeRegions passed");
 }
 

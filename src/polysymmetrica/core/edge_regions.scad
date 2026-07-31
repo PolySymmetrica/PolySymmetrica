@@ -108,29 +108,50 @@ function _ps_er_span_filled_ray_edge_local(span, edge_site, eps=1e-8) =
     )
     yz / norm(yz);
 
-function _ps_er_side_y_for_z(ray_yz, outset, z, eps=1e-8) =
+function _ps_er_side_constraint(ray_yz, outset, eps=1e-8) =
     let(
         _ry = assert(abs(ray_yz[0]) > eps, "ps_edge_region_shells: side ray cannot constrain edge-local Y"),
-        y = (outset - ray_yz[1] * z) / ray_yz[0]
+        slope = -ray_yz[1] / ray_yz[0],
+        intercept = outset / ray_yz[0]
     )
-    y;
+    [slope, intercept];
 
-function _ps_er_oriented_side_ys(ray0, ray1, outset, z, eps=1e-8) =
+function _ps_er_side_constraint_y(constraint, z) =
+    constraint[0] * z + constraint[1];
+
+function _ps_er_side_constraints_cross_z(c0, c1, eps=1e-8) =
+    let(dz = c0[0] - c1[0])
+    abs(dz) <= eps ? undef : (c1[1] - c0[1]) / dz;
+
+function _ps_er_z_ordered(z0, z1) =
+    z0 <= z1 ? [z0, z1] : [z1, z0];
+
+function _ps_er_stable_z_ranges(c0, c1, z0, z1, eps=1e-8) =
     let(
-        y0 = _ps_er_side_y_for_z(ray0, outset, z, eps),
-        y1 = _ps_er_side_y_for_z(ray1, outset, z, eps)
+        zz = _ps_er_z_ordered(z0, z1),
+        za = zz[0],
+        zb = zz[1],
+        z_cross = _ps_er_side_constraints_cross_z(c0, c1, eps)
     )
-    (y0 <= y1) ? [y0, y1] : [y1, y0];
+    is_undef(z_cross) || z_cross <= za + eps || z_cross >= zb - eps
+        ? [[z0, z1]]
+        : (z0 <= z1)
+            ? [[z0, z_cross], [z_cross, z1]]
+            : [[z0, z_cross], [z_cross, z1]];
 
-function _ps_er_atom_shell(edge_site, atom, span0, span1, outset, z0, z1, eps=1e-8) =
+function _ps_er_side_ys_for_z(constraints, z) =
+    [
+        _ps_er_side_constraint_y(constraints[0], z),
+        _ps_er_side_constraint_y(constraints[1], z)
+    ];
+
+function _ps_er_atom_shell_from_constraints(edge_site, atom, span0, span1, constraints, z0, z1, eps=1e-8) =
     let(
         edge_len = ps_edge_site_edge_len(edge_site),
         x0 = -edge_len / 2 + atom[0] * edge_len,
         x1 = -edge_len / 2 + atom[1] * edge_len,
-        ray0 = _ps_er_span_filled_ray_edge_local(span0, edge_site, eps),
-        ray1 = _ps_er_span_filled_ray_edge_local(span1, edge_site, eps),
-        bottom_ys = _ps_er_oriented_side_ys(ray0, ray1, outset, z0, eps),
-        top_ys = _ps_er_oriented_side_ys(ray0, ray1, outset, z1, eps),
+        bottom_ys = _ps_er_side_ys_for_z(constraints, z0),
+        top_ys = _ps_er_side_ys_for_z(constraints, z1),
         _bw = assert(bottom_ys[1] - bottom_ys[0] > eps, "ps_edge_region_shells: z0 side constraints cross or collapse"),
         _tw = assert(top_ys[1] - top_ys[0] > eps, "ps_edge_region_shells: z1 side constraints cross or collapse"),
         bottom_loop = [
@@ -151,6 +172,105 @@ function _ps_er_atom_shell(edge_site, atom, span0, span1, outset, z0, z1, eps=1e
         ]
     )
     ps_loop_shell_from_loops(bottom_loop, top_loop, z0, z1, "edge_region", ps_edge_site_idx(edge_site), lineage, 0, undef, eps);
+
+function _ps_er_atom_wedge_shell(edge_site, atom, span0, span1, constraints, z_wide, z_tip, eps=1e-8) =
+    let(
+        edge_len = ps_edge_site_edge_len(edge_site),
+        x0 = -edge_len / 2 + atom[0] * edge_len,
+        x1 = -edge_len / 2 + atom[1] * edge_len,
+        wide_ys = _ps_er_side_ys_for_z(constraints, z_wide),
+        tip_y = _ps_er_side_constraint_y(constraints[0], z_tip),
+        bottom_wide = z_wide < z_tip,
+        points = bottom_wide
+            ? [
+                [x0, wide_ys[0], z_wide],
+                [x1, wide_ys[0], z_wide],
+                [x1, wide_ys[1], z_wide],
+                [x0, wide_ys[1], z_wide],
+                [x0, tip_y, z_tip],
+                [x1, tip_y, z_tip]
+            ]
+            : [
+                [x0, tip_y, z_tip],
+                [x1, tip_y, z_tip],
+                [x0, wide_ys[0], z_wide],
+                [x1, wide_ys[0], z_wide],
+                [x1, wide_ys[1], z_wide],
+                [x0, wide_ys[1], z_wide]
+            ],
+        faces = bottom_wide
+            ? [
+                [0, 1, 2, 3],
+                [0, 4, 5, 1],
+                [3, 2, 5, 4],
+                [0, 3, 4],
+                [1, 5, 2]
+            ]
+            : [
+                [2, 3, 4, 5],
+                [0, 1, 3, 2],
+                [0, 5, 4, 1],
+                [0, 2, 5],
+                [1, 4, 3]
+            ],
+        bottom_loop = bottom_wide
+            ? [[x0, wide_ys[0]], [x1, wide_ys[0]], [x1, wide_ys[1]], [x0, wide_ys[1]]]
+            : [[x0, tip_y], [x1, tip_y]],
+        top_loop = bottom_wide
+            ? [[x0, tip_y], [x1, tip_y]]
+            : [[x0, wide_ys[0]], [x1, wide_ys[0]], [x1, wide_ys[1]], [x0, wide_ys[1]]],
+        lineage = [
+            ps_boundary_span_site_idx(span0[0]),
+            ps_boundary_span_site_idx(span1[0])
+        ]
+    )
+    [
+        "loop_shell",
+        points,
+        faces,
+        bottom_loop,
+        top_loop,
+        min(z_wide, z_tip),
+        max(z_wide, z_tip),
+        "edge_region",
+        ps_edge_site_idx(edge_site),
+        lineage,
+        0,
+        undef
+    ];
+
+function _ps_er_atom_shell_for_stable_z(edge_site, atom, span0, span1, constraints, za, zb, eps=1e-8) =
+    let(
+        ya = _ps_er_side_ys_for_z(constraints, za),
+        yb = _ps_er_side_ys_for_z(constraints, zb),
+        wa = ya[1] - ya[0],
+        wb = yb[1] - yb[0],
+        _valid = assert(wa >= -eps && wb >= -eps, "ps_edge_region_shells: stable side constraints are reversed"),
+        wide_z = wa > wb ? za : zb,
+        tip_z = wa > wb ? zb : za
+    )
+    (wa <= eps || wb <= eps)
+        ? _ps_er_atom_wedge_shell(edge_site, atom, span0, span1, constraints, wide_z, tip_z, eps)
+        : _ps_er_atom_shell_from_constraints(edge_site, atom, span0, span1, constraints, za, zb, eps);
+
+function _ps_er_atom_shells(edge_site, atom, span0, span1, outset, z0, z1, eps=1e-8) =
+    let(
+        ray0 = _ps_er_span_filled_ray_edge_local(span0, edge_site, eps),
+        ray1 = _ps_er_span_filled_ray_edge_local(span1, edge_site, eps),
+        c0 = _ps_er_side_constraint(ray0, outset, eps),
+        c1 = _ps_er_side_constraint(ray1, outset, eps),
+        ranges = _ps_er_stable_z_ranges(c0, c1, z0, z1, eps)
+    )
+    [
+        for (range = ranges)
+            let(
+                z_mid = (range[0] + range[1]) / 2,
+                y0_mid = _ps_er_side_constraint_y(c0, z_mid),
+                y1_mid = _ps_er_side_constraint_y(c1, z_mid),
+                constraints = y0_mid <= y1_mid ? [c0, c1] : [c1, c0]
+            )
+            _ps_er_atom_shell_for_stable_z(edge_site, atom, span0, span1, constraints, range[0], range[1], eps)
+    ];
 
 // Function: ps_edge_region_shells()
 // Usage:
@@ -199,7 +319,7 @@ function ps_edge_region_shells(poly, outset, z0, z1, inter_radius=1, edge_len=un
                 span1 = _ps_er_span_at_t(spans1, atom[2], eps)
             )
             if (!is_undef(span0) && !is_undef(span1))
-                _ps_er_atom_shell(edge_site, atom, span0, span1, outset, z0, z1, eps)
+                each _ps_er_atom_shells(edge_site, atom, span0, span1, outset, z0, z1, eps)
     ];
 
 // Module: ps_edge_region_volume()
