@@ -13,6 +13,7 @@ use <core/TestCleanup.scad>
 use <core/TestValidity.scad>
 use <core/TestClassify.scad>
 use <core/TestPlacement.scad>
+use <core/TestEdgeRegions.scad>
 use <core/TestFaceRegions.scad>
 use <core/TestSelfCrossing.scad>
 use <core/TestPrisms.scad>
@@ -31,6 +32,7 @@ run_TestCleanup();
 run_TestValidity();
 run_TestClassify();
 run_TestPlacement();
+run_TestEdgeRegions();
 run_TestFaceRegions();
 run_TestSelfCrossing();
 run_TestPrisms();
