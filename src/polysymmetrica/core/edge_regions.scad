@@ -302,7 +302,7 @@ function ps_edge_region_shells(poly, outset, z0, z1, inter_radius=1, edge_len=un
         _outset = assert(outset > eps, "ps_edge_region_shells: outset must be positive"),
         _z0 = assert(!is_undef(z0), "ps_edge_region_shells: z0 must be defined"),
         _z1 = assert(!is_undef(z1), "ps_edge_region_shells: z1 must be defined"),
-        _height = assert(abs(z1 - z0) > eps, "ps_edge_region_shells: z0 and z1 must differ"),
+        _height = assert(z1 > z0 + eps, "ps_edge_region_shells: z1 must be greater than z0"),
         edge_site = ps_edge_sites(poly, inter_radius, edge_len)[edge_idx],
         edge_verts = ps_edge_site_verts_idx(edge_site),
         adj_faces = ps_edge_site_adj_faces_idx(edge_site),
