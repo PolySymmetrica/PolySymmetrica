@@ -278,6 +278,12 @@ when it can. Boundary or degenerate edges fall back to a radial frame.
 `ps_placement_frame(...)` tail element to each site record; the frame is the
 stored source of truth for edge center/axis accessors.
 
+For edge-owned CSG regions, `polysymmetrica/core/edge_regions.scad` provides
+`ps_edge_region_shells(...)` and `ps_edge_region_volume(...)`. These derive
+edge-region atom shells from the adjacent faces' filled boundary spans, then
+emit them in the same edge-local frame: X follows the edge and Z follows the
+adjacent-face normal bisector.
+
 Describe example:
 
 ```scad
