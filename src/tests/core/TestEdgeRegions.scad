@@ -5,6 +5,7 @@
  */
 
 use <../../polysymmetrica/core/edge_regions.scad>
+use <../../polysymmetrica/core/funcs.scad>
 use <../../polysymmetrica/core/loop_shells.scad>
 use <../../polysymmetrica/core/placement.scad>
 use <../../polysymmetrica/core/truncation.scad>
@@ -82,6 +83,28 @@ module test_ps_edge_region_shells__crossing_side_constraints_split_z_range() {
     assert(max(shell_counts) > 1, str("crossing side constraints should split edge region shells counts=", shell_counts));
 }
 
+module test_ps_edge_region_shells__crossing_wedges_are_lhr_outward() {
+    p = poly_truncate(tetrahedron(), t = -1);
+    edge_count = len(ps_edge_sites(p));
+    shells = [
+        for (ei = [0:1:edge_count-1])
+            each ps_edge_region_shells(p, outset = 1.4, z0 = -1.2, z1 = 2, inter_radius = 26, edge_idx = ei)
+    ];
+    wedge_shells = [
+        for (shell = shells)
+            if (len(ps_loop_shell_points(shell)) == 6)
+                shell
+    ];
+    inward_wedges = [
+        for (shell = wedge_shells)
+            if (_ps_faces_signed_volume6_rhr(ps_loop_shell_points(shell), ps_loop_shell_faces(shell)) >= -EPS)
+                shell
+    ];
+
+    assert(len(wedge_shells) > 0, "crossing case should produce wedge shells");
+    assert_int_eq(len(inward_wedges), 0, "crossing wedge shells should be LHR outward");
+}
+
 module test_ps_edge_region_shells__side_constraints_preserve_identity() {
     constraints = [[0, -0.4], [0, 0.4]];
     bottom_ys = _ps_er_side_ys_for_z(constraints, -1);
@@ -107,6 +130,7 @@ module run_TestEdgeRegions() {
     test_ps_edge_region_shells__uses_edge_placement_context();
     test_ps_edge_region_shells__anti_tet_splits_some_edges();
     test_ps_edge_region_shells__crossing_side_constraints_split_z_range();
+    test_ps_edge_region_shells__crossing_wedges_are_lhr_outward();
     test_ps_edge_region_shells__side_constraints_preserve_identity();
     test_ps_edge_region_shells__crossing_constraints_are_split_at_crossing_z();
     echo("TestEdgeRegions passed");

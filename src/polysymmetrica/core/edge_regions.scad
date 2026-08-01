@@ -207,11 +207,11 @@ function _ps_er_atom_wedge_shell(edge_site, atom, span0, span1, constraints, z_w
                 [1, 5, 2]
             ]
             : [
-                [2, 3, 4, 5],
-                [0, 1, 3, 2],
-                [0, 5, 4, 1],
-                [0, 2, 5],
-                [1, 4, 3]
+                [5, 4, 3, 2],
+                [2, 3, 1, 0],
+                [1, 4, 5, 0],
+                [5, 2, 0],
+                [3, 4, 1]
             ],
         bottom_loop = bottom_wide
             ? [[x0, wide_ys[0]], [x1, wide_ys[0]], [x1, wide_ys[1]], [x0, wide_ys[1]]]
