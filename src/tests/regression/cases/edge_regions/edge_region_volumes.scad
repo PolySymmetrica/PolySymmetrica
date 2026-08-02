@@ -40,8 +40,8 @@ module _edge_region_wire(poly) {
 
 module _edge_region_atoms(poly) {
     color("indianred", 0.70)
-        place_on_edges(poly, IR)
-            ps_edge_region_volume(poly, outset = OUTSET, z0 = Z0, z1 = Z1, inter_radius = IR);
+        place_on_edges(poly, IR, edge_regions = true)
+            ps_current_edge_region_volume(outset = OUTSET, z0 = Z0, z1 = Z1);
 }
 
 module _edge_region_panel(poly, label_s) {

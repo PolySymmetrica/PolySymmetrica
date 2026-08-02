@@ -30,6 +30,32 @@ function _test_shell_points_are_finite(points) =
                 1
     ]) == len(points);
 
+function _test_shell_max_point_delta(a, b) =
+    let(
+        pts_a = ps_loop_shell_points(a),
+        pts_b = ps_loop_shell_points(b)
+    )
+    max(concat(
+        [0],
+        [
+            for (i = [0:1:len(pts_a)-1])
+                for (axis = [0:1:2])
+                    abs(pts_a[i][axis] - pts_b[i][axis])
+        ]
+    ));
+
+module assert_shells_equivalent(a, b, msg="") {
+    assert_int_eq(len(a), len(b), str(msg, " shell count"));
+
+    for (i = [0:1:len(a)-1]) {
+        assert_int_eq(ps_loop_shell_source_idx(a[i]), ps_loop_shell_source_idx(b[i]), str(msg, " shell source idx i=", i));
+        assert(ps_loop_shell_source_kind(a[i]) == ps_loop_shell_source_kind(b[i]), str(msg, " shell source kind i=", i));
+        assert(ps_loop_shell_faces(a[i]) == ps_loop_shell_faces(b[i]), str(msg, " shell faces i=", i));
+        assert_int_eq(len(ps_loop_shell_points(a[i])), len(ps_loop_shell_points(b[i])), str(msg, " shell point count i=", i));
+        assert(_test_shell_max_point_delta(a[i], b[i]) <= EPS, str(msg, " shell point coords i=", i));
+    }
+}
+
 module test_ps_edge_region_shells__tetra_edge_single_atom() {
     p = tetrahedron();
     shells = ps_edge_region_shells(p, outset = 0.4, z0 = -0.3, z1 = 0.6, inter_radius = 12, edge_idx = 0);
@@ -124,6 +150,40 @@ module test_ps_edge_region_shells__crossing_constraints_are_split_at_crossing_z(
     assert_near(ranges[1][0], 0.4, EPS, "second split should start at crossing z");
 }
 
+module test_ps_edge_region_shells_from_context__matches_oneoff_tetra() {
+    p = tetrahedron();
+    ctx = ps_edge_region_context(p, inter_radius = 12);
+    oneoff = ps_edge_region_shells(p, outset = 0.4, z0 = -0.3, z1 = 0.6, inter_radius = 12, edge_idx = 0);
+    cached = ps_edge_region_shells_from_context(ctx, outset = 0.4, z0 = -0.3, z1 = 0.6, edge_idx = 0);
+
+    assert_shells_equivalent(cached, oneoff, "tetra context path should match oneoff path");
+}
+
+module test_ps_edge_region_shells_from_context__matches_oneoff_crossing_wedges() {
+    p = poly_truncate(tetrahedron(), t = -1);
+    ctx = ps_edge_region_context(p, inter_radius = 26);
+    edge_count = len(ps_edge_sites(p));
+
+    for (ei = [0:1:edge_count-1]) {
+        oneoff = ps_edge_region_shells(p, outset = 1.4, z0 = -1.2, z1 = 2, inter_radius = 26, edge_idx = ei);
+        cached = ps_edge_region_shells_from_context(ctx, outset = 1.4, z0 = -1.2, z1 = 2, edge_idx = ei);
+
+        assert_shells_equivalent(cached, oneoff, str("crossing context path should match oneoff path edge=", ei));
+    }
+}
+
+module test_ps_current_edge_region_shells__matches_explicit_context() {
+    p = poly_truncate(tetrahedron(), t = -1);
+    ctx = ps_edge_region_context(p, inter_radius = 26);
+
+    place_on_edges(p, inter_radius = 26, indices = 0, edge_regions = true) {
+        current = ps_current_edge_region_shells(outset = 1.4, z0 = -1.2, z1 = 2);
+        explicit = ps_edge_region_shells_from_context(ctx, outset = 1.4, z0 = -1.2, z1 = 2, edge_idx = $ps_edge_idx);
+
+        assert_shells_equivalent(current, explicit, "current edge-region helper should use placement context");
+    }
+}
+
 module run_TestEdgeRegions() {
     echo("Running TestEdgeRegions...");
     test_ps_edge_region_shells__tetra_edge_single_atom();
@@ -133,6 +193,9 @@ module run_TestEdgeRegions() {
     test_ps_edge_region_shells__crossing_wedges_are_lhr_outward();
     test_ps_edge_region_shells__side_constraints_preserve_identity();
     test_ps_edge_region_shells__crossing_constraints_are_split_at_crossing_z();
+    test_ps_edge_region_shells_from_context__matches_oneoff_tetra();
+    test_ps_edge_region_shells_from_context__matches_oneoff_crossing_wedges();
+    test_ps_current_edge_region_shells__matches_explicit_context();
     echo("TestEdgeRegions passed");
 }
 

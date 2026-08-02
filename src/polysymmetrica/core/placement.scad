@@ -46,6 +46,72 @@ function _ps_resolve_classify(poly, classify=undef, classify_opts=undef) =
             _ps_cls_opt(classify_opts, 3, false)
         );
 
+function _ps_placement_base(poly, inter_radius=1, edge_len=undef, classify=undef, classify_opts=undef) =
+    let(
+        exp_edge_len = is_undef(edge_len) ? inter_radius * poly_e_over_ir(poly) : edge_len,
+        verts = poly_verts(poly),
+        faces = poly_faces(poly),
+        faces0 = ps_orient_all_faces_outward(verts, faces),
+        edges = _ps_edges_from_faces(faces),
+        edge_faces = ps_edge_faces_table(faces0, edges),
+        face_n = [for (f = faces0) ps_face_frame_normal(verts, f)],
+        cls = _ps_resolve_classify(poly, classify, classify_opts),
+        family_counts = is_undef(cls) ? undef : ps_classify_counts(cls)
+    )
+    [
+        "placement_base",
+        poly,
+        exp_edge_len,
+        verts,
+        faces,
+        faces0,
+        edges,
+        edge_faces,
+        face_n,
+        cls,
+        family_counts
+    ];
+
+function _ps_placement_base_poly(base) = base[1];
+function _ps_placement_base_edge_len(base) = base[2];
+function _ps_placement_base_verts(base) = base[3];
+function _ps_placement_base_faces(base) = base[4];
+function _ps_placement_base_faces_oriented(base) = base[5];
+function _ps_placement_base_edges(base) = base[6];
+function _ps_placement_base_edge_faces(base) = base[7];
+function _ps_placement_base_face_normals(base) = base[8];
+function _ps_placement_base_classify(base) = base[9];
+function _ps_placement_base_family_counts(base) = base[10];
+
+function _ps_edge_region_context(edge_sites, face_sites, face_span_sites, eps) =
+    ["edge_region_context", edge_sites, face_sites, face_span_sites, eps];
+
+function _ps_edge_region_context_edge_sites(ctx) = ctx[1];
+function _ps_edge_region_context_face_sites(ctx) = ctx[2];
+function _ps_edge_region_context_face_span_sites(ctx) = ctx[3];
+function _ps_edge_region_context_eps(ctx) = ctx[4];
+
+function _ps_edge_region_face_boundary_span_sites(face_site, eps=1e-8) =
+    let(face_ctx = ps_face_site_face_local_context(face_site))
+    _ps_face_boundary_span_sites(
+        ps_face_local_context_pts3d_local(face_ctx),
+        ps_face_local_context_idx(face_ctx),
+        ps_face_local_context_poly_faces_idx(face_ctx),
+        ps_face_local_context_poly_verts_local(face_ctx),
+        ps_face_local_context_neighbors_idx(face_ctx),
+        ps_face_local_context_dihedrals(face_ctx),
+        "nonzero",
+        eps
+    );
+
+function _ps_edge_region_context_from_sites(edge_sites, face_sites, eps=1e-8) =
+    _ps_edge_region_context(
+        edge_sites,
+        face_sites,
+        [for (face_site = face_sites) _ps_edge_region_face_boundary_span_sites(face_site, eps)],
+        eps
+    );
+
 // Function: _ps_face_site_neighbors_idx()
 // Usage:
 //   result = _ps_face_site_neighbors_idx(face, fi, faces0, edges, edge_faces);
@@ -1072,18 +1138,19 @@ function ps_proxy_volume_group_face_replay_sites(group, ctx, eps=1e-8) =
 //   edge_len = explicit target edge length; overrides `inter_radius`.
 //   classify = optional `poly_classify(...)` result to reuse for family ids.
 //   classify_opts = optional `[detail, eps, radius, include_geom]` tuple used to compute classification when `classify` is `undef`.
-function ps_face_sites(poly, inter_radius = 1, edge_len = undef, classify = undef, classify_opts = undef) =
+function _ps_face_sites_from_base(base) =
     let(
-        exp_edge_len = is_undef(edge_len) ? inter_radius * poly_e_over_ir(poly) : edge_len,
+        poly = _ps_placement_base_poly(base),
+        exp_edge_len = _ps_placement_base_edge_len(base),
         scale = exp_edge_len,
-        verts = poly_verts(poly),
-        faces = poly_faces(poly),
-        faces0 = ps_orient_all_faces_outward(verts, faces),
-        edges = _ps_edges_from_faces(faces0),
-        edge_faces = ps_edge_faces_table(faces0, edges),
-        face_n = [ for (f = faces0) ps_face_frame_normal(verts, f) ],
-        cls = _ps_resolve_classify(poly, classify, classify_opts),
-        family_counts = is_undef(cls) ? undef : ps_classify_counts(cls),
+        verts = _ps_placement_base_verts(base),
+        faces = _ps_placement_base_faces(base),
+        faces0 = _ps_placement_base_faces_oriented(base),
+        edges = _ps_placement_base_edges(base),
+        edge_faces = _ps_placement_base_edge_faces(base),
+        face_n = _ps_placement_base_face_normals(base),
+        cls = _ps_placement_base_classify(base),
+        family_counts = _ps_placement_base_family_counts(base),
         face_family_ids = is_undef(cls) ? [] : ps_classify_face_ids(cls, len(faces)),
         edge_family_count = is_undef(family_counts) ? undef : family_counts[1],
         vert_family_count = is_undef(family_counts) ? undef : family_counts[2]
@@ -1125,23 +1192,23 @@ function ps_face_sites(poly, inter_radius = 1, edge_len = undef, classify = unde
                 face_neighbors_idx = _ps_face_site_neighbors_idx(f, fi, faces0, edges, edge_faces),
                 face_dihedrals = _ps_face_site_dihedrals(f, fi, faces0, edges, edge_faces, face_n)
             )
-    [
-        fi,
-        exp_edge_len,
-        len(face_pts2d),
-        face_midradius,
-        face_radius,
-        face_planarity_err,
-        face_planarity_err <= 1e-8,
-        is_undef(cls) ? undef : face_family_ids[fi],
-        is_undef(family_counts) ? undef : family_counts[0],
-        edge_family_count,
-        vert_family_count,
-        frame,
-        ps_face_local_context(
-            face_pts3d_local,
-            face_pts2d,
-            fi,
+            [
+                fi,
+                exp_edge_len,
+                len(face_pts2d),
+                face_midradius,
+                face_radius,
+                face_planarity_err,
+                face_planarity_err <= 1e-8,
+                is_undef(cls) ? undef : face_family_ids[fi],
+                is_undef(family_counts) ? undef : family_counts[0],
+                edge_family_count,
+                vert_family_count,
+                frame,
+                ps_face_local_context(
+                    face_pts3d_local,
+                    face_pts2d,
+                    fi,
                     faces,
                     poly_verts_local,
                     face_neighbors_idx,
@@ -1150,6 +1217,9 @@ function ps_face_sites(poly, inter_radius = 1, edge_len = undef, classify = unde
                 )
             ]
     ];
+
+function ps_face_sites(poly, inter_radius = 1, edge_len = undef, classify = undef, classify_opts = undef) =
+    _ps_face_sites_from_base(_ps_placement_base(poly, inter_radius, edge_len, classify, classify_opts));
 
 // Module: place_on_faces()
 // Usage:
@@ -1698,18 +1768,16 @@ module _ps_place_on_face_foreign_proxy_volume_group_hull(group, group_idx, group
 //   edge_len = explicit target edge length; overrides `inter_radius`.
 //   classify = optional `poly_classify(...)` result to reuse for family ids.
 //   classify_opts = optional `[detail, eps, radius, include_geom]` tuple used to compute classification when `classify` is `undef`.
-function ps_edge_sites(poly, inter_radius = 1, edge_len = undef, classify = undef, classify_opts = undef) =
+function _ps_edge_sites_from_base(base) =
     let(
-        exp_edge_len = is_undef(edge_len) ? inter_radius * poly_e_over_ir(poly) : edge_len,
+        exp_edge_len = _ps_placement_base_edge_len(base),
         scale = exp_edge_len,
-        verts = poly_verts(poly),
-        faces = poly_faces(poly),
-        faces0 = ps_orient_all_faces_outward(verts, faces),
-        edges = _ps_edges_from_faces(faces),
-        edge_faces = ps_edge_faces_table(faces0, edges),
-        face_n = [for (f = faces0) ps_face_frame_normal(verts, f)],
-        cls = _ps_resolve_classify(poly, classify, classify_opts),
-        family_counts = is_undef(cls) ? undef : ps_classify_counts(cls),
+        verts = _ps_placement_base_verts(base),
+        edges = _ps_placement_base_edges(base),
+        edge_faces = _ps_placement_base_edge_faces(base),
+        face_n = _ps_placement_base_face_normals(base),
+        cls = _ps_placement_base_classify(base),
+        family_counts = _ps_placement_base_family_counts(base),
         edge_family_ids = is_undef(cls) ? [] : ps_classify_edge_ids(cls, len(edges)),
         face_family_count = is_undef(family_counts) ? undef : family_counts[0],
         edge_family_count = is_undef(family_counts) ? undef : family_counts[1],
@@ -1766,6 +1834,9 @@ function ps_edge_sites(poly, inter_radius = 1, edge_len = undef, classify = unde
                 frame
             ]
     ];
+
+function ps_edge_sites(poly, inter_radius = 1, edge_len = undef, classify = undef, classify_opts = undef) =
+    _ps_edge_sites_from_base(_ps_placement_base(poly, inter_radius, edge_len, classify, classify_opts));
 
 // Function: ps_vertex_sites()
 // Usage:
@@ -1891,7 +1962,7 @@ module place_on_vertices(poly, inter_radius = 1, edge_len = undef, classify = un
 
 // Module: place_on_edges()
 // Usage:
-//   place_on_edges(poly, inter_radius, edge_len, classify, classify_opts, indices);
+//   place_on_edges(poly, inter_radius, edge_len, classify, classify_opts, indices, edge_regions, edge_region_eps);
 // Description:
 //   Place children on selected edges of a polyhedron.
 //   .
@@ -1905,8 +1976,14 @@ module place_on_vertices(poly, inter_radius = 1, edge_len = undef, classify = un
 //   classify = optional `poly_classify(...)` result to reuse for family ids.
 //   classify_opts = optional `[detail, eps, radius, include_geom]` tuple used to compute classification when `classify` is `undef`.
 //   indices = `undef` for all edges, one edge index, or a list of edge indices.
-module place_on_edges(poly, inter_radius = 1, edge_len = undef, classify = undef, classify_opts = undef, indices = undef) {
-    sites = ps_edge_sites(poly, inter_radius, edge_len, classify, classify_opts);
+//   edge_regions = true to precompute the internal edge-region context used by `ps_current_edge_region_*` helpers.
+//   edge_region_eps = tolerance used when deriving edge-region face boundary spans.
+module place_on_edges(poly, inter_radius = 1, edge_len = undef, classify = undef, classify_opts = undef, indices = undef, edge_regions = false, edge_region_eps = 1e-8) {
+    base = _ps_placement_base(poly, inter_radius, edge_len, classify, classify_opts);
+    sites = _ps_edge_sites_from_base(base);
+    edge_region_ctx = edge_regions
+        ? _ps_edge_region_context_from_sites(sites, _ps_face_sites_from_base(base), edge_region_eps)
+        : undef;
 
     for (site = sites) {
         if (_ps_place_idx_selected(ps_edge_site_idx(site), indices)) {
@@ -1924,6 +2001,7 @@ module place_on_edges(poly, inter_radius = 1, edge_len = undef, classify = undef
             $ps_edge_family_count   = ps_edge_site_edge_family_count(site);
             $ps_vertex_family_count = ps_edge_site_vertex_family_count(site);
             $ps_edge_frame          = ps_edge_site_frame(site);
+            $_ps_edge_region_context = edge_region_ctx;
 
             multmatrix(ps_placement_frame_matrix($ps_edge_frame))
                 children();

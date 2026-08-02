@@ -12,7 +12,7 @@ use <../../polysymmetrica/models/catalans_all.scad>
 use <../../polysymmetrica/models/platonics_all.scad>
 
 IR = 26;
-OUTSET = 1.4;
+OUTSET = 1.5;
 Z_MIN = -1.2;
 Z_MAX = 2.0;
 SPACING = 92;
@@ -23,8 +23,8 @@ module edge_region_preview(poly, label_s) {
             cube([$ps_edge_len, 0.45, 0.45], center = true);
 
     color("indianred", 0.72)
-        place_on_edges(poly, IR)
-            ps_edge_region_volume(poly, outset = OUTSET, z0 = Z_MIN, z1 = Z_MAX, inter_radius = IR);
+        place_on_edges(poly, IR, edge_regions = true)
+            ps_current_edge_region_volume(outset = OUTSET, z0 = Z_MIN, z1 = Z_MAX);
 
     translate([0, -36, -18])
         linear_extrude(height = 0.4)
