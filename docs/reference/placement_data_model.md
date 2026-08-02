@@ -282,7 +282,11 @@ For edge-owned CSG regions, `polysymmetrica/core/edge_regions.scad` provides
 `ps_edge_region_shells(...)` and `ps_edge_region_volume(...)`. These derive
 edge-region atom shells from the adjacent faces' filled boundary spans, then
 emit them in the same edge-local frame: X follows the edge and Z follows the
-adjacent-face normal bisector.
+adjacent-face normal bisector. When generating volumes for many edges of the
+same polyhedron, build `ps_edge_region_context(...)` once and call
+`ps_edge_region_shells_from_context(...)` or
+`ps_edge_region_volume_from_context(...)` inside `place_on_edges(...)`; the
+one-off functions are convenience wrappers for isolated edges.
 
 Describe example:
 

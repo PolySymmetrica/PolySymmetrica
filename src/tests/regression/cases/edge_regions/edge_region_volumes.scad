@@ -38,15 +38,17 @@ module _edge_region_wire(poly) {
             cube([$ps_edge_len, 0.45, 0.45], center = true);
 }
 
-module _edge_region_atoms(poly) {
+module _edge_region_atoms(poly, ctx) {
     color("indianred", 0.70)
         place_on_edges(poly, IR)
-            ps_edge_region_volume(poly, outset = OUTSET, z0 = Z0, z1 = Z1, inter_radius = IR);
+            ps_edge_region_volume_from_context(ctx, outset = OUTSET, z0 = Z0, z1 = Z1);
 }
 
 module _edge_region_panel(poly, label_s) {
+    ctx = ps_edge_region_context(poly, inter_radius = IR);
+
     _edge_region_wire(poly);
-    _edge_region_atoms(poly);
+    _edge_region_atoms(poly, ctx);
     reg_panel_label(label_s);
 }
 

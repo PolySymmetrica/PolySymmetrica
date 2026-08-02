@@ -30,29 +30,40 @@ function _ps_er_global_t_range(site, face, edge_verts, eps=1e-8) =
     )
     [min(t0, t1), max(t0, t1)];
 
-function _ps_er_face_edge_boundary_spans(face_site, edge_verts, mode="nonzero", eps=1e-8) =
+function _ps_er_face_boundary_span_sites(face_site, mode="nonzero", eps=1e-8) =
+    let(face_ctx = ps_face_site_face_local_context(face_site))
+    _ps_face_boundary_span_sites(
+        ps_face_local_context_pts3d_local(face_ctx),
+        ps_face_local_context_idx(face_ctx),
+        ps_face_local_context_poly_faces_idx(face_ctx),
+        ps_face_local_context_poly_verts_local(face_ctx),
+        ps_face_local_context_neighbors_idx(face_ctx),
+        ps_face_local_context_dihedrals(face_ctx),
+        mode,
+        eps
+    );
+
+function _ps_er_face_edge_boundary_spans_from_sites(face_site, sites, edge_verts, eps=1e-8) =
     let(
         face_ctx = ps_face_site_face_local_context(face_site),
         face_idx = ps_face_local_context_idx(face_ctx),
         face = ps_face_local_context_poly_faces_idx(face_ctx)[face_idx],
         source_edge_idx = _ps_er_face_source_edge_idx(face, edge_verts),
-        _edge = assert(!is_undef(source_edge_idx), "ps_edge_region_shells: adjacent face does not contain edge"),
-        sites = _ps_face_boundary_span_sites(
-            ps_face_local_context_pts3d_local(face_ctx),
-            face_idx,
-            ps_face_local_context_poly_faces_idx(face_ctx),
-            ps_face_local_context_poly_verts_local(face_ctx),
-            ps_face_local_context_neighbors_idx(face_ctx),
-            ps_face_local_context_dihedrals(face_ctx),
-            mode,
-            eps
-        )
+        _edge = assert(!is_undef(source_edge_idx), "ps_edge_region_shells: adjacent face does not contain edge")
     )
     [
         for (site = sites)
             if (ps_boundary_span_site_source_edge_idx(site) == source_edge_idx)
                 [site, _ps_er_global_t_range(site, face, edge_verts, eps), face_site]
     ];
+
+function _ps_er_face_edge_boundary_spans(face_site, edge_verts, mode="nonzero", eps=1e-8) =
+    _ps_er_face_edge_boundary_spans_from_sites(
+        face_site,
+        _ps_er_face_boundary_span_sites(face_site, mode, eps),
+        edge_verts,
+        eps
+    );
 
 function _ps_er_span_at_t(spans, t, eps=1e-8) =
     let(
@@ -272,6 +283,93 @@ function _ps_er_atom_shells(edge_site, atom, span0, span1, outset, z0, z1, eps=1
             _ps_er_atom_shell_for_stable_z(edge_site, atom, span0, span1, constraints, range[0], range[1], eps)
     ];
 
+function _ps_er_shells_from_edge_spans(edge_site, spans0, spans1, outset, z0, z1, eps=1e-8) =
+    let(intervals = _ps_er_atom_intervals(spans0, spans1, eps))
+    [
+        for (atom = intervals)
+            let(
+                span0 = _ps_er_span_at_t(spans0, atom[2], eps),
+                span1 = _ps_er_span_at_t(spans1, atom[2], eps)
+            )
+            if (!is_undef(span0) && !is_undef(span1))
+                each _ps_er_atom_shells(edge_site, atom, span0, span1, outset, z0, z1, eps)
+    ];
+
+function _ps_edge_region_context(edge_sites, face_sites, face_span_sites, mode, eps) =
+    ["edge_region_context", edge_sites, face_sites, face_span_sites, mode, eps];
+
+function _ps_edge_region_context_edge_sites(ctx) = ctx[1];
+function _ps_edge_region_context_face_sites(ctx) = ctx[2];
+function _ps_edge_region_context_face_span_sites(ctx) = ctx[3];
+function _ps_edge_region_context_eps(ctx) = ctx[5];
+
+// Function: ps_edge_region_context()
+// Usage:
+//   ctx = ps_edge_region_context(poly, inter_radius, edge_len, mode, eps, classify, classify_opts);
+// Description:
+//   Precompute shared edge-region source data for a polyhedron.
+//   .
+//   Use this when generating edge-region shells for many edges of the same
+//   polyhedron. It avoids rebuilding placement sites and face boundary spans for
+//   every edge.
+//   .
+//   - Returns: opaque edge-region context record for `ps_edge_region_shells_from_context(...)`
+// Arguments:
+//   poly = source poly descriptor.
+//   inter_radius = target interradius scale used when `edge_len` is `undef`.
+//   edge_len = explicit target edge length; pass the same value used by `place_on_edges(...)`.
+//   mode = face fill mode used when deriving adjacent face boundary spans.
+//   eps = geometric tolerance.
+//   classify = optional `poly_classify(...)` result to reuse for placement site family ids.
+//   classify_opts = optional `[detail, eps, radius, include_geom]` tuple used to compute classification when `classify` is `undef`.
+function ps_edge_region_context(poly, inter_radius=1, edge_len=undef, mode="nonzero", eps=1e-8, classify=undef, classify_opts=undef) =
+    let(
+        edge_sites = ps_edge_sites(poly, inter_radius, edge_len, classify, classify_opts),
+        face_sites = ps_face_sites(poly, inter_radius, edge_len, classify, classify_opts),
+        face_span_sites = [
+            for (face_site = face_sites)
+                _ps_er_face_boundary_span_sites(face_site, mode, eps)
+        ]
+    )
+    _ps_edge_region_context(edge_sites, face_sites, face_span_sites, mode, eps);
+
+// Function: ps_edge_region_shells_from_context()
+// Usage:
+//   shells = ps_edge_region_shells_from_context(ctx, outset, z0, z1, edge_idx, eps);
+// Description:
+//   Build edge-region atom shells for one source edge using a precomputed context.
+//   .
+//   - Returns: list of `ps_loop_shell` records
+//   .
+//   - Limitations/Gotchas: closed two-face edges only; `ctx` must have been
+//     built with the same poly scale and fill mode intended for this shell.
+// Arguments:
+//   ctx = edge-region context from `ps_edge_region_context(...)`.
+//   outset = symmetric side offset from the topological edge.
+//   z0 = lower edge-local Z bound.
+//   z1 = upper edge-local Z bound.
+//   edge_idx = source edge index; defaults to `$ps_edge_idx` inside `place_on_edges(...)`.
+//   eps = geometric tolerance for this shell construction; defaults to the context tolerance.
+function ps_edge_region_shells_from_context(ctx, outset, z0, z1, edge_idx=$ps_edge_idx, eps=undef) =
+    let(
+        eps0 = is_undef(eps) ? _ps_edge_region_context_eps(ctx) : eps,
+        _kind = assert(ctx[0] == "edge_region_context", "ps_edge_region_shells_from_context: ctx must be an edge-region context"),
+        _edge_idx = assert(!is_undef(edge_idx), "ps_edge_region_shells_from_context: edge_idx is required; call inside place_on_edges(...) or pass edge_idx"),
+        _outset = assert(outset > eps0, "ps_edge_region_shells_from_context: outset must be positive"),
+        _z0 = assert(!is_undef(z0), "ps_edge_region_shells_from_context: z0 must be defined"),
+        _z1 = assert(!is_undef(z1), "ps_edge_region_shells_from_context: z1 must be defined"),
+        _height = assert(z1 > z0 + eps0, "ps_edge_region_shells_from_context: z1 must be greater than z0"),
+        edge_site = _ps_edge_region_context_edge_sites(ctx)[edge_idx],
+        edge_verts = ps_edge_site_verts_idx(edge_site),
+        adj_faces = ps_edge_site_adj_faces_idx(edge_site),
+        _closed = assert(len(adj_faces) == 2, "ps_edge_region_shells_from_context: edge must have exactly two adjacent faces"),
+        face_sites = _ps_edge_region_context_face_sites(ctx),
+        face_span_sites = _ps_edge_region_context_face_span_sites(ctx),
+        spans0 = _ps_er_face_edge_boundary_spans_from_sites(face_sites[adj_faces[0]], face_span_sites[adj_faces[0]], edge_verts, eps0),
+        spans1 = _ps_er_face_edge_boundary_spans_from_sites(face_sites[adj_faces[1]], face_span_sites[adj_faces[1]], edge_verts, eps0)
+    )
+    _ps_er_shells_from_edge_spans(edge_site, spans0, spans1, outset, z0, z1, eps0);
+
 // Function: ps_edge_region_shells()
 // Usage:
 //   shells = ps_edge_region_shells(poly, outset, z0, z1, inter_radius, edge_len, edge_idx, mode, eps);
@@ -309,18 +407,34 @@ function ps_edge_region_shells(poly, outset, z0, z1, inter_radius=1, edge_len=un
         _closed = assert(len(adj_faces) == 2, "ps_edge_region_shells: edge must have exactly two adjacent faces"),
         face_sites = ps_face_sites(poly, inter_radius, edge_len),
         spans0 = _ps_er_face_edge_boundary_spans(face_sites[adj_faces[0]], edge_verts, mode, eps),
-        spans1 = _ps_er_face_edge_boundary_spans(face_sites[adj_faces[1]], edge_verts, mode, eps),
-        intervals = _ps_er_atom_intervals(spans0, spans1, eps)
+        spans1 = _ps_er_face_edge_boundary_spans(face_sites[adj_faces[1]], edge_verts, mode, eps)
     )
-    [
-        for (atom = intervals)
-            let(
-                span0 = _ps_er_span_at_t(spans0, atom[2], eps),
-                span1 = _ps_er_span_at_t(spans1, atom[2], eps)
-            )
-            if (!is_undef(span0) && !is_undef(span1))
-                each _ps_er_atom_shells(edge_site, atom, span0, span1, outset, z0, z1, eps)
-    ];
+    _ps_er_shells_from_edge_spans(edge_site, spans0, spans1, outset, z0, z1, eps);
+
+// Module: ps_edge_region_volume_from_context()
+// Usage:
+//   ps_edge_region_volume_from_context(ctx, outset, z0, z1, edge_idx, eps, convexity);
+// Description:
+//   Emit edge-region atom shells for the current or supplied source edge using
+//   a precomputed edge-region context.
+//   .
+//   - Returns: none; intended for use inside `place_on_edges(...)`
+// Arguments:
+//   ctx = edge-region context from `ps_edge_region_context(...)`.
+//   outset = symmetric side offset from the topological edge.
+//   z0 = lower edge-local Z bound.
+//   z1 = upper edge-local Z bound.
+//   edge_idx = source edge index; defaults to `$ps_edge_idx`.
+//   eps = geometric tolerance for this shell construction; defaults to the context tolerance.
+//   convexity = OpenSCAD polyhedron convexity hint.
+module ps_edge_region_volume_from_context(ctx, outset, z0, z1, edge_idx=$ps_edge_idx, eps=undef, convexity=6) {
+    shells = ps_edge_region_shells_from_context(ctx, outset, z0, z1, edge_idx, eps);
+
+    union() {
+        for (shell = shells)
+            ps_loop_shell(shell, convexity);
+    }
+}
 
 // Module: ps_edge_region_volume()
 // Usage:
