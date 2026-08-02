@@ -295,14 +295,6 @@ function _ps_er_shells_from_edge_spans(edge_site, spans0, spans1, outset, z0, z1
                 each _ps_er_atom_shells(edge_site, atom, span0, span1, outset, z0, z1, eps)
     ];
 
-function _ps_edge_region_context(edge_sites, face_sites, face_span_sites, mode, eps) =
-    ["edge_region_context", edge_sites, face_sites, face_span_sites, mode, eps];
-
-function _ps_edge_region_context_edge_sites(ctx) = ctx[1];
-function _ps_edge_region_context_face_sites(ctx) = ctx[2];
-function _ps_edge_region_context_face_span_sites(ctx) = ctx[3];
-function _ps_edge_region_context_eps(ctx) = ctx[5];
-
 // Function: ps_edge_region_context()
 // Usage:
 //   ctx = ps_edge_region_context(poly, inter_radius, edge_len, mode, eps, classify, classify_opts);
@@ -324,14 +316,15 @@ function _ps_edge_region_context_eps(ctx) = ctx[5];
 //   classify_opts = optional `[detail, eps, radius, include_geom]` tuple used to compute classification when `classify` is `undef`.
 function ps_edge_region_context(poly, inter_radius=1, edge_len=undef, mode="nonzero", eps=1e-8, classify=undef, classify_opts=undef) =
     let(
-        edge_sites = ps_edge_sites(poly, inter_radius, edge_len, classify, classify_opts),
-        face_sites = ps_face_sites(poly, inter_radius, edge_len, classify, classify_opts),
+        base = _ps_placement_base(poly, inter_radius, edge_len, classify, classify_opts),
+        edge_sites = _ps_edge_sites_from_base(base),
+        face_sites = _ps_face_sites_from_base(base),
         face_span_sites = [
             for (face_site = face_sites)
                 _ps_er_face_boundary_span_sites(face_site, mode, eps)
         ]
     )
-    _ps_edge_region_context(edge_sites, face_sites, face_span_sites, mode, eps);
+    _ps_edge_region_context(edge_sites, face_sites, face_span_sites, eps);
 
 // Function: ps_edge_region_shells_from_context()
 // Usage:
@@ -369,6 +362,25 @@ function ps_edge_region_shells_from_context(ctx, outset, z0, z1, edge_idx=$ps_ed
         spans1 = _ps_er_face_edge_boundary_spans_from_sites(face_sites[adj_faces[1]], face_span_sites[adj_faces[1]], edge_verts, eps0)
     )
     _ps_er_shells_from_edge_spans(edge_site, spans0, spans1, outset, z0, z1, eps0);
+
+// Function: ps_current_edge_region_shells()
+// Usage:
+//   shells = ps_current_edge_region_shells(outset, z0, z1, edge_idx, eps, ctx);
+// Description:
+//   Build edge-region atom shells for the current edge using the context
+//   precomputed by `place_on_edges(..., edge_regions = true)`.
+//   .
+//   - Returns: list of `ps_loop_shell` records
+// Arguments:
+//   outset = symmetric side offset from the topological edge.
+//   z0 = lower edge-local Z bound.
+//   z1 = upper edge-local Z bound.
+//   edge_idx = source edge index; defaults to `$ps_edge_idx`.
+//   eps = optional geometric tolerance override.
+//   ctx = optional explicit context; defaults to the current placement context.
+function ps_current_edge_region_shells(outset, z0, z1, edge_idx=$ps_edge_idx, eps=undef, ctx=$_ps_edge_region_context) =
+    let(_ctx = assert(!is_undef(ctx), "ps_current_edge_region_shells: requires place_on_edges(..., edge_regions = true) or an explicit ctx"))
+    ps_edge_region_shells_from_context(ctx, outset, z0, z1, edge_idx, eps);
 
 // Function: ps_edge_region_shells()
 // Usage:
@@ -434,6 +446,27 @@ module ps_edge_region_volume_from_context(ctx, outset, z0, z1, edge_idx=$ps_edge
         for (shell = shells)
             ps_loop_shell(shell, convexity);
     }
+}
+
+// Module: ps_current_edge_region_volume()
+// Usage:
+//   ps_current_edge_region_volume(outset, z0, z1, edge_idx, eps, convexity, ctx);
+// Description:
+//   Emit edge-region atom shells for the current edge using the context
+//   precomputed by `place_on_edges(..., edge_regions = true)`.
+//   .
+//   - Returns: none; intended for use inside `place_on_edges(..., edge_regions = true)`
+// Arguments:
+//   outset = symmetric side offset from the topological edge.
+//   z0 = lower edge-local Z bound.
+//   z1 = upper edge-local Z bound.
+//   edge_idx = source edge index; defaults to `$ps_edge_idx`.
+//   eps = optional geometric tolerance override.
+//   convexity = OpenSCAD polyhedron convexity hint.
+//   ctx = optional explicit context; defaults to the current placement context.
+module ps_current_edge_region_volume(outset, z0, z1, edge_idx=$ps_edge_idx, eps=undef, convexity=6, ctx=$_ps_edge_region_context) {
+    assert(!is_undef(ctx), "ps_current_edge_region_volume: requires place_on_edges(..., edge_regions = true) or an explicit ctx");
+    ps_edge_region_volume_from_context(ctx, outset, z0, z1, edge_idx, eps, convexity);
 }
 
 // Module: ps_edge_region_volume()

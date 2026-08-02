@@ -172,6 +172,18 @@ module test_ps_edge_region_shells_from_context__matches_oneoff_crossing_wedges()
     }
 }
 
+module test_ps_current_edge_region_shells__matches_explicit_context() {
+    p = poly_truncate(tetrahedron(), t = -1);
+    ctx = ps_edge_region_context(p, inter_radius = 26);
+
+    place_on_edges(p, inter_radius = 26, indices = 0, edge_regions = true) {
+        current = ps_current_edge_region_shells(outset = 1.4, z0 = -1.2, z1 = 2);
+        explicit = ps_edge_region_shells_from_context(ctx, outset = 1.4, z0 = -1.2, z1 = 2, edge_idx = $ps_edge_idx);
+
+        assert_shells_equivalent(current, explicit, "current edge-region helper should use placement context");
+    }
+}
+
 module run_TestEdgeRegions() {
     echo("Running TestEdgeRegions...");
     test_ps_edge_region_shells__tetra_edge_single_atom();
@@ -183,6 +195,7 @@ module run_TestEdgeRegions() {
     test_ps_edge_region_shells__crossing_constraints_are_split_at_crossing_z();
     test_ps_edge_region_shells_from_context__matches_oneoff_tetra();
     test_ps_edge_region_shells_from_context__matches_oneoff_crossing_wedges();
+    test_ps_current_edge_region_shells__matches_explicit_context();
     echo("TestEdgeRegions passed");
 }
 

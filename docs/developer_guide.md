@@ -186,7 +186,7 @@ This has multiple advantages:
 These operators attach arbitrary geometry to each face/edge/vertex of a polyhedron:
 
 * `place_on_faces(poly, inter_radius, edge_len=undef, classify=undef, classify_opts=undef, indices=undef)`
-* `place_on_edges(poly, inter_radius, edge_len=undef, classify=undef, classify_opts=undef, indices=undef)`
+* `place_on_edges(poly, inter_radius, edge_len=undef, classify=undef, classify_opts=undef, indices=undef, edge_regions=false, edge_region_eps=1e-8)`
 * `place_on_vertices(poly, inter_radius, edge_len=undef, classify=undef, classify_opts=undef, indices=undef)`
 
 Or calculate it based on edge length:
