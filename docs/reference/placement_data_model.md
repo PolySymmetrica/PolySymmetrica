@@ -575,8 +575,10 @@ Accessors:
 | `ps_loop_shell_source_idx(shell)` | Caller-owned source index. |
 | `ps_loop_shell_lineage(shell)` | Caller-owned lineage rows. |
 | `ps_loop_shell_capped_count(shell)` | Number of projected spans capped during shell construction. |
-| `ps_loop_shell_bottom_loop2d(shell)` | Bottom cap loop projected to `z0`. |
-| `ps_loop_shell_top_loop2d(shell)` | Top cap loop projected to `z1`. |
+| `ps_loop_shell_z0(shell)` | Actual lower shell Z bound after any caller-specific clipping. |
+| `ps_loop_shell_z1(shell)` | Actual upper shell Z bound after any caller-specific clipping. |
+| `ps_loop_shell_bottom_loop2d(shell)` | Bottom cap loop at `ps_loop_shell_z0(shell)`. |
+| `ps_loop_shell_top_loop2d(shell)` | Top cap loop at `ps_loop_shell_z1(shell)`. |
 | `ps_loop_shell_exposure_sign(shell)` | `+1` for same- or zero-winding/top-exposed regions, `-1` for opposite-winding/bottom-exposed regions. |
 
 Shell records are mesh outputs, not canonical source records. They should be

@@ -170,7 +170,7 @@ module test_ps_face_region_loop_shells__open_boundary_vertex_skips_fan_clip() {
     assert(_test_shell_caps_are_simple(shells[0]), "open cube inset shell caps should be simple");
 }
 
-module test_ps_face_region_vertex_clip_line__skips_unrealizable_cap_plane() {
+module test_ps_face_region_vertex_clip_spec__skips_unrealizable_cap_plane() {
     verts = [
         [0, 0, 0],
         [1, 0, 0],
@@ -181,19 +181,17 @@ module test_ps_face_region_vertex_clip_line__skips_unrealizable_cap_plane() {
     faces = [[0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 1], [1, 4, 3, 2]];
     edges = _ps_edges_from_faces(faces);
     edge_faces = ps_edge_faces_table(faces, edges);
-    clip_line = _ps_fr_vertex_clip_line(
+    clip_spec = _ps_fr_vertex_clip_spec_for_vertex(
         faces,
         verts,
         edges,
         edge_faces,
         0,
         0,
-        [[0, 0], [1, 0]],
-        [[0, 0], [0, 1]],
         boundary_inset = 0.1
     );
 
-    assert(is_undef(clip_line), "unrealizable high-valence fan clip should be skipped");
+    assert(is_undef(clip_spec), "unrealizable high-valence fan clip should be skipped");
 }
 
 module test_ps_face_region_loop_shells__site_context_matches_raw_context_builder() {
@@ -357,6 +355,31 @@ module test_ps_face_region_projection_cap__limits_offset() {
     assert_near(_ps_fr_project_offset(10, 0, 3), 3, EPS, "near-flat projection uses cap");
 }
 
+module test_ps_face_region_loop_shells__clips_before_projected_loop_convergence() {
+    p = poly_rectify(dodecahedron());
+    site = ps_face_sites(p, inter_radius = 20)[13];
+    face_ctx = ps_face_site_face_local_context(site);
+    shells = ps_face_region_loop_shells(face_ctx, -5, 4, boundary_inset = 3);
+    shell = shells[0];
+    bottom = ps_loop_shell_bottom_loop2d(shell);
+    top = ps_loop_shell_top_loop2d(shell);
+
+    assert_int_eq(len(shells), 1, "rectified dodecahedron face should still produce one clipped shell");
+    assert(ps_loop_shell_z0(shell) > -5 + EPS, str("z0 should be clipped before convergence got=", ps_loop_shell_z0(shell)));
+    assert_near(ps_loop_shell_z1(shell), 4, EPS, "z1 should remain unchanged");
+    assert(_ps_seg_poly_area2(bottom) * _ps_seg_poly_area2(top) > 0, "clipped cap loops should keep the same orientation");
+    assert(_test_shell_caps_are_simple(shell, 1e-6), "clipped convergence shell caps should be simple");
+}
+
+module test_ps_face_region_loop_shells__omits_interval_beyond_same_convergence() {
+    p = poly_rectify(dodecahedron());
+    site = ps_face_sites(p, inter_radius = 20)[13];
+    face_ctx = ps_face_site_face_local_context(site);
+    shells = ps_face_region_loop_shells(face_ctx, -8, -6, boundary_inset = 3);
+
+    assert_int_eq(len(shells), 0, "interval beyond one convergence side should produce no shell");
+}
+
 module run_TestFaceRegions() {
     test_ps_face_region_loop_shells__cube_face_single_quad_shell();
     test_ps_loop_shell_describe_str__summary();
@@ -365,7 +388,7 @@ module run_TestFaceRegions() {
     test_ps_face_region_loop_shells__cubocta_high_valence_vertex_clip_inset_sweep_stays_simple();
     test_ps_face_region_span_end_source_vertex_idx__recognizes_reversed_endpoint();
     test_ps_face_region_loop_shells__open_boundary_vertex_skips_fan_clip();
-    test_ps_face_region_vertex_clip_line__skips_unrealizable_cap_plane();
+    test_ps_face_region_vertex_clip_spec__skips_unrealizable_cap_plane();
     test_ps_face_region_loop_shells__site_context_matches_raw_context_builder();
     test_ps_face_region_loop_shells__side_inset_compensates_face_offset();
     test_ps_face_region_loop_shells__matches_boundary_loop_count();
@@ -375,6 +398,8 @@ module run_TestFaceRegions() {
     test_ps_face_region_loop_shells__anti_tet_winding_splits_exposure();
     test_ps_face_region_loop_shells__anti_tet_past_zero_area_keeps_atom_regions();
     test_ps_face_region_projection_cap__limits_offset();
+    test_ps_face_region_loop_shells__clips_before_projected_loop_convergence();
+    test_ps_face_region_loop_shells__omits_interval_beyond_same_convergence();
 }
 
 run_TestFaceRegions();

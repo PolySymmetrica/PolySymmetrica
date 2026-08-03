@@ -82,6 +82,12 @@ module _face_plate_loop_ring(pts, width, eps) {
     }
 }
 
+function _face_plate_shell_lower_clipped(shell, requested_z, eps) =
+    abs(ps_loop_shell_z0(shell) - requested_z) > eps;
+
+function _face_plate_shell_upper_clipped(shell, requested_z, eps) =
+    abs(ps_loop_shell_z1(shell) - requested_z) > eps;
+
 // Function: _face_plate_seam_support_offset()
 // Usage:
 //   result = _face_plate_seam_support_offset(current_n_seam_local, top_z, support_t, eps);
@@ -266,18 +272,20 @@ module face_plate(face_thk,
                 for (shell = shells) {
                     // Keep several structural top layers at the supported
                     // ramp-top footprint before the optional inset pillow begins.
-                    translate([0, 0, top_skin_base_z])
-                        linear_extrude(height = top_thk)
-                            ps_polygon(points = ps_loop_shell_top_loop2d(shell));
+                    if (!_face_plate_shell_upper_clipped(shell, top_skin_base_z, eps))
+                        translate([0, 0, ps_loop_shell_z1(shell)])
+                            linear_extrude(height = top_thk)
+                                ps_polygon(points = ps_loop_shell_top_loop2d(shell));
                 }
             }
         }
 
         for (shell = shells)
-            if (ps_loop_shell_exposure_sign(shell) > 0)
+            if (ps_loop_shell_exposure_sign(shell) > 0
+                    && !_face_plate_shell_upper_clipped(shell, top_skin_base_z, eps))
                 _face_plate_pillow_loop(
                     ps_loop_shell_top_loop2d(shell),
-                    top_z, pillow_min_rad, pillow_inset, pillow_ramp, pillow_thk, eps);
+                    ps_loop_shell_z1(shell) + top_thk, pillow_min_rad, pillow_inset, pillow_ramp, pillow_thk, eps);
     }
 
     if (clear_space)
@@ -285,13 +293,15 @@ module face_plate(face_thk,
             union() {
                 for (shell = shells) {
                     if (ps_loop_shell_exposure_sign(shell) > 0) {
-                        translate([0, 0, top_z - eps])
-                            linear_extrude(height = clear_height)
-                                ps_polygon(points = ps_loop_shell_top_loop2d(shell));
+                        if (!_face_plate_shell_upper_clipped(shell, top_skin_base_z, eps))
+                            translate([0, 0, ps_loop_shell_z1(shell) + top_thk - eps])
+                                linear_extrude(height = clear_height)
+                                    ps_polygon(points = ps_loop_shell_top_loop2d(shell));
                     } else {
-                        translate([0, 0, base_z_eff - clear_height + eps])
-                            linear_extrude(height = clear_height)
-                                ps_polygon(points = ps_loop_shell_bottom_loop2d(shell));
+                        if (!_face_plate_shell_lower_clipped(shell, base_z_eff, eps))
+                            translate([0, 0, ps_loop_shell_z0(shell) - clear_height + eps])
+                                linear_extrude(height = clear_height)
+                                    ps_polygon(points = ps_loop_shell_bottom_loop2d(shell));
                     }
                 }
             }
@@ -354,13 +364,15 @@ module face_mounting_plate(
 
     for (shell = shells) {
         if (ps_loop_shell_exposure_sign(shell) > 0) {
-            translate([0, 0, base_z_eff - mount_thk])
-                linear_extrude(height = mount_thk)
-                    _face_plate_loop_ring(ps_loop_shell_bottom_loop2d(shell), mount_width, eps);
+            if (!_face_plate_shell_lower_clipped(shell, base_z_eff, eps))
+                translate([0, 0, ps_loop_shell_z0(shell) - mount_thk])
+                    linear_extrude(height = mount_thk)
+                        _face_plate_loop_ring(ps_loop_shell_bottom_loop2d(shell), mount_width, eps);
         } else {
-            translate([0, 0, top_z])
-                linear_extrude(height = mount_thk)
-                    _face_plate_loop_ring(ps_loop_shell_top_loop2d(shell), mount_width, eps);
+            if (!_face_plate_shell_upper_clipped(shell, top_skin_base_z, eps))
+                translate([0, 0, ps_loop_shell_z1(shell) + top_thk])
+                    linear_extrude(height = mount_thk)
+                        _face_plate_loop_ring(ps_loop_shell_top_loop2d(shell), mount_width, eps);
         }
     }
 }
