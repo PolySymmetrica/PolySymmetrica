@@ -371,6 +371,15 @@ module test_ps_face_region_loop_shells__clips_before_projected_loop_convergence(
     assert(_test_shell_caps_are_simple(shell, 1e-6), "clipped convergence shell caps should be simple");
 }
 
+module test_ps_face_region_loop_shells__omits_interval_beyond_same_convergence() {
+    p = poly_rectify(dodecahedron());
+    site = ps_face_sites(p, inter_radius = 20)[13];
+    face_ctx = ps_face_site_face_local_context(site);
+    shells = ps_face_region_loop_shells(face_ctx, -8, -6, boundary_inset = 3);
+
+    assert_int_eq(len(shells), 0, "interval beyond one convergence side should produce no shell");
+}
+
 module run_TestFaceRegions() {
     test_ps_face_region_loop_shells__cube_face_single_quad_shell();
     test_ps_loop_shell_describe_str__summary();
@@ -390,6 +399,7 @@ module run_TestFaceRegions() {
     test_ps_face_region_loop_shells__anti_tet_past_zero_area_keeps_atom_regions();
     test_ps_face_region_projection_cap__limits_offset();
     test_ps_face_region_loop_shells__clips_before_projected_loop_convergence();
+    test_ps_face_region_loop_shells__omits_interval_beyond_same_convergence();
 }
 
 run_TestFaceRegions();

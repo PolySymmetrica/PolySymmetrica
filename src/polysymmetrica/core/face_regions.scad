@@ -782,7 +782,9 @@ function _ps_fr_loop_shell(face_pts3d_local, poly_faces_idx, poly_verts_local, f
         exposure_sign = _ps_fr_loop_exposure_sign(loop_sites, input_sign, cell_winding_signs),
         lineage = [for (site = loop_sites) ps_boundary_span_site_idx(site)]
     )
-    ps_loop_shell_from_projected_lines(lines0, lines1, z0c, z1c, "face_region", loop_idx, lineage, exposure_sign, eps);
+    abs(z1c - z0c) <= eps
+        ? undef
+        : ps_loop_shell_from_projected_lines(lines0, lines1, z0c, z1c, "face_region", loop_idx, lineage, exposure_sign, eps);
 
 // Function: _ps_face_region_loop_shells_from_context()
 // Usage:
@@ -901,7 +903,7 @@ function _ps_face_region_loop_shells_from_fields(
                 loop_sites = _ps_fr_sites_for_loop(sites, loop_idx),
                 shell = _ps_fr_loop_shell(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, loop_idx, z0, z1, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps)
             )
-            if (len(ps_loop_shell_points(shell)) >= 6 && len(ps_loop_shell_faces(shell)) >= 4)
+            if (!is_undef(shell) && len(ps_loop_shell_points(shell)) >= 6 && len(ps_loop_shell_faces(shell)) >= 4)
                 shell
     ];
 
