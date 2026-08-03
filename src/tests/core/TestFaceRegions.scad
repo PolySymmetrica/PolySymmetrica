@@ -170,7 +170,7 @@ module test_ps_face_region_loop_shells__open_boundary_vertex_skips_fan_clip() {
     assert(_test_shell_caps_are_simple(shells[0]), "open cube inset shell caps should be simple");
 }
 
-module test_ps_face_region_vertex_clip_line__skips_unrealizable_cap_plane() {
+module test_ps_face_region_vertex_clip_spec__skips_unrealizable_cap_plane() {
     verts = [
         [0, 0, 0],
         [1, 0, 0],
@@ -181,19 +181,17 @@ module test_ps_face_region_vertex_clip_line__skips_unrealizable_cap_plane() {
     faces = [[0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 1], [1, 4, 3, 2]];
     edges = _ps_edges_from_faces(faces);
     edge_faces = ps_edge_faces_table(faces, edges);
-    clip_line = _ps_fr_vertex_clip_line(
+    clip_spec = _ps_fr_vertex_clip_spec_for_vertex(
         faces,
         verts,
         edges,
         edge_faces,
         0,
         0,
-        [[0, 0], [1, 0]],
-        [[0, 0], [0, 1]],
         boundary_inset = 0.1
     );
 
-    assert(is_undef(clip_line), "unrealizable high-valence fan clip should be skipped");
+    assert(is_undef(clip_spec), "unrealizable high-valence fan clip should be skipped");
 }
 
 module test_ps_face_region_loop_shells__site_context_matches_raw_context_builder() {
@@ -381,7 +379,7 @@ module run_TestFaceRegions() {
     test_ps_face_region_loop_shells__cubocta_high_valence_vertex_clip_inset_sweep_stays_simple();
     test_ps_face_region_span_end_source_vertex_idx__recognizes_reversed_endpoint();
     test_ps_face_region_loop_shells__open_boundary_vertex_skips_fan_clip();
-    test_ps_face_region_vertex_clip_line__skips_unrealizable_cap_plane();
+    test_ps_face_region_vertex_clip_spec__skips_unrealizable_cap_plane();
     test_ps_face_region_loop_shells__site_context_matches_raw_context_builder();
     test_ps_face_region_loop_shells__side_inset_compensates_face_offset();
     test_ps_face_region_loop_shells__matches_boundary_loop_count();
