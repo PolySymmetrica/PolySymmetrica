@@ -675,6 +675,9 @@ function _ps_fr_projected_loop_for_z(face_pts3d_local, poly_faces_idx, poly_vert
         eps
     );
 
+function _ps_fr_projected_loop_from_lines(lines, eps=1e-8) =
+    _ps_fr_projected_loop(lines, eps);
+
 function _ps_fr_loop_valid_against_ref(loop2d, ref_loop2d, ref_area_sign, eps=1e-8) =
     let(loop = _ps_fr_loop_without_adjacent_duplicates(loop2d, eps))
     len(loop) >= 3
@@ -682,29 +685,33 @@ function _ps_fr_loop_valid_against_ref(loop2d, ref_loop2d, ref_area_sign, eps=1e
         && len(_ps_fr_loop_self_hits(loop, eps)) == 0
         && _ps_seg_poly_area2(loop) * ref_area_sign > eps;
 
-function _ps_fr_projected_loop_valid_for_z(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z, input_sign, cell_winding_signs, ref_loop2d, ref_area_sign, max_project=undef, boundary_inset=0, boundary_inset_mode="side", eps=1e-8) =
-    _ps_fr_loop_valid_against_ref(
-        _ps_fr_projected_loop_for_z(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps),
-        ref_loop2d,
-        ref_area_sign,
-        eps
-    );
+function _ps_fr_bound_projection_record(z, lines) =
+    [z, lines];
 
-function _ps_fr_clipped_z_search(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z_good, z_bad, input_sign, cell_winding_signs, ref_loop2d, ref_area_sign, max_project=undef, boundary_inset=0, boundary_inset_mode="side", eps=1e-8, iter=36) =
+function _ps_fr_bound_projection_z(record) = record[0];
+
+function _ps_fr_bound_projection_lines(record) = record[1];
+
+function _ps_fr_clipped_z_search(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z_good, lines_good, z_bad, input_sign, cell_winding_signs, ref_loop2d, ref_area_sign, max_project=undef, boundary_inset=0, boundary_inset_mode="side", eps=1e-8, iter=36) =
     (iter <= 0 || abs(z_bad - z_good) <= eps)
-        ? z_good
+        ? _ps_fr_bound_projection_record(z_good, lines_good)
         : let(
             z_mid = (z_good + z_bad) / 2,
-            ok = _ps_fr_projected_loop_valid_for_z(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z_mid, input_sign, cell_winding_signs, ref_loop2d, ref_area_sign, max_project, boundary_inset, boundary_inset_mode, eps)
+            lines_mid = _ps_fr_projected_lines_for_z(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z_mid, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps),
+            ok = _ps_fr_loop_valid_against_ref(_ps_fr_projected_loop_from_lines(lines_mid, eps), ref_loop2d, ref_area_sign, eps)
         )
         ok
-            ? _ps_fr_clipped_z_search(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z_mid, z_bad, input_sign, cell_winding_signs, ref_loop2d, ref_area_sign, max_project, boundary_inset, boundary_inset_mode, eps, iter - 1)
-            : _ps_fr_clipped_z_search(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z_good, z_mid, input_sign, cell_winding_signs, ref_loop2d, ref_area_sign, max_project, boundary_inset, boundary_inset_mode, eps, iter - 1);
+            ? _ps_fr_clipped_z_search(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z_mid, lines_mid, z_bad, input_sign, cell_winding_signs, ref_loop2d, ref_area_sign, max_project, boundary_inset, boundary_inset_mode, eps, iter - 1)
+            : _ps_fr_clipped_z_search(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z_good, lines_good, z_mid, input_sign, cell_winding_signs, ref_loop2d, ref_area_sign, max_project, boundary_inset, boundary_inset_mode, eps, iter - 1);
 
-function _ps_fr_clipped_z_for_bound(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z, input_sign, cell_winding_signs, ref_loop2d, ref_area_sign, max_project=undef, boundary_inset=0, boundary_inset_mode="side", eps=1e-8) =
-    _ps_fr_projected_loop_valid_for_z(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z, input_sign, cell_winding_signs, ref_loop2d, ref_area_sign, max_project, boundary_inset, boundary_inset_mode, eps)
-        ? z
-        : _ps_fr_clipped_z_search(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, 0, z, input_sign, cell_winding_signs, ref_loop2d, ref_area_sign, max_project, boundary_inset, boundary_inset_mode, eps);
+function _ps_fr_clipped_z_for_bound(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z, input_sign, cell_winding_signs, ref_loop2d, ref_lines, ref_area_sign, max_project=undef, boundary_inset=0, boundary_inset_mode="side", eps=1e-8) =
+    let(
+        lines = _ps_fr_projected_lines_for_z(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps),
+        valid = _ps_fr_loop_valid_against_ref(_ps_fr_projected_loop_from_lines(lines, eps), ref_loop2d, ref_area_sign, eps)
+    )
+    valid
+        ? _ps_fr_bound_projection_record(z, lines)
+        : _ps_fr_clipped_z_search(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, 0, ref_lines, z, input_sign, cell_winding_signs, ref_loop2d, ref_area_sign, max_project, boundary_inset, boundary_inset_mode, eps);
 
 // Function: _ps_fr_loop_shell()
 // Usage:
@@ -727,17 +734,20 @@ function _ps_fr_clipped_z_for_bound(face_pts3d_local, poly_faces_idx, poly_verts
 //   eps = tolerance
 function _ps_fr_loop_shell(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, loop_idx, z0, z1, input_sign, cell_winding_signs, max_project=undef, boundary_inset=0, boundary_inset_mode="side", eps=1e-8) =
     let(
+        ref_lines = _ps_fr_projected_lines_for_z(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, 0, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps),
         ref_loop = _ps_fr_loop_without_adjacent_duplicates(
-            _ps_fr_projected_loop_for_z(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, 0, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps),
+            _ps_fr_projected_loop_from_lines(ref_lines, eps),
             eps
         ),
         ref_area = _ps_seg_poly_area2(ref_loop),
         _ref = assert(abs(ref_area) > eps, "ps_face_region_loop_shells: projected loop at z=0 is degenerate"),
         ref_area_sign = ref_area >= 0 ? 1 : -1,
-        z0c = _ps_fr_clipped_z_for_bound(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z0, input_sign, cell_winding_signs, ref_loop, ref_area_sign, max_project, boundary_inset, boundary_inset_mode, eps),
-        z1c = _ps_fr_clipped_z_for_bound(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z1, input_sign, cell_winding_signs, ref_loop, ref_area_sign, max_project, boundary_inset, boundary_inset_mode, eps),
-        lines0 = _ps_fr_projected_lines_for_z(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z0c, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps),
-        lines1 = _ps_fr_projected_lines_for_z(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z1c, input_sign, cell_winding_signs, max_project, boundary_inset, boundary_inset_mode, eps),
+        bound0 = _ps_fr_clipped_z_for_bound(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z0, input_sign, cell_winding_signs, ref_loop, ref_lines, ref_area_sign, max_project, boundary_inset, boundary_inset_mode, eps),
+        bound1 = _ps_fr_clipped_z_for_bound(face_pts3d_local, poly_faces_idx, poly_verts_local, face_idx, edges, edge_faces, loop_sites, z1, input_sign, cell_winding_signs, ref_loop, ref_lines, ref_area_sign, max_project, boundary_inset, boundary_inset_mode, eps),
+        z0c = _ps_fr_bound_projection_z(bound0),
+        z1c = _ps_fr_bound_projection_z(bound1),
+        lines0 = _ps_fr_bound_projection_lines(bound0),
+        lines1 = _ps_fr_bound_projection_lines(bound1),
         exposure_sign = _ps_fr_loop_exposure_sign(loop_sites, input_sign, cell_winding_signs),
         lineage = [for (site = loop_sites) ps_boundary_span_site_idx(site)]
     )
