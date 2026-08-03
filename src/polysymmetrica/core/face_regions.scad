@@ -754,8 +754,8 @@ function _ps_fr_clipped_z_for_bound(face_pts3d_local, loop_sites, vertex_clip_sp
 //   face_pts3d_local = source face loop
 //   loop_sites = sites for one boundary loop
 //   loop_idx = loop id
-//   z0 = target Z planes
-//   z1 = target Z planes
+//   z0 = requested lower local Z plane
+//   z1 = requested upper local Z plane
 //   input_sign = source loop winding sign
 //   cell_winding_signs = per-cell winding signs
 //   max_project = optional cap
@@ -795,10 +795,11 @@ function _ps_fr_loop_shell(face_pts3d_local, poly_faces_idx, poly_verts_local, f
 //   - Returns: list of `ps_loop_shell` records
 //   .
 //   - Limitations/Gotchas: emits one shell per filled boundary loop; holes/proxy punch-through volumes are intentionally outside this first primitive
+//   - Gotchas: returned shell `z0`/`z1` may be clipped inward from the requested bounds; always use `ps_loop_shell_z0(shell)` and `ps_loop_shell_z1(shell)` for dependent geometry
 // Arguments:
 //   face_ctx = face-local context
-//   z0 = target local Z planes
-//   z1 = target local Z planes
+//   z0 = requested lower local Z plane
+//   z1 = requested upper local Z plane
 //   mode = `"nonzero"`, `"evenodd"`, or `"all"`
 //   max_project = optional projection-distance cap
 //   eps = geometric tolerance
@@ -847,6 +848,7 @@ function _ps_face_region_loop_shells_from_context(
 //   - Returns: list of `ps_loop_shell` records
 //   .
 //   - Limitations/Gotchas: emits one shell per filled boundary loop; holes/proxy punch-through volumes are intentionally outside this first primitive
+//   - Gotchas: returned shell `z0`/`z1` may be clipped inward from the requested bounds; always use `ps_loop_shell_z0(shell)` and `ps_loop_shell_z1(shell)` for dependent geometry
 // Arguments:
 //   face_pts3d_local = current face loop in face-local 3D
 //   face_idx = current face index
@@ -854,8 +856,8 @@ function _ps_face_region_loop_shells_from_context(
 //   poly_verts_local = full poly in current face-local coordinates
 //   face_neighbors_idx = current face-edge metadata
 //   face_dihedrals = current face-edge metadata
-//   z0 = target local Z planes
-//   z1 = target local Z planes
+//   z0 = requested lower local Z plane
+//   z1 = requested upper local Z plane
 //   mode = `"nonzero"`, `"evenodd"`, or `"all"`
 //   max_project = optional projection-distance cap
 //   eps = geometric tolerance
@@ -915,11 +917,11 @@ function _ps_face_region_loop_shells_from_fields(
 //   .
 //   - Returns: list of `ps_loop_shell` records
 //   .
-//   - Limitations/Gotchas: context-first public entry point
+//   - Limitations/Gotchas: returned shell `z0`/`z1` may be clipped inward from the requested bounds to avoid invalid projected loops; always use `ps_loop_shell_z0(shell)` and `ps_loop_shell_z1(shell)` for dependent geometry
 // Arguments:
 //   face_ctx = face-local context
-//   z0 = target local Z planes
-//   z1 = target local Z planes
+//   z0 = requested lower local Z plane
+//   z1 = requested upper local Z plane
 //   mode = `"nonzero"`, `"evenodd"`, or `"all"`
 //   max_project = optional projection-distance cap
 //   eps = geometric tolerance
@@ -955,9 +957,10 @@ function ps_face_region_loop_shells(
 //   - Returns: none; intended for use inside `place_on_faces(...)`, usually inside `intersection()`
 //   .
 //   - Limitations/Gotchas: this is only the boundary-span volume primitive; it does not yet subtract or union proxy punch-through voids
+//   - Gotchas: generated shell bounds may be clipped inward from requested `z0`/`z1`; consumers that need exact effective bounds should call `ps_face_region_loop_shells(...)` and read `ps_loop_shell_z0/z1`
 // Arguments:
-//   z0 = target local Z planes
-//   z1 = target local Z planes
+//   z0 = requested lower local Z plane
+//   z1 = requested upper local Z plane
 //   mode = `"nonzero"`, `"evenodd"`, or `"all"`
 //   max_project = optional projection-distance cap
 //   eps = geometric tolerance

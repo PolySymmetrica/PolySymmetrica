@@ -59,12 +59,22 @@ Accessor helpers:
 - `ps_loop_shell_faces(shell)`
 - `ps_loop_shell_source_idx(shell)`
 - `ps_loop_shell_capped_count(shell)`
+- `ps_loop_shell_z0(shell)`
+- `ps_loop_shell_z1(shell)`
 - `ps_loop_shell_bottom_loop2d(shell)`
 - `ps_loop_shell_top_loop2d(shell)`
 - `ps_loop_shell_exposure_sign(shell)`
 
 `face_ctx` is a `ps_face_local_context(...)` record. In `place_on_faces(...)`
 contexts, pass `$ps_face_local_context`.
+
+The requested `z0` and `z1` are not guaranteed to be the returned shell's
+actual cap planes. If a projected loop would self-intersect, reverse, or
+collapse before reaching a requested bound, the shell is clipped to the last
+valid plane on that side. Consumers that attach shelves, skins, cutters, or
+other dependent geometry must read the effective bounds from
+`ps_loop_shell_z0(shell)` and `ps_loop_shell_z1(shell)`, and must not assume
+their input `z0`/`z1` survived unchanged.
 
 ### `ps_face_region_loop_volume(...)`
 
@@ -99,6 +109,11 @@ projects that midpoint to `z0` and `z1` along the span's anti-interference
 direction. The projected line stays parallel to the boundary span. Adjacent
 projected lines are intersected to form the projected polygon at each target Z
 plane.
+
+When a requested target plane lies beyond a projected-loop convergence, the
+implementation retreats that side of the shell toward `z=0` until the projected
+loop is still valid. If both requested bounds lie beyond the same convergence
+and collapse to the same effective plane, no shell is emitted for that loop.
 
 `boundary_inset` is applied after each boundary span has been projected to the
 target Z plane. Positive values move the generated line toward the filled side
