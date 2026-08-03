@@ -357,6 +357,22 @@ module test_ps_face_region_projection_cap__limits_offset() {
     assert_near(_ps_fr_project_offset(10, 0, 3), 3, EPS, "near-flat projection uses cap");
 }
 
+module test_ps_face_region_loop_shells__clips_before_projected_loop_convergence() {
+    p = poly_rectify(dodecahedron());
+    site = ps_face_sites(p, inter_radius = 20)[13];
+    face_ctx = ps_face_site_face_local_context(site);
+    shells = ps_face_region_loop_shells(face_ctx, -5, 4, boundary_inset = 3);
+    shell = shells[0];
+    bottom = ps_loop_shell_bottom_loop2d(shell);
+    top = ps_loop_shell_top_loop2d(shell);
+
+    assert_int_eq(len(shells), 1, "rectified dodecahedron face should still produce one clipped shell");
+    assert(ps_loop_shell_z0(shell) > -5 + EPS, str("z0 should be clipped before convergence got=", ps_loop_shell_z0(shell)));
+    assert_near(ps_loop_shell_z1(shell), 4, EPS, "z1 should remain unchanged");
+    assert(_ps_seg_poly_area2(bottom) * _ps_seg_poly_area2(top) > 0, "clipped cap loops should keep the same orientation");
+    assert(_test_shell_caps_are_simple(shell, 1e-6), "clipped convergence shell caps should be simple");
+}
+
 module run_TestFaceRegions() {
     test_ps_face_region_loop_shells__cube_face_single_quad_shell();
     test_ps_loop_shell_describe_str__summary();
@@ -375,6 +391,7 @@ module run_TestFaceRegions() {
     test_ps_face_region_loop_shells__anti_tet_winding_splits_exposure();
     test_ps_face_region_loop_shells__anti_tet_past_zero_area_keeps_atom_regions();
     test_ps_face_region_projection_cap__limits_offset();
+    test_ps_face_region_loop_shells__clips_before_projected_loop_convergence();
 }
 
 run_TestFaceRegions();
