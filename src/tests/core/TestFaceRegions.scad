@@ -57,9 +57,21 @@ function _test_loop_self_hits(loop, eps=EPS) =
                         [i, j]
     ];
 
+function _test_loop_adjacent_duplicate_idxs(loop, eps=EPS) =
+    let(n = len(loop))
+    [
+        for (i = [0:1:n-1])
+            if (norm(loop[(i + 1) % n] - loop[i]) <= eps)
+                i
+    ];
+
 function _test_shell_caps_are_simple(shell, eps=EPS) =
     len(_test_loop_self_hits(ps_loop_shell_bottom_loop2d(shell), eps)) == 0
         && len(_test_loop_self_hits(ps_loop_shell_top_loop2d(shell), eps)) == 0;
+
+function _test_shell_caps_have_no_adjacent_duplicates(shell, eps=EPS) =
+    len(_test_loop_adjacent_duplicate_idxs(ps_loop_shell_bottom_loop2d(shell), eps)) == 0
+        && len(_test_loop_adjacent_duplicate_idxs(ps_loop_shell_top_loop2d(shell), eps)) == 0;
 
 function _test_first_face_idx_by_n(poly, n, i=0) =
     (i >= len(poly_faces(poly))) ? undef :
@@ -277,6 +289,17 @@ module test_ps_face_region_loop_shells__pentagram_zmax_expands_outward() {
     assert(_test_shell_caps_are_simple(shells[0]), "pentagram shell cap loops should be simple");
 }
 
+module test_ps_face_region_loop_shells__star_antiprism_vertex_clips_drop_duplicate_cap_points() {
+    p = poly_antiprism(5, p = 3, angle = 0);
+    site = _test_face_site(p, 0);
+    face_ctx = ps_face_site_face_local_context(site);
+    shells = ps_face_region_loop_shells(face_ctx, -0.8, 0.5, max_project = 10, boundary_inset = 1.1);
+
+    assert_int_eq(len(shells), 1, "star antiprism face should produce one shell");
+    assert(_test_shell_caps_are_simple(shells[0]), "star antiprism clipped cap loops should be simple");
+    assert(_test_shell_caps_have_no_adjacent_duplicates(shells[0]), "star antiprism clipped cap loops should not expose adjacent duplicate vertices");
+}
+
 module test_ps_face_region_loop_shells__zero_winding_exposure_uses_same_winding_fallback() {
     zero_cell_site = [0, undef, 0, undef, 0, undef, 0, 1, "source_edge", 0];
 
@@ -393,6 +416,7 @@ module run_TestFaceRegions() {
     test_ps_face_region_loop_shells__side_inset_compensates_face_offset();
     test_ps_face_region_loop_shells__matches_boundary_loop_count();
     test_ps_face_region_loop_shells__pentagram_zmax_expands_outward();
+    test_ps_face_region_loop_shells__star_antiprism_vertex_clips_drop_duplicate_cap_points();
     test_ps_face_region_loop_shells__zero_winding_exposure_uses_same_winding_fallback();
     test_ps_face_region_loop_shells__anti_tet_hex_is_finite();
     test_ps_face_region_loop_shells__anti_tet_winding_splits_exposure();

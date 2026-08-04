@@ -526,8 +526,11 @@ function _ps_fr_vertex_clip_specs(poly_faces_idx, poly_verts_local, edges, edge_
     (boundary_inset <= eps) ? undef :
     let(
         face = poly_faces_idx[face_idx],
+        face_pts2d = ps_xy([for (vi = face) poly_verts_local[vi]]),
+        face_self_crosses = len(_ps_fr_loop_self_hits(face_pts2d, eps)) > 0,
         n = len(loop_sites)
     )
+    face_self_crosses ? undef :
     [
         for (i = [0:1:n-1])
             let(
