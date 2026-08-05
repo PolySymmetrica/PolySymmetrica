@@ -22,7 +22,6 @@ STAR_FACE_IDX = 1;
 STAR_SOURCE_EDGE_IDX = 0;
 TRI_FACE_IDX = 12;
 TRI_SOURCE_EDGE_IDX = undef;
-MODE = "nonzero";
 FILTER_PARENT_CUTS = true;
 
 FACE_THK = 0.28;
@@ -186,7 +185,7 @@ module draw_poly_context(poly, face_idx) {
         if ($ps_face_idx == face_idx)
             color("tomato", 0.46)
                 linear_extrude(height = FACE_THK, center = true)
-                    ps_polygon($ps_face_pts2d, MODE);
+                    ps_polygon($ps_face_pts2d);
 
         color(($ps_face_idx == face_idx) ? "black" : "gray")
             translate([0, 0, 1.3])
@@ -216,13 +215,12 @@ module draw_poly_context(poly, face_idx) {
 //   poly_verts_local =
 module echo_target_summary(label_s, face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local) {
     arr = ps_face_arrangement(face_pts3d_local);
-    bm = ps_face_boundary_model(face_pts3d_local, MODE);
+    bm = ps_face_boundary_model(face_pts3d_local);
     cuts = ps_face_geom_cut_entries(
         ps_xy(face_pts3d_local),
         face_idx,
         poly_faces_idx,
         poly_verts_local,
-        mode = MODE,
         filter_parent = FILTER_PARENT_CUTS
     );
     visible = ps_face_visible_segments(
@@ -230,7 +228,6 @@ module echo_target_summary(label_s, face_pts3d_local, face_idx, poly_faces_idx, 
         face_idx,
         poly_faces_idx,
         poly_verts_local,
-        mode = MODE,
         filter_parent = FILTER_PARENT_CUTS
     );
 
@@ -270,7 +267,7 @@ module draw_arrangement_panel(poly, face_idx, source_edge_idx, label_s) {
             color("gainsboro", 0.28)
                 translate([0, 0, -FACE_THK])
                     linear_extrude(height = FACE_THK, center = true)
-                        ps_polygon($ps_face_pts2d, MODE);
+                        ps_polygon($ps_face_pts2d);
 
             for (si = [0:1:len(spans)-1]) {
                 span = spans[si];
@@ -309,14 +306,14 @@ module draw_arrangement_panel(poly, face_idx, source_edge_idx, label_s) {
 module draw_boundary_panel(poly, face_idx, source_edge_idx, label_s) {
     place_on_faces(poly, IR) {
         if ($ps_face_idx == face_idx) {
-            bm = ps_face_boundary_model($ps_face_pts3d_local, MODE);
+            bm = ps_face_boundary_model($ps_face_pts3d_local);
             loops = bm[2];
             spans = bm[3];
 
             color("gainsboro", 0.18)
                 translate([0, 0, -FACE_THK])
                     linear_extrude(height = FACE_THK, center = true)
-                        ps_polygon($ps_face_pts2d, MODE);
+                        ps_polygon($ps_face_pts2d);
 
             for (li = [0:1:len(loops)-1])
                 color(example_color(li), 0.38)
@@ -360,9 +357,9 @@ module draw_cut_visibility_panel(poly, face_idx, source_edge_idx, label_s) {
             color("gainsboro", 0.16)
                 translate([0, 0, -FACE_THK])
                     linear_extrude(height = FACE_THK, center = true)
-                        ps_polygon($ps_face_pts2d, MODE);
+                        ps_polygon($ps_face_pts2d);
 
-            place_on_face_visible_segments(mode = MODE, filter_parent = FILTER_PARENT_CUTS) {
+            place_on_face_visible_segments(filter_parent = FILTER_PARENT_CUTS) {
                 color(example_color($ps_vis_seg_idx), 0.35)
                     draw_polygon_fill($ps_vis_seg_pts2d, z = -0.05);
 
@@ -377,7 +374,6 @@ module draw_cut_visibility_panel(poly, face_idx, source_edge_idx, label_s) {
                 $ps_face_idx,
                 $ps_poly_faces_idx,
                 $ps_poly_verts_local,
-                mode = MODE,
                 filter_parent = FILTER_PARENT_CUTS
             );
 
@@ -418,17 +414,16 @@ module draw_volume_panel(poly, face_idx, source_edge_idx, label_s) {
             color("gainsboro", 0.18)
                 translate([0, 0, -FACE_THK])
                     linear_extrude(height = FACE_THK, center = true)
-                        ps_polygon($ps_face_pts2d, MODE);
+                        ps_polygon($ps_face_pts2d);
 
             color("deepskyblue", 0.32)
                 ps_face_region_loop_volume(
                     VOL_Z_MIN,
                     VOL_Z_MAX,
-                    mode = MODE,
                     max_project = MAX_PROJECT
                 );
 
-            place_on_face_boundary_spans(mode = MODE) {
+            place_on_face_boundary_spans() {
                 is_target_source = !is_undef(source_edge_idx) && $ps_boundary_span_source_edge_idx == source_edge_idx;
                 color(is_target_source ? "red" : "black")
                     cube([$ps_boundary_span_len, is_target_source ? 0.95 : 0.55, 0.55], center = true);
@@ -462,7 +457,7 @@ module draw_volume_panel(poly, face_idx, source_edge_idx, label_s) {
 module draw_face_proxy_body() {
     color(example_color($ps_proxy_idx), 0.30)
         linear_extrude(height = FACE_THK * 4, center = true)
-            ps_polygon($ps_proxy_face_pts2d, MODE);
+            ps_polygon($ps_proxy_face_pts2d);
 
     color("black")
         translate([0, 0, FACE_THK * 2.6])
@@ -487,14 +482,14 @@ module draw_foreign_replay_panel(poly, face_idx, source_edge_idx, label_s) {
             color("gainsboro", 0.94)
                 translate([0, 0, -FACE_THK])
                     linear_extrude(height = FACE_THK, center = true)
-                        ps_polygon($ps_face_pts2d, MODE);
+                        ps_polygon($ps_face_pts2d);
 
-            place_on_face_foreign_face_replay_sites(mode = MODE, filter_parent = FILTER_PARENT_CUTS, coords = "parent") {
+            place_on_face_foreign_face_replay_sites(filter_parent = FILTER_PARENT_CUTS, coords = "parent") {
                 color(example_color($ps_replay_idx))
                     draw_segment_stroke($ps_replay_intrusion_segment2d_local, r = LINE_R * 0.35, z = 0.25);
             }
 
-            place_on_face_foreign_proxy_sites(mode = MODE, filter_parent = FILTER_PARENT_CUTS) {
+            place_on_face_foreign_proxy_sites(filter_parent = FILTER_PARENT_CUTS) {
                 draw_face_proxy_body(); // face proxy child slot
             }
 

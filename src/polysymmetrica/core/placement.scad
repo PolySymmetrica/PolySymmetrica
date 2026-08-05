@@ -100,7 +100,6 @@ function _ps_edge_region_face_boundary_span_sites(face_site, eps=1e-8) =
         ps_face_local_context_poly_verts_local(face_ctx),
         ps_face_local_context_neighbors_idx(face_ctx),
         ps_face_local_context_dihedrals(face_ctx),
-        "nonzero",
         eps
     );
 
@@ -662,7 +661,7 @@ function _ps_face_foreign_vertex_replay_site(replay_idx, record, ctx, eps=1e-12)
 
 // Function: _ps_face_foreign_face_replay_sites_from_context()
 // Usage:
-//   result = _ps_face_foreign_face_replay_sites_from_context(face_pts2d, face_idx, ctx, eps, mode, filter_parent);
+//   result = _ps_face_foreign_face_replay_sites_from_context(face_pts2d, face_idx, ctx, eps, filter_parent);
 // Description:
 //   Build target-local replay sites for exact foreign face intrusions from a target-local poly context.
 //   .
@@ -674,14 +673,13 @@ function _ps_face_foreign_vertex_replay_site(replay_idx, record, ctx, eps=1e-12)
 //   face_idx = current target face index in the source poly.
 //   ctx = target-local poly context containing source faces and vertices in the current face frame.
 //   eps = geometric tolerance for intrusion/arrangement calculations.
-//   mode = face-arrangement fill rule: `"nonzero"`, `"evenodd"`, or `"all"`.
 //   filter_parent = whether to drop cuts caused only by the current face's own boundary adjacency.
-function _ps_face_foreign_face_replay_sites_from_context(face_pts2d, face_idx, ctx, eps=1e-8, mode="nonzero", filter_parent=true) =
+function _ps_face_foreign_face_replay_sites_from_context(face_pts2d, face_idx, ctx, eps=1e-8, filter_parent=true) =
     let(
         ctx_faces_idx = ps_target_local_poly_context_faces_idx(ctx),
         ctx_verts_local = ps_target_local_poly_context_verts_local(ctx),
         records = [
-            for (r = ps_face_foreign_intrusion_records(face_pts2d, face_idx, ctx_faces_idx, ctx_verts_local, eps, mode, filter_parent))
+            for (r = ps_face_foreign_intrusion_records(face_pts2d, face_idx, ctx_faces_idx, ctx_verts_local, eps, filter_parent))
                 if (ps_intrusion_foreign_kind(r) == "face")
                     r
         ]
@@ -693,7 +691,7 @@ function _ps_face_foreign_face_replay_sites_from_context(face_pts2d, face_idx, c
 
 // Function: ps_face_foreign_face_replay_sites()
 // Usage:
-//   result = ps_face_foreign_face_replay_sites(face_pts2d, face_idx, ctx, eps, mode, filter_parent);
+//   result = ps_face_foreign_face_replay_sites(face_pts2d, face_idx, ctx, eps, filter_parent);
 // Description:
 //   Build target-local replay sites for exact foreign face intrusions from a target-local poly context.
 //   .
@@ -705,10 +703,9 @@ function _ps_face_foreign_face_replay_sites_from_context(face_pts2d, face_idx, c
 //   face_idx = current target face index in the source poly.
 //   ctx = target-local poly context containing source faces and vertices in the current face frame.
 //   eps = geometric tolerance for intrusion/arrangement calculations.
-//   mode = face-arrangement fill rule: `"nonzero"`, `"evenodd"`, or `"all"`.
 //   filter_parent = whether to drop cuts caused only by the current face's own boundary adjacency.
-function ps_face_foreign_face_replay_sites(face_pts2d, face_idx, ctx, eps=1e-8, mode="nonzero", filter_parent=true) =
-    _ps_face_foreign_face_replay_sites_from_context(face_pts2d, face_idx, ctx, eps, mode, filter_parent);
+function ps_face_foreign_face_replay_sites(face_pts2d, face_idx, ctx, eps=1e-8, filter_parent=true) =
+    _ps_face_foreign_face_replay_sites_from_context(face_pts2d, face_idx, ctx, eps, filter_parent);
 
 // Function: _ps_face_foreign_proxy_replay_sites_from_records_context()
 // Usage:
@@ -773,7 +770,7 @@ function _ps_face_foreign_proxy_replay_sites_from_records(face_idx, face_records
 
 // Function: _ps_face_foreign_proxy_replay_sites_from_context()
 // Usage:
-//   result = _ps_face_foreign_proxy_replay_sites_from_context(face_pts2d, face_idx, ctx, eps, mode, filter_parent);
+//   result = _ps_face_foreign_proxy_replay_sites_from_context(face_pts2d, face_idx, ctx, eps, filter_parent);
 // Description:
 //   Build provenance-driven proxy replay sites for foreign face/edge/vertex sources from a target-local poly context.
 //   .
@@ -785,14 +782,13 @@ function _ps_face_foreign_proxy_replay_sites_from_records(face_idx, face_records
 //   face_idx = current target face index in the source poly.
 //   ctx = target-local poly context containing source faces and vertices in the current face frame.
 //   eps = geometric tolerance for intrusion/arrangement calculations.
-//   mode = face-arrangement fill rule: `"nonzero"`, `"evenodd"`, or `"all"`.
 //   filter_parent = whether to drop cuts caused only by the current face's own boundary adjacency.
-function _ps_face_foreign_proxy_replay_sites_from_context(face_pts2d, face_idx, ctx, eps=1e-8, mode="nonzero", filter_parent=true) =
+function _ps_face_foreign_proxy_replay_sites_from_context(face_pts2d, face_idx, ctx, eps=1e-8, filter_parent=true) =
     let(
         ctx_faces_idx = ps_target_local_poly_context_faces_idx(ctx),
         ctx_verts_local = ps_target_local_poly_context_verts_local(ctx),
         face_records = [
-            for (r = ps_face_foreign_intrusion_records(face_pts2d, face_idx, ctx_faces_idx, ctx_verts_local, eps, mode, filter_parent))
+            for (r = ps_face_foreign_intrusion_records(face_pts2d, face_idx, ctx_faces_idx, ctx_verts_local, eps, filter_parent))
                 if (ps_intrusion_foreign_kind(r) == "face")
                     r
         ]
@@ -801,7 +797,7 @@ function _ps_face_foreign_proxy_replay_sites_from_context(face_pts2d, face_idx, 
 
 // Function: ps_face_foreign_proxy_replay_sites()
 // Usage:
-//   result = ps_face_foreign_proxy_replay_sites(face_pts2d, face_idx, ctx, eps, mode, filter_parent);
+//   result = ps_face_foreign_proxy_replay_sites(face_pts2d, face_idx, ctx, eps, filter_parent);
 // Description:
 //   Build provenance-driven proxy replay sites for foreign face/edge/vertex sources from a target-local poly context.
 //   .
@@ -813,10 +809,9 @@ function _ps_face_foreign_proxy_replay_sites_from_context(face_pts2d, face_idx, 
 //   face_idx = target face index
 //   ctx = target-local poly context
 //   eps = tolerance
-//   mode = foreign face fill rule
 //   filter_parent = drop parent-edge cuts
-function ps_face_foreign_proxy_replay_sites(face_pts2d, face_idx, ctx, eps=1e-8, mode="nonzero", filter_parent=true) =
-    _ps_face_foreign_proxy_replay_sites_from_context(face_pts2d, face_idx, ctx, eps, mode, filter_parent);
+function ps_face_foreign_proxy_replay_sites(face_pts2d, face_idx, ctx, eps=1e-8, filter_parent=true) =
+    _ps_face_foreign_proxy_replay_sites_from_context(face_pts2d, face_idx, ctx, eps, filter_parent);
 
 // Function: _ps_faces_share_source_edge()
 // Usage:
@@ -1044,7 +1039,7 @@ function _ps_face_foreign_proxy_volume_groups_from_records(target_face_idx, face
 
 // Function: _ps_face_foreign_proxy_volume_groups_from_context()
 // Usage:
-//   result = _ps_face_foreign_proxy_volume_groups_from_context(face_pts2d, face_idx, ctx, eps, mode, filter_parent);
+//   result = _ps_face_foreign_proxy_volume_groups_from_context(face_pts2d, face_idx, ctx, eps, filter_parent);
 // Description:
 //   Build connected foreign proxy volume-group records for a target face from a target-local poly context.
 //   .
@@ -1056,14 +1051,13 @@ function _ps_face_foreign_proxy_volume_groups_from_records(target_face_idx, face
 //   face_idx = target face index
 //   ctx = target-local poly context
 //   eps = tolerance
-//   mode = foreign face fill rule
 //   filter_parent = drop parent-edge cuts
-function _ps_face_foreign_proxy_volume_groups_from_context(face_pts2d, face_idx, ctx, eps=1e-8, mode="nonzero", filter_parent=true) =
+function _ps_face_foreign_proxy_volume_groups_from_context(face_pts2d, face_idx, ctx, eps=1e-8, filter_parent=true) =
     let(
         ctx_faces_idx = ps_target_local_poly_context_faces_idx(ctx),
         ctx_verts_local = ps_target_local_poly_context_verts_local(ctx),
         face_records = [
-            for (r = ps_face_foreign_intrusion_records(face_pts2d, face_idx, ctx_faces_idx, ctx_verts_local, eps, mode, filter_parent))
+            for (r = ps_face_foreign_intrusion_records(face_pts2d, face_idx, ctx_faces_idx, ctx_verts_local, eps, filter_parent))
                 if (ps_intrusion_foreign_kind(r) == "face" && ps_intrusion_confidence(r) == "exact")
                     r
         ]
@@ -1072,7 +1066,7 @@ function _ps_face_foreign_proxy_volume_groups_from_context(face_pts2d, face_idx,
 
 // Function: ps_face_foreign_proxy_volume_groups()
 // Usage:
-//   result = ps_face_foreign_proxy_volume_groups(face_pts2d, face_idx, ctx, eps, mode, filter_parent);
+//   result = ps_face_foreign_proxy_volume_groups(face_pts2d, face_idx, ctx, eps, filter_parent);
 // Description:
 //   Build connected foreign proxy volume-group records for a target face from a target-local poly context.
 //   .
@@ -1084,10 +1078,9 @@ function _ps_face_foreign_proxy_volume_groups_from_context(face_pts2d, face_idx,
 //   face_idx = target face index
 //   ctx = target-local poly context
 //   eps = tolerance
-//   mode = foreign face fill rule
 //   filter_parent = drop parent-edge cuts
-function ps_face_foreign_proxy_volume_groups(face_pts2d, face_idx, ctx, eps=1e-8, mode="nonzero", filter_parent=true) =
-    _ps_face_foreign_proxy_volume_groups_from_context(face_pts2d, face_idx, ctx, eps, mode, filter_parent);
+function ps_face_foreign_proxy_volume_groups(face_pts2d, face_idx, ctx, eps=1e-8, filter_parent=true) =
+    _ps_face_foreign_proxy_volume_groups_from_context(face_pts2d, face_idx, ctx, eps, filter_parent);
 
 // Function: _ps_proxy_volume_group_face_replay_sites_from_context()
 // Usage:
@@ -1284,11 +1277,10 @@ module place_on_faces(poly, inter_radius = 1, edge_len = undef, classify = undef
 //   .
 //   - Limitations/Gotchas: requires `place_on_faces(...)`; does not generate or subtract proxy geometry
 // Arguments:
-//   mode = face-arrangement fill rule: `"nonzero"`, `"evenodd"`, or `"all"`.
 //   eps = geometric tolerance for intrusion/arrangement calculations.
 //   filter_parent = whether to drop cuts caused only by the current face's own boundary adjacency.
 //   coords = `"element"` to enter each foreign face frame before calling children, or `"parent"` to keep children in the current face-local frame.
-module place_on_face_foreign_face_replay_sites(mode="nonzero", eps=1e-8, filter_parent=true, coords="element") {
+module place_on_face_foreign_face_replay_sites(eps=1e-8, filter_parent=true, coords="element") {
     assert(!is_undef($ps_face_pts2d), "place_on_face_foreign_face_replay_sites: requires place_on_faces context ($ps_face_pts2d)");
     assert(!is_undef($ps_face_idx), "place_on_face_foreign_face_replay_sites: requires place_on_faces context ($ps_face_idx)");
     assert(!is_undef($ps_face_local_context), "place_on_face_foreign_face_replay_sites: requires place_on_faces context ($ps_face_local_context)");
@@ -1297,7 +1289,7 @@ module place_on_face_foreign_face_replay_sites(mode="nonzero", eps=1e-8, filter_
 
     target_ctx = $ps_target_local_poly_context;
     face_ctx = $ps_face_local_context;
-    sites = ps_face_foreign_face_replay_sites($ps_face_pts2d, $ps_face_idx, target_ctx, eps, mode, filter_parent);
+    sites = ps_face_foreign_face_replay_sites($ps_face_pts2d, $ps_face_idx, target_ctx, eps, filter_parent);
     for (site = sites) {
         face_site = ps_replay_site_face_site(site);
         $ps_replay_idx = ps_replay_site_idx(site);
@@ -1353,7 +1345,7 @@ module place_on_face_foreign_face_replay_sites(mode="nonzero", eps=1e-8, filter_
 
 // Module: place_on_face_foreign_proxy_sites()
 // Usage:
-//   place_on_face_foreign_proxy_sites(mode, eps, filter_parent, coords, face_child, edge_child, vertex_child);
+//   place_on_face_foreign_proxy_sites(eps, filter_parent, coords, face_child, edge_child, vertex_child);
 // Description:
 //   Replay caller-supplied proxy geometry for foreign sites affecting the current placed face.
 //   .
@@ -1361,7 +1353,6 @@ module place_on_face_foreign_face_replay_sites(mode="nonzero", eps=1e-8, filter_
 //   .
 //   - Limitations/Gotchas: face sites are exact face-plane intrusions; edge/vertex sites are deduped boundary candidates from those intruding faces, not distance-envelope proximity tests
 // Arguments:
-//   mode = face-arrangement fill rule: `"nonzero"`, `"evenodd"`, or `"all"`.
 //   eps = geometric tolerance for intrusion/arrangement calculations.
 //   filter_parent = whether to drop cuts caused only by the current face's own boundary adjacency.
 //   coords = `"element"` to enter the replayed face/edge/vertex frame before calling the selected child, or `"parent"` to stay in the current face-local frame.
@@ -1369,7 +1360,6 @@ module place_on_face_foreign_face_replay_sites(mode="nonzero", eps=1e-8, filter_
 //   edge_child = child slot used for foreign edge proxies.
 //   vertex_child = child slot used for foreign vertex proxies.
 module place_on_face_foreign_proxy_sites(
-    mode="nonzero",
     eps=1e-8,
     filter_parent=true,
     coords="element",
@@ -1385,7 +1375,7 @@ module place_on_face_foreign_proxy_sites(
     assert(face_child >= 0 && edge_child >= 0 && vertex_child >= 0, "place_on_face_foreign_proxy_sites: child slot indices must be non-negative");
 
     target_ctx = $ps_target_local_poly_context;
-    sites = ps_face_foreign_proxy_replay_sites($ps_face_pts2d, $ps_face_idx, target_ctx, eps, mode, filter_parent);
+    sites = ps_face_foreign_proxy_replay_sites($ps_face_pts2d, $ps_face_idx, target_ctx, eps, filter_parent);
     for (site = sites) {
         source_kind = ps_replay_site_foreign_kind(site);
         face_site = ps_replay_site_face_site(site);
@@ -1532,7 +1522,7 @@ module place_on_face_foreign_proxy_sites(
 
 // Module: place_on_face_foreign_proxy_volume_groups()
 // Usage:
-//   place_on_face_foreign_proxy_volume_groups(mode, eps, filter_parent);
+//   place_on_face_foreign_proxy_volume_groups(eps, filter_parent);
 // Description:
 //   Iterate data-only connected foreign proxy volume groups affecting the current placed face.
 //   .
@@ -1540,17 +1530,16 @@ module place_on_face_foreign_proxy_sites(
 //   .
 //   - Limitations/Gotchas: this is a provenance iterator only; it does not construct or transform a solid volume
 // Arguments:
-//   mode = face-arrangement fill rule: `"nonzero"`, `"evenodd"`, or `"all"`.
 //   eps = geometric tolerance for intrusion/arrangement calculations.
 //   filter_parent = whether to drop cuts caused only by the current face's own boundary adjacency.
-module place_on_face_foreign_proxy_volume_groups(mode="nonzero", eps=1e-8, filter_parent=true) {
+module place_on_face_foreign_proxy_volume_groups(eps=1e-8, filter_parent=true) {
     assert(!is_undef($ps_face_pts2d), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_face_pts2d)");
     assert(!is_undef($ps_face_idx), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_face_idx)");
     assert(!is_undef($ps_face_local_context), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_face_local_context)");
     assert(!is_undef($ps_target_local_poly_context), "place_on_face_foreign_proxy_volume_groups: requires place_on_faces context ($ps_target_local_poly_context)");
 
     target_ctx = $ps_target_local_poly_context;
-    groups = ps_face_foreign_proxy_volume_groups($ps_face_pts2d, $ps_face_idx, target_ctx, eps, mode, filter_parent);
+    groups = ps_face_foreign_proxy_volume_groups($ps_face_pts2d, $ps_face_idx, target_ctx, eps, filter_parent);
     for (group = groups) {
         $ps_proxy_volume_group_record = group;
         $ps_proxy_volume_group_idx = ps_proxy_volume_group_idx(group);
@@ -1575,7 +1564,7 @@ module place_on_face_foreign_proxy_volume_groups(mode="nonzero", eps=1e-8, filte
 
 // Module: place_on_face_foreign_proxy_volume_group_faces()
 // Usage:
-//   place_on_face_foreign_proxy_volume_group_faces(mode, eps, filter_parent, coords);
+//   place_on_face_foreign_proxy_volume_group_faces(eps, filter_parent, coords);
 // Description:
 //   Iterate renderable exact foreign face units, grouped by proxy volume group.
 //   .
@@ -1583,12 +1572,10 @@ module place_on_face_foreign_proxy_volume_groups(mode="nonzero", eps=1e-8, filte
 //   .
 //   - Limitations/Gotchas: emits grouped face replay units only; it does not infer or close the volume enclosed by those faces
 // Arguments:
-//   mode = face-arrangement fill rule: `"nonzero"`, `"evenodd"`, or `"all"`.
 //   eps = geometric tolerance for intrusion/arrangement calculations.
 //   filter_parent = whether to drop cuts caused only by the current face's own boundary adjacency.
 //   coords = `"element"` to enter each replayed foreign face frame before calling child slot 0, or `"parent"` to stay in the current face-local frame.
 module place_on_face_foreign_proxy_volume_group_faces(
-    mode="nonzero",
     eps=1e-8,
     filter_parent=true,
     coords="element"
@@ -1599,7 +1586,7 @@ module place_on_face_foreign_proxy_volume_group_faces(
     assert(coords == "element" || coords == "parent", "place_on_face_foreign_proxy_volume_group_faces: coords must be \"element\" or \"parent\"");
 
     target_ctx = $ps_target_local_poly_context;
-    groups = ps_face_foreign_proxy_volume_groups($ps_face_pts2d, $ps_face_idx, target_ctx, eps, mode, filter_parent);
+    groups = ps_face_foreign_proxy_volume_groups($ps_face_pts2d, $ps_face_idx, target_ctx, eps, filter_parent);
     for (group = groups) {
         sites = ps_proxy_volume_group_face_replay_sites(group, target_ctx, eps);
         for (site = sites) {
@@ -1685,7 +1672,7 @@ module place_on_face_foreign_proxy_volume_group_faces(
 
 // Module: place_on_face_foreign_proxy_volume_group_hulls()
 // Usage:
-//   place_on_face_foreign_proxy_volume_group_hulls(mode, eps, filter_parent, point_r, point_fn);
+//   place_on_face_foreign_proxy_volume_group_hulls(eps, filter_parent, point_r, point_fn);
 // Description:
 //   Render one conservative convex hull per foreign proxy volume group.
 //   .
@@ -1693,19 +1680,17 @@ module place_on_face_foreign_proxy_volume_group_faces(
 //   .
 //   - Limitations/Gotchas: debug/conservative helper only; convexifies each group and can over-subtract concave or disconnected real user geometry
 // Arguments:
-//   mode = face-arrangement fill rule: `"nonzero"`, `"evenodd"`, or `"all"`.
 //   eps = geometric tolerance for intrusion/arrangement calculations.
 //   filter_parent = whether to drop cuts caused only by the current face's own boundary adjacency.
 //   point_r = radius of default hull marker spheres when no child is supplied.
 //   point_fn = `$fn` facet count for default hull marker spheres.
 module place_on_face_foreign_proxy_volume_group_hulls(
-    mode="nonzero",
     eps=1e-8,
     filter_parent=true,
     point_r=0.04,
     point_fn=8
 ) {
-    place_on_face_foreign_proxy_volume_groups(mode = mode, eps = eps, filter_parent = filter_parent) {
+    place_on_face_foreign_proxy_volume_groups(eps = eps, filter_parent = filter_parent) {
         group = $ps_proxy_volume_group_record;
         group_idx = $ps_proxy_volume_group_idx;
         group_count = $ps_proxy_volume_group_count;

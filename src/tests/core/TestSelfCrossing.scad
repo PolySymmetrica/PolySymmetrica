@@ -14,7 +14,6 @@ use <../../polysymmetrica/core/vertex.scad>
 use <../../polysymmetrica/models/tetrahedron.scad>
 
 EPS = 1e-8;
-MODE = "nonzero";
 STAR_FACE_IDX = 1;
 TRI_FACE_IDX = 12;
 ANTI_FACE_IDX = 0;
@@ -164,8 +163,8 @@ module test_ps_face_arrangement__7_3_15_star_has_stable_structure() {
 module test_ps_face_boundary_model__7_3_15_star_has_true_nonzero_boundary() {
     site = _test_face_site(_test_punch_poly(), STAR_FACE_IDX);
     face_pts3d_local = ps_face_site_pts3d_local(site);
-    bm = ps_face_boundary_model(face_pts3d_local, MODE);
-    segments = ps_face_segments(face_pts3d_local, MODE);
+    bm = ps_face_boundary_model(face_pts3d_local);
+    segments = ps_face_segments(face_pts3d_local);
 
     assert_int_eq(len(bm[1]), 1, "star face nonzero filled cell count");
     assert_int_eq(len(bm[2]), 1, "star face nonzero boundary loop count");
@@ -193,7 +192,6 @@ module test_ps_face_boundary_span_sites__classifies_full_and_partial_source_span
                 $ps_poly_verts_local,
                 $ps_face_neighbors_idx,
                 $ps_face_dihedrals,
-                MODE,
                 EPS
             );
 
@@ -212,7 +210,6 @@ module test_ps_face_boundary_span_sites__classifies_full_and_partial_source_span
                 $ps_poly_verts_local,
                 $ps_face_neighbors_idx,
                 $ps_face_dihedrals,
-                MODE,
                 EPS
             );
 
@@ -230,7 +227,7 @@ module test_ps_face_boundary_span_sites__classifies_full_and_partial_source_span
 
 module test_ps_face_filled_boundary_source_edges__7_3_15_star_groups_surviving_spans() {
     site = _test_face_site(_test_punch_poly(), STAR_FACE_IDX);
-    source_edges = ps_face_filled_boundary_source_edges(ps_face_site_pts3d_local(site), MODE);
+    source_edges = ps_face_filled_boundary_source_edges(ps_face_site_pts3d_local(site));
 
     assert_int_eq(len(source_edges), 7, "star face should expose one filled-boundary record per source edge");
     assert_list_eq([for (e = source_edges) e[0]], [0, 1, 2, 3, 4, 5, 6], "star face source-edge ids");
@@ -253,7 +250,6 @@ module test_ps_face_geom_cut_entries__7_3_15_triangle_records_foreign_cutters() 
         site[0],
         ps_face_site_poly_faces_idx(site),
         ps_face_site_poly_verts_local(site),
-        mode = MODE,
         filter_parent = true
     );
 
@@ -276,7 +272,6 @@ module test_ps_face_foreign_intrusion_records__7_3_15_triangle_wraps_exact_face_
         site[0],
         ps_face_site_poly_faces_idx(site),
         ps_face_site_poly_verts_local(site),
-        mode = MODE,
         filter_parent = true
     );
 
@@ -326,7 +321,6 @@ module test_ps_face_foreign_intrusion_records__preserves_coincident_foreign_face
         0,
         _test_coincident_intrusion_faces_idx(),
         _test_coincident_intrusion_verts_local(),
-        mode = MODE,
         filter_parent = true
     );
 
@@ -351,7 +345,6 @@ module test_ps_face_foreign_face_replay_sites__7_3_15_triangle_builds_target_loc
         face_pts2d,
         site[0],
         target_ctx,
-        mode = MODE,
         filter_parent = true
     );
 
@@ -403,18 +396,16 @@ module test_ps_face_foreign_replay_context_helpers__match_public_wrappers() {
         face_pts2d,
         site[0],
         target_ctx,
-        mode = MODE,
         filter_parent = true
     );
-    face_ctx = ps_face_foreign_face_replay_sites(face_pts2d, site[0], target_ctx, EPS, MODE, true);
+    face_ctx = ps_face_foreign_face_replay_sites(face_pts2d, site[0], target_ctx, EPS, true);
     proxy_public = ps_face_foreign_proxy_replay_sites(
         face_pts2d,
         site[0],
         target_ctx,
-        mode = MODE,
         filter_parent = true
     );
-    proxy_ctx = ps_face_foreign_proxy_replay_sites(face_pts2d, site[0], target_ctx, EPS, MODE, true);
+    proxy_ctx = ps_face_foreign_proxy_replay_sites(face_pts2d, site[0], target_ctx, EPS, true);
 
     assert(face_ctx == face_public, "context face replay helper should match public wrapper output");
     assert(proxy_ctx == proxy_public, "context proxy replay helper should match public wrapper output");
@@ -435,7 +426,6 @@ module test_ps_face_foreign_proxy_replay_sites__7_3_15_triangle_includes_edge_an
         face_pts2d,
         site[0],
         target_ctx,
-        mode = MODE,
         filter_parent = true
     );
 
@@ -468,7 +458,6 @@ module test_ps_face_foreign_proxy_replay_sites__5_2_15_triangle_includes_all_int
         face_pts2d,
         site[0],
         target_ctx,
-        mode = MODE,
         filter_parent = true
     );
 
@@ -513,7 +502,6 @@ module test_ps_face_foreign_proxy_volume_groups__7_3_15_triangle_groups_exact_fa
         face_pts2d,
         site[0],
         target_ctx,
-        mode = MODE,
         filter_parent = true
     );
 
@@ -570,7 +558,6 @@ module test_ps_proxy_volume_group_face_replay_sites__7_3_15_triangle_builds_rend
         face_pts2d,
         site[0],
         target_ctx,
-        mode = MODE,
         filter_parent = true
     );
     group_sites = [
@@ -610,10 +597,9 @@ module test_ps_proxy_volume_group_context_helpers__match_public_wrappers() {
         face_pts2d,
         site[0],
         target_ctx,
-        mode = MODE,
         filter_parent = true
     );
-    groups_ctx = ps_face_foreign_proxy_volume_groups(face_pts2d, site[0], target_ctx, EPS, MODE, true);
+    groups_ctx = ps_face_foreign_proxy_volume_groups(face_pts2d, site[0], target_ctx, EPS, true);
     group_sites_public = [
         for (g = groups_public)
             ps_proxy_volume_group_face_replay_sites(g, target_ctx)
@@ -660,7 +646,7 @@ module test_ps_replay_and_proxy_describe_str__summary() {
 module test_place_on_face_foreign_proxy_volume_groups__7_3_15_triangle_exposes_context() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
-            place_on_face_foreign_proxy_volume_groups(mode = MODE) {
+            place_on_face_foreign_proxy_volume_groups() {
                 assert($ps_proxy_volume_group_count > 0, "volume-group iterator count");
                 assert($ps_proxy_volume_group_idx >= 0 && $ps_proxy_volume_group_idx < $ps_proxy_volume_group_count, "volume-group iterator idx bounds");
                 assert($ps_proxy_volume_group_kind == "foreign_proxy_volume_group", "volume-group iterator kind");
@@ -693,7 +679,7 @@ module _test_assert_volume_group_face_render_context() {
 module test_place_on_face_foreign_proxy_volume_group_faces__7_3_15_triangle_exposes_render_context() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
-            place_on_face_foreign_proxy_volume_group_faces(mode = MODE) {
+            place_on_face_foreign_proxy_volume_group_faces() {
                 _test_assert_volume_group_face_render_context();
                 assert(false, "volume-group face iterator should not dispatch child slot 1");
                 assert(false, "volume-group face iterator should not dispatch child slot 2");
@@ -705,7 +691,7 @@ module test_place_on_face_foreign_proxy_volume_group_faces__7_3_15_triangle_expo
 module test_place_on_face_foreign_proxy_volume_group_hulls__7_3_15_triangle_exposes_hull_context() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
-            place_on_face_foreign_proxy_volume_group_hulls(mode = MODE, point_r = 0.01, point_fn = 4) {
+            place_on_face_foreign_proxy_volume_group_hulls(point_r = 0.01, point_fn = 4) {
                 assert_int_eq($ps_proxy_volume_group_count, 2, "volume-group hull iterator group count");
                 assert($ps_proxy_kind == "foreign_volume_group_hull", "volume-group hull proxy kind");
                 assert($ps_proxy_source_kind == "volume_group", "volume-group hull source kind");
@@ -730,7 +716,6 @@ module test_ps_face_visible_segments__7_3_15_triangle_splits_into_visible_cells(
         site[0],
         ps_face_site_poly_faces_idx(site),
         ps_face_site_poly_verts_local(site),
-        mode = MODE,
         filter_parent = true
     );
 
@@ -755,7 +740,6 @@ module test_ps_face_visible_segments__7_3_0_triangle_catches_meeting_cut_edges()
         site[0],
         ps_face_site_poly_faces_idx(site),
         ps_face_site_poly_verts_local(site),
-        mode = MODE,
         filter_parent = true
     );
     visible = ps_face_visible_segments(
@@ -763,7 +747,6 @@ module test_ps_face_visible_segments__7_3_0_triangle_catches_meeting_cut_edges()
         site[0],
         ps_face_site_poly_faces_idx(site),
         ps_face_site_poly_verts_local(site),
-        mode = MODE,
         filter_parent = true
     );
 
@@ -793,15 +776,14 @@ module test_ps_face_visible_segments__atut_past_zero_area_uses_semantic_target_w
     site = _test_face_site(p, ANTI_FACE_IDX);
     face_pts3d_local = ps_face_site_pts3d_local(site);
     raw_sign = (_ps_seg_poly_area2(ps_xy(face_pts3d_local)) >= 0) ? 1 : -1;
-    target_sign = _ps_seg_fill_target_sign(ps_face_arrangement(face_pts3d_local, 1e-4), MODE, 1e-4);
-    bm = ps_face_boundary_model(face_pts3d_local, MODE, 1e-4);
+    target_sign = _ps_seg_fill_target_sign(ps_face_arrangement(face_pts3d_local, 1e-4), 1e-4);
+    bm = ps_face_boundary_model(face_pts3d_local, 1e-4);
     visible = ps_face_visible_segments(
         face_pts3d_local,
         site[0],
         ps_face_site_poly_faces_idx(site),
         ps_face_site_poly_verts_local(site),
         1e-4,
-        MODE,
         true
     );
 
@@ -818,9 +800,9 @@ module test_ps_face_visible_segments__atut_past_zero_area_uses_semantic_target_w
 module test_ps_face_seam_clearance_loops__5_2_15_triangle_faces_emit_hidden_cut_loops() {
     place_on_faces(_test_penta_punch_poly()) {
         if ($ps_face_idx == 2 || $ps_face_idx == 9) {
-            loops = ps_face_seam_clearance_loops($ps_face_local_context, MODE, EPS, true);
+            loops = ps_face_seam_clearance_loops($ps_face_local_context, EPS, true);
             reversed_ctx = _test_reversed_face_context($ps_face_local_context);
-            reversed_loops = ps_face_seam_clearance_loops(reversed_ctx, MODE, EPS, true);
+            reversed_loops = ps_face_seam_clearance_loops(reversed_ctx, EPS, true);
 
             assert_int_eq(len(loops), 1, str("5/2+15 face ", $ps_face_idx, " should emit one seam-clearance loop"));
             assert(_test_loop_matches_face_winding(loops[0], EPS), "seam-clearance loop should match target-face winding");
@@ -836,7 +818,7 @@ module test_ps_face_seam_clearance_loops__5_2_15_triangle_faces_emit_hidden_cut_
 module test_ps_face_seam_clearance_loops__7_3_15_triangle_emits_ordered_cut_loops() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
-            loops = ps_face_seam_clearance_loops($ps_face_local_context, MODE, EPS, true);
+            loops = ps_face_seam_clearance_loops($ps_face_local_context, EPS, true);
 
             assert_int_eq(len(loops), 5, "7/3+15 triangle should emit hidden seam-clearance loops");
             for (loop = loops) {
@@ -853,7 +835,7 @@ module test_ps_face_seam_clearance_shells__stress_cases_emit_simple_caps() {
     place_on_faces(_test_penta_punch_poly()) {
         if ($ps_face_idx == 2 || $ps_face_idx == 9) {
             shells = ps_face_seam_clearance_shells(
-                    $ps_face_local_context, -1.2, 1.2, 0.05, MODE, EPS, true,
+                    $ps_face_local_context, -1.2, 1.2, 0.05, EPS, true,
                     max_slope_offset = 0.05);
 
             assert_int_eq(len(shells), 1, str("5/2+15 face ", $ps_face_idx, " clearance shell count"));
@@ -867,7 +849,7 @@ module test_ps_face_seam_clearance_shells__stress_cases_emit_simple_caps() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
             shells = ps_face_seam_clearance_shells(
-                    $ps_face_local_context, -1.2, 1.2, 0.05, MODE, EPS, true,
+                    $ps_face_local_context, -1.2, 1.2, 0.05, EPS, true,
                     max_slope_offset = 0.05);
 
             assert_int_eq(len(shells), 5, "7/3+15 triangle clearance shell count");
@@ -889,7 +871,7 @@ module test_ps_face_seam_clearance_shells__default_slope_refs_face_plane() {
 
 module test_ps_face_filled_boundary_source_edges__7_3_0_triangle_is_simple_boundary() {
     site = _test_face_site(_test_punch_poly_angle0(), TRI_FACE_IDX);
-    source_edges = ps_face_filled_boundary_source_edges(ps_face_site_pts3d_local(site), MODE);
+    source_edges = ps_face_filled_boundary_source_edges(ps_face_site_pts3d_local(site));
 
     assert_int_eq(len(source_edges), 3, "simple triangle should expose three filled-boundary source edges");
     assert_list_eq([for (e = source_edges) e[0]], [0, 1, 2], "simple triangle source-edge ids");
@@ -909,7 +891,7 @@ module test_ps_face_filled_boundary_source_edges__7_3_0_triangle_is_simple_bound
 module test_place_on_face_filled_boundary_source_edges__7_3_15_star_exposes_context() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == STAR_FACE_IDX) {
-            place_on_face_filled_boundary_source_edges(MODE) {
+            place_on_face_filled_boundary_source_edges() {
                 assert_int_eq($ps_boundary_source_edge_count, 7, "placed source-edge record count");
                 assert_int_eq($ps_boundary_source_edge_span_count, 2, "placed source-edge span count");
                 assert(
@@ -949,7 +931,7 @@ module test_place_on_face_filled_boundary_source_edges__7_3_15_star_exposes_cont
 module test_place_on_face_filled_boundary_source_edges__antitet_uses_span_direction() {
     place_on_faces(_test_antitet_poly()) {
         if ($ps_face_idx == ANTI_FACE_IDX) {
-            place_on_face_filled_boundary_source_edges(MODE) {
+            place_on_face_filled_boundary_source_edges() {
                 if ($ps_boundary_source_edge_idx == 1) {
                     assert_list_eq(
                         $ps_boundary_source_edge_span_sides_local,
@@ -972,7 +954,7 @@ module test_place_on_face_filled_boundary_source_edges__antitet_uses_span_direct
 module test_place_on_face_foreign_intrusions__7_3_15_triangle_exposes_context() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
-            place_on_face_foreign_intrusions(mode = MODE) {
+            place_on_face_foreign_intrusions() {
                 assert_int_eq($ps_intrusion_count, 6, "triangle intrusion iterator count");
                 assert($ps_intrusion_idx >= 0 && $ps_intrusion_idx < $ps_intrusion_count, "triangle intrusion iterator idx bounds");
                 assert_int_eq($ps_intrusion_target_face_idx, TRI_FACE_IDX, "triangle intrusion iterator target face id");
@@ -999,8 +981,8 @@ module test_ps_face_seam_segment_sites__triangle_builds_boundary_edge_records() 
                 $ps_face_dihedrals,
                 $ps_poly_center_local
             );
-            sites = ps_face_seam_segment_sites(face_ctx_site, MODE, EPS, "source_edge", true, false);
-            ctx_sites = ps_face_seam_segment_sites(face_ctx_raw, MODE, EPS, "source_edge", true, false);
+            sites = ps_face_seam_segment_sites(face_ctx_site, EPS, "source_edge", true, false);
+            ctx_sites = ps_face_seam_segment_sites(face_ctx_raw, EPS, "source_edge", true, false);
 
             assert_int_eq(len(sites), 3, "triangle source-edge seam site count");
             assert(ctx_sites == sites, "context seam-site builder should match public wrapper");
@@ -1064,12 +1046,11 @@ module test_ps_boundary_and_seam_describe_str__summary() {
 module test_place_on_face_seam_segments__triangle_exposes_foreign_edge_aliases() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
-            records = ps_face_foreign_intrusion_records($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, EPS, MODE, true);
+            records = ps_face_foreign_intrusion_records($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, EPS, true);
             first_foreign = ps_intrusion_foreign_idx(records[0]);
             expected_count = len([for (r = records) if (ps_intrusion_foreign_idx(r) == first_foreign) 1]);
 
             place_on_face_seam_segments(
-                mode = MODE,
                 eps = EPS,
                 coords = "parent",
                 include_boundary = false,
@@ -1095,7 +1076,6 @@ module test_place_on_face_seam_segments__element_coords_exposes_frame_backed_edg
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
             place_on_face_seam_segments(
-                mode = MODE,
                 eps = EPS,
                 coords = "element",
                 include_boundary = false,
@@ -1126,7 +1106,7 @@ module test_ps_face_seam_segment_sites__source_partial_spans_are_not_support_can
                 $ps_face_dihedrals,
                 $ps_poly_center_local
             );
-            sites = ps_face_seam_segment_sites(face_ctx, MODE, EPS, "generated", true, false);
+            sites = ps_face_seam_segment_sites(face_ctx, EPS, "generated", true, false);
             support_sites = [for (site = sites) if (ps_seam_site_is_support_candidate(site)) site];
 
             assert_int_eq(len(sites), 14, "star generated seam site count includes source_partial spans");
@@ -1148,7 +1128,7 @@ module test_ps_face_seam_segment_sites__5_2_triangle_cuts_are_support_candidates
                 $ps_face_dihedrals,
                 $ps_poly_center_local
             );
-            sites = ps_face_seam_segment_sites(face_ctx, MODE, EPS, "generated_cut", false, true);
+            sites = ps_face_seam_segment_sites(face_ctx, EPS, "generated_cut", false, true);
             support_sites = [for (site = sites) if (ps_seam_site_is_support_candidate(site)) site];
 
             assert_int_eq(len(sites), 3, "5/2 triangle exact foreign seam count");
@@ -1175,7 +1155,7 @@ module test_ps_face_seam_segment_sites__5_2_15_canonicalizes_current_face_side()
                 $ps_face_dihedrals,
                 $ps_poly_center_local
             );
-            sites = ps_face_seam_segment_sites(face_ctx, MODE, EPS, "generated_cut", false, true);
+            sites = ps_face_seam_segment_sites(face_ctx, EPS, "generated_cut", false, true);
 
             assert_int_eq(len(sites), 3, str("5/2+15 face ", $ps_face_idx, " exact foreign seam count"));
             for (site = sites) {
@@ -1194,7 +1174,7 @@ module test_ps_face_seam_segment_sites__5_2_15_canonicalizes_current_face_side()
 module test_place_on_face_foreign_face_replay_sites__7_3_15_triangle_exposes_context() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
-            place_on_face_foreign_face_replay_sites(mode = MODE, coords = "parent") {
+            place_on_face_foreign_face_replay_sites(coords = "parent") {
                 assert_int_eq($ps_replay_count, 6, "triangle replay iterator count");
                 assert($ps_replay_idx >= 0 && $ps_replay_idx < $ps_replay_count, "triangle replay iterator idx bounds");
                 assert($ps_replay_kind == "foreign_face", "triangle replay iterator kind");
@@ -1287,11 +1267,11 @@ module _test_assert_triangle_proxy_face_child_element_context(expected_child_idx
 module test_place_on_face_foreign_proxy_sites__7_3_15_triangle_dispatches_face_child() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
-            place_on_face_foreign_proxy_sites(mode = MODE, coords = "parent") {
+            place_on_face_foreign_proxy_sites(coords = "parent") {
                 _test_assert_triangle_proxy_face_child(0);
             }
 
-            place_on_face_foreign_proxy_sites(mode = MODE, coords = "parent", face_child = 1, edge_child = 0, vertex_child = 2) {
+            place_on_face_foreign_proxy_sites(coords = "parent", face_child = 1, edge_child = 0, vertex_child = 2) {
                 assert($ps_proxy_source_kind == "edge", "remapped child 0 should receive edge proxies");
                 _test_assert_triangle_proxy_face_child(1);
                 assert($ps_proxy_source_kind == "vertex", "remapped child 2 should receive vertex proxies");
@@ -1303,7 +1283,7 @@ module test_place_on_face_foreign_proxy_sites__7_3_15_triangle_dispatches_face_c
 module test_place_on_face_foreign_proxy_sites__7_3_15_triangle_element_child_uses_source_face_context() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
-            place_on_face_foreign_proxy_sites(mode = MODE) {
+            place_on_face_foreign_proxy_sites() {
                 _test_assert_triangle_proxy_face_child_element_context(0);
             }
         }
@@ -1313,7 +1293,7 @@ module test_place_on_face_foreign_proxy_sites__7_3_15_triangle_element_child_use
 module test_place_on_face_foreign_proxy_sites__7_3_15_triangle_dispatches_edge_and_vertex_children() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
-            place_on_face_foreign_proxy_sites(mode = MODE) {
+            place_on_face_foreign_proxy_sites() {
                 _test_assert_triangle_proxy_face_child_element_context(0);
                 _test_assert_triangle_proxy_edge_child(1);
                 _test_assert_triangle_proxy_vertex_child(2);
@@ -1325,7 +1305,7 @@ module test_place_on_face_foreign_proxy_sites__7_3_15_triangle_dispatches_edge_a
 module test_face_local_iterators__parent_coords_preserve_metadata() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == STAR_FACE_IDX) {
-            place_on_face_filled_boundary_source_edges(mode = MODE, coords = "parent") {
+            place_on_face_filled_boundary_source_edges(coords = "parent") {
                 assert_int_eq($ps_boundary_source_edge_count, 7, "parent-coords source-edge record count");
                 assert_int_eq(len($ps_boundary_source_edge_segment2d_local), 2, "parent-coords source edge segment arity");
                 assert_int_eq(
@@ -1335,7 +1315,7 @@ module test_face_local_iterators__parent_coords_preserve_metadata() {
                 );
             }
 
-            place_on_face_boundary_spans(mode = MODE, coords = "parent") {
+            place_on_face_boundary_spans(coords = "parent") {
                 assert($ps_boundary_span_count > 0, "parent-coords boundary span count");
                 assert_int_eq(len($ps_boundary_span_segment2d_local), 2, "parent-coords boundary span segment arity");
             }
@@ -1346,7 +1326,7 @@ module test_face_local_iterators__parent_coords_preserve_metadata() {
 module test_place_on_face_boundary_spans__kind_filter_exposes_generated_seams() {
     place_on_faces(_test_punch_poly()) {
         if ($ps_face_idx == STAR_FACE_IDX) {
-            place_on_face_boundary_spans(mode = MODE, kind = "generated") {
+            place_on_face_boundary_spans(kind = "generated") {
                 assert_int_eq($ps_boundary_span_count, 14, "generated filter should keep all split star spans");
                 assert_int_eq($ps_boundary_span_total_count, 14, "generated filter total count");
                 assert($ps_boundary_span_kind == "source_partial", "generated star seam should be source_partial");
@@ -1358,7 +1338,7 @@ module test_place_on_face_boundary_spans__kind_filter_exposes_generated_seams() 
 
     place_on_faces(_test_punch_poly_angle0()) {
         if ($ps_face_idx == TRI_FACE_IDX) {
-            place_on_face_boundary_spans(mode = MODE, kind = "source_edge") {
+            place_on_face_boundary_spans(kind = "source_edge") {
                 assert_int_eq($ps_boundary_span_count, 3, "source_edge filter should keep simple triangle edges");
                 assert_int_eq($ps_boundary_span_total_count, 3, "source_edge filter total count");
                 assert($ps_boundary_span_kind == "source_edge", "simple triangle spans should be source_edge");

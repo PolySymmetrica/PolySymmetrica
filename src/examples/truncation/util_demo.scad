@@ -24,7 +24,7 @@ module _face_fill_plate(thk = T) {
         pts3d = is_undef($ps_face_pts3d_local)
             ? [for (p = $ps_face_pts2d) [p[0], p[1], 0]]
             : $ps_face_pts3d_local;
-        segs = ps_face_segments(pts3d, "nonzero");
+        segs = ps_face_segments(pts3d);
         union() {
             for (s = segs) {
                 linear_extrude(height = thk)

@@ -45,4 +45,8 @@ module show_spherical(i, poly) {
     }  
 }
 
-show_spherical(0, r3);
+show_spherical(0, r1);
+//show_spherical(1, d1);
+//show_spherical(2, r2);
+//show_spherical(3, d2);
+//show_spherical(4, r3);

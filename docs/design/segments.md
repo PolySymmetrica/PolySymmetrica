@@ -73,7 +73,7 @@ In short:
   spans.
 
 - `filled cell`
-  A simple 2D face cell that is kept by the chosen fill rule (`nonzero`, `evenodd`, or `all`).
+  A simple 2D face cell that is kept by PolySymmetrica's nonzero winding fill rule.
 
 - `atom`
   A convex 2D sub-piece of a filled face cell, introduced when a filled cell is too complex or non-convex for robust clipping or cutter generation.
@@ -84,7 +84,7 @@ In short:
   The boundary of the original face loop as drawn, before any fill-rule interpretation.
 
 - `filled boundary`
-  The boundary of the region that remains after applying the fill rule. For a self-crossing face, this can differ from the raw face loop.
+  The boundary of the region that remains after applying nonzero winding fill semantics. For a self-crossing face, this can differ from the raw face loop.
 
 - `geometry cut`
   A segment formed where another face crosses the current face plane, expressed in the current face-local 2D coordinates.
@@ -92,24 +92,18 @@ In short:
 - `visible cell`
   A filled 2D face cell, or sub-cell after further splitting by geometry cuts, that is still visible from the face-local `+Z` side.
 
-## Fill Modes
+## Fill Semantics
 
-Most user-facing solid-face work should use `mode="nonzero"`.
+Public solid-face APIs use nonzero winding semantics. Self-intersecting loops
+are treated as filled solids under winding-number rules, which is the normal
+choice for star faces intended to behave as polyhedron faces.
 
-- `nonzero`
-  Treats self-intersecting loops as filled solids under winding-number rules.
-  This is the normal choice for star faces intended to behave as solid polyhedron faces.
-
-- `evenodd`
-  Treats alternating regions as in/out under parity rules.
-  Keep this for debugging, comparison, or when you intentionally want the central overlap of a star to be hollow.
-
-- `all`
-  Keeps every extracted cycle for inspection/debugging.
+Low-level arrangement helpers may still expose all arrangement cells for
+inspection, but that is not a public fill mode for face geometry.
 
 ## Main APIs
 
-### `ps_face_segments(face_pts3d_local, mode="nonzero", eps=1e-8)`
+### `ps_face_segments(face_pts3d_local, eps=1e-8)`
 
 Splits one face loop into simple 2D face cells.
 
@@ -208,9 +202,9 @@ Where:
 - `signed_area`
   signed 2D loop area, useful for orientation and fill-rule logic.
 
-### `ps_face_boundary_model(face_pts3d_local, mode="nonzero", eps=1e-8)`
+### `ps_face_boundary_model(face_pts3d_local, eps=1e-8)`
 
-Derives the true filled boundary from the arrangement for the chosen fill rule.
+Derives the true filled boundary from the arrangement using nonzero winding semantics.
 
 Returns:
 
@@ -271,7 +265,7 @@ Where:
 `place_on_face_boundary_spans(...)` maps this raw record into the public
 `$ps_boundary_span_kind` values described below.
 
-### `ps_face_filled_boundary_source_edges(face_pts3d_local, mode="nonzero", eps=1e-8)`
+### `ps_face_filled_boundary_source_edges(face_pts3d_local, eps=1e-8)`
 
 Groups true filled-boundary spans by the original source edge they came from.
 
@@ -334,7 +328,7 @@ Use this when source-edge lineage is the primary structure. Use
 `place_on_face_boundary_spans(...)` instead when each surviving span needs its
 own local frame or adjacent-face/dihedral context.
 
-### `place_on_face_segments(mode="nonzero", eps=1e-8)`
+### `place_on_face_segments(eps=1e-8)`
 
 Iterator wrapper over `ps_face_segments(...)` for use inside `place_on_faces(...)`.
 
@@ -348,7 +342,7 @@ Provides:
 - `$ps_seg_parent_face_edge_idx`
 - `$ps_seg_edge_kind`
 
-### `place_on_face_filled_boundary_source_edges(mode="nonzero", eps=1e-8, coords="element")`
+### `place_on_face_filled_boundary_source_edges(eps=1e-8, coords="element")`
 
 Iterator wrapper over `ps_face_filled_boundary_source_edges(...)` for use inside
 `place_on_faces(...)`.
@@ -397,7 +391,7 @@ When `coords="parent"`, the exposed segment records such as
 `$ps_boundary_source_edge_span_segments2d_local` can be drawn directly in the
 current face-local coordinates.
 
-### `place_on_face_boundary_spans(mode="nonzero", eps=1e-8, coords="element", kind="all")`
+### `place_on_face_boundary_spans(eps=1e-8, coords="element", kind="all")`
 
 Iterator wrapper over internal dihedral-aware boundary-span site records for
 use inside `place_on_faces(...)`.
@@ -546,14 +540,14 @@ Where:
   derived, so warped/non-planar faces still preserve the span-frame `Y/Z`
   contract.
 
-### `ps_polygon(points, mode="nonzero", eps=1e-8)`
+### `ps_polygon(points, eps=1e-8)`
 
 Safe 2D polygon builder for concave or self-intersecting face loops.
 
 This is the user-facing replacement for assuming raw `polygon(points=...)`
 will behave well on star/self-intersecting loops.
 
-### `ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero", filter_parent=true)`
+### `ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, filter_parent=true)`
 
 Derives the geometry cuts made by other faces crossing the current face plane.
 
@@ -580,7 +574,7 @@ Where:
 Convenience wrapper returning only the `seg2d` part of
 `ps_face_geom_cut_entries(...)`.
 
-### `ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero", filter_parent=true)`
+### `ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, filter_parent=true)`
 
 Derives exact face-local foreign intrusion records for other faces that cross
 the current face plane.
@@ -862,7 +856,7 @@ It also exposes edge-compatible aliases for reusable edge children:
 `$ps_edge_idx`, `$ps_edge_verts_idx`, and family metadata are `undef` because a
 generated seam is not necessarily a true polyhedron edge.
 
-### `ps_face_visible_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero", filter_parent=true)`
+### `ps_face_visible_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, filter_parent=true)`
 
 Splits the current face by geometry cuts and keeps only 2D face cells visible from the
 face-local `+Z` side.
@@ -904,5 +898,5 @@ Provides:
 ## Notes
 
 - `segments.scad` is intentionally face-local.
-- Most printing/punch-through workflows should use `mode="nonzero"`.
+- Public filled-face APIs use nonzero winding semantics.
 - These APIs are intended to stay analyzable as data. Arbitrary 3D clipping belongs in later geometry layers.

@@ -248,7 +248,6 @@ module test_ps_face_region_loop_shells__side_inset_compensates_face_offset() {
         ps_face_site_poly_verts_local(site),
         ps_face_site_neighbors_idx(site),
         ps_face_site_dihedrals(site),
-        "nonzero",
         EPS
     );
     span_site = span_sites[0];
@@ -265,8 +264,8 @@ module test_ps_face_region_loop_shells__matches_boundary_loop_count() {
     site = _test_face_site(p, 1);
     face_pts3d_local = ps_face_site_pts3d_local(site);
     face_ctx = ps_face_site_face_local_context(site);
-    bm = ps_face_boundary_model(face_pts3d_local, "nonzero");
-    shells = ps_face_region_loop_shells(face_ctx, -0.3, 0.3, "nonzero");
+    bm = ps_face_boundary_model(face_pts3d_local);
+    shells = ps_face_region_loop_shells(face_ctx, -0.3, 0.3);
 
     assert_int_eq(len(shells), len(bm[2]), "one shell per filled boundary loop");
     for (i = [0:1:len(shells)-1])
@@ -277,7 +276,7 @@ module test_ps_face_region_loop_shells__pentagram_zmax_expands_outward() {
     p = poly_antiprism(5, 2);
     site = _test_face_site(p, 1);
     face_ctx = ps_face_site_face_local_context(site);
-    shells = ps_face_region_loop_shells(face_ctx, -0.5, 0.5, "nonzero");
+    shells = ps_face_region_loop_shells(face_ctx, -0.5, 0.5);
 
     assert_int_eq(len(shells), 1, "pentagram cap should produce one shell");
     area_zmin = abs(_ps_seg_poly_area2(ps_loop_shell_bottom_loop2d(shells[0])));
@@ -314,7 +313,7 @@ module test_ps_face_region_loop_shells__anti_tet_hex_is_finite() {
     p = poly_truncate(tetrahedron(), t = -0.5);
     site = _test_face_site(p, 0);
     face_ctx = ps_face_site_face_local_context(site);
-    shells = ps_face_region_loop_shells(face_ctx, -0.25, 0.25, "nonzero", 20);
+    shells = ps_face_region_loop_shells(face_ctx, -0.25, 0.25, max_project = 20);
 
     assert(len(shells) >= 1, "anti-truncated tetrahedron hex should produce at least one shell");
     for (shell = shells) {
@@ -330,7 +329,7 @@ module test_ps_face_region_loop_shells__anti_tet_winding_splits_exposure() {
     p = poly_truncate(tetrahedron(), t = -0.5);
     site = _test_face_site(p, 0);
     face_ctx = ps_face_site_face_local_context(site);
-    shells = ps_face_region_loop_shells(face_ctx, -0.5, 0.5, "nonzero", 20);
+    shells = ps_face_region_loop_shells(face_ctx, -0.5, 0.5, max_project = 20);
 
     assert_int_eq(len(shells), 4, "anti-tet hex should split into one centre and three corner shells");
 
@@ -349,8 +348,8 @@ module test_ps_face_region_loop_shells__anti_tet_past_zero_area_keeps_atom_regio
     p = poly_truncate(tetrahedron(), t = -1);
     site = _test_face_site(p, 0);
     face_ctx = ps_face_site_face_local_context(site);
-    bm = ps_face_boundary_model(ps_face_site_pts3d_local(site), "nonzero", 1e-4);
-    shells = ps_face_region_loop_shells(face_ctx, -0.5, 0.5, "nonzero", 20, 1e-4);
+    bm = ps_face_boundary_model(ps_face_site_pts3d_local(site), 1e-4);
+    shells = ps_face_region_loop_shells(face_ctx, -0.5, 0.5, max_project = 20, eps = 1e-4);
 
     assert_int_eq(len(bm[2]), 4, "anti-tet past zero-area threshold should keep four boundary loops");
     assert_int_eq(len(shells), 4, "anti-tet past zero-area threshold should keep four face-region shells");

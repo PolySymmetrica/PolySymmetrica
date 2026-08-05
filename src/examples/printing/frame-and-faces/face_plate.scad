@@ -145,7 +145,6 @@ module _face_plate_seam_support_bar(support_t, top_z, extend, eps) {
 //   support_t = bar diameter
 //   top_z = current face underside plane
 //   extend = extra length at each seam end
-//   mode = seam analysis controls
 //   eps = seam analysis controls
 //   boundary_kind = seam candidate controls
 //   include_boundary = seam candidate controls
@@ -157,7 +156,6 @@ module face_seam_supports(
     support_t = FACE_PLATE_SEAM_SUPPORT_T,
     top_z = undef,
     extend = 0,
-    mode = "nonzero",
     eps = 1e-4,
     boundary_kind = "generated_cut",
     include_boundary = true,
@@ -172,7 +170,6 @@ module face_seam_supports(
     top_z_eff = is_undef(top_z) ? 0 : top_z;
 
     place_on_face_seam_segments(
-        mode = mode,
         eps = eps,
         coords = "element",
         boundary_kind = boundary_kind,
@@ -189,7 +186,7 @@ module face_seam_supports(
 
 // Module: face_plate()
 // Usage:
-//   face_plate(face_thk, face_ctx, clear_space, top_thk, pillow_min_rad, pillow_inset, pillow_ramp, pillow_thk, base_z, clear_height, mode, max_project, boundary_inset, boundary_inset_mode, eps, convexity);
+//   face_plate(face_thk, face_ctx, clear_space, top_thk, pillow_min_rad, pillow_inset, pillow_ramp, pillow_thk, base_z, clear_height, max_project, boundary_inset, boundary_inset_mode, eps, convexity);
 // Description:
 //   Emit a face plate clipped by the current face's anti-interference volume.
 //   .
@@ -204,7 +201,6 @@ module face_seam_supports(
 //   pillow_* = raised optional pillow sizing
 //   base_z = bottom Z; defaults to `-face_thk` so the structural top sits on the source face plane
 //   clear_height = clearance height
-//   mode = anti-interference controls
 //   max_project = anti-interference controls
 //   boundary_inset = anti-interference controls
 //   boundary_inset_mode = anti-interference controls
@@ -220,7 +216,6 @@ module face_plate(face_thk,
     pillow_thk = FACE_PLATE_PILLOW_THK,
     base_z = undef,
     clear_height = FACE_PLATE_CLEAR_HEIGHT,
-    mode = "nonzero",
     max_project = undef,
     boundary_inset = 0,
     boundary_inset_mode = "side",
@@ -240,7 +235,6 @@ module face_plate(face_thk,
         face_ctx,
         base_z_eff,
         top_skin_base_z,
-        mode,
         max_project,
         eps,
         boundary_inset,
@@ -335,7 +329,6 @@ module face_mounting_plate(
     face_ctx = $ps_face_local_context,
     base_z = undef,
     top_thk = FACE_PLATE_TOP_THK,
-    mode = "nonzero",
     max_project = undef,
     boundary_inset = 0,
     boundary_inset_mode = "side",
@@ -355,7 +348,6 @@ module face_mounting_plate(
         face_ctx,
         base_z_eff,
         top_skin_base_z,
-        mode,
         max_project,
         eps,
         boundary_inset,

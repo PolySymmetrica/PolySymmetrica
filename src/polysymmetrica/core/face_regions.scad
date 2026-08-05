@@ -791,7 +791,7 @@ function _ps_fr_loop_shell(face_pts3d_local, poly_faces_idx, poly_verts_local, f
 
 // Function: _ps_face_region_loop_shells_from_context()
 // Usage:
-//   result = _ps_face_region_loop_shells_from_context(face_ctx, z0, z1, mode, max_project, eps, boundary_inset, boundary_inset_mode);
+//   result = _ps_face_region_loop_shells_from_context(face_ctx, z0, z1, max_project, eps, boundary_inset, boundary_inset_mode);
 // Description:
 //   Build positive face-region loop shells from a face-local context.
 //   .
@@ -803,7 +803,6 @@ function _ps_fr_loop_shell(face_pts3d_local, poly_faces_idx, poly_verts_local, f
 //   face_ctx = face-local context
 //   z0 = requested lower local Z plane
 //   z1 = requested upper local Z plane
-//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
 //   max_project = optional projection-distance cap
 //   eps = geometric tolerance
 //   boundary_inset = positive shift toward filled side
@@ -812,7 +811,6 @@ function _ps_face_region_loop_shells_from_context(
     face_ctx,
     z0,
     z1,
-    mode="nonzero",
     max_project=undef,
     eps=1e-8,
     boundary_inset=0,
@@ -835,7 +833,6 @@ function _ps_face_region_loop_shells_from_context(
         face_dihedrals,
         z0,
         z1,
-        mode,
         max_project,
         eps,
         boundary_inset,
@@ -844,7 +841,7 @@ function _ps_face_region_loop_shells_from_context(
 
 // Function: _ps_face_region_loop_shells_from_fields()
 // Usage:
-//   result = _ps_face_region_loop_shells_from_fields(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local, face_neighbors_idx, face_dihedrals, z0, z1, mode, max_project, eps, boundary_inset, boundary_inset_mode);
+//   result = _ps_face_region_loop_shells_from_fields(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local, face_neighbors_idx, face_dihedrals, z0, z1, max_project, eps, boundary_inset, boundary_inset_mode);
 // Description:
 //   Build positive face-region loop shells for one face.
 //   .
@@ -861,7 +858,6 @@ function _ps_face_region_loop_shells_from_context(
 //   face_dihedrals = current face-edge metadata
 //   z0 = requested lower local Z plane
 //   z1 = requested upper local Z plane
-//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
 //   max_project = optional projection-distance cap
 //   eps = geometric tolerance
 //   boundary_inset = positive shift toward filled side
@@ -875,7 +871,6 @@ function _ps_face_region_loop_shells_from_fields(
     face_dihedrals,
     z0,
     z1,
-    mode="nonzero",
     max_project=undef,
     eps=1e-8,
     boundary_inset=0,
@@ -886,7 +881,7 @@ function _ps_face_region_loop_shells_from_fields(
         _z1 = assert(!is_undef(z1), "ps_face_region_loop_shells: z1 must be defined"),
         _inset = assert(boundary_inset >= 0, "ps_face_region_loop_shells: boundary_inset must be >= 0"),
         arr = ps_face_arrangement(face_pts3d_local, eps),
-        input_sign = _ps_seg_fill_target_sign(arr, mode, eps),
+        input_sign = _ps_seg_fill_target_sign(arr, eps),
         cell_winding_signs = _ps_fr_cell_winding_signs(face_pts3d_local, arr[4], eps),
         sites = _ps_face_boundary_span_sites(
             face_pts3d_local,
@@ -895,7 +890,6 @@ function _ps_face_region_loop_shells_from_fields(
             poly_verts_local,
             face_neighbors_idx,
             face_dihedrals,
-            mode,
             eps
         ),
         edges = _ps_edges_from_faces(poly_faces_idx),
@@ -914,7 +908,7 @@ function _ps_face_region_loop_shells_from_fields(
 
 // Function: ps_face_region_loop_shells()
 // Usage:
-//   result = ps_face_region_loop_shells(face_ctx, z0, z1, mode, max_project, eps, boundary_inset, boundary_inset_mode);
+//   result = ps_face_region_loop_shells(face_ctx, z0, z1, max_project, eps, boundary_inset, boundary_inset_mode);
 // Description:
 //   Build positive face-region loop shells from a face-local context.
 //   .
@@ -925,7 +919,6 @@ function _ps_face_region_loop_shells_from_fields(
 //   face_ctx = face-local context
 //   z0 = requested lower local Z plane
 //   z1 = requested upper local Z plane
-//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
 //   max_project = optional projection-distance cap
 //   eps = geometric tolerance
 //   boundary_inset = positive shift toward filled side
@@ -934,7 +927,6 @@ function ps_face_region_loop_shells(
     face_ctx,
     z0,
     z1,
-    mode="nonzero",
     max_project=undef,
     eps=1e-8,
     boundary_inset=0,
@@ -944,7 +936,6 @@ function ps_face_region_loop_shells(
         face_ctx,
         z0,
         z1,
-        mode,
         max_project,
         eps,
         boundary_inset,
@@ -953,7 +944,7 @@ function ps_face_region_loop_shells(
 
 // Module: ps_face_region_loop_volume()
 // Usage:
-//   ps_face_region_loop_volume(z0, z1, mode, max_project, eps, convexity, boundary_inset, boundary_inset_mode);
+//   ps_face_region_loop_volume(z0, z1, max_project, eps, convexity, boundary_inset, boundary_inset_mode);
 // Description:
 //   Emit the current face's positive face-region loop volume.
 //   .
@@ -964,13 +955,12 @@ function ps_face_region_loop_shells(
 // Arguments:
 //   z0 = requested lower local Z plane
 //   z1 = requested upper local Z plane
-//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
 //   max_project = optional projection-distance cap
 //   eps = geometric tolerance
 //   convexity = OpenSCAD polyhedron convexity hint
 //   boundary_inset = positive shift toward filled side
 //   boundary_inset_mode = `"side"` or `"face"`
-module ps_face_region_loop_volume(z0, z1, mode="nonzero", max_project=undef, eps=1e-8, convexity=6, boundary_inset=0, boundary_inset_mode="side") {
+module ps_face_region_loop_volume(z0, z1, max_project=undef, eps=1e-8, convexity=6, boundary_inset=0, boundary_inset_mode="side") {
     assert(!is_undef($ps_face_pts3d_local), "ps_face_region_loop_volume: requires place_on_faces context ($ps_face_pts3d_local)");
     assert(!is_undef($ps_face_idx), "ps_face_region_loop_volume: requires place_on_faces context ($ps_face_idx)");
     assert(!is_undef($ps_face_local_context), "ps_face_region_loop_volume: requires place_on_faces context ($ps_face_local_context)");
@@ -980,7 +970,6 @@ module ps_face_region_loop_volume(z0, z1, mode="nonzero", max_project=undef, eps
         face_ctx,
         z0,
         z1,
-        mode,
         max_project,
         eps,
         boundary_inset,

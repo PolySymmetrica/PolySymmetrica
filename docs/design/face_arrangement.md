@@ -65,14 +65,13 @@ That means:
 ## Relationship To Current `segments.scad`
 
 The current `segments.scad` layer already provides useful face-local products,
-but it is still organized mainly around fill modes and visible segments.
+with public filled-face APIs using nonzero winding semantics and visible
+segments layered above the base arrangement.
 
 Roughly:
 
 - `ps_face_segments(...)`
   currently behaves closest to `ps_face_cells(...)`
-- `mode="all"`
-  means “return all simple cells from the arrangement”, not “return convex atoms”
 - `ps_face_visible_segments(...)`
   is a later visibility-stage result, not the canonical base layer
 
@@ -130,7 +129,7 @@ Where `kind` is intentionally explicit and small, for example:
 
 ## Proposed Boundary Product
 
-### `ps_face_boundary_model(face_pts3d_local, mode="nonzero", eps=1e-8)`
+### `ps_face_boundary_model(face_pts3d_local, eps=1e-8)`
 
 Derive the true filled boundary from the arrangement.
 
@@ -168,7 +167,7 @@ Boundary spans should preserve lineage where possible:
 
 ## Proposed Filled-Cell Product
 
-### `ps_face_cells(face_pts3d_local, mode="nonzero", eps=1e-8)`
+### `ps_face_cells(face_pts3d_local, eps=1e-8)`
 
 Return the filled simple cells selected by the fill rule.
 
@@ -189,7 +188,7 @@ from the arrangement/boundary model rather than recomputed ad hoc.
 
 ## Proposed Atom Product
 
-### `ps_face_atoms(face_pts3d_local, mode="nonzero", eps=1e-8)`
+### `ps_face_atoms(face_pts3d_local, eps=1e-8)`
 
 Return a convex decomposition of the filled cells.
 
@@ -225,7 +224,7 @@ Once the data products exist, the thin iterator wrappers become much clearer:
 
 ## Non-Goals
 
-- Do not treat current `mode="all"` as if it already means convex
+- Do not treat raw arrangement cells as if they already mean convex
   decomposition.
 - Do not fold visible-cell logic into the first arrangement/boundary-model
   pass.

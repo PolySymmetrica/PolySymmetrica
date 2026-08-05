@@ -65,7 +65,7 @@ function _ps_render_face_tris3(verts, f, eps=1e-8) =
     // edges (keeps shell closed against adjacent faces).
     (_ps_face_self_intersections(verts, f, eps) > 0)
         ? _ps_render_face_centroid_fan_tris3(verts, f)
-        : _ps_seg_face_tris3(f, verts, eps, "nonzero");
+        : _ps_seg_face_tris3(f, verts, eps);
 
 function _ps_render_find_point(list, p, eps, i=0) =
     (i >= len(list)) ? -1 :

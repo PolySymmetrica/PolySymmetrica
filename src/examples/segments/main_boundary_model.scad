@@ -259,7 +259,7 @@ module draw_wireframe(poly, ir = IR, show_face_labels = false) {
 
 // Module: draw_panel_boundary_model()
 // Usage:
-//   draw_panel_boundary_model(poly, face_idx, mode, label_s);
+//   draw_panel_boundary_model(poly, face_idx, label_s);
 // Description:
 //   Draw one boundary-model panel for one selected face.
 //   .
@@ -267,14 +267,13 @@ module draw_wireframe(poly, ir = IR, show_face_labels = false) {
 // Arguments:
 //   poly = poly descriptor
 //   face_idx = target face index
-//   mode = `"nonzero"` or `"evenodd"`
 //   label_s = panel label
-module draw_panel_boundary_model(poly, face_idx, mode, label_s) {
+module draw_panel_boundary_model(poly, face_idx, label_s) {
     draw_wireframe(poly, IR);
 
     place_on_faces(poly, IR) {
         if ($ps_face_idx == face_idx) {
-            bm = ps_face_boundary_model($ps_face_pts3d_local, mode = mode);
+            bm = ps_face_boundary_model($ps_face_pts3d_local);
             loops = bm[2];
             spans = bm[3];
 
@@ -318,7 +317,7 @@ module draw_panel_boundary_model(poly, face_idx, mode, label_s) {
 
 // Module: draw_panel_boundary_spans()
 // Usage:
-//   draw_panel_boundary_spans(poly, face_idx, mode, label_s);
+//   draw_panel_boundary_spans(poly, face_idx, label_s);
 // Description:
 //   Draw one span-site panel for one selected face.
 //   .
@@ -326,14 +325,13 @@ module draw_panel_boundary_model(poly, face_idx, mode, label_s) {
 // Arguments:
 //   poly = poly descriptor
 //   face_idx = target face index
-//   mode = `"nonzero"` or `"evenodd"`
 //   label_s = panel label
-module draw_panel_boundary_spans(poly, face_idx, mode, label_s) {
+module draw_panel_boundary_spans(poly, face_idx, label_s) {
     draw_wireframe(poly, IR, true);
 
     place_on_faces(poly, IR) {
         if ($ps_face_idx == face_idx) {
-            bm = ps_face_boundary_model($ps_face_pts3d_local, mode = mode);
+            bm = ps_face_boundary_model($ps_face_pts3d_local);
             loops = bm[2];
 
             color("gainsboro", 0.25)
@@ -350,7 +348,7 @@ module draw_panel_boundary_spans(poly, face_idx, mode, label_s) {
 
             draw_source_edge_labels($ps_face_pts2d);
 
-            place_on_face_boundary_spans(mode = mode) {
+            place_on_face_boundary_spans() {
                 color(boundary_span_kind_color($ps_boundary_span_kind))
                     cube([$ps_boundary_span_len, 0.8, 0.3], center = true);
 
@@ -384,7 +382,7 @@ module draw_panel_boundary_spans(poly, face_idx, mode, label_s) {
 
 // Module: draw_panel_generated_seams()
 // Usage:
-//   draw_panel_generated_seams(poly, face_idx, mode, label_s);
+//   draw_panel_generated_seams(poly, face_idx, label_s);
 // Description:
 //   Draw only generated/split seam candidates for one selected face.
 //   .
@@ -392,9 +390,8 @@ module draw_panel_boundary_spans(poly, face_idx, mode, label_s) {
 // Arguments:
 //   poly = poly descriptor
 //   face_idx = target face index
-//   mode = `"nonzero"` or `"evenodd"`
 //   label_s = panel label
-module draw_panel_generated_seams(poly, face_idx, mode, label_s) {
+module draw_panel_generated_seams(poly, face_idx, label_s) {
     draw_wireframe(poly, IR, true);
 
     place_on_faces(poly, IR) {
@@ -405,7 +402,7 @@ module draw_panel_generated_seams(poly, face_idx, mode, label_s) {
 
             draw_source_edge_labels($ps_face_pts2d);
 
-            place_on_face_boundary_spans(mode = mode, kind = "generated") {
+            place_on_face_boundary_spans(kind = "generated") {
                 color(boundary_span_kind_color($ps_boundary_span_kind))
                     cube([$ps_boundary_span_len, 2.2, 1.0], center = true);
 
@@ -431,7 +428,7 @@ module draw_panel_generated_seams(poly, face_idx, mode, label_s) {
 
 // Module: draw_panel_boundary_source_edges()
 // Usage:
-//   draw_panel_boundary_source_edges(poly, face_idx, mode, label_s);
+//   draw_panel_boundary_source_edges(poly, face_idx, label_s);
 // Description:
 //   Draw one source-edge grouped boundary panel for one selected face.
 //   .
@@ -439,9 +436,8 @@ module draw_panel_generated_seams(poly, face_idx, mode, label_s) {
 // Arguments:
 //   poly = poly descriptor
 //   face_idx = target face index
-//   mode = `"nonzero"` or `"evenodd"`
 //   label_s = panel label
-module draw_panel_boundary_source_edges(poly, face_idx, mode, label_s) {
+module draw_panel_boundary_source_edges(poly, face_idx, label_s) {
     draw_wireframe(poly, IR, true);
 
     place_on_faces(poly, IR) {
@@ -452,7 +448,7 @@ module draw_panel_boundary_source_edges(poly, face_idx, mode, label_s) {
 
             draw_source_edge_labels($ps_face_pts2d);
 
-            place_on_face_filled_boundary_source_edges(mode = mode, coords = "parent") {
+            place_on_face_filled_boundary_source_edges(coords = "parent") {
                 echo(str(label_s, "draw_panel_boundary_source_edges::", $ps_boundary_source_edge_idx));
 
                 source_seg = $ps_boundary_source_edge_segment2d_local;
@@ -533,20 +529,17 @@ module draw_boundary_row(poly, face_idx, row_s, y) {
         place_on_faces(poly, IR)
             linear_extrude(height = 0.1) ps_polygon($ps_face_pts2d);
 
-    translate([-2.0 * PANEL_X, y, 0])
-        draw_panel_boundary_model(poly, face_idx, "nonzero", "boundary nonzero");
+    translate([-1.5 * PANEL_X, y, 0])
+        draw_panel_boundary_model(poly, face_idx, "boundary model");
 
-    translate([-1.0 * PANEL_X, y, 0])
-        draw_panel_boundary_model(poly, face_idx, "evenodd", "boundary evenodd");
+    translate([-0.5 * PANEL_X, y, 0])
+        draw_panel_boundary_spans(poly, face_idx, "boundary spans");
 
-    translate([0, y, 0])
-        draw_panel_boundary_spans(poly, face_idx, "nonzero", "boundary spans");
+    translate([0.5 * PANEL_X, y, 0])
+        draw_panel_generated_seams(poly, face_idx, "generated seams");
 
-    translate([1.0 * PANEL_X, y, 0])
-        draw_panel_generated_seams(poly, face_idx, "nonzero", "generated seams");
-
-    translate([2.0 * PANEL_X, y, 0])
-        draw_panel_boundary_source_edges(poly, face_idx, "nonzero", "source edges");
+    translate([1.5 * PANEL_X, y, 0])
+        draw_panel_boundary_source_edges(poly, face_idx, "source edges");
 }
 
 draw_boundary_row(STAR_POLY, STAR_FACE_IDX, "star antiprism", PANEL_Y);
