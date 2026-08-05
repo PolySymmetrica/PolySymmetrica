@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: MIT
  */
 
-use <../../polysymmetrica/core/funcs.scad>
-use <../../polysymmetrica/core/placement.scad>
-use <../../polysymmetrica/core/duals.scad>
-use <../../polysymmetrica/core/truncation.scad>
-use <../../polysymmetrica/core/render.scad>
-use <../../polysymmetrica/core/classify.scad>
-use <../../polysymmetrica/core/prisms.scad>
-use <../../polysymmetrica/core/construction.scad>
-use <../../polysymmetrica/core/face_regions.scad>
+use <../../../polysymmetrica/core/funcs.scad>
+use <../../../polysymmetrica/core/placement.scad>
+use <../../../polysymmetrica/core/duals.scad>
+use <../../../polysymmetrica/core/truncation.scad>
+use <../../../polysymmetrica/core/render.scad>
+use <../../../polysymmetrica/core/classify.scad>
+use <../../../polysymmetrica/core/prisms.scad>
+use <../../../polysymmetrica/core/construction.scad>
+use <../../../polysymmetrica/core/face_regions.scad>
 
-use <../../polysymmetrica/models/platonics_all.scad>
-use <../../polysymmetrica/models/archimedians_all.scad>
-use <../../polysymmetrica/models/johnsons_all.scad>
+use <../../../polysymmetrica/models/platonics_all.scad>
+use <../../../polysymmetrica/models/archimedians_all.scad>
+use <../../../polysymmetrica/models/johnsons_all.scad>
 
 use <edge_seg.scad>
 use <face_plate.scad>

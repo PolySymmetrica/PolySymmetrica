@@ -10,7 +10,7 @@ use <../../../polysymmetrica/core/placement.scad>
 use <../../../polysymmetrica/core/prisms.scad>
 use <../../../polysymmetrica/core/segments.scad>
 use <../../../polysymmetrica/core/render.scad>
-use <../../printing/face_plate.scad>
+use <../../printing/frame-and-faces/face_plate.scad>
 
 // Minimal printable punch-through integration probe for poly_antiprism(7,3,15).
 // This deliberately stays narrow: it combines the stable face-local data APIs
