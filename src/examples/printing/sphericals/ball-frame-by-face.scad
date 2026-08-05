@@ -45,7 +45,7 @@ module show_spherical(i, poly, indices = undef) {
     module faces() {
         place_on_faces(poly, IR, indices = indices) {
             ps_face_region_loop_volume(Z_MIN, Z_MAX, max_project = undef, boundary_inset=SHELL_W/2);
-        };
+        }
     }
     
     translate([i * IR * 3, 0, 0])
