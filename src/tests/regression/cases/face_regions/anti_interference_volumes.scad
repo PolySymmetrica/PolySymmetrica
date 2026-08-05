@@ -67,21 +67,19 @@ module _volume_panel(poly, face_idx, label_s, boundary_inset = 0) {
                 ps_face_region_loop_volume(
                     Z0,
                     Z1,
-                    mode = "nonzero",
                     max_project = MAX_PROJECT,
                     boundary_inset = boundary_inset
                 );
 
             color("black")
-                place_on_face_boundary_spans(mode = "nonzero")
+                place_on_face_boundary_spans()
                     cube([$ps_boundary_span_len, 0.54, 0.54], center = true);
 
             shells = ps_face_region_loop_shells(
                 $ps_face_local_context,
                 Z0,
                 Z1,
-                "nonzero",
-                MAX_PROJECT,
+                max_project = MAX_PROJECT,
                 boundary_inset = boundary_inset
             );
 

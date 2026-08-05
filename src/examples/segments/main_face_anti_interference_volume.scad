@@ -91,26 +91,24 @@ module draw_volume_panel(poly, face_idx, label_s) {
             color("gainsboro", 0.30)
                 translate([0, 0, -0.08])
                     linear_extrude(height = FACE_THK, center = true)
-                        ps_polygon($ps_face_pts2d, mode = "nonzero");
+                        ps_polygon($ps_face_pts2d);
 
             color("deepskyblue", 0.38)
                 ps_face_region_loop_volume(
                     VOL_Z_MIN,
                     VOL_Z_MAX,
-                    mode = "nonzero",
                     max_project = MAX_PROJECT
                 );
 
             color("black")
-                place_on_face_boundary_spans(mode = "nonzero")
+                place_on_face_boundary_spans()
                     cube([$ps_boundary_span_len, LINE_R, LINE_R], center = true);
 
             shells = ps_face_region_loop_shells(
                 $ps_face_local_context,
                 VOL_Z_MIN,
                 VOL_Z_MAX,
-                "nonzero",
-                MAX_PROJECT
+                max_project = MAX_PROJECT
             );
 
             color("navy")

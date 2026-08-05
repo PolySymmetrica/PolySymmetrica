@@ -127,7 +127,7 @@ module demo_face_plate(clear_height = 0) {
         // minus local seam clearance regions for hidden foreign crossing loops
         ps_face_seam_clearance_volume(
                 BASE_Z - 0.5, BASE_Z + FACE_T + 0.5,
-                clearance = SEAM_INSET, max_slope_offset = undef, mode = "nonzero", eps = 1e-4);
+                clearance = SEAM_INSET, max_slope_offset = undef, eps = 1e-4);
     }
 }
 

@@ -19,9 +19,8 @@ IR = 30;
 FACE_THK = 0.26;
 
 TESTS = [
-    ["star_evenodd_cells", "cells", function() poly_antiprism(5, 2), 1, "evenodd"],
-    ["star_nonzero_cells", "cells", function() poly_antiprism(5, 2), 1, "nonzero"],
-    ["atut_nonzero_cells", "cells", function() poly_truncate(tetrahedron(), t = -0.5), 0, "nonzero"],
+    ["star_cells", "cells", function() poly_antiprism(5, 2), 1],
+    ["atut_cells", "cells", function() poly_truncate(tetrahedron(), t = -0.5), 0],
     ["atut_boundary_spans", "boundary_spans", function() poly_truncate(tetrahedron(), t = -0.5), 0, "all"],
     ["atut_boundary_sources", "boundary_sources", function() poly_truncate(tetrahedron(), t = -0.5), 0],
     ["atut_generated_spans", "boundary_spans", function() poly_truncate(tetrahedron(), t = -0.5), 0, "generated"],
@@ -100,12 +99,12 @@ module _two_sided_face_label(pt2d, s, size = 2.4, h = 0.08, z = 1.0) {
             reg_text_label(s, size = size, h = h);
 }
 
-module _cells_panel(poly, face_idx, mode, label_s) {
+module _cells_panel(poly, face_idx, label_s) {
     _wire_context(poly, face_idx, show_fill = false);
 
     place_on_faces(poly, IR)
         if ($ps_face_idx == face_idx)
-            place_on_face_segments(mode = mode) {
+            place_on_face_segments() {
                 color(reg_cycle_color($ps_seg_idx))
                     translate([0, 0, 0.18])
                         linear_extrude(height = FACE_THK, center = true)
@@ -129,7 +128,7 @@ module _boundary_spans_panel(poly, face_idx, label_s, kind = "all") {
         if ($ps_face_idx == face_idx) {
             _source_edge_labels($ps_face_pts2d);
 
-            place_on_face_boundary_spans(mode = "nonzero", kind = kind) {
+            place_on_face_boundary_spans(kind = kind) {
                 color(_span_kind_color($ps_boundary_span_kind))
                     cube([$ps_boundary_span_len, 0.8, 0.35], center = true);
 
@@ -158,7 +157,7 @@ module _boundary_sources_panel(poly, face_idx, label_s) {
         if ($ps_face_idx == face_idx) {
             _source_edge_labels($ps_face_pts2d);
 
-            place_on_face_filled_boundary_source_edges(mode = "nonzero") {
+            place_on_face_filled_boundary_source_edges() {
                 color($ps_boundary_source_edge_frame_reversed ? "crimson" : "mediumseagreen")
                     cube([$ps_boundary_source_edge_len, 0.82, 0.36], center = true);
 
@@ -192,7 +191,6 @@ module _seam_panel(poly, face_idx, label_s) {
     place_on_faces(poly, IR)
         if ($ps_face_idx == face_idx)
             place_on_face_seam_segments(
-                mode = "nonzero",
                 boundary_kind = "all",
                 include_boundary = true,
                 include_foreign = true,
@@ -217,7 +215,7 @@ module _visible_panel(poly, face_idx, label_s) {
 
     place_on_faces(poly, IR)
         if ($ps_face_idx == face_idx)
-            place_on_face_visible_segments(mode = "nonzero", filter_parent = true) {
+            place_on_face_visible_segments(filter_parent = true) {
                 color(reg_cycle_color($ps_vis_seg_idx))
                     linear_extrude(height = FACE_THK, center = true)
                         polygon(points = $ps_vis_seg_pts2d);
@@ -256,16 +254,15 @@ module _visible_winding_panel(poly, face_idx, label_s) {
     face_pts3d_local = ps_face_site_pts3d_local(site);
     face_pts2d = ps_xy(face_pts3d_local);
     arr = ps_face_arrangement(face_pts3d_local, 1e-4);
-    target_sign = _ps_seg_fill_target_sign(arr, "nonzero", 1e-4);
+    target_sign = _ps_seg_fill_target_sign(arr, 1e-4);
     raw_sign = (_ps_seg_poly_area2(face_pts2d) >= 0) ? 1 : -1;
-    bm = ps_face_boundary_model(face_pts3d_local, "nonzero", 1e-4);
+    bm = ps_face_boundary_model(face_pts3d_local, 1e-4);
     visible = ps_face_visible_segments(
         face_pts3d_local,
         site[0],
         ps_face_site_poly_faces_idx(site),
         ps_face_site_poly_verts_local(site),
         1e-4,
-        "nonzero",
         true
     );
 
@@ -313,7 +310,7 @@ module _render_test(spec) {
     face_idx = spec[3];
 
     if (kind == "cells") {
-        _cells_panel(poly, face_idx, spec[4], name);
+        _cells_panel(poly, face_idx, name);
     } else if (kind == "boundary_spans") {
         _boundary_spans_panel(poly, face_idx, name, kind = spec[4]);
     } else if (kind == "boundary_sources") {

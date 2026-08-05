@@ -114,22 +114,21 @@ module draw_wireframe(poly, ir = IR) {
 
 // Module: draw_panel_ps_polygon()
 // Usage:
-//   draw_panel_ps_polygon(mode, label_s);
+//   draw_panel_ps_polygon(label_s);
 // Description:
-//   Show `ps_polygon(...)` on the star face with specified fill rule.
+//   Show `ps_polygon(...)` on the star face.
 //   .
 //   - Returns: none
 // Arguments:
-//   mode = `"evenodd"` or `"nonzero"`
 //   label_s = panel label
-module draw_panel_ps_polygon(mode, label_s) {
+module draw_panel_ps_polygon(label_s) {
     draw_wireframe(P, IR);
     
     place_on_faces(P, IR) {
         if ($ps_face_idx == STAR_FACE_IDX) {
-            color(mode == "evenodd" ? "lightsalmon" : "deepskyblue")
+            color("deepskyblue")
                 linear_extrude(height = FACE_THK, center = true)
-                    ps_polygon($ps_face_pts2d, mode = mode);
+                    ps_polygon($ps_face_pts2d);
         }
     }
     draw_panel_label(label_s);
@@ -149,7 +148,7 @@ module draw_panel_face_segments() {
     
     place_on_faces(P, IR) {
         if ($ps_face_idx == STAR_FACE_IDX) {
-            place_on_face_segments(mode = "nonzero") {
+            place_on_face_segments() {
                 // simply draw the polygon in supplied color
                 color(cell_color($ps_seg_idx)) 
                     draw_polygon($ps_seg_pts2d);
@@ -188,7 +187,7 @@ module draw_panel_geom_cuts() {
         if ($ps_face_idx == SIDE_FACE_IDX) {
             color("gainsboro") draw_polygon($ps_face_pts2d);
             
-            place_on_face_geom_cut_segments(mode = "nonzero", filter_parent = true) {
+            place_on_face_geom_cut_segments(filter_parent = true) {
                 color("crimson") draw_local_segment_stroke($ps_face_cut_segment2d_local, r = LINE_R * 1.1);
 
                 color("black")
@@ -231,7 +230,7 @@ module draw_panel_visible_segments() {
                 linear_extrude(height = FACE_THK * 0.4, center = true)
                     polygon(points = $ps_face_pts2d);
 
-            place_on_face_visible_segments(mode = "nonzero", filter_parent = true) {
+            place_on_face_visible_segments(filter_parent = true) {
                 color(cell_color($ps_vis_seg_idx))
                     linear_extrude(height = FACE_THK, center = true)
                         polygon(points = $ps_vis_seg_pts2d);
@@ -250,8 +249,7 @@ module draw_panel_visible_segments() {
     draw_panel_label("place_on_face_visible_segments");
 }
 
-translate([-2 * PANEL_X, 0, 0]) draw_panel_ps_polygon("evenodd", "ps_polygon evenodd");
-translate([-1 * PANEL_X, 0, 0]) draw_panel_ps_polygon("nonzero", "ps_polygon nonzero");
-translate([ 0 * PANEL_X, 0, 0]) draw_panel_face_segments();
-translate([ 1 * PANEL_X, 0, 0]) draw_panel_geom_cuts();
-translate([ 2 * PANEL_X, 0, 0]) draw_panel_visible_segments();
+translate([-1.5 * PANEL_X, 0, 0]) draw_panel_ps_polygon("ps_polygon");
+translate([-0.5 * PANEL_X, 0, 0]) draw_panel_face_segments();
+translate([ 0.5 * PANEL_X, 0, 0]) draw_panel_geom_cuts();
+translate([ 1.5 * PANEL_X, 0, 0]) draw_panel_visible_segments();

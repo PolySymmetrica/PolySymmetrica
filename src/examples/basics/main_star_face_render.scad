@@ -15,7 +15,7 @@ use <../truncation/util_demo.scad>
 // Compare the same poly rendered in four ways:
 //   1) poly_render(...) -> OpenSCAD polyhedron(points, faces)
 //   2) demo(...)         -> util_demo face fill (triangle fan)
-//   3) face-local polygon() plates (even-odd behavior from 2D polygon filling)
+//   3) face-local segmented plates
 //   4) face segmentation plates via place_on_face_segments(...)
 
 IR = 30;
@@ -48,7 +48,7 @@ function _seg_mid2d(seg) =
 
 module _face_polygon_fill(poly, ir=IR, thk=0.02) {
     place_on_faces(poly, ir) {
-        place_on_face_segments(mode="nonzero") {
+        place_on_face_segments() {
             color("lightblue")
                 linear_extrude(height=thk)
                     polygon(points = $ps_seg_pts2d);
@@ -62,7 +62,7 @@ module _face_polygon_fill(poly, ir=IR, thk=0.02) {
 
 module _face_segment_fill(poly, ir=IR, thk=0.02) {
     place_on_faces(poly, ir) {
-        place_on_face_segments(mode="evenodd") {
+        place_on_face_segments() {
             color(_seg_color($ps_seg_idx), 1)
                 linear_extrude(height=thk)
                     polygon(points = $ps_seg_pts2d);
@@ -100,7 +100,7 @@ module _face_geom_cut_stencil(poly, ir=IR, thk=0.4) {
                             text(str($ps_face_cut_idx), size=1.4, halign="center", valign="center");
             }
         } else {
-            place_on_face_segments(mode="nonzero") {
+            place_on_face_segments() {
                 color("gainsboro")
                     linear_extrude(height=thk, center=true)
                         polygon(points = $ps_seg_pts2d);

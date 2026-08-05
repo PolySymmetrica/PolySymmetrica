@@ -43,7 +43,7 @@ use <polysymmetrica/core/loop_shells.scad>
 
 Function: Build mesh data for the face's positive anti-interference volume.
 
-Params: `face_ctx`, `z0`, `z1`, `mode="nonzero"`, `max_project=undef`,
+Params: `face_ctx`, `z0`, `z1`, `max_project=undef`,
 `eps=1e-8`, `boundary_inset=0`, `boundary_inset_mode="side"`.
 
 Returns: one generic `ps_loop_shell` record per filled boundary loop.
@@ -81,7 +81,7 @@ their input `z0`/`z1` survived unchanged.
 Module: Emit the generated shell volume for the current `place_on_faces(...)`
 context.
 
-Params: `z0`, `z1`, `mode="nonzero"`, `max_project=undef`, `eps=1e-8`,
+Params: `z0`, `z1`, `max_project=undef`, `eps=1e-8`,
 `convexity=6`, `boundary_inset=0`, `boundary_inset_mode="side"`.
 
 Typical usage:
@@ -145,12 +145,10 @@ for anti-truncation-style faces where the central atom and corner atoms are
 valid filled regions but represent opposite local orientations.
 
 The shell `exposure_sign` records that same relative winding decision: `+1`
-for same-winding regions and `-1` for opposite-winding regions. Zero-winding
-cells, such as inspection cells included by `mode="all"`, use the same `+1`
-fallback as the projection ray selection. Callers that build printable face
-details should use this field, not loop area or whether a projection grows
-toward `+Z`, to decide whether a region receives top-side or bottom-side
-geometry.
+for same-winding regions and `-1` for opposite-winding regions. Callers that
+build printable face details should use this field, not loop area or whether a
+projection grows toward `+Z`, to decide whether a region receives top-side or
+bottom-side geometry.
 
 For non-planar faces this is deliberately best-effort: each boundary span uses
 its own local source-edge midpoint Z. This keeps the generated volume tied to

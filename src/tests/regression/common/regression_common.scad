@@ -61,8 +61,8 @@ function reg_cycle_color(i) =
     (i % 8 == 6) ? "turquoise" :
     "sienna";
 
-module reg_face_fill(thk = 0.16, mode = "nonzero") {
-    cells = ps_face_segments($ps_face_pts3d_local, mode);
+module reg_face_fill(thk = 0.16) {
+    cells = ps_face_segments($ps_face_pts3d_local);
     for (cell = cells)
         linear_extrude(height = thk, center = true)
             polygon(points = cell[0]);

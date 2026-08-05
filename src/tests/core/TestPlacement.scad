@@ -793,14 +793,14 @@ module test_place_on_all__empty_indices_skip_children() {
         assert(false, "empty vertex indices should skip children");
 }
 
-module test_place_on_face_segments__star_face_split() {
+module test_place_on_face_segments__star_face_metadata() {
     p = poly_antiprism(5, 2);
     place_on_faces(p) {
         if ($ps_face_idx == 0) {
-            place_on_face_segments(mode="evenodd") {
+            place_on_face_segments() {
                 assert(!is_undef($ps_seg_idx), "segment idx should be defined");
                 assert(!is_undef($ps_seg_count), "segment count should be defined");
-                assert($ps_seg_count > 1, "star face should split into multiple segments");
+                assert($ps_seg_count >= 1, "star face should produce at least one filled segment");
                 assert($ps_seg_vertex_count >= 3, "segment should have at least 3 vertices");
                 assert(len($ps_seg_pts2d) == $ps_seg_vertex_count, "segment pts2d count");
                 assert(len($ps_seg_pts3d_local) == $ps_seg_vertex_count, "segment pts3d count");
@@ -873,7 +873,7 @@ module test_seg_face_tris3__star_area_matches_segments() {
     // Pentagram-style self-intersecting face loop.
     pts3 = [[0,9,0], [-5,-5,0], [8,3,0], [-8,3,0], [5,-5,0]];
     tris = _ps_seg_face_tris3([0,1,2,3,4], pts3, 1e-9);
-    segs = ps_face_segments(pts3, "evenodd", 1e-9);
+    segs = ps_face_segments(pts3, 1e-9);
     area_tris = _list_sum([
         for (t = tris)
             _tri2_area(
@@ -883,16 +883,16 @@ module test_seg_face_tris3__star_area_matches_segments() {
             )
     ]);
     area_segs = _list_sum([for (s = segs) abs(_ps_seg_poly_area2(s[0]))]);
-    assert(len(segs) > 1, "star face should split into multiple even-odd regions");
+    assert(len(segs) > 1, "star face should split into multiple nonzero regions");
     assert(len(tris) >= 3, "triangulation should produce at least a few triangles");
     assert(abs(area_tris - area_segs) < 1e-6, str("star triangulation area mismatch tris=", area_tris, " segs=", area_segs));
 }
 
-module test_ps_face_segments__default_matches_nonzero() {
+module test_ps_face_segments__explicit_eps_matches_named_eps() {
     pts3 = [[0,9,0], [-5,-5,0], [8,3,0], [-8,3,0], [5,-5,0]];
     segs_default = ps_face_segments(pts3, eps=1e-9);
-    segs_nonzero = ps_face_segments(pts3, "nonzero", 1e-9);
-    assert(segs_default == segs_nonzero, "ps_face_segments default should match nonzero fill");
+    segs_positional = ps_face_segments(pts3, 1e-9);
+    assert(segs_default == segs_positional, "ps_face_segments named and positional eps should match");
 }
 
 module test_ps_face_arrangement__pentagram_counts() {
@@ -918,18 +918,13 @@ module test_ps_face_boundary_model__pentagram_counts() {
     p = poly_antiprism(5, 2);
     pts3 = [for (i = poly_faces(p)[1]) poly_verts(p)[i]];
     pts2 = [for (pt = pts3) [pt[0], pt[1]]];
-    nz = ps_face_boundary_model(pts3, "nonzero", 1e-9);
-    eo = ps_face_boundary_model(pts3, "evenodd", 1e-9);
+    nz = ps_face_boundary_model(pts3, 1e-9);
 
     assert_int_eq(len(nz[1]), 1, "pentagram nonzero filled cell count");
     assert_int_eq(len(nz[2]), 1, "pentagram nonzero boundary loop count");
     assert_int_eq(len(nz[3]), 10, "pentagram nonzero boundary span count");
 
-    assert_int_eq(len(eo[1]), 5, "pentagram evenodd filled cell count");
-    assert_int_eq(len(eo[2]), 2, "pentagram evenodd boundary loop count");
-    assert_int_eq(len(eo[3]), 15, "pentagram evenodd boundary span count");
-
-    for (bm = [nz, eo])
+    for (bm = [nz])
         for (span = bm[3]) {
             edge_idx = span[2];
             t0 = span[3];
@@ -954,7 +949,6 @@ module test_ps_face_boundary_span_sites__pentagram_attach_adjacent_face_context(
                 $ps_poly_verts_local,
                 $ps_face_neighbors_idx,
                 $ps_face_dihedrals,
-                "nonzero",
                 1e-9
             );
 
@@ -986,7 +980,6 @@ module test_ps_boundary_span_site_accessors__match_record_layout_and_frame() {
                 $ps_poly_verts_local,
                 $ps_face_neighbors_idx,
                 $ps_face_dihedrals,
-                "nonzero",
                 1e-9
             );
 
@@ -1056,7 +1049,6 @@ module test_ps_face_boundary_span_sites__anti_tet_hex_is_span_directional() {
                 $ps_poly_verts_local,
                 $ps_face_neighbors_idx,
                 $ps_face_dihedrals,
-                "nonzero",
                 1e-9
             );
             source_edges = len($ps_face_pts2d);
@@ -1106,7 +1098,7 @@ module test_ps_face_visible_segments__cube_face_unchanged() {
     p = hexahedron();
     place_on_faces(p) {
         if ($ps_face_idx == 0) {
-            vis = ps_face_visible_segments($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, 1e-8, "nonzero", true);
+            vis = ps_face_visible_segments($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, 1e-8, true);
             area_face = abs(_ps_seg_poly_area2($ps_face_pts2d));
             area_vis = _list_sum([for (s = vis) abs(_ps_seg_poly_area2(s[0]))]);
             assert_int_eq(len(vis), 1, "cube face should keep one visible cell");
@@ -1125,7 +1117,7 @@ module test_ps_face_visible_segments__star_antiprism_side_reduced() {
     target = tri_faces[0];
     place_on_faces(p) {
         if ($ps_face_idx == target) {
-            vis = ps_face_visible_segments($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, 1e-8, "nonzero", true);
+            vis = ps_face_visible_segments($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, 1e-8, true);
             area_face = abs(_ps_seg_poly_area2($ps_face_pts2d));
             area_vis = _list_sum([for (s = vis) abs(_ps_seg_poly_area2(s[0]))]);
             assert(len(vis) >= 1, "star antiprism side should keep at least one visible cell");
@@ -1149,7 +1141,7 @@ module test_ps_face_visible_segments__cells_preserve_parent_winding() {
     target = tri_faces[0];
     place_on_faces(p) {
         if ($ps_face_idx == target) {
-            vis = ps_face_visible_segments($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, 1e-8, "nonzero", true);
+            vis = ps_face_visible_segments($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, 1e-8, true);
             parent_sign = (_ps_seg_poly_area2($ps_face_pts2d) >= 0) ? 1 : -1;
             for (s = vis)
                 assert(
@@ -1160,7 +1152,7 @@ module test_ps_face_visible_segments__cells_preserve_parent_winding() {
     }
 }
 
-module test_ps_face_geom_cut_segments__respects_fill_mode() {
+module test_ps_face_geom_cut_segments__star_cutter_generates_cut_segments() {
     // Target square in z=0 plane plus a star-shaped cutter face tilted through the plane.
     target = [[-6,-6], [6,-6], [6,6], [-6,6]];
     faces = [
@@ -1172,10 +1164,8 @@ module test_ps_face_geom_cut_segments__respects_fill_mode() {
         [for (p = target) [p[0], p[1], 0]],
         [for (p = star_xy) [p[0], p[1], p[1] / 6]]
     );
-    segs_evenodd = ps_face_geom_cut_segments(target, 0, faces, verts_local, 1e-8, "evenodd", true);
-    segs_nonzero = ps_face_geom_cut_segments(target, 0, faces, verts_local, 1e-8, "nonzero", true);
-    assert(len(segs_evenodd) > 0, "synthetic star cutter should generate some cut geometry");
-    assert(len(segs_nonzero) > len(segs_evenodd), str("nonzero star cutter should yield more cut segments than evenodd evenodd=", len(segs_evenodd), " nonzero=", len(segs_nonzero)));
+    segs = ps_face_geom_cut_segments(target, 0, faces, verts_local, 1e-8, true);
+    assert(len(segs) > 0, "synthetic star cutter should generate some cut geometry");
 }
 
 module run_TestPlacement() {
@@ -1216,12 +1206,12 @@ module run_TestPlacement() {
     test_place_on_all__indices_filter_selected_ids();
     test_place_on_all__indices_accept_scalar();
     test_place_on_all__empty_indices_skip_children();
-    test_place_on_face_segments__star_face_split();
+    test_place_on_face_segments__star_face_metadata();
     test_place_on_faces__local_z_origin_consistent_for_face_and_poly_verts();
     test_seg_cycle_probe_point__concave_inside();
     test_seg_face_tris3__concave_area_preserved();
     test_seg_face_tris3__star_area_matches_segments();
-    test_ps_face_segments__default_matches_nonzero();
+    test_ps_face_segments__explicit_eps_matches_named_eps();
     test_ps_face_arrangement__pentagram_counts();
     test_ps_face_boundary_model__pentagram_counts();
     test_ps_face_boundary_span_sites__pentagram_attach_adjacent_face_context();
@@ -1231,7 +1221,7 @@ module run_TestPlacement() {
     test_ps_face_visible_segments__cube_face_unchanged();
     test_ps_face_visible_segments__star_antiprism_side_reduced();
     test_ps_face_visible_segments__cells_preserve_parent_winding();
-    test_ps_face_geom_cut_segments__respects_fill_mode();
+    test_ps_face_geom_cut_segments__star_cutter_generates_cut_segments();
 }
 
 run_TestPlacement();

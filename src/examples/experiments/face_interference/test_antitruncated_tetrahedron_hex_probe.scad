@@ -22,7 +22,6 @@ IR = 34;
 HEX_FACE_IDX = 0;
 LONG_SOURCE_EDGE_IDX = 1;
 SHORT_SOURCE_EDGE_IDX = 0;
-MODE = "nonzero";
 
 FACE_THK = 0.26;
 LINE_R = 0.48;
@@ -203,13 +202,12 @@ module draw_source_edge_labels(pts2d) {
 //   poly_verts_local =
 module echo_hex_summary(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local) {
     arr = ps_face_arrangement(face_pts3d_local);
-    bm = ps_face_boundary_model(face_pts3d_local, MODE);
+    bm = ps_face_boundary_model(face_pts3d_local);
     cuts = ps_face_geom_cut_entries(
         ps_xy(face_pts3d_local),
         face_idx,
         poly_faces_idx,
-        poly_verts_local,
-        mode = MODE
+        poly_verts_local
     );
 
     echo(str(
@@ -253,7 +251,7 @@ module draw_context_panel() {
         if ($ps_face_idx == HEX_FACE_IDX)
             color("tomato", 0.45)
                 linear_extrude(height = FACE_THK, center = true)
-                    ps_polygon($ps_face_pts2d, MODE);
+                    ps_polygon($ps_face_pts2d);
     }
 
     draw_panel_label("anti-tet context");
@@ -278,7 +276,7 @@ module draw_arrangement_panel() {
             color("gainsboro", 0.22)
                 translate([0, 0, -FACE_THK])
                     linear_extrude(height = FACE_THK, center = true)
-                        ps_polygon($ps_face_pts2d, MODE);
+                        ps_polygon($ps_face_pts2d);
 
             for (si = [0:1:len(spans)-1]) {
                 span = spans[si];
@@ -317,9 +315,9 @@ module draw_source_edges_panel() {
             color("gainsboro", 0.16)
                 translate([0, 0, -FACE_THK])
                     linear_extrude(height = FACE_THK, center = true)
-                        ps_polygon($ps_face_pts2d, MODE);
+                        ps_polygon($ps_face_pts2d);
 
-            place_on_face_filled_boundary_source_edges(mode = MODE, coords = "parent") {
+            place_on_face_filled_boundary_source_edges(coords = "parent") {
                 is_long = $ps_boundary_source_edge_idx == LONG_SOURCE_EDGE_IDX;
 
                 color(is_long ? "red" : example_color($ps_boundary_source_edge_idx), 0.34)
@@ -368,9 +366,9 @@ module draw_boundary_span_panel() {
             color("gainsboro", 0.14)
                 translate([0, 0, -FACE_THK])
                     linear_extrude(height = FACE_THK, center = true)
-                        ps_polygon($ps_face_pts2d, MODE);
+                        ps_polygon($ps_face_pts2d);
 
-            place_on_face_boundary_spans(mode = MODE) {
+            place_on_face_boundary_spans() {
                 is_long = $ps_boundary_span_source_edge_idx == LONG_SOURCE_EDGE_IDX;
                 is_short = $ps_boundary_span_source_edge_idx == SHORT_SOURCE_EDGE_IDX;
 
@@ -412,18 +410,17 @@ module draw_volume_panel() {
             color("gainsboro", 0.16)
                 translate([0, 0, -FACE_THK])
                     linear_extrude(height = FACE_THK, center = true)
-                        ps_polygon($ps_face_pts2d, MODE);
+                        ps_polygon($ps_face_pts2d);
 
             color("deepskyblue", 0.34)
                 ps_face_region_loop_volume(
                     VOL_Z_MIN,
                     VOL_Z_MAX,
-                    mode = MODE,
                     max_project = MAX_PROJECT
                 );
 
             color("black")
-                place_on_face_boundary_spans(mode = MODE)
+                place_on_face_boundary_spans()
                     cube([$ps_boundary_span_len, LINE_R * 0.75, LINE_R * 0.75], center = true);
         }
     }

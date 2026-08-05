@@ -352,24 +352,20 @@ function _ps_seg_node_kind(node3d, face_pts3d_local, eps=1e-9) =
 function _ps_seg_arr_input_sign(arr) =
     (_ps_seg_poly_area2(arr[0]) >= 0) ? 1 : -1;
 
-function _ps_seg_keep_arr_cell_with_target(cell, outer2d, mode, target_sign, eps=1e-8) =
+function _ps_seg_keep_arr_cell_with_target(cell, outer2d, target_sign, eps=1e-8) =
     let(
         pts2d = cell[0],
         area_c = cell[4],
         probe = _ps_seg_cycle_probe_point(pts2d, eps),
         cycle_sign_ok = area_c * target_sign > eps,
-        in_evenodd = _ps_seg_point_in_poly_evenodd(probe, outer2d, eps),
         in_nonzero = _ps_seg_point_in_poly_nonzero(probe, outer2d, eps)
     )
-    (mode == "all") ? true :
-    (mode == "nonzero") ? (in_nonzero && cycle_sign_ok) :
-    in_evenodd;
+    in_nonzero && cycle_sign_ok;
 
-function _ps_seg_keep_arr_cell(cell, outer2d, mode="nonzero", eps=1e-8) =
+function _ps_seg_keep_arr_cell(cell, outer2d, eps=1e-8) =
     _ps_seg_keep_arr_cell_with_target(
         cell,
         outer2d,
-        mode,
         (_ps_seg_poly_area2(outer2d) >= 0) ? 1 : -1,
         eps
     );
@@ -387,14 +383,14 @@ function _ps_seg_orient_arr_cell(cell, target_sign, eps=1e-9) =
         -area
     ];
 
-function _ps_seg_fill_cell_ids_from_arr_with_target(arr, mode, target_sign, eps=1e-8) =
+function _ps_seg_fill_cell_ids_from_arr_with_target(arr, target_sign, eps=1e-8) =
     let(
         outer2d = arr[0],
         cells = arr[4]
     )
     [
         for (ci = [0:1:len(cells)-1])
-            if (_ps_seg_keep_arr_cell_with_target(cells[ci], outer2d, mode, target_sign, eps))
+            if (_ps_seg_keep_arr_cell_with_target(cells[ci], outer2d, target_sign, eps))
                 ci
     ];
 
@@ -412,26 +408,25 @@ function _ps_seg_nonzero_fill_target_sign(arr, eps=1e-8) =
     let(
         default_sign = _ps_seg_arr_input_sign(arr),
         alt_sign = -default_sign,
-        default_ids = _ps_seg_fill_cell_ids_from_arr_with_target(arr, "nonzero", default_sign, eps),
-        alt_ids = _ps_seg_fill_cell_ids_from_arr_with_target(arr, "nonzero", alt_sign, eps),
+        default_ids = _ps_seg_fill_cell_ids_from_arr_with_target(arr, default_sign, eps),
+        alt_ids = _ps_seg_fill_cell_ids_from_arr_with_target(arr, alt_sign, eps),
         default_loop_count = _ps_seg_boundary_loop_count_for_target(arr, default_ids, default_sign, eps),
         alt_loop_count = _ps_seg_boundary_loop_count_for_target(arr, alt_ids, alt_sign, eps)
     )
     alt_loop_count > default_loop_count ? alt_sign : default_sign;
 
-function _ps_seg_fill_target_sign(arr, mode="nonzero", eps=1e-8) =
-    (mode == "nonzero") ? _ps_seg_nonzero_fill_target_sign(arr, eps) : _ps_seg_arr_input_sign(arr);
+function _ps_seg_fill_target_sign(arr, eps=1e-8) =
+    _ps_seg_nonzero_fill_target_sign(arr, eps);
 
-function _ps_seg_fill_target_sign_for_face_pts(face_pts, mode="nonzero", eps=1e-8) =
+function _ps_seg_fill_target_sign_for_face_pts(face_pts, eps=1e-8) =
     _ps_seg_fill_target_sign(
         ps_face_arrangement([for (p = face_pts) [p[0], p[1], 0]], eps),
-        mode,
         eps
     );
 
-function _ps_seg_fill_cell_ids_from_arr(arr, mode="nonzero", eps=1e-8) =
-    let(target_sign = _ps_seg_fill_target_sign(arr, mode, eps))
-    _ps_seg_fill_cell_ids_from_arr_with_target(arr, mode, target_sign, eps);
+function _ps_seg_fill_cell_ids_from_arr(arr, eps=1e-8) =
+    let(target_sign = _ps_seg_fill_target_sign(arr, eps))
+    _ps_seg_fill_cell_ids_from_arr_with_target(arr, target_sign, eps);
 
 function _ps_seg_arr_occurrences(cells, cell_ids, target_sign, eps=1e-9) =
     [
@@ -607,7 +602,7 @@ function _ps_seg_boundary_span_kind_matches(public_kind, kind="all") =
 
 // Function: _ps_face_boundary_span_sites()
 // Usage:
-//   result = _ps_face_boundary_span_sites(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local, face_neighbors_idx, face_dihedrals, mode, eps);
+//   result = _ps_face_boundary_span_sites(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local, face_neighbors_idx, face_dihedrals, eps);
 // Description:
 //   Build internal dihedral-aware boundary-span site records for the current face.
 //   .
@@ -621,13 +616,12 @@ function _ps_seg_boundary_span_kind_matches(public_kind, kind="all") =
 //   poly_verts_local = full poly in current face-local coordinates
 //   face_neighbors_idx = current face-edge metadata
 //   face_dihedrals = current face-edge metadata
-//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
 //   eps = geometric tolerance
-function _ps_face_boundary_span_sites(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local, face_neighbors_idx, face_dihedrals, mode="nonzero", eps=1e-8) =
+function _ps_face_boundary_span_sites(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local, face_neighbors_idx, face_dihedrals, eps=1e-8) =
     let(
         arr = ps_face_arrangement(face_pts3d_local, eps),
         cells = arr[4],
-        bm = ps_face_boundary_model(face_pts3d_local, mode, eps),
+        bm = ps_face_boundary_model(face_pts3d_local, eps),
         spans = bm[3]
     )
     [
@@ -767,24 +761,23 @@ function ps_face_arrangement(face_pts3d_local, eps=1e-8) =
 
 // Function: ps_face_boundary_model()
 // Usage:
-//   result = ps_face_boundary_model(face_pts3d_local, mode, eps);
+//   result = ps_face_boundary_model(face_pts3d_local, eps);
 // Description:
 //   Derive the true filled boundary from a face arrangement.
 //   .
-//   - Returns: `[mode, filled_cell_ids, boundary_loops, boundary_spans]`
+//   - Returns: `["nonzero", filled_cell_ids, boundary_loops, boundary_spans]`
 //   .
 //   - Limitations/Gotchas: boundary spans are currently sourced from arrangement spans only; later synthetic/cut spans can build on this record shape
 // Arguments:
 //   face_pts3d_local = loop in face-local 3D
-//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
 //   eps = geometric tolerance
-function ps_face_boundary_model(face_pts3d_local, mode="nonzero", eps=1e-8) =
+function ps_face_boundary_model(face_pts3d_local, eps=1e-8) =
     let(
         arr = ps_face_arrangement(face_pts3d_local, eps),
         nodes = arr[2],
         spans = arr[3],
-        target_sign = _ps_seg_fill_target_sign(arr, mode, eps),
-        filled_cell_ids = _ps_seg_fill_cell_ids_from_arr_with_target(arr, mode, target_sign, eps),
+        target_sign = _ps_seg_fill_target_sign(arr, eps),
+        filled_cell_ids = _ps_seg_fill_cell_ids_from_arr_with_target(arr, target_sign, eps),
         boundary_occs = _ps_seg_boundary_occurrences(arr, filled_cell_ids, eps, target_sign),
         occ_loops = _ps_seg_extract_boundary_loops(boundary_occs, nodes),
         loop_offsets = _ps_prefix_offsets([for (loop = occ_loops) len(loop)], [0]),
@@ -819,11 +812,11 @@ function ps_face_boundary_model(face_pts3d_local, mode="nonzero", eps=1e-8) =
                     [seg2d, li, span[3], ts[0], ts[1], span[6], occ[1], occ[4]]
         ]
     )
-    [mode, filled_cell_ids, boundary_loops, boundary_spans];
+    ["nonzero", filled_cell_ids, boundary_loops, boundary_spans];
 
 // Function: ps_face_filled_boundary_source_edges()
 // Usage:
-//   result = ps_face_filled_boundary_source_edges(face_pts3d_local, mode, eps);
+//   result = ps_face_filled_boundary_source_edges(face_pts3d_local, eps);
 // Description:
 //   Group true filled-boundary spans by their original source edge.
 //   .
@@ -832,14 +825,13 @@ function ps_face_boundary_model(face_pts3d_local, mode="nonzero", eps=1e-8) =
 //   - Limitations/Gotchas: returns only source edges with at least one surviving filled-boundary span
 // Arguments:
 //   face_pts3d_local = loop in face-local 3D
-//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
 //   eps = geometric tolerance
-function ps_face_filled_boundary_source_edges(face_pts3d_local, mode="nonzero", eps=1e-8) =
+function ps_face_filled_boundary_source_edges(face_pts3d_local, eps=1e-8) =
     let(
         n = len(face_pts3d_local),
         arr = ps_face_arrangement(face_pts3d_local, eps),
         cells = arr[4],
-        bm = ps_face_boundary_model(face_pts3d_local, mode, eps),
+        bm = ps_face_boundary_model(face_pts3d_local, eps),
         spans = bm[3]
     )
     [
@@ -877,25 +869,24 @@ function ps_face_filled_boundary_source_edges(face_pts3d_local, mode="nonzero", 
 
 // Function: ps_face_segments()
 // Usage:
-//   result = ps_face_segments(face_pts3d_local, mode, eps);
+//   result = ps_face_segments(face_pts3d_local, eps);
 // Description:
 //   Split a face loop into simple face-local cells.
 //   .
 //   - Returns: `[[seg_pts2d, seg_pts3d_local, seg_parent_edge_ids, seg_edge_kinds], ...]`
 //   .
-//   - Limitations/Gotchas: `mode="nonzero"` is the intended default for solid self-crossing faces; use `"evenodd"` only when parity fill is genuinely wanted
+//   - Limitations/Gotchas: self-crossing loops are filled with nonzero winding semantics
 // Arguments:
 //   face_pts3d_local = loop in face-local 3D
-//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
 //   eps = geometric tolerance
-function ps_face_segments(face_pts3d_local, mode="nonzero", eps=1e-8) =
+function ps_face_segments(face_pts3d_local, eps=1e-8) =
     let(
         n = len(face_pts3d_local),
         arr = ps_face_arrangement(face_pts3d_local, eps),
         outer2d = arr[0],
         spans = arr[3],
         cells = arr[4],
-        target_sign = _ps_seg_fill_target_sign(arr, mode, eps)
+        target_sign = _ps_seg_fill_target_sign(arr, eps)
     )
     (n < 3) ? [] :
     let(
@@ -908,7 +899,7 @@ function ps_face_segments(face_pts3d_local, mode="nonzero", eps=1e-8) =
                     edge_ids = [for (si = span_ids) spans[si][3]],
                     kinds = [for (si = span_ids) spans[si][6]]
                 )
-                if (_ps_seg_keep_arr_cell_with_target(c, outer2d, mode, target_sign, eps))
+                if (_ps_seg_keep_arr_cell_with_target(c, outer2d, target_sign, eps))
                     [pts2d, pts3d, edge_ids, kinds]
         ]
     )
@@ -933,19 +924,18 @@ function _ps_seg_first_nonzero_side(sides, i=0) =
 
 // Module: place_on_face_segments()
 // Usage:
-//   place_on_face_segments(mode, eps);
+//   place_on_face_segments(eps);
 // Description:
 //   Iterate simple face-local cells for the current placed face.
 //   .
 //   - Returns: none; exposes `$ps_seg_*` metadata and calls children once per cell
 // Arguments:
-//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
 //   eps = geometric tolerance
-module place_on_face_segments(mode="nonzero", eps=1e-8) {
+module place_on_face_segments(eps=1e-8) {
     face_pts3d_local = is_undef($ps_face_pts3d_local)
         ? [for (p = $ps_face_pts2d) [p[0], p[1], 0]]
         : $ps_face_pts3d_local;
-    segs = ps_face_segments(face_pts3d_local, mode, eps);
+    segs = ps_face_segments(face_pts3d_local, eps);
     for (si = [0:1:len(segs)-1]) {
         s = segs[si];
         $ps_seg_idx = si;
@@ -962,19 +952,18 @@ module place_on_face_segments(mode="nonzero", eps=1e-8) {
 
 // Module: place_on_face_filled_boundary_source_edges()
 // Usage:
-//   place_on_face_filled_boundary_source_edges(mode, eps, coords);
+//   place_on_face_filled_boundary_source_edges(eps, coords);
 // Description:
 //   Iterate source edges that contribute to the current face's true filled boundary.
 //   .
 //   - Returns: none; exposes `$ps_boundary_source_edge_*` metadata and places children in normalized source-edge coords or parent face coords
 // Arguments:
-//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
 //   eps = geometric tolerance
 //   coords = `"element"` or `"parent"`
-module place_on_face_filled_boundary_source_edges(mode="nonzero", eps=1e-8, coords="element") {
+module place_on_face_filled_boundary_source_edges(eps=1e-8, coords="element") {
     assert(!is_undef($ps_face_pts3d_local), "place_on_face_filled_boundary_source_edges: requires place_on_faces context ($ps_face_pts3d_local)");
     assert(coords == "element" || coords == "parent", "place_on_face_filled_boundary_source_edges: coords must be \"element\" or \"parent\"");
-    records = ps_face_filled_boundary_source_edges($ps_face_pts3d_local, mode, eps);
+    records = ps_face_filled_boundary_source_edges($ps_face_pts3d_local, eps);
     for (ri = [0:1:len(records)-1]) {
         record = records[ri];
         seg2d = record[1];
@@ -1029,17 +1018,16 @@ module place_on_face_filled_boundary_source_edges(mode="nonzero", eps=1e-8, coor
 
 // Module: place_on_face_boundary_spans()
 // Usage:
-//   place_on_face_boundary_spans(mode, eps, coords, kind);
+//   place_on_face_boundary_spans(eps, coords, kind);
 // Description:
 //   Iterate dihedral-aware boundary spans for the current placed face.
 //   .
 //   - Returns: none; exposes `$ps_boundary_span_*` metadata and places children in span coords or parent face coords
 // Arguments:
-//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
 //   eps = geometric tolerance
 //   coords = `"element"` or `"parent"`
 //   kind = `"all"`, `"source"`, `"source_edge"`, `"source_partial"`, `"generated"`, or `"generated_cut"`
-module place_on_face_boundary_spans(mode="nonzero", eps=1e-8, coords="element", kind="all") {
+module place_on_face_boundary_spans(eps=1e-8, coords="element", kind="all") {
     assert(!is_undef($ps_face_pts3d_local), "place_on_face_boundary_spans: requires place_on_faces context ($ps_face_pts3d_local)");
     assert(!is_undef($ps_face_idx), "place_on_face_boundary_spans: requires place_on_faces context ($ps_face_idx)");
     assert(!is_undef($ps_poly_faces_idx), "place_on_face_boundary_spans: requires place_on_faces context ($ps_poly_faces_idx)");
@@ -1054,7 +1042,6 @@ module place_on_face_boundary_spans(mode="nonzero", eps=1e-8, coords="element", 
         $ps_poly_verts_local,
         $ps_face_neighbors_idx,
         $ps_face_dihedrals,
-        mode,
         eps
     );
     sites = [
@@ -1093,7 +1080,7 @@ module place_on_face_boundary_spans(mode="nonzero", eps=1e-8, coords="element", 
 
 // Module: ps_polygon()
 // Usage:
-//   ps_polygon(points, mode, eps);
+//   ps_polygon(points, eps);
 // Description:
 //   Render a safe 2D polygon fill for concave or self-intersecting loops.
 //   .
@@ -1102,13 +1089,12 @@ module place_on_face_boundary_spans(mode="nonzero", eps=1e-8, coords="element", 
 //   - Limitations/Gotchas: intended as a drop-in replacement for raw `polygon(points=...)` when backend behavior on crossing loops is unreliable
 // Arguments:
 //   points = 2D loop
-//   mode = `"nonzero"`, `"evenodd"`, or `"all"`
 //   eps = geometric tolerance
-module ps_polygon(points, mode="nonzero", eps=1e-8) {
+module ps_polygon(points, eps=1e-8) {
     assert(!is_undef(points), "ps_polygon: points must be defined");
     assert(len(points) >= 3, "ps_polygon: need at least 3 points");
     pts3d = [for (p = points) [p[0], p[1], 0]];
-    segs = ps_face_segments(pts3d, mode, eps);
+    segs = ps_face_segments(pts3d, eps);
     union() {
         for (s = segs)
             polygon(points = s[0]);
@@ -1223,12 +1209,12 @@ function _ps_seg_triangulate_simple_poly_idx(pts2d, eps=1e-9) =
 
 // Triangulate a face in face-local coordinates.
 // Unlike a simple fan, this path handles concave/self-intersecting loops by:
-// 1) splitting into simple segments via ps_face_segments(..., mode),
+// 1) splitting into simple segments via ps_face_segments(...),
 // 2) ear-clipping each simple segment.
-function _ps_seg_face_tris3(face_idx_loop, poly_verts_local, eps=1e-8, mode="evenodd") =
+function _ps_seg_face_tris3(face_idx_loop, poly_verts_local, eps=1e-8) =
     let(
         face_pts3d = [for (vi = face_idx_loop) poly_verts_local[vi]],
-        segs = ps_face_segments(face_pts3d, mode, eps)
+        segs = ps_face_segments(face_pts3d, eps)
     )
     [
         for (s = segs)
@@ -1421,12 +1407,12 @@ function _ps_seg_tri_z_at_xy(pt2d, tri, eps=1e-9) =
     )
     ((u < -eps) || (v < -eps) || (w < -eps)) ? undef : (u * az + v * bz + w * cz);
 
-function _ps_seg_pt_occluded(pt2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero") =
+function _ps_seg_pt_occluded(pt2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8) =
     len([
         for (fj = [0:1:len(poly_faces_idx)-1])
             if (fj != face_idx)
                 let(
-                    tris3 = _ps_seg_face_tris3(poly_faces_idx[fj], poly_verts_local, eps, mode)
+                    tris3 = _ps_seg_face_tris3(poly_faces_idx[fj], poly_verts_local, eps)
                 )
                 for (tri = tris3)
                     let(z = _ps_seg_tri_z_at_xy(pt2d, tri, eps))
@@ -1470,7 +1456,7 @@ function _ps_seg_cut_entries_dedupe(entries, eps=1e-8, i=0, acc=[]) =
 
 // Function: ps_face_geom_cut_entries()
 // Usage:
-//   result = ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent);
+//   result = ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, filter_parent);
 // Description:
 //   Derive geometry cut entries where other faces cross the current face plane.
 //   .
@@ -1481,9 +1467,8 @@ function _ps_seg_cut_entries_dedupe(entries, eps=1e-8, i=0, acc=[]) =
 //   poly_faces_idx = full poly in current face-local coordinates
 //   poly_verts_local = full poly in current face-local coordinates
 //   eps = tolerance
-//   mode = cutter triangulation fill rule
 //   filter_parent = drop cuts that coincide with parent edges
-function ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero", filter_parent=true) =
+function ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, filter_parent=true) =
     (is_undef(face_pts2d) || is_undef(poly_faces_idx) || is_undef(poly_verts_local)) ? [] :
     let(
         raw = [
@@ -1491,7 +1476,7 @@ function ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_ver
                 if (fj != face_idx)
                     let(
                         f = poly_faces_idx[fj],
-                        tris3 = _ps_seg_face_tris3(f, poly_verts_local, eps, mode)
+                        tris3 = _ps_seg_face_tris3(f, poly_verts_local, eps)
                     )
                     for (tri = tris3)
                         let(
@@ -1512,7 +1497,7 @@ function ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_ver
 
 // Function: ps_face_foreign_intrusion_records()
 // Usage:
-//   result = ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent);
+//   result = ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, filter_parent);
 // Description:
 //   Derive exact foreign intrusion records for the current face plane.
 //   .
@@ -1525,17 +1510,16 @@ function ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_ver
 //   poly_faces_idx = full poly in target face-local coordinates
 //   poly_verts_local = full poly in target face-local coordinates
 //   eps = tolerance
-//   mode = foreign face triangulation fill rule
 //   filter_parent = drop cuts that coincide with parent edges
-function ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero", filter_parent=true) =
+function ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, filter_parent=true) =
     [
-        for (e = ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent))
+        for (e = ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, filter_parent))
             _ps_intrusion_record("face_plane_cut", face_idx, "face", e[1], e[0], e[2], "exact")
     ];
 
 // Function: ps_face_geom_cut_segments()
 // Usage:
-//   result = ps_face_geom_cut_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent);
+//   result = ps_face_geom_cut_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, filter_parent);
 // Description:
 //   Return only the 2D cut segments from `ps_face_geom_cut_entries(...)`.
 //   .
@@ -1546,14 +1530,13 @@ function ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx,
 //   poly_faces_idx =
 //   poly_verts_local =
 //   eps =
-//   mode =
 //   filter_parent =
-function ps_face_geom_cut_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero", filter_parent=true) =
-    [for (e = ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent)) e[0]];
+function ps_face_geom_cut_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, filter_parent=true) =
+    [for (e = ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, filter_parent)) e[0]];
 
 // Function: ps_face_visible_segments()
 // Usage:
-//   result = ps_face_visible_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent);
+//   result = ps_face_visible_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, filter_parent);
 // Description:
 //   Split the current face by geometry cuts and keep only the cells visible from local `+Z`.
 //   .
@@ -1564,13 +1547,12 @@ function ps_face_geom_cut_segments(face_pts2d, face_idx, poly_faces_idx, poly_ve
 //   poly_faces_idx =
 //   poly_verts_local =
 //   eps =
-//   mode =
 //   filter_parent =
-function ps_face_visible_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero", filter_parent=true) =
+function ps_face_visible_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, filter_parent=true) =
     let(
-        base_segs = ps_face_segments([for (p = face_pts2d) [p[0], p[1], 0]], mode, eps),
-        cut_segs = ps_face_geom_cut_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent),
-        target_sign = _ps_seg_fill_target_sign_for_face_pts(face_pts2d, mode, eps)
+        base_segs = ps_face_segments([for (p = face_pts2d) [p[0], p[1], 0]], eps),
+        cut_segs = ps_face_geom_cut_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, filter_parent),
+        target_sign = _ps_seg_fill_target_sign_for_face_pts(face_pts2d, eps)
     )
     [
         for (base = base_segs)
@@ -1580,14 +1562,14 @@ function ps_face_visible_segments(face_pts2d, face_idx, poly_faces_idx, poly_ver
             for (cell = cells)
                 let(
                     probe = _ps_seg_cycle_probe_point(cell[0], eps),
-                    hidden = _ps_seg_pt_occluded(probe, face_idx, poly_faces_idx, poly_verts_local, eps, mode)
+                    hidden = _ps_seg_pt_occluded(probe, face_idx, poly_faces_idx, poly_verts_local, eps)
                 )
                 if (!hidden) _ps_seg_orient_cell(cell, target_sign, eps)
     ];
 
-function _ps_face_cut_split_cells_from_cuts(face_pts2d, cut_segs, eps=1e-8, mode="nonzero") =
+function _ps_face_cut_split_cells_from_cuts(face_pts2d, cut_segs, eps=1e-8) =
     let(
-        base_segs = ps_face_segments([for (p = face_pts2d) [p[0], p[1], 0]], mode, eps)
+        base_segs = ps_face_segments([for (p = face_pts2d) [p[0], p[1], 0]], eps)
     )
     [
         for (base = base_segs)
@@ -1595,16 +1577,16 @@ function _ps_face_cut_split_cells_from_cuts(face_pts2d, cut_segs, eps=1e-8, mode
                 cell
     ];
 
-function _ps_face_cut_split_cells(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, mode="nonzero", filter_parent=true) =
-    let(cut_segs = ps_face_geom_cut_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent))
-    _ps_face_cut_split_cells_from_cuts(face_pts2d, cut_segs, eps, mode);
+function _ps_face_cut_split_cells(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps=1e-8, filter_parent=true) =
+    let(cut_segs = ps_face_geom_cut_segments(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, filter_parent))
+    _ps_face_cut_split_cells_from_cuts(face_pts2d, cut_segs, eps);
 
 function _ps_scl_cut_edge_count(cell) =
     len([for (kind = cell[3]) if (kind == "cut") 1]);
 
 // Function: ps_face_seam_clearance_loops()
 // Usage:
-//   result = ps_face_seam_clearance_loops(face_ctx, mode, eps, filter_parent);
+//   result = ps_face_seam_clearance_loops(face_ctx, eps, filter_parent);
 // Description:
 //   Build ordered seam-clearance loop records for a face.
 //   .
@@ -1613,12 +1595,10 @@ function _ps_scl_cut_edge_count(cell) =
 //   - Limitations/Gotchas: emits closed cell loops derived from geometry cuts; individual seam-segment placement records are not grouped here
 // Arguments:
 //   face_ctx = face-local context
-//   mode = foreign cut controls
 //   eps = foreign cut controls
 //   filter_parent = foreign cut controls
 function ps_face_seam_clearance_loops(
     face_ctx,
-    mode="nonzero",
     eps=1e-8,
     filter_parent=true
 ) =
@@ -1628,17 +1608,17 @@ function ps_face_seam_clearance_loops(
         face_idx = ps_face_local_context_idx(face_ctx),
         poly_faces_idx = ps_face_local_context_poly_faces_idx(face_ctx),
         poly_verts_local = ps_face_local_context_poly_verts_local(face_ctx),
-        target_sign = _ps_seg_fill_target_sign_for_face_pts(face_pts2d, mode, eps),
-        cut_entries = ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent),
+        target_sign = _ps_seg_fill_target_sign_for_face_pts(face_pts2d, eps),
+        cut_entries = ps_face_geom_cut_entries(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, filter_parent),
         cut_segs = [for (e = cut_entries) e[0]],
-        cells = _ps_face_cut_split_cells_from_cuts(face_pts2d, cut_segs, eps, mode),
+        cells = _ps_face_cut_split_cells_from_cuts(face_pts2d, cut_segs, eps),
         selected = [
             for (ci = [0:1:len(cells)-1])
                 let(
                     cell = cells[ci],
                     area = _ps_seg_poly_area2(cell[0]),
                     probe = _ps_seg_cycle_probe_point(cell[0], eps),
-                    hidden = _ps_seg_pt_occluded(probe, face_idx, poly_faces_idx, poly_verts_local, eps, mode)
+                    hidden = _ps_seg_pt_occluded(probe, face_idx, poly_faces_idx, poly_verts_local, eps)
                 )
                 // Hidden clearance islands are opposite-wound before normalization.
                 if (hidden && area * target_sign < -eps && _ps_scl_cut_edge_count(cell) > 0)
@@ -1709,7 +1689,7 @@ function _ps_scl_shell(loop, z0, z1, clearance=0, max_slope_offset=undef, eps=1e
 
 // Function: ps_face_seam_clearance_shells()
 // Usage:
-//   result = ps_face_seam_clearance_shells(face_ctx, z0, z1, clearance, mode, eps, filter_parent, max_slope_offset);
+//   result = ps_face_seam_clearance_shells(face_ctx, z0, z1, clearance, eps, filter_parent, max_slope_offset);
 // Description:
 //   Build seam-clearance loop shells for a face.
 //   .
@@ -1721,7 +1701,6 @@ function _ps_scl_shell(loop, z0, z1, clearance=0, max_slope_offset=undef, eps=1e
 //   z0 = cap Z planes
 //   z1 = cap Z planes
 //   clearance = outward loop offset
-//   mode = foreign cut controls
 //   eps = foreign cut controls
 //   filter_parent = foreign cut controls
 //   max_slope_offset = optional max extra slope offset
@@ -1730,7 +1709,6 @@ function ps_face_seam_clearance_shells(
     z0,
     z1,
     clearance=0,
-    mode="nonzero",
     eps=1e-8,
     filter_parent=true,
     max_slope_offset=undef
@@ -1741,7 +1719,7 @@ function ps_face_seam_clearance_shells(
         _z1 = assert(!is_undef(z1), "ps_face_seam_clearance_shells: z1 must be defined"),
         _clearance = assert(clearance >= 0, "ps_face_seam_clearance_shells: clearance must be >= 0"),
         _slope_limit = assert(is_undef(max_slope_offset) || max_slope_offset >= 0, "ps_face_seam_clearance_shells: max_slope_offset must be >= 0"),
-        loops = ps_face_seam_clearance_loops(face_ctx, mode, eps, filter_parent)
+        loops = ps_face_seam_clearance_loops(face_ctx, eps, filter_parent)
     )
     [
         for (loop = loops)
@@ -1752,18 +1730,17 @@ function ps_face_seam_clearance_shells(
 
 // Module: place_on_face_seam_clearance_loops()
 // Usage:
-//   place_on_face_seam_clearance_loops(mode, eps, filter_parent);
+//   place_on_face_seam_clearance_loops(eps, filter_parent);
 // Description:
 //   Iterate seam-clearance loops for the current placed face.
 //   .
 //   - Returns: none; exposes `$ps_seam_clearance_loop_*` metadata
 // Arguments:
-//   mode = foreign cut controls
 //   eps = foreign cut controls
 //   filter_parent = foreign cut controls
-module place_on_face_seam_clearance_loops(mode="nonzero", eps=1e-8, filter_parent=true) {
+module place_on_face_seam_clearance_loops(eps=1e-8, filter_parent=true) {
     assert(!is_undef($ps_face_local_context), "place_on_face_seam_clearance_loops: requires place_on_faces context ($ps_face_local_context)");
-    loops = ps_face_seam_clearance_loops($ps_face_local_context, mode, eps, filter_parent);
+    loops = ps_face_seam_clearance_loops($ps_face_local_context, eps, filter_parent);
 
     for (li = [0:1:len(loops)-1]) {
         loop = loops[li];
@@ -1782,7 +1759,7 @@ module place_on_face_seam_clearance_loops(mode="nonzero", eps=1e-8, filter_paren
 
 // Module: place_on_face_seam_clearance_shells()
 // Usage:
-//   place_on_face_seam_clearance_shells(z0, z1, clearance, mode, eps, filter_parent, max_slope_offset);
+//   place_on_face_seam_clearance_shells(z0, z1, clearance, eps, filter_parent, max_slope_offset);
 // Description:
 //   Iterate seam-clearance shells for the current placed face.
 //   .
@@ -1791,13 +1768,12 @@ module place_on_face_seam_clearance_loops(mode="nonzero", eps=1e-8, filter_paren
 //   z0 = see `ps_face_seam_clearance_shells`
 //   z1 = see `ps_face_seam_clearance_shells`
 //   clearance = see `ps_face_seam_clearance_shells`
-//   mode = see `ps_face_seam_clearance_shells`
 //   eps = see `ps_face_seam_clearance_shells`
 //   filter_parent = see `ps_face_seam_clearance_shells`
 //   max_slope_offset = see `ps_face_seam_clearance_shells`
-module place_on_face_seam_clearance_shells(z0, z1, clearance=0, mode="nonzero", eps=1e-8, filter_parent=true, max_slope_offset=undef) {
+module place_on_face_seam_clearance_shells(z0, z1, clearance=0, eps=1e-8, filter_parent=true, max_slope_offset=undef) {
     assert(!is_undef($ps_face_local_context), "place_on_face_seam_clearance_shells: requires place_on_faces context ($ps_face_local_context)");
-    shells = ps_face_seam_clearance_shells($ps_face_local_context, z0, z1, clearance, mode, eps, filter_parent, max_slope_offset);
+    shells = ps_face_seam_clearance_shells($ps_face_local_context, z0, z1, clearance, eps, filter_parent, max_slope_offset);
 
     for (si = [0:1:len(shells)-1]) {
         shell = shells[si];
@@ -1813,7 +1789,7 @@ module place_on_face_seam_clearance_shells(z0, z1, clearance=0, mode="nonzero", 
 
 // Module: ps_face_seam_clearance_volume()
 // Usage:
-//   ps_face_seam_clearance_volume(z0, z1, clearance, mode, eps, filter_parent, max_slope_offset, convexity);
+//   ps_face_seam_clearance_volume(z0, z1, clearance, eps, filter_parent, max_slope_offset, convexity);
 // Description:
 //   Render seam-clearance shells for the current placed face.
 //   .
@@ -1822,14 +1798,13 @@ module place_on_face_seam_clearance_shells(z0, z1, clearance=0, mode="nonzero", 
 //   z0 = see `ps_face_seam_clearance_shells`
 //   z1 = see `ps_face_seam_clearance_shells`
 //   clearance = see `ps_face_seam_clearance_shells`
-//   mode = see `ps_face_seam_clearance_shells`
 //   eps = see `ps_face_seam_clearance_shells`
 //   filter_parent = see `ps_face_seam_clearance_shells`
 //   max_slope_offset = see `ps_face_seam_clearance_shells`
 //   convexity = OpenSCAD hint
-module ps_face_seam_clearance_volume(z0, z1, clearance=0, mode="nonzero", eps=1e-8, filter_parent=true, max_slope_offset=undef, convexity=6) {
+module ps_face_seam_clearance_volume(z0, z1, clearance=0, eps=1e-8, filter_parent=true, max_slope_offset=undef, convexity=6) {
     assert(!is_undef($ps_face_local_context), "ps_face_seam_clearance_volume: requires place_on_faces context ($ps_face_local_context)");
-    shells = ps_face_seam_clearance_shells($ps_face_local_context, z0, z1, clearance, mode, eps, filter_parent, max_slope_offset);
+    shells = ps_face_seam_clearance_shells($ps_face_local_context, z0, z1, clearance, eps, filter_parent, max_slope_offset);
 
     for (shell = shells)
         ps_loop_shell(shell, convexity);
@@ -1837,21 +1812,20 @@ module ps_face_seam_clearance_volume(z0, z1, clearance=0, mode="nonzero", eps=1e
 
 // Module: place_on_face_geom_cut_segments()
 // Usage:
-//   place_on_face_geom_cut_segments(mode, eps, filter_parent);
+//   place_on_face_geom_cut_segments(eps, filter_parent);
 // Description:
 //   Iterate geometry-derived cut segments for the current placed face.
 //   .
 //   - Returns: none; exposes `$ps_face_cut_*` metadata and calls children once per cut segment
 // Arguments:
-//   mode = cutter triangulation fill rule
 //   eps = tolerance
 //   filter_parent = drop cuts that coincide with parent edges
-module place_on_face_geom_cut_segments(mode="nonzero", eps=1e-8, filter_parent=true) {
+module place_on_face_geom_cut_segments(eps=1e-8, filter_parent=true) {
     assert(!is_undef($ps_face_pts2d), "place_on_face_geom_cut_segments: requires place_on_faces context ($ps_face_pts2d)");
     assert(!is_undef($ps_face_idx), "place_on_face_geom_cut_segments: requires place_on_faces context ($ps_face_idx)");
     assert(!is_undef($ps_poly_faces_idx), "place_on_face_geom_cut_segments: requires place_on_faces context ($ps_poly_faces_idx)");
     assert(!is_undef($ps_poly_verts_local), "place_on_face_geom_cut_segments: requires place_on_faces context ($ps_poly_verts_local)");
-    segs = ps_face_geom_cut_segments($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, eps, mode, filter_parent);
+    segs = ps_face_geom_cut_segments($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, eps, filter_parent);
     for (si = [0:1:len(segs)-1]) {
         $ps_face_cut_idx = si;
         $ps_face_cut_count = len(segs);
@@ -1863,7 +1837,7 @@ module place_on_face_geom_cut_segments(mode="nonzero", eps=1e-8, filter_parent=t
 
 // Module: place_on_face_foreign_intrusions()
 // Usage:
-//   place_on_face_foreign_intrusions(mode, eps, filter_parent);
+//   place_on_face_foreign_intrusions(eps, filter_parent);
 // Description:
 //   Iterate exact foreign intrusion records for the current placed face.
 //   .
@@ -1871,16 +1845,15 @@ module place_on_face_geom_cut_segments(mode="nonzero", eps=1e-8, filter_parent=t
 //   .
 //   - Limitations/Gotchas: currently reports only `"face_plane_cut"` records; no clearance/envelope candidates are generated here
 // Arguments:
-//   mode = foreign face triangulation fill rule
 //   eps = tolerance
 //   filter_parent = drop cuts that coincide with parent edges
-module place_on_face_foreign_intrusions(mode="nonzero", eps=1e-8, filter_parent=true) {
+module place_on_face_foreign_intrusions(eps=1e-8, filter_parent=true) {
     assert(!is_undef($ps_face_pts2d), "place_on_face_foreign_intrusions: requires place_on_faces context ($ps_face_pts2d)");
     assert(!is_undef($ps_face_idx), "place_on_face_foreign_intrusions: requires place_on_faces context ($ps_face_idx)");
     assert(!is_undef($ps_poly_faces_idx), "place_on_face_foreign_intrusions: requires place_on_faces context ($ps_poly_faces_idx)");
     assert(!is_undef($ps_poly_verts_local), "place_on_face_foreign_intrusions: requires place_on_faces context ($ps_poly_verts_local)");
 
-    records = ps_face_foreign_intrusion_records($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, eps, mode, filter_parent);
+    records = ps_face_foreign_intrusion_records($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, eps, filter_parent);
     for (ii = [0:1:len(records)-1]) {
         record = records[ii];
         $ps_intrusion_idx = ii;
@@ -2026,14 +1999,13 @@ function _ps_seg_boundary_support_reason(source_kind) =
 
 // Function: _ps_face_seam_segment_sites_from_context()
 // Usage:
-//   result = _ps_face_seam_segment_sites_from_context(face_ctx, mode, eps, boundary_kind, include_boundary, include_foreign, filter_parent);
+//   result = _ps_face_seam_segment_sites_from_context(face_ctx, eps, boundary_kind, include_boundary, include_foreign, filter_parent);
 // Description:
 //   Build edge-like placement sites for current-face seam segments from a face-local context.
 //   .
 //   - Returns: seam site records for `place_on_face_seam_segments(...)`
 // Arguments:
 //   face_ctx = face-local context
-//   mode = segmentation controls
 //   eps = segmentation controls
 //   boundary_kind = boundary span kind filter
 //   include_boundary = source controls
@@ -2041,7 +2013,6 @@ function _ps_seg_boundary_support_reason(source_kind) =
 //   filter_parent = source controls
 function _ps_face_seam_segment_sites_from_context(
     face_ctx,
-    mode="nonzero",
     eps=1e-8,
     boundary_kind="generated_cut",
     include_boundary=true,
@@ -2058,7 +2029,7 @@ function _ps_face_seam_segment_sites_from_context(
         face_dihedrals = ps_face_local_context_dihedrals(face_ctx),
         poly_center_local = ps_face_local_context_poly_center_local(face_ctx),
         boundary_sites = include_boundary
-            ? _ps_face_boundary_span_sites(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local, face_neighbors_idx, face_dihedrals, mode, eps)
+            ? _ps_face_boundary_span_sites(face_pts3d_local, face_idx, poly_faces_idx, poly_verts_local, face_neighbors_idx, face_dihedrals, eps)
             : [],
         boundary_filtered = [
             for (site = boundary_sites)
@@ -2087,7 +2058,7 @@ function _ps_face_seam_segment_sites_from_context(
                 )
         ],
         foreign_records = include_foreign
-            ? ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, mode, filter_parent)
+            ? ps_face_foreign_intrusion_records(face_pts2d, face_idx, poly_faces_idx, poly_verts_local, eps, filter_parent)
             : [],
         foreign_out = [
             for (fi = [0:1:len(foreign_records)-1])
@@ -2125,7 +2096,7 @@ function _ps_face_seam_segment_sites_from_context(
 
 // Function: ps_face_seam_segment_sites()
 // Usage:
-//   result = ps_face_seam_segment_sites(face_ctx, mode, eps, boundary_kind, include_boundary, include_foreign, filter_parent);
+//   result = ps_face_seam_segment_sites(face_ctx, eps, boundary_kind, include_boundary, include_foreign, filter_parent);
 // Description:
 //   Build edge-like placement sites for current-face seam segments from a face-local context.
 //   .
@@ -2134,7 +2105,6 @@ function _ps_face_seam_segment_sites_from_context(
 //   - Limitations/Gotchas: context-first public entry point
 // Arguments:
 //   face_ctx = face-local context
-//   mode = segmentation controls
 //   eps = segmentation controls
 //   boundary_kind = boundary span kind filter
 //   include_boundary = source controls
@@ -2142,7 +2112,6 @@ function _ps_face_seam_segment_sites_from_context(
 //   filter_parent = source controls
 function ps_face_seam_segment_sites(
     face_ctx,
-    mode="nonzero",
     eps=1e-8,
     boundary_kind="generated_cut",
     include_boundary=true,
@@ -2151,7 +2120,6 @@ function ps_face_seam_segment_sites(
 ) =
     _ps_face_seam_segment_sites_from_context(
         face_ctx,
-        mode,
         eps,
         boundary_kind,
         include_boundary,
@@ -2168,7 +2136,7 @@ function _ps_seg_optional_idx_selected(idx, indices) =
 
 // Module: place_on_face_seam_segments()
 // Usage:
-//   place_on_face_seam_segments(mode, eps, coords, boundary_kind, include_boundary, include_foreign, filter_parent, foreign_indices, support_only);
+//   place_on_face_seam_segments(eps, coords, boundary_kind, include_boundary, include_foreign, filter_parent, foreign_indices, support_only);
 // Description:
 //   Place children on edge-like seam segments for the current placed face.
 //   .
@@ -2176,7 +2144,6 @@ function _ps_seg_optional_idx_selected(idx, indices) =
 //   .
 //   - Limitations/Gotchas: requires `place_on_faces(...)`; printable support classification is conservative and only promotes simple-face exact cuts plus non-source generated cuts
 // Arguments:
-//   mode = segmentation controls
 //   eps = segmentation controls
 //   coords = `"element"` or `"parent"`
 //   boundary_kind = boundary span kind filter
@@ -2186,7 +2153,6 @@ function _ps_seg_optional_idx_selected(idx, indices) =
 //   foreign_indices = optional accepted foreign element id or ids
 //   support_only = visit only classified printable support candidates
 module place_on_face_seam_segments(
-    mode="nonzero",
     eps=1e-8,
     coords="element",
     boundary_kind="generated_cut",
@@ -2205,7 +2171,6 @@ module place_on_face_seam_segments(
     face_ctx = $ps_face_local_context;
     all_sites = ps_face_seam_segment_sites(
         face_ctx,
-        mode,
         eps,
         boundary_kind,
         include_boundary,
@@ -2259,22 +2224,21 @@ module place_on_face_seam_segments(
 
 // Module: place_on_face_visible_segments()
 // Usage:
-//   place_on_face_visible_segments(mode, eps, filter_parent);
+//   place_on_face_visible_segments(eps, filter_parent);
 // Description:
 //   Iterate the retained visible cells for the current placed face.
 //   .
 //   - Returns: none; exposes `$ps_vis_seg_*` metadata and calls children once per visible cell
 // Arguments:
-//   mode = cell/cutter fill rule
 //   eps = tolerance
 //   filter_parent = drop cuts that coincide with parent edges
-module place_on_face_visible_segments(mode="nonzero", eps=1e-8, filter_parent=true) {
+module place_on_face_visible_segments(eps=1e-8, filter_parent=true) {
     assert(!is_undef($ps_face_pts2d), "place_on_face_visible_segments: requires place_on_faces context ($ps_face_pts2d)");
     assert(!is_undef($ps_face_idx), "place_on_face_visible_segments: requires place_on_faces context ($ps_face_idx)");
     assert(!is_undef($ps_poly_faces_idx), "place_on_face_visible_segments: requires place_on_faces context ($ps_poly_faces_idx)");
     assert(!is_undef($ps_poly_verts_local), "place_on_face_visible_segments: requires place_on_faces context ($ps_poly_verts_local)");
 
-    segs = ps_face_visible_segments($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, eps, mode, filter_parent);
+    segs = ps_face_visible_segments($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, eps, filter_parent);
     for (si = [0:1:len(segs)-1]) {
         s = segs[si];
         $ps_vis_seg_idx = si;
@@ -2315,14 +2279,14 @@ module _ps_face_cut_strip(seg2d, face_thk, kerf=0.2, extend=0.5, z_pad=0.2, eps=
 
 // Build a subtraction body from geometry-derived face cut segments.
 // Use inside place_on_faces(...), typically in difference() with a face plate/face polygon.
-module ps_face_cut_stencil(face_thk, kerf=0.2, extend=0.5, z_pad=0.2, mode="nonzero", eps=1e-8, filter_parent=true) {
+module ps_face_cut_stencil(face_thk, kerf=0.2, extend=0.5, z_pad=0.2, eps=1e-8, filter_parent=true) {
     assert(face_thk > 0, "ps_face_cut_stencil: face_thk must be > 0");
     assert(!is_undef($ps_face_pts2d), "ps_face_cut_stencil: requires place_on_faces context");
     assert(!is_undef($ps_face_idx), "ps_face_cut_stencil: requires place_on_faces context");
     assert(!is_undef($ps_poly_faces_idx), "ps_face_cut_stencil: requires place_on_faces context");
     assert(!is_undef($ps_poly_verts_local), "ps_face_cut_stencil: requires place_on_faces context");
 
-    segs = ps_face_geom_cut_segments($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, eps, mode, filter_parent);
+    segs = ps_face_geom_cut_segments($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, eps, filter_parent);
     union() {
         for (s = segs)
             _ps_face_cut_strip(s, face_thk, kerf, extend, z_pad, eps);
@@ -2332,14 +2296,14 @@ module ps_face_cut_stencil(face_thk, kerf=0.2, extend=0.5, z_pad=0.2, mode="nonz
 // Extruded keep-mask built from the visible cells of the current face.
 // Use this in intersection() with a finished face body to keep only printable
 // face pieces instead of subtracting an oversized stencil hull.
-module ps_face_visible_mask(face_thk, z_pad=0.2, mode="nonzero", eps=1e-8, filter_parent=true) {
+module ps_face_visible_mask(face_thk, z_pad=0.2, eps=1e-8, filter_parent=true) {
     assert(face_thk > 0, "ps_face_visible_mask: face_thk must be > 0");
     assert(!is_undef($ps_face_pts2d), "ps_face_visible_mask: requires place_on_faces context");
     assert(!is_undef($ps_face_idx), "ps_face_visible_mask: requires place_on_faces context");
     assert(!is_undef($ps_poly_faces_idx), "ps_face_visible_mask: requires place_on_faces context");
     assert(!is_undef($ps_poly_verts_local), "ps_face_visible_mask: requires place_on_faces context");
 
-    segs = ps_face_visible_segments($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, eps, mode, filter_parent);
+    segs = ps_face_visible_segments($ps_face_pts2d, $ps_face_idx, $ps_poly_faces_idx, $ps_poly_verts_local, eps, filter_parent);
     linear_extrude(height = face_thk + 2 * z_pad, center = true)
         union() {
             for (s = segs)

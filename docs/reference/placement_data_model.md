@@ -600,9 +600,9 @@ as stable semantic records with dedicated accessors:
 
 - `ps_face_arrangement(face_pts3d_local, eps)` returns
   `[face_pts2d, crossings, nodes, spans, cells]`.
-- `ps_face_boundary_model(face_pts3d_local, mode, eps)` returns
+- `ps_face_boundary_model(face_pts3d_local, eps)` returns
   `[mode, filled_cell_ids, boundary_loops, boundary_spans]`.
-- `ps_face_filled_boundary_source_edges(face_pts3d_local, mode, eps)` returns
+- `ps_face_filled_boundary_source_edges(face_pts3d_local, eps)` returns
   `[[source_edge_idx, source_seg2d, source_boundary_spans], ...]`.
 
 These are best understood as composite helper outputs: the structure is stable
