@@ -127,12 +127,14 @@ XY offset, which is simpler for inspection but produces different physical gaps
 for different side wall angles.
 
 After the edge-span inset is applied, source-vertex corners with valence
-greater than three get an extra projected clip line. The clip direction comes
-from the corresponding side of the local vertex figure for the current source
-face. Its position is measured from the already-inset adjacent-edge miter
-farther into the filled region. This keeps the vertex clip compatible with the
-edge-span inset instead of reusing the original source vertex as the clip
-origin.
+greater than three on simple source-face loops get an extra projected clip
+line. The clip direction comes from the corresponding side of the local vertex
+figure for the current source face. Its position is measured from the
+already-inset adjacent-edge miter farther into the filled region. This keeps
+the vertex clip compatible with the edge-span inset instead of reusing the
+original source vertex as the clip origin. Self-crossing source faces skip this
+vertex-fan clip and use only their boundary spans, because a true source vertex
+can participate in multiple filled-loop semantics after arrangement splitting.
 
 The anti-interference direction is the bisector between a selected current-face
 ray and the adjacent-face ray on the current face `+Z` branch. For filled atoms
@@ -172,5 +174,6 @@ geometry is replayed and subtracted deliberately.
 - Each filled boundary loop becomes one shell. Do not rely on holed cap faces;
   use multiple shells for multiple loops.
 - The shell is an admissible region, not a finished printable face plate.
-- Vertex-fan clipping is applied at true source-vertex corners only. Generated
-  self-crossing split points still use only their projected boundary spans.
+- Vertex-fan clipping is applied at true source-vertex corners on simple source
+  face loops only. Self-crossing source faces and generated self-crossing split
+  points still use only their projected boundary spans.
