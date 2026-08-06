@@ -809,6 +809,9 @@ function _ps_cantellate_vertex_raw_pts(face_pts, faces0, fan_faces, vi) =
                 face_pts[fi][pos]
     ];
 
+function _ps_cantellate_raw_pts_at_vertex(vertex_pt, raw_pts, eps) =
+    max([for (p = raw_pts) norm(p - vertex_pt)]) <= eps;
+
 function _ps_cantellate_cap_pts_by_vertex(verts0, faces0, face_pts, edges, edge_faces, poly0, cap_mode_by_vert, poly_center, eps) =
     [
         for (vi = [0:1:len(verts0)-1])
@@ -816,7 +819,9 @@ function _ps_cantellate_cap_pts_by_vertex(verts0, faces0, face_pts, edges, edge_
                 fan_faces = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)),
                 raw_pts = _ps_cantellate_vertex_raw_pts(face_pts, faces0, fan_faces, vi)
             )
-            ps_vertex_figure_points_from_raw(verts0[vi], raw_pts, cap_mode_by_vert[vi], poly_center, eps)
+            _ps_cantellate_raw_pts_at_vertex(verts0[vi], raw_pts, eps)
+                ? raw_pts
+                : ps_vertex_figure_points_from_raw(verts0[vi], raw_pts, cap_mode_by_vert[vi], poly_center, eps)
     ];
 
 function _ps_cantellate_cap_pts_by_face(verts0, faces0, edges, edge_faces, poly0, cap_pts_by_vertex) =

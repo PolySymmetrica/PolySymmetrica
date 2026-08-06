@@ -128,6 +128,21 @@ module test_poly_cantellate__profile_vertex_cap_mode() {
     assert(err > 1e-4, "vertex profile cap_mode=edge_fraction should preserve the raw skew cap at that vertex");
 }
 
+module test_poly_cantellate__planarized_preserves_zero_offset_endpoint() {
+    p = _irregular_valence4_bipyramid();
+    q_strict = poly_cantellate(p, df = 0, cleanup = true);
+    q_df0 = poly_cantellate(p, df = 0, style = "planarized", cleanup = true);
+    q_c0 = poly_cantellate_norm(p, c = 0, style = "planarized", cleanup = true);
+
+    assert_int_eq(len(poly_verts(q_df0)), len(poly_verts(q_strict)), "planarized df=0 should preserve strict vertex count");
+    assert_int_eq(len(poly_faces(q_df0)), len(poly_faces(q_strict)), "planarized df=0 should preserve strict face count");
+    assert(_max_vertex_diff(q_strict, q_df0) < 1e-7, "planarized df=0 should preserve strict endpoint vertices");
+
+    assert_int_eq(len(poly_verts(q_c0)), len(poly_verts(q_strict)), "planarized c=0 should preserve strict vertex count");
+    assert_int_eq(len(poly_faces(q_c0)), len(poly_faces(q_strict)), "planarized c=0 should preserve strict face count");
+    assert(_max_vertex_diff(q_strict, q_c0) < 1e-7, "planarized c=0 should preserve strict endpoint vertices");
+}
+
 module run_TestCantellation() {
     test_poly_cantellate__tetra_counts();
     test_poly_cantellate__cube_counts();
@@ -136,6 +151,7 @@ module run_TestCantellation() {
     test_poly_cantellate__planarized_keeps_tetrakis_faces_planar();
     test_poly_cantellate__planarized_edge_fraction_matches_strict();
     test_poly_cantellate__profile_vertex_cap_mode();
+    test_poly_cantellate__planarized_preserves_zero_offset_endpoint();
 }
 
 run_TestCantellation();
