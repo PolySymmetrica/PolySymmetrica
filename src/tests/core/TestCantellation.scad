@@ -149,7 +149,8 @@ module test_poly_cantellate__planarized_handles_partial_zero_face_profile() {
         p,
         df = 0,
         style = "planarized",
-        profile = [["face", "id", 0, ["df", 0.1]]]
+        profile = [["face", "id", 0, ["df", 0.1]]],
+        cleanup = true
     );
     q = poly_cantellate(
         p,
@@ -159,8 +160,7 @@ module test_poly_cantellate__planarized_handles_partial_zero_face_profile() {
         cleanup = true
     );
 
-    assert(len(poly_verts(q_sparse)) > 0, "planarized sparse face profile should construct without zero-ray assertion");
-    assert(len(poly_faces(q_sparse)) > 0, "planarized sparse face profile should return faces");
+    assert(poly_valid(q_sparse, "closed", 1e-7), "planarized sparse face profile should remain closed-valid");
     assert(poly_valid(q, "closed", 1e-7), "planarized selective face profile should support mixed zero/nonzero incidences");
 }
 

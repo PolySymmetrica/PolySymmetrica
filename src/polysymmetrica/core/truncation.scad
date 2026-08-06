@@ -822,6 +822,23 @@ function _ps_cantellate_vertex_ray_pts(verts0, faces0, face_pts, face_n, fan_fac
 function _ps_cantellate_raw_pts_at_vertex(vertex_pt, raw_pts, eps) =
     max([for (p = raw_pts) norm(p - vertex_pt)]) <= eps;
 
+function _ps_cantellate_distinct_points_count(pts, eps, acc=[], i=0) =
+    (i >= len(pts)) ? len(acc) :
+    let(p = pts[i])
+    (_ps_find_point(acc, p, eps) >= 0)
+        ? _ps_cantellate_distinct_points_count(pts, eps, acc, i + 1)
+        : _ps_cantellate_distinct_points_count(pts, eps, concat(acc, [p]), i + 1);
+
+function _ps_cantellate_cap_active_by_vertex(verts0, faces0, face_pts, edges, edge_faces, poly0, eps) =
+    [
+        for (vi = [0:1:len(verts0)-1])
+            let(
+                fan_faces = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)),
+                raw_pts = _ps_cantellate_vertex_raw_pts(face_pts, faces0, fan_faces, vi)
+            )
+            _ps_cantellate_distinct_points_count(raw_pts, eps) >= 3
+    ];
+
 function _ps_cantellate_vertex_plane_pts(vertex_pt, raw_pts, ray_pts, eps) =
     let(
         nonzero_offsets = [for (p = raw_pts) let(d = norm(p - vertex_pt)) if (d > eps) d],
@@ -868,13 +885,14 @@ function _ps_cantellate_cap_pts_by_face(verts0, faces0, edges, edge_faces, poly0
             ]
     ];
 
-function _ps_cantellate_vertex_connector_cycles(verts0, faces0, edges, edge_faces, poly0, face_offsets, cap_site_offset) =
+function _ps_cantellate_vertex_connector_cycles(verts0, faces0, edges, edge_faces, poly0, face_offsets, cap_site_offset, cap_active_by_vertex) =
     [
         for (vi = [0:1:len(verts0)-1])
             let(
                 fan_faces = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)),
                 n = len(fan_faces)
             )
+            if (cap_active_by_vertex[vi])
             for (i = [0:1:n-1])
                 let(
                     fi0 = fan_faces[i],
@@ -1000,6 +1018,9 @@ function poly_cantellate(
         face_offsets = _ps_face_offsets(faces0),
         face_pts_flat = [for (fi = [0:1:len(faces0)-1]) for (p = face_pts[fi]) p],
         cap_site_offset = len(face_pts_flat),
+        cap_active_by_vertex = (style == "planarized")
+            ? _ps_cantellate_cap_active_by_vertex(verts0, faces0, face_pts, edges, edge_faces, poly0, eps)
+            : undef,
         cap_pts_by_vertex = (style == "planarized")
             ? _ps_cantellate_cap_pts_by_vertex(verts0, faces0, face_pts, face_n, edges, edge_faces, poly0, cap_mode_by_vert, v_sum(verts0) / len(verts0), eps)
             : undef,
@@ -1047,16 +1068,17 @@ function poly_cantellate(
         vert_cycles = [
             for (vi = [0:1:len(verts0)-1])
                 let(fc = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)))
-                [
-                    for (fi = fc)
-                        let(pos = _ps_index_of(faces0[fi], vi))
-                            [1, (style == "planarized")
-                                ? _ps_cantellate_cap_site_idx(face_offsets, cap_site_offset, fi, pos)
-                                : _ps_cantellate_face_site_idx(face_offsets, fi, pos)]
-                ]
+                (style == "planarized" && !cap_active_by_vertex[vi]) ? [] :
+                    [
+                        for (fi = fc)
+                            let(pos = _ps_index_of(faces0[fi], vi))
+                                [1, (style == "planarized")
+                                    ? _ps_cantellate_cap_site_idx(face_offsets, cap_site_offset, fi, pos)
+                                    : _ps_cantellate_face_site_idx(face_offsets, fi, pos)]
+                    ]
         ],
         connector_cycles = (style == "planarized")
-            ? _ps_cantellate_vertex_connector_cycles(verts0, faces0, edges, edge_faces, poly0, face_offsets, cap_site_offset)
+            ? _ps_cantellate_vertex_connector_cycles(verts0, faces0, edges, edge_faces, poly0, face_offsets, cap_site_offset, cap_active_by_vertex)
             : [],
         cycles_all = concat(face_cycles, edge_cycles, connector_cycles, vert_cycles)
     )
