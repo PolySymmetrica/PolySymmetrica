@@ -143,6 +143,27 @@ module test_poly_cantellate__planarized_preserves_zero_offset_endpoint() {
     assert(_max_vertex_diff(q_strict, q_c0) < 1e-7, "planarized c=0 should preserve strict endpoint vertices");
 }
 
+module test_poly_cantellate__planarized_handles_partial_zero_face_profile() {
+    p = _irregular_valence4_bipyramid();
+    q_sparse = poly_cantellate(
+        p,
+        df = 0,
+        style = "planarized",
+        profile = [["face", "id", 0, ["df", 0.1]]]
+    );
+    q = poly_cantellate(
+        p,
+        df = 0.1,
+        style = "planarized",
+        profile = [["face", "id", 0, ["df", 0]]],
+        cleanup = true
+    );
+
+    assert(len(poly_verts(q_sparse)) > 0, "planarized sparse face profile should construct without zero-ray assertion");
+    assert(len(poly_faces(q_sparse)) > 0, "planarized sparse face profile should return faces");
+    assert(poly_valid(q, "closed", 1e-7), "planarized selective face profile should support mixed zero/nonzero incidences");
+}
+
 module run_TestCantellation() {
     test_poly_cantellate__tetra_counts();
     test_poly_cantellate__cube_counts();
@@ -152,6 +173,7 @@ module run_TestCantellation() {
     test_poly_cantellate__planarized_edge_fraction_matches_strict();
     test_poly_cantellate__profile_vertex_cap_mode();
     test_poly_cantellate__planarized_preserves_zero_offset_endpoint();
+    test_poly_cantellate__planarized_handles_partial_zero_face_profile();
 }
 
 run_TestCantellation();

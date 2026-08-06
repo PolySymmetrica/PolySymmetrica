@@ -809,19 +809,50 @@ function _ps_cantellate_vertex_raw_pts(face_pts, faces0, fan_faces, vi) =
                 face_pts[fi][pos]
     ];
 
+function _ps_cantellate_vertex_ray_pts(verts0, faces0, face_pts, face_n, fan_faces, vi, eps) =
+    [
+        for (fi = fan_faces)
+            let(
+                pos = _ps_index_of(faces0[fi], vi),
+                raw_pt = face_pts[fi][pos]
+            )
+            (norm(raw_pt - verts0[vi]) <= eps) ? (verts0[vi] + face_n[fi]) : raw_pt
+    ];
+
 function _ps_cantellate_raw_pts_at_vertex(vertex_pt, raw_pts, eps) =
     max([for (p = raw_pts) norm(p - vertex_pt)]) <= eps;
 
-function _ps_cantellate_cap_pts_by_vertex(verts0, faces0, face_pts, edges, edge_faces, poly0, cap_mode_by_vert, poly_center, eps) =
+function _ps_cantellate_vertex_plane_pts(vertex_pt, raw_pts, ray_pts, eps) =
+    let(
+        nonzero_offsets = [for (p = raw_pts) let(d = norm(p - vertex_pt)) if (d > eps) d],
+        offset_scale = (len(nonzero_offsets) == 0) ? 1 : (ps_sum(nonzero_offsets) / len(nonzero_offsets))
+    )
+    [
+        for (i = [0:1:len(raw_pts)-1])
+            let(
+                raw_pt = raw_pts[i],
+                ray_dir_raw = ray_pts[i] - vertex_pt,
+                ray_dir_len = norm(ray_dir_raw)
+            )
+            (norm(raw_pt - vertex_pt) <= eps && ray_dir_len > eps)
+                ? (vertex_pt + offset_scale * ray_dir_raw / ray_dir_len)
+                : raw_pt
+    ];
+
+function _ps_cantellate_cap_pts_by_vertex(verts0, faces0, face_pts, face_n, edges, edge_faces, poly0, cap_mode_by_vert, poly_center, eps) =
     [
         for (vi = [0:1:len(verts0)-1])
             let(
                 fan_faces = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)),
-                raw_pts = _ps_cantellate_vertex_raw_pts(face_pts, faces0, fan_faces, vi)
+                raw_pts = _ps_cantellate_vertex_raw_pts(face_pts, faces0, fan_faces, vi),
+                ray_pts = _ps_cantellate_vertex_ray_pts(verts0, faces0, face_pts, face_n, fan_faces, vi, eps),
+                plane_pts = _ps_cantellate_vertex_plane_pts(verts0[vi], raw_pts, ray_pts, eps)
             )
             _ps_cantellate_raw_pts_at_vertex(verts0[vi], raw_pts, eps)
                 ? raw_pts
-                : ps_vertex_figure_points_from_raw(verts0[vi], raw_pts, cap_mode_by_vert[vi], poly_center, eps)
+                : (cap_mode_by_vert[vi] == "edge_fraction")
+                    ? raw_pts
+                    : _ps_vertex_figure_points_from_raw_on_rays(verts0[vi], plane_pts, ray_pts, cap_mode_by_vert[vi], poly_center, eps)
     ];
 
 function _ps_cantellate_cap_pts_by_face(verts0, faces0, edges, edge_faces, poly0, cap_pts_by_vertex) =
@@ -970,7 +1001,7 @@ function poly_cantellate(
         face_pts_flat = [for (fi = [0:1:len(faces0)-1]) for (p = face_pts[fi]) p],
         cap_site_offset = len(face_pts_flat),
         cap_pts_by_vertex = (style == "planarized")
-            ? _ps_cantellate_cap_pts_by_vertex(verts0, faces0, face_pts, edges, edge_faces, poly0, cap_mode_by_vert, v_sum(verts0) / len(verts0), eps)
+            ? _ps_cantellate_cap_pts_by_vertex(verts0, faces0, face_pts, face_n, edges, edge_faces, poly0, cap_mode_by_vert, v_sum(verts0) / len(verts0), eps)
             : undef,
         cap_pts = (style == "planarized")
             ? _ps_cantellate_cap_pts_by_face(verts0, faces0, edges, edge_faces, poly0, cap_pts_by_vertex)
