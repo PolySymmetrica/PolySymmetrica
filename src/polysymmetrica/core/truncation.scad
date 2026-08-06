@@ -796,14 +796,82 @@ function _ps_cantellate_df_from_c(poly, c, df_max=undef, steps=16, family_edge_i
     )
     _ps_cantellate_df_from_c_linear(c, df_mid, df_max_eff);
 
+function _ps_cantellate_face_site_idx(face_offsets, fi, pos) =
+    face_offsets[fi] + pos;
+
+function _ps_cantellate_cap_site_idx(face_offsets, cap_site_offset, fi, pos) =
+    cap_site_offset + face_offsets[fi] + pos;
+
+function _ps_cantellate_vertex_raw_pts(face_pts, faces0, fan_faces, vi) =
+    [
+        for (fi = fan_faces)
+            let(pos = _ps_index_of(faces0[fi], vi))
+                face_pts[fi][pos]
+    ];
+
+function _ps_cantellate_cap_pts_by_vertex(verts0, faces0, face_pts, edges, edge_faces, poly0, cap_mode_by_vert, poly_center, eps) =
+    [
+        for (vi = [0:1:len(verts0)-1])
+            let(
+                fan_faces = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)),
+                raw_pts = _ps_cantellate_vertex_raw_pts(face_pts, faces0, fan_faces, vi)
+            )
+            ps_vertex_figure_points_from_raw(verts0[vi], raw_pts, cap_mode_by_vert[vi], poly_center, eps)
+    ];
+
+function _ps_cantellate_cap_pts_by_face(verts0, faces0, edges, edge_faces, poly0, cap_pts_by_vertex) =
+    [
+        for (fi = [0:1:len(faces0)-1])
+            [
+                for (v = faces0[fi])
+                    let(
+                        fan_faces = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, v, edges, edge_faces)),
+                        fan_pos = _ps_index_of(fan_faces, fi)
+                    )
+                    cap_pts_by_vertex[v][fan_pos]
+            ]
+    ];
+
+function _ps_cantellate_vertex_connector_cycles(verts0, faces0, edges, edge_faces, poly0, face_offsets, cap_site_offset) =
+    [
+        for (vi = [0:1:len(verts0)-1])
+            let(
+                fan_faces = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)),
+                n = len(fan_faces)
+            )
+            for (i = [0:1:n-1])
+                let(
+                    fi0 = fan_faces[i],
+                    fi1 = fan_faces[(i + 1) % n],
+                    pos0 = _ps_index_of(faces0[fi0], vi),
+                    pos1 = _ps_index_of(faces0[fi1], vi)
+                )
+                [
+                    [1, _ps_cantellate_face_site_idx(face_offsets, fi0, pos0)],
+                    [1, _ps_cantellate_face_site_idx(face_offsets, fi1, pos1)],
+                    [1, _ps_cantellate_cap_site_idx(face_offsets, cap_site_offset, fi1, pos1)],
+                    [1, _ps_cantellate_cap_site_idx(face_offsets, cap_site_offset, fi0, pos0)]
+                ]
+    ];
+
 // Function: poly_cantellate()
 // Usage:
 //   result = poly_cantellate(poly, df=undef, c=undef, df_max=undef, steps=16,
 //       family_edge_idx=0, eps=1e-8, len_eps=1e-6, profile=undef,
-//       cleanup=false, cleanup_eps=1e-8);
+//       cleanup=false, cleanup_eps=1e-8, style="strict", cap_mode=undef);
 // Description:
 //   Cantellate or expand a poly. When `df` is omitted, `c` is mapped onto a
 //   face offset using the square-edge calibration map.
+//   .
+//   `style="strict"` preserves the classic shared-incidence topology: each
+//   `(source face, source vertex)` point is shared by source faces, edge faces,
+//   and vertex caps. This is watertight but vertex caps can be non-planar for
+//   irregular or valence > 3 source vertices.
+//   .
+//   `style="planarized"` keeps the shared source/edge sites unchanged, then
+//   creates separate vertex-cap sites using the shared vertex-figure
+//   realization modes. Connector quads bridge each raw incidence loop to its
+//   planarized cap loop.
 // Arguments:
 //   poly = source poly descriptor.
 //   df = explicit outward face offset used to build the expanded face planes. When supplied, it is used directly unless a profile row overrides it.
@@ -813,9 +881,11 @@ function _ps_cantellate_df_from_c(poly, c, df_max=undef, steps=16, family_edge_i
 //   family_edge_idx = representative source edge-family index used to choose which edge faces should become square at `c=0.5`.
 //   eps = geometric tolerance for transform construction.
 //   len_eps = point-merging tolerance for generated vertices.
-//   profile = optional face profile rows supporting `["df", value]` and `["c", value]` overrides.
+//   profile = optional face profile rows supporting `["df", value]` and `["c", value]` overrides, plus vertex `["cap_mode", value]` rows when `style="planarized"`.
 //   cleanup = whether to run structural cleanup on the result.
 //   cleanup_eps = cleanup tolerance used when `cleanup=true`.
+//   style = `"strict"` or `"planarized"` topology.
+//   cap_mode = vertex-cap realization mode for `style="planarized"`; defaults to `"planar_edge_fraction"` there and must be omitted for strict cantellation.
 function poly_cantellate(
     poly,
     df=undef,
@@ -827,11 +897,14 @@ function poly_cantellate(
     len_eps = 1e-6,
     profile=undef,
     cleanup=false,
-    cleanup_eps=1e-8
+    cleanup_eps=1e-8,
+    style="strict",
+    cap_mode=undef
 ) =
     let(
         rows = is_undef(profile) ? [] : profile,
-        _pwarn = _ps_override_warn_unsupported(rows, "poly_cantellate", [["face", ["df", "c"]]])
+        _style_ok = assert(style == "strict" || style == "planarized", "poly_cantellate: style must be \"strict\" or \"planarized\""),
+        _pwarn = _ps_override_warn_unsupported(rows, "poly_cantellate", [["face", ["df", "c"]], ["vert", ["cap_mode"]]])
     )
     let(
         base = _ps_poly_base(poly),
@@ -841,15 +914,32 @@ function poly_cantellate(
         edge_faces = base[3],
         face_n = base[4],
         poly0 = base[5],
-        face_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "face"))
-            ? ps_classify_face_ids(poly_classify(poly, 1, 1e-6, 1, false), len(faces0))
+        need_face_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "face")),
+        need_vert_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "vert")),
+        cls = (need_face_fid || need_vert_fid) ? poly_classify(poly, 1, 1e-6, 1, false) : undef,
+        face_fid = need_face_fid
+            ? ps_classify_face_ids(cls, len(faces0))
+            : undef,
+        vert_fid = need_vert_fid
+            ? ps_classify_vert_ids(cls, len(verts0))
             : undef,
         params_compiled = (len(rows) == 0) ? undef : ps_profile_compile_specs(rows, [
             ["face", "df", len(faces0), face_fid],
-            ["face", "c", len(faces0), face_fid]
+            ["face", "c", len(faces0), face_fid],
+            ["vert", "cap_mode", len(verts0), vert_fid]
         ]),
         face_df_by_idx = is_undef(params_compiled) ? undef : params_compiled[0],
         face_c_by_idx = is_undef(params_compiled) ? undef : params_compiled[1],
+        vert_cap_mode_by_idx = is_undef(params_compiled) ? undef : params_compiled[2],
+        has_cap_mode_rows = !is_undef(vert_cap_mode_by_idx) && len([for (x = vert_cap_mode_by_idx) if (!is_undef(x)) 1]) > 0,
+        _strict_cap_ok = assert(style == "planarized" || (is_undef(cap_mode) && !has_cap_mode_rows), "poly_cantellate: cap_mode requires style=\"planarized\""),
+        cap_mode_default = is_undef(cap_mode) ? "planar_edge_fraction" : cap_mode,
+        cap_mode_by_vert = [
+            for (vi = [0:1:len(verts0)-1])
+                let(mode_ov = ps_compiled_param_get(vert_cap_mode_by_idx, vi))
+                is_undef(mode_ov) ? cap_mode_default : mode_ov
+        ],
+        _cap_modes_ok = (style == "planarized") ? _ps_truncate_cap_modes_ok(cap_mode_by_vert) : 0,
         has_c_overrides = !is_undef(face_c_by_idx) && (len([for (x = face_c_by_idx) if (!is_undef(x)) 1]) > 0),
         need_c_map = is_undef(df) || !is_undef(c) || has_c_overrides,
         cmap = need_c_map ? _ps_cantellate_df_map(poly, df_max, steps, family_edge_idx) : undef,
@@ -872,16 +962,26 @@ function poly_cantellate(
         // offset face corners: one point per (face, vertex) incidence
         face_pts = _ps_face_offset_pts(verts0, faces0, face_n, df_by_face),
         face_offsets = _ps_face_offsets(faces0),
+        face_pts_flat = [for (fi = [0:1:len(faces0)-1]) for (p = face_pts[fi]) p],
+        cap_site_offset = len(face_pts_flat),
+        cap_pts_by_vertex = (style == "planarized")
+            ? _ps_cantellate_cap_pts_by_vertex(verts0, faces0, face_pts, edges, edge_faces, poly0, cap_mode_by_vert, v_sum(verts0) / len(verts0), eps)
+            : undef,
+        cap_pts = (style == "planarized")
+            ? _ps_cantellate_cap_pts_by_face(verts0, faces0, edges, edge_faces, poly0, cap_pts_by_vertex)
+            : undef,
+        cap_pts_flat = (style == "planarized")
+            ? [for (fi = [0:1:len(faces0)-1]) for (p = cap_pts[fi]) p]
+            : [],
         sites = [
             for (fi = [0:1:len(faces0)-1])
                 for (v = faces0[fi])
                     [fi, v]
         ],
-        site_points = [
-            for (fi = [0:1:len(faces0)-1])
-                for (p = face_pts[fi])
-                    p
-        ],
+        cap_sites = (style == "planarized")
+            ? [for (fi = [0:1:len(faces0)-1]) for (v = faces0[fi]) ["cap", fi, v]]
+            : [],
+        site_points = concat(face_pts_flat, cap_pts_flat),
         face_cycles = [
             for (fi = [0:1:len(faces0)-1])
                 let(n = len(faces0[fi]))
@@ -914,12 +1014,17 @@ function poly_cantellate(
                 [
                     for (fi = fc)
                         let(pos = _ps_index_of(faces0[fi], vi))
-                            [1, face_offsets[fi] + pos]
+                            [1, (style == "planarized")
+                                ? _ps_cantellate_cap_site_idx(face_offsets, cap_site_offset, fi, pos)
+                                : _ps_cantellate_face_site_idx(face_offsets, fi, pos)]
                 ]
         ],
-        cycles_all = concat(face_cycles, edge_cycles, vert_cycles)
+        connector_cycles = (style == "planarized")
+            ? _ps_cantellate_vertex_connector_cycles(verts0, faces0, edges, edge_faces, poly0, face_offsets, cap_site_offset)
+            : [],
+        cycles_all = concat(face_cycles, edge_cycles, connector_cycles, vert_cycles)
     )
-    let(q = ps_poly_transform_from_sites(verts0, sites, site_points, cycles_all, eps, len_eps))
+    let(q = ps_poly_transform_from_sites(verts0, concat(sites, cap_sites), site_points, cycles_all, eps, len_eps))
     ps_finalize_poly(q, cleanup, cleanup_eps);
 
 // Measure how square an edge face is (edge length spread).
@@ -986,7 +1091,7 @@ function solve_cantellate_square_df(poly, df_min, df_max, steps=40, family_edge_
 // Usage:
 //   result = poly_cantellate_norm(poly, c, df_max=undef, steps=16,
 //       family_edge_idx=0, eps=1e-8, len_eps=1e-6, profile=undef,
-//       cleanup=false, cleanup_eps=1e-8);
+//       cleanup=false, cleanup_eps=1e-8, style="strict", cap_mode=undef);
 // Description:
 //   Cantellate a poly using normalized control `c in [0,1]`, mapped onto `df`
 //   so that `c=0.5` hits the computed square-edge offset.
@@ -1001,6 +1106,8 @@ function solve_cantellate_square_df(poly, df_min, df_max, steps=40, family_edge_
 //   profile = optional face profile rows supporting `["df", value]` and `["c", value]` overrides.
 //   cleanup = whether to run structural cleanup on the result.
 //   cleanup_eps = cleanup tolerance used when `cleanup=true`.
+//   style = `"strict"` or `"planarized"` topology.
+//   cap_mode = vertex-cap realization mode for `style="planarized"`.
 function poly_cantellate_norm(
     poly,
     c,
@@ -1011,12 +1118,14 @@ function poly_cantellate_norm(
     len_eps=1e-6,
     profile=undef,
     cleanup=false,
-    cleanup_eps=1e-8
+    cleanup_eps=1e-8,
+    style="strict",
+    cap_mode=undef
 ) =
     let(df = _ps_cantellate_df_from_c(poly, c, df_max, steps, family_edge_idx))
     poly_cantellate(
         poly, df, undef, df_max, steps, family_edge_idx, eps, len_eps, profile,
-        cleanup, cleanup_eps
+        cleanup, cleanup_eps, style, cap_mode
     );
 
 // --- Snub helpers ---

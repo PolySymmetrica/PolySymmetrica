@@ -23,7 +23,7 @@ Rows can target all elements, families, or explicit element indices.
 
 - `kind` is usually `"face"`, `"vert"`, `"edge"` (operators may define others)
 - `id_or_ids` can be a single index or a list of indices
-- keys are operator-defined (e.g. `df`, `angle`, `c`, `de`, `t`)
+- keys are operator-defined (e.g. `df`, `angle`, `c`, `de`, `t`, `cap_mode`)
 - each row can set **multiple keys** for the same target
 
 Example with multiple params per row:
@@ -33,6 +33,7 @@ profile = [
     ["face", "all",    ["angle", 15], ["df", 0.03]],
     ["face", "family", 1, ["angle", 20], ["df", 0.04]],
     ["vert", "family", 0, ["c", 0.06], ["de", 0.05]],
+    ["vert", "id", 3, ["cap_mode", "centric"]],
     ["face", "id", [2, 7], ["angle", 19]]
 ];
 ```

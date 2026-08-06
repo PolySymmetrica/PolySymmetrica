@@ -4,24 +4,33 @@ This document captures current cantellation behavior, parameterization, and solv
 
 ## Parameterization
 
-`poly_cantellate(poly, df=undef, c=undef, df_max=undef, steps=16, family_edge_idx=0, eps, len_eps)`
+`poly_cantellate(poly, df=undef, c=undef, df_max=undef, steps=16, family_edge_idx=0, eps, len_eps, profile=undef, cleanup=false, cleanup_eps=1e-8, style="strict", cap_mode=undef)`
 
 - **df** controls face offsets (how far original faces move along their normals).
 - **c** provides a normalized knob; `c=0.5` targets square edge faces (via `solve_cantellate_square_df`).
 - If `df` is omitted, `c` (or a default `c=0.5`) is used to derive a `df`.
 - `df_max` bounds the normalized mapping; `steps` controls the square‑target search.
+- **style** controls vertex-cap topology:
+  - `"strict"` preserves the classic shared-incidence construction.
+  - `"planarized"` keeps source/edge sites unchanged, then adds separate
+    planarized vertex-cap sites and connector quads.
+- **cap_mode** is only valid with `style="planarized"` and uses the shared
+  vertex-figure realization modes: `"planar_edge_fraction"`,
+  `"edge_fraction"`, `"centric"`, and `"poly_centroidal"`.
 
-Topology (current):
+Topology:
 - Face cycles: original faces (expanded) become larger polygons.
 - Edge cycles: quads derived from each original edge.
 - Vertex cycles: polygons derived from each original vertex (valence‑gons).
+- Planarized connector cycles: one quad per source `(vertex, incident face)`
+  side, bridging the strict raw incidence loop to the realized cap loop.
 
 ## Components & Current Limitations
 
 Cantellation is constructed from three components:
 
 1) **Face cycles**
-   - Derived by shifting original face planes by `df` and intersecting with edge‑bisector planes.
+   - Derived by shifting each original face corner along that face's normal by `df`.
    - Intended to remain planar by construction.
 
 2) **Edge cycles** (quads)
@@ -30,9 +39,12 @@ Cantellation is constructed from three components:
 
 3) **Vertex cycles** (valence‑gons)
    - Built from edge‑adjacent points around each original vertex.
+   - In strict mode, they share the source/edge incidence points directly.
+   - In planarized mode, they use separate realized cap points.
 
 Current limitations:
-- Mixed‑family bases can show slight warping depending on how offsets are balanced.
+- Strict vertex caps can be non-planar for irregular or valence > 3 source
+  vertices.
 - Extreme offsets (large `df`) can yield self‑intersections or degenerate faces; use with care.
 
 ## Solvers / Helpers
@@ -40,7 +52,7 @@ Current limitations:
 - `solve_cantellate_square_df(poly, df_min, df_max, steps, family_edge_idx, eps)`
   - Searches for a `df` that makes a chosen edge‑family as square as possible.
 
-- `poly_cantellate_norm(poly, c, df_max=undef, steps=16, family_edge_idx=0, eps, len_eps)`
+- `poly_cantellate_norm(poly, c, df_max=undef, steps=16, family_edge_idx=0, eps, len_eps, profile=undef, cleanup=false, cleanup_eps=1e-8, style="strict", cap_mode=undef)`
   - Normalized cantellation (maps `c in [0,1]` to a `df` range).
   - Intended as the user‑friendly entry point for many examples.
 
@@ -58,6 +70,11 @@ p = poly_cantellate(hexahedron(), df = 0.2);
 ### Normalized cantellation
 ```
 p = poly_cantellate_norm(hexahedron(), 0.5);
+```
+
+### Planarized vertex caps
+```
+p = poly_cantellate(base, df = 0.1, style = "planarized");
 ```
 
 ### Square‑targeted face family
