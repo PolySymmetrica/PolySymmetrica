@@ -4,7 +4,7 @@ This document captures current cantitruncation behavior, parameterization, and t
 
 ## Parameterization
 
-`poly_cantitruncate(poly, t=undef, c=undef, eps, len_eps)`
+`poly_cantitruncate(poly, t=undef, c=undef, profile=undef, cleanup=false, style="strict", cap_mode=undef, eps=1e-8, len_eps=1e-6, cleanup_eps=1e-8)`
 
 - **t** controls edge‑point placement along each original edge.
   - `t=0` at original vertices, `t=0.5` at mid‑edge.
@@ -14,10 +14,19 @@ This document captures current cantitruncation behavior, parameterization, and t
   - `d_e =  c * ir` (edge‑bisector plane offset)
 If both `t` and `c` are `undef`, the trig solver is used **only for regular bases** (single face size + single edge length). Otherwise it falls back to `_ps_truncate_default_t(poly)` and `c=0`.
 
-Topology (current):
+Topology with `style="strict"` (the default):
 - Face cycles: 2n‑gons built from *face‑edge points*.
 - Edge cycles: quads built from the same face‑edge points.
 - Vertex cycles: 2·valence‑gons built from face‑edge points (hex for valence 3).
+
+Topology with `style="planarized"`:
+- Face and edge cycles keep the same shared face-edge points as strict mode.
+- Source-vertex cycles use separate cap points realized from the corresponding
+  raw face-edge loop.
+- Connector quads bridge each raw source-vertex loop to its planarized cap loop.
+- `cap_mode` controls the source-vertex cap realization and defaults to
+  `"planar_edge_fraction"`. Use `"edge_fraction"` when you deliberately want
+  the raw strict cap shape.
 
 ## Components & Current Limitations
 
@@ -37,10 +46,18 @@ base poly:
 3) **Vertex cycles** (2·valence‑gons)  
    - Built from the same face‑edge points around each original vertex.  
    - These are the faces most prone to **warp** when a single global `c` is used.
+   - `style="planarized"` gives these cycles their own realized cap points, so
+     they can be planar without moving the shared face/edge sites.
 
 Current limitations:
 - **Mixed face families** (e.g., cuboctahedron) can produce warped vertex faces
-  unless the dominant family is prioritized.  
+  in strict mode unless the dominant family is prioritized.
+- Planarized cantitruncation is not the classic shared-site topology: it adds
+  connector strips around source vertices.
+- On irregular stress cases, those connector strips can be self-crossing even
+  when every face is planar and the output remains `star_ok`. Treat
+  `style="planarized"` as a source-vertex cap planarity tool, not as a promise
+  of `closed` validity for every input/profile.
 - `solve_cantitruncate_dominant_edges` returns `c_edge_by_pair` consistent with
   `c_by_size`, which stabilizes defaults but does **not** fully solve planarity
   for all mixed-family cases yet.
@@ -109,6 +126,22 @@ p = poly_cantitruncate(hexahedron()); // defaults to trig solver for regular bas
 base = poly_rectify(octahedron()); // cuboctahedron
 rows = solve_cantitruncate_dominant_edges_profile_rows(base, 4); // prioritize squares
 p = poly_cantitruncate(base, t=0, c=0, profile=rows);
+```
+
+### Planarized source-vertex caps
+```
+p = poly_cantitruncate(tetrakis_hexahedron(), t=0.2, c=0.1, style="planarized");
+```
+
+### Per-vertex cap mode
+```
+p = poly_cantitruncate(
+    tetrakis_hexahedron(),
+    t=0.2,
+    c=0.1,
+    style="planarized",
+    profile=[["vert", "id", 0, ["cap_mode", "edge_fraction"]]]
+);
 ```
 
 ### Inspect planarity

@@ -911,8 +911,8 @@ function _ps_cantellate_vertex_connector_cycles(verts0, faces0, edges, edge_face
 // Function: poly_cantellate()
 // Usage:
 //   result = poly_cantellate(poly, df=undef, c=undef, df_max=undef, steps=16,
-//       family_edge_idx=0, eps=1e-8, len_eps=1e-6, profile=undef,
-//       cleanup=false, cleanup_eps=1e-8, style="strict", cap_mode=undef);
+//       family_edge_idx=0, profile=undef, cleanup=false, style="strict",
+//       cap_mode=undef, eps=1e-8, len_eps=1e-6, cleanup_eps=1e-8);
 // Description:
 //   Cantellate or expand a poly. When `df` is omitted, `c` is mapped onto a
 //   face offset using the square-edge calibration map.
@@ -933,13 +933,13 @@ function _ps_cantellate_vertex_connector_cycles(verts0, faces0, edges, edge_face
 //   df_max = optional maximum face offset used by normalized `c` mapping.
 //   steps = calibration search step count for normalized `c` mapping.
 //   family_edge_idx = representative source edge-family index used to choose which edge faces should become square at `c=0.5`.
-//   eps = geometric tolerance for transform construction.
-//   len_eps = point-merging tolerance for generated vertices.
 //   profile = optional face profile rows supporting `["df", value]` and `["c", value]` overrides, plus vertex `["cap_mode", value]` rows when `style="planarized"`.
 //   cleanup = whether to run structural cleanup on the result.
-//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 //   style = `"strict"` or `"planarized"` topology.
 //   cap_mode = vertex-cap realization mode for `style="planarized"`; defaults to `"planar_edge_fraction"` there and must be omitted for strict cantellation.
+//   eps = geometric tolerance for transform construction.
+//   len_eps = point-merging tolerance for generated vertices.
+//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_cantellate(
     poly,
     df=undef,
@@ -947,13 +947,13 @@ function poly_cantellate(
     df_max=undef,
     steps=16,
     family_edge_idx=0,
-    eps = 1e-8,
-    len_eps = 1e-6,
     profile=undef,
     cleanup=false,
-    cleanup_eps=1e-8,
     style="strict",
-    cap_mode=undef
+    cap_mode=undef,
+    eps = 1e-8,
+    len_eps = 1e-6,
+    cleanup_eps=1e-8
 ) =
     let(
         rows = is_undef(profile) ? [] : profile,
@@ -1148,8 +1148,8 @@ function solve_cantellate_square_df(poly, df_min, df_max, steps=40, family_edge_
 // Function: poly_cantellate_norm()
 // Usage:
 //   result = poly_cantellate_norm(poly, c, df_max=undef, steps=16,
-//       family_edge_idx=0, eps=1e-8, len_eps=1e-6, profile=undef,
-//       cleanup=false, cleanup_eps=1e-8, style="strict", cap_mode=undef);
+//       family_edge_idx=0, profile=undef, cleanup=false, style="strict",
+//       cap_mode=undef, eps=1e-8, len_eps=1e-6, cleanup_eps=1e-8);
 // Description:
 //   Cantellate a poly using normalized control `c in [0,1]`, mapped onto `df`
 //   so that `c=0.5` hits the computed square-edge offset.
@@ -1159,31 +1159,42 @@ function solve_cantellate_square_df(poly, df_min, df_max, steps=40, family_edge_
 //   df_max = optional maximum face offset used by normalized `c` mapping.
 //   steps = calibration search step count for normalized `c` mapping.
 //   family_edge_idx = representative source edge-family index used to choose which edge faces should become square at `c=0.5`.
-//   eps = geometric tolerance for transform construction.
-//   len_eps = point-merging tolerance for generated vertices.
 //   profile = optional face profile rows supporting `["df", value]` and `["c", value]` overrides.
 //   cleanup = whether to run structural cleanup on the result.
-//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 //   style = `"strict"` or `"planarized"` topology.
 //   cap_mode = vertex-cap realization mode for `style="planarized"`.
+//   eps = geometric tolerance for transform construction.
+//   len_eps = point-merging tolerance for generated vertices.
+//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_cantellate_norm(
     poly,
     c,
     df_max=undef,
     steps=16,
     family_edge_idx=0,
-    eps=1e-8,
-    len_eps=1e-6,
     profile=undef,
     cleanup=false,
-    cleanup_eps=1e-8,
     style="strict",
-    cap_mode=undef
+    cap_mode=undef,
+    eps=1e-8,
+    len_eps=1e-6,
+    cleanup_eps=1e-8
 ) =
     let(df = _ps_cantellate_df_from_c(poly, c, df_max, steps, family_edge_idx))
     poly_cantellate(
-        poly, df, undef, df_max, steps, family_edge_idx, eps, len_eps, profile,
-        cleanup, cleanup_eps, style, cap_mode
+        poly,
+        df = df,
+        c = undef,
+        df_max = df_max,
+        steps = steps,
+        family_edge_idx = family_edge_idx,
+        profile = profile,
+        cleanup = cleanup,
+        style = style,
+        cap_mode = cap_mode,
+        eps = eps,
+        len_eps = len_eps,
+        cleanup_eps = cleanup_eps
     );
 
 // --- Snub helpers ---
@@ -1869,35 +1880,160 @@ function poly_snub(
 
 // --- Cantitruncation operators ---
 //
+
+function _ps_cantitruncate_vertex_face_edge_site_indices(faces0, face_edge_offsets, fan_faces, vi, site_offset=0) =
+    [
+        for (fi = fan_faces)
+            let(
+                f = faces0[fi],
+                n = len(f),
+                pos = _ps_index_of(f, vi),
+                k_prev = (pos - 1 + n) % n,
+                base = site_offset + face_edge_offsets[fi],
+                s_prev = _ps_face_edge_site(base, k_prev, true),
+                s_next = _ps_face_edge_site(base, pos, false)
+            )
+            each [s_prev, s_next]
+    ];
+
+function _ps_cantitruncate_vertex_raw_pts(face_edge_pts3d, faces0, fan_faces, vi) =
+    [
+        for (fi = fan_faces)
+            let(
+                f = faces0[fi],
+                n = len(f),
+                pos = _ps_index_of(f, vi),
+                k_prev = (pos - 1 + n) % n
+            )
+            each [face_edge_pts3d[fi][2 * k_prev + 1], face_edge_pts3d[fi][2 * pos]]
+    ];
+
+function _ps_cantitruncate_vertex_ray_pts(verts0, faces0, face_edge_pts3d, fan_faces, vi, eps) =
+    [
+        for (fi = fan_faces)
+            let(
+                f = faces0[fi],
+                n = len(f),
+                pos = _ps_index_of(f, vi),
+                k_prev = (pos - 1 + n) % n,
+                v_prev = f[k_prev],
+                v_next = f[(pos + 1) % n],
+                p_prev = face_edge_pts3d[fi][2 * k_prev + 1],
+                p_next = face_edge_pts3d[fi][2 * pos]
+            )
+            each [
+                (norm(p_prev - verts0[vi]) <= eps) ? verts0[v_prev] : p_prev,
+                (norm(p_next - verts0[vi]) <= eps) ? verts0[v_next] : p_next
+            ]
+    ];
+
+function _ps_cantitruncate_cap_active_by_vertex(verts0, faces0, face_edge_pts3d, edges, edge_faces, poly0, eps) =
+    [
+        for (vi = [0:1:len(verts0)-1])
+            let(
+                fan_faces = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)),
+                raw_pts = _ps_cantitruncate_vertex_raw_pts(face_edge_pts3d, faces0, fan_faces, vi)
+            )
+            _ps_cantellate_distinct_points_count(raw_pts, eps) >= 3
+    ];
+
+function _ps_cantitruncate_cap_pts_by_vertex(verts0, faces0, face_edge_pts3d, edges, edge_faces, poly0, cap_mode_by_vert, poly_center, eps) =
+    [
+        for (vi = [0:1:len(verts0)-1])
+            let(
+                fan_faces = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)),
+                raw_pts = _ps_cantitruncate_vertex_raw_pts(face_edge_pts3d, faces0, fan_faces, vi),
+                ray_pts = _ps_cantitruncate_vertex_ray_pts(verts0, faces0, face_edge_pts3d, fan_faces, vi, eps),
+                plane_pts = _ps_cantellate_vertex_plane_pts(verts0[vi], raw_pts, ray_pts, eps)
+            )
+            _ps_cantellate_raw_pts_at_vertex(verts0[vi], raw_pts, eps)
+                ? raw_pts
+                : (cap_mode_by_vert[vi] == "edge_fraction")
+                    ? raw_pts
+                    : _ps_vertex_figure_points_from_raw_on_rays(verts0[vi], plane_pts, ray_pts, cap_mode_by_vert[vi], poly_center, eps)
+    ];
+
+function _ps_cantitruncate_cap_point_for_face_edge_site(verts0, faces0, edges, edge_faces, poly0, cap_pts_by_vertex, fi, k, near_next) =
+    let(
+        f = faces0[fi],
+        vi = near_next ? f[(k + 1) % len(f)] : f[k],
+        fan_faces = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)),
+        fan_pos = _ps_index_of(fan_faces, fi),
+        local_pos = near_next ? (2 * fan_pos) : (2 * fan_pos + 1)
+    )
+    cap_pts_by_vertex[vi][local_pos];
+
+function _ps_cantitruncate_cap_face_edge_pts3d(verts0, faces0, edges, edge_faces, poly0, cap_pts_by_vertex) =
+    [
+        for (fi = [0:1:len(faces0)-1])
+            let(n = len(faces0[fi]))
+            [
+                for (k = [0:1:n-1])
+                    each [
+                        _ps_cantitruncate_cap_point_for_face_edge_site(verts0, faces0, edges, edge_faces, poly0, cap_pts_by_vertex, fi, k, false),
+                        _ps_cantitruncate_cap_point_for_face_edge_site(verts0, faces0, edges, edge_faces, poly0, cap_pts_by_vertex, fi, k, true)
+                    ]
+            ]
+    ];
+
+function _ps_cantitruncate_vertex_connector_cycles(verts0, faces0, edges, edge_faces, poly0, face_edge_offsets, cap_site_offset, cap_active_by_vertex) =
+    [
+        for (vi = [0:1:len(verts0)-1])
+            let(
+                fan_faces = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)),
+                raw_sites = _ps_cantitruncate_vertex_face_edge_site_indices(faces0, face_edge_offsets, fan_faces, vi),
+                cap_sites = _ps_cantitruncate_vertex_face_edge_site_indices(faces0, face_edge_offsets, fan_faces, vi, cap_site_offset),
+                n = len(raw_sites)
+            )
+            if (cap_active_by_vertex[vi])
+            for (i = [0:1:n-1])
+                [
+                    [1, raw_sites[i]],
+                    [1, raw_sites[(i + 1) % n]],
+                    [1, cap_sites[(i + 1) % n]],
+                    [1, cap_sites[i]]
+                ]
+    ];
+
 // Function: poly_cantitruncate()
 // Usage:
-//   result = poly_cantitruncate(poly, t=undef, c=undef, eps=1e-8,
-//       len_eps=1e-6, profile=undef, cleanup=false, cleanup_eps=1e-8);
+//   result = poly_cantitruncate(poly, t=undef, c=undef, profile=undef,
+//       cleanup=false, style="strict", cap_mode=undef, eps=1e-8,
+//       len_eps=1e-6, cleanup_eps=1e-8);
 // Description:
 //   Combine truncation and cantellation in one operator. `t` controls the
 //   face-plane shift and `c` controls edge and vertex expansion.
+//   `style="strict"` preserves the historical shared face-edge site topology.
+//   `style="planarized"` keeps face and edge sites shared, then adds separate
+//   source-vertex cap sites plus connector strips so vertex caps can be
+//   planarized without moving the source-face and source-edge output.
 // Arguments:
 //   poly = source poly descriptor.
 //   t = truncation-style vertex control; when omitted for supported regular bases, a default is solved with `c`.
 //   c = cantellation-style expansion control; when omitted for supported regular bases, a default is solved with `t`.
+//   profile = optional vertex rows supporting `t`/`c` and, when `style="planarized"`, `cap_mode`; face rows supporting `c`; and edge rows supporting `c`/`de`.
+//   cleanup = whether to run structural cleanup on the result.
+//   style = `"strict"` or `"planarized"` topology.
+//   cap_mode = vertex-cap realization mode for `style="planarized"`; defaults to `"planar_edge_fraction"` there and must be omitted for strict cantitruncation.
 //   eps = geometric tolerance for transform construction.
 //   len_eps = point-merging tolerance for generated vertices.
-//   profile = optional vertex rows supporting `t`/`c`, face rows supporting `c`, and edge rows supporting `c`/`de`.
-//   cleanup = whether to run structural cleanup on the result.
 //   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_cantitruncate(
     poly,
     t=undef,
     c=undef,
-    eps = 1e-8,
-    len_eps = 1e-6,
     profile=undef,
     cleanup=false,
+    style="strict",
+    cap_mode=undef,
+    eps = 1e-8,
+    len_eps = 1e-6,
     cleanup_eps=1e-8
 ) =
     let(
         rows = is_undef(profile) ? [] : profile,
-        _pwarn = _ps_override_warn_unsupported(rows, "poly_cantitruncate", [["face", ["c"]], ["vert", ["t", "c"]], ["edge", ["c", "de"]]]),
+        _style_ok = assert(style == "strict" || style == "planarized", "poly_cantitruncate: style must be \"strict\" or \"planarized\""),
+        _pwarn = _ps_override_warn_unsupported(rows, "poly_cantitruncate", [["face", ["c"]], ["vert", ["t", "c", "cap_mode"]], ["edge", ["c", "de"]]]),
         sol = (is_undef(t) && is_undef(c) && _ps_is_regular_base(poly)) ? solve_cantitruncate_trig(poly) : [t, c],
         t_base = is_undef(sol[0]) ? _ps_truncate_default_t(poly) : sol[0],
         c_base = is_undef(sol[1]) ? 0 : sol[1]
@@ -1920,15 +2056,26 @@ function poly_cantitruncate(
         params_compiled = (len(rows) == 0) ? undef : ps_profile_compile_specs(rows, [
             ["vert", "t", len(verts0), vert_fid],
             ["vert", "c", len(verts0), vert_fid],
+            ["vert", "cap_mode", len(verts0), vert_fid],
             ["face", "c", len(faces0), face_fid],
             ["edge", "c", len(edges), edge_fid],
             ["edge", "de", len(edges), edge_fid]
         ]),
         vert_t_by_idx = is_undef(params_compiled) ? undef : params_compiled[0],
         vert_c_by_idx = is_undef(params_compiled) ? undef : params_compiled[1],
-        face_c_by_idx = is_undef(params_compiled) ? undef : params_compiled[2],
-        edge_c_by_idx = is_undef(params_compiled) ? undef : params_compiled[3],
-        edge_de_by_idx = is_undef(params_compiled) ? undef : params_compiled[4],
+        vert_cap_mode_by_idx = is_undef(params_compiled) ? undef : params_compiled[2],
+        face_c_by_idx = is_undef(params_compiled) ? undef : params_compiled[3],
+        edge_c_by_idx = is_undef(params_compiled) ? undef : params_compiled[4],
+        edge_de_by_idx = is_undef(params_compiled) ? undef : params_compiled[5],
+        has_cap_mode_rows = !is_undef(vert_cap_mode_by_idx) && len([for (x = vert_cap_mode_by_idx) if (!is_undef(x)) 1]) > 0,
+        _strict_cap_ok = assert(style == "planarized" || (is_undef(cap_mode) && !has_cap_mode_rows), "poly_cantitruncate: cap_mode requires style=\"planarized\""),
+        cap_mode_default = is_undef(cap_mode) ? "planar_edge_fraction" : cap_mode,
+        cap_mode_by_vert = [
+            for (vi = [0:1:len(verts0)-1])
+                let(mode_ov = ps_compiled_param_get(vert_cap_mode_by_idx, vi))
+                is_undef(mode_ov) ? cap_mode_default : mode_ov
+        ],
+        _cap_modes_ok = (style == "planarized") ? _ps_truncate_cap_modes_ok(cap_mode_by_vert) : 0,
         t_by_vert = [
             for (vi = [0:1:len(verts0)-1])
                 let(
@@ -2019,16 +2166,43 @@ function poly_cantitruncate(
         face_edge_pts_flat = [ for (fi = [0:1:len(faces0)-1]) for (p = face_edge_pts3d[fi]) p ],
         edge_site_offset = 0,
         face_site_offset = len(face_edge_pts_flat),
+        cap_site_offset = face_site_offset + len(face_pts_flat),
+        cap_active_by_vertex = (style == "planarized")
+            ? _ps_cantitruncate_cap_active_by_vertex(verts0, faces0, face_edge_pts3d, edges, edge_faces, poly0, eps)
+            : undef,
+        cap_pts_by_vertex = (style == "planarized")
+            ? _ps_cantitruncate_cap_pts_by_vertex(verts0, faces0, face_edge_pts3d, edges, edge_faces, poly0, cap_mode_by_vert, v_sum(verts0) / len(verts0), eps)
+            : undef,
+        cap_face_edge_pts3d = (style == "planarized")
+            ? _ps_cantitruncate_cap_face_edge_pts3d(verts0, faces0, edges, edge_faces, poly0, cap_pts_by_vertex)
+            : undef,
+        cap_face_edge_pts_flat = (style == "planarized")
+            ? [ for (fi = [0:1:len(faces0)-1]) for (p = cap_face_edge_pts3d[fi]) p ]
+            : [],
         sites = concat(
             [ for (i = [0:1:len(face_edge_pts_flat)-1]) [0, i] ],
-            face_sites
+            face_sites,
+            (style == "planarized")
+                ? [ for (i = [0:1:len(cap_face_edge_pts_flat)-1]) ["cap", i] ]
+                : []
         ),
-        site_points = concat(face_edge_pts_flat, face_pts_flat),
+        site_points = concat(face_edge_pts_flat, face_pts_flat, cap_face_edge_pts_flat),
         face_cycles = _ps_face_cycles_from_face_edge_sites(faces0, [for (x = face_edge_offsets) edge_site_offset + x]),
         edge_cycles = _ps_edge_cycles_from_face_edge_sites(faces0, edges, edge_faces, [for (x = face_edge_offsets) edge_site_offset + x]),
-        vert_cycles = _ps_vert_cycles_from_face_edge_sites(verts0, faces0, edges, edge_faces, [for (x = face_edge_offsets) edge_site_offset + x], poly0),
-        // Debug: echo one decagon face cycle points and their angles (first face with n>=5*2)
-        cycles_all = concat(face_cycles, edge_cycles, vert_cycles)
+        vert_cycles = (style == "planarized")
+            ? [
+                for (vi = [0:1:len(verts0)-1])
+                    let(
+                        fan_faces = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)),
+                        cap_sites = _ps_cantitruncate_vertex_face_edge_site_indices(faces0, face_edge_offsets, fan_faces, vi, cap_site_offset)
+                    )
+                    cap_active_by_vertex[vi] ? [for (s = cap_sites) [1, s]] : []
+            ]
+            : _ps_vert_cycles_from_face_edge_sites(verts0, faces0, edges, edge_faces, [for (x = face_edge_offsets) edge_site_offset + x], poly0),
+        connector_cycles = (style == "planarized")
+            ? _ps_cantitruncate_vertex_connector_cycles(verts0, faces0, edges, edge_faces, poly0, [for (x = face_edge_offsets) edge_site_offset + x], cap_site_offset, cap_active_by_vertex)
+            : [],
+        cycles_all = concat(face_cycles, edge_cycles, connector_cycles, vert_cycles)
     )
     let(q = ps_poly_transform_from_sites(verts0, sites, site_points, cycles_all, eps, len_eps))
     ps_finalize_poly(q, cleanup, cleanup_eps);

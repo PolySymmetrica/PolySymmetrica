@@ -4,7 +4,7 @@ This document captures current cantellation behavior, parameterization, and solv
 
 ## Parameterization
 
-`poly_cantellate(poly, df=undef, c=undef, df_max=undef, steps=16, family_edge_idx=0, eps, len_eps, profile=undef, cleanup=false, cleanup_eps=1e-8, style="strict", cap_mode=undef)`
+`poly_cantellate(poly, df=undef, c=undef, df_max=undef, steps=16, family_edge_idx=0, profile=undef, cleanup=false, style="strict", cap_mode=undef, eps=1e-8, len_eps=1e-6, cleanup_eps=1e-8)`
 
 - **df** controls face offsets (how far original faces move along their normals).
 - **c** provides a normalized knob; `c=0.5` targets square edge faces (via `solve_cantellate_square_df`).
@@ -52,7 +52,7 @@ Current limitations:
 - `solve_cantellate_square_df(poly, df_min, df_max, steps, family_edge_idx, eps)`
   - Searches for a `df` that makes a chosen edge‑family as square as possible.
 
-- `poly_cantellate_norm(poly, c, df_max=undef, steps=16, family_edge_idx=0, eps, len_eps, profile=undef, cleanup=false, cleanup_eps=1e-8, style="strict", cap_mode=undef)`
+- `poly_cantellate_norm(poly, c, df_max=undef, steps=16, family_edge_idx=0, profile=undef, cleanup=false, style="strict", cap_mode=undef, eps=1e-8, len_eps=1e-6, cleanup_eps=1e-8)`
   - Normalized cantellation (maps `c in [0,1]` to a `df` range).
   - Intended as the user‑friendly entry point for many examples.
 

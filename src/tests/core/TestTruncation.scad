@@ -100,6 +100,13 @@ function _points_max_diff(a, b) =
         : (len(a) == 0) ? 0
         : max([for (i = [0:1:len(a)-1]) norm(a[i] - b[i])]);
 
+function _source_vertex_faces(source, transformed) =
+    let(
+        faces = poly_faces(transformed),
+        n = len(poly_verts(source))
+    )
+    [for (i = [len(faces) - n:1:len(faces)-1]) faces[i]];
+
 function _skew_quad_prism() =
     let(
         v = [
@@ -434,10 +441,78 @@ module test_poly_cantitruncate__cube_edge_face_adjacency() {
     // adjacent face cycles are expected to share its vertices
     shared = [
         for (v = quad)
-            ps_sum([for (f = [0:1:face_count-1]) (search([v], faces[f], 1)[0] >= 0) ? 1 : 0])
+            ps_sum([for (f = [0:1:face_count-1]) (_ps_index_of(faces[f], v) >= 0) ? 1 : 0])
     ];
     // each quad vertex should belong to at least one original-face cycle
     assert(min(shared) >= 1, "cantitruncate cube: quad vertices shared with face cycles");
+}
+
+module test_poly_cantitruncate__strict_exposes_tetrakis_vertex_cap_nonplanarity() {
+    p = tetrakis_hexahedron();
+    q = poly_cantitruncate(p, t=0.2, c=0.1);
+    cap_faces = _source_vertex_faces(p, q);
+    err = _ps_faces_max_planarity_err(poly_verts(q), cap_faces);
+
+    assert(err > 1e-3, str("strict cantitruncate should expose tetrakis source-vertex cap non-planarity err=", err));
+}
+
+module test_poly_cantitruncate__planarized_keeps_tetrakis_vertex_caps_planar() {
+    p = tetrakis_hexahedron();
+    q = poly_cantitruncate(p, t=0.2, c=0.1, style="planarized");
+    cap_faces = _source_vertex_faces(p, q);
+    err = _ps_faces_max_planarity_err(poly_verts(q), cap_faces);
+
+    assert(err <= 1e-7, str("planarized cantitruncate should keep tetrakis source-vertex caps planar err=", err));
+    assert(poly_valid(q, "star_ok", 1e-7), "planarized tetrakis cantitruncate should remain manifold and winding-consistent");
+}
+
+module test_poly_cantitruncate__planarized_keeps_irregular_vertex_caps_planar() {
+    p = _irregular_valence4_bipyramid();
+    q = poly_cantitruncate(p, t=0.2, c=0.1, style="planarized");
+    cap_faces = _source_vertex_faces(p, q);
+    err = _ps_faces_max_planarity_err(poly_verts(q), cap_faces);
+
+    assert(err <= 1e-7, str("planarized cantitruncate should keep irregular source-vertex caps planar err=", err));
+    assert(poly_valid(q, "star_ok", 1e-7), "planarized irregular cantitruncate should remain manifold and winding-consistent");
+}
+
+module test_poly_cantitruncate__planarized_profile_cap_mode_edge_fraction() {
+    p = _irregular_valence4_bipyramid();
+    q = poly_cantitruncate(
+        p,
+        t=0.2,
+        c=0.1,
+        style="planarized",
+        profile=[["vert", "id", 0, ["cap_mode", "edge_fraction"]]]
+    );
+    cap_faces = _source_vertex_faces(p, q);
+    err0 = _ps_face_planarity_err(poly_verts(q), cap_faces[0]);
+
+    assert(err0 > 1e-3, str("vertex profile cap_mode=edge_fraction should preserve raw skew cantitruncate cap err=", err0));
+}
+
+module test_poly_cantitruncate__planarized_profile_vertex_t_and_edge_de() {
+    p = hexahedron();
+    q_profile = poly_cantitruncate(
+        p,
+        t=0.2,
+        c=0.1,
+        style="planarized",
+        profile=[
+            ["vert", "all", ["t", 0.14]],
+            ["edge", "all", ["de", 0.05]]
+        ]
+    );
+    q_ref = poly_cantitruncate(
+        p,
+        t=0.14,
+        c=0.1,
+        style="planarized",
+        profile=[["edge", "all", ["de", 0.05]]]
+    );
+
+    assert(_max_vertex_diff(q_profile, q_ref) < 1e-7, "planarized cantitruncate should preserve vertex t and edge de profile semantics");
+    assert(poly_valid(q_profile, "star_ok", 1e-7), "planarized cantitruncate with vertex t and edge de profile should remain manifold and winding-consistent");
 }
 
 module test_poly_cantellate__profile_face_df_and_c() {
@@ -947,6 +1022,14 @@ module run_TestTruncation() {
     test_poly_truncate__cap_points_match_vertex_figure_helper();
     test_poly_rectify__star_prism_keeps_star_ok_output();
     test_poly_cantitruncate__tetra_counts();
+    test_poly_cantitruncate__cube_counts();
+    test_poly_cantitruncate__dodeca_counts();
+    test_poly_cantitruncate__cube_edge_face_adjacency();
+    test_poly_cantitruncate__strict_exposes_tetrakis_vertex_cap_nonplanarity();
+    test_poly_cantitruncate__planarized_keeps_tetrakis_vertex_caps_planar();
+    test_poly_cantitruncate__planarized_keeps_irregular_vertex_caps_planar();
+    test_poly_cantitruncate__planarized_profile_cap_mode_edge_fraction();
+    test_poly_cantitruncate__planarized_profile_vertex_t_and_edge_de();
     test_poly_cantellate__profile_face_df_and_c();
     test_poly_cantitruncate__unsupported_profile_ignored();
     test_poly_cantitruncate__profile_face_c();
