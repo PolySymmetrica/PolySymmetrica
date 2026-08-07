@@ -42,19 +42,21 @@ module show_spherical(i, poly, indices = undef) {
             sphere(r = IR - SHELL_T);
         }
     }
-    module faces() {
+    module faces(extra_w = 0) {
         place_on_faces(poly, IR, indices = indices) {
-            ps_face_region_loop_volume(Z_MIN, Z_MAX, max_project = undef, boundary_inset=SHELL_W/2);
+            #ps_face_region_loop_volume(Z_MIN, Z_MAX, max_project = undef, boundary_inset=SHELL_W/2 - extra_w);
         }
     }
     
     translate([i * IR * 3, 0, 0])
     if (is_undef(indices)) {
+        // Create the shell, with faces removed
         difference() {
             shell();
-            faces();
+            faces(extra_w = 0.4);
         }  
     } else {
+        // Create the specified faces
         intersection() {
             sphere(r = IR);
             faces();
