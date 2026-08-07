@@ -4,7 +4,7 @@ This document captures current cantitruncation behavior, parameterization, and t
 
 ## Parameterization
 
-`poly_cantitruncate(poly, t=undef, c=undef, eps, len_eps, style="strict", cap_mode=undef)`
+`poly_cantitruncate(poly, t=undef, c=undef, profile=undef, cleanup=false, style="strict", cap_mode=undef, eps=1e-8, len_eps=1e-6, cleanup_eps=1e-8)`
 
 - **t** controls edge‑point placement along each original edge.
   - `t=0` at original vertices, `t=0.5` at mid‑edge.

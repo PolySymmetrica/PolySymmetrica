@@ -911,8 +911,8 @@ function _ps_cantellate_vertex_connector_cycles(verts0, faces0, edges, edge_face
 // Function: poly_cantellate()
 // Usage:
 //   result = poly_cantellate(poly, df=undef, c=undef, df_max=undef, steps=16,
-//       family_edge_idx=0, eps=1e-8, len_eps=1e-6, profile=undef,
-//       cleanup=false, cleanup_eps=1e-8, style="strict", cap_mode=undef);
+//       family_edge_idx=0, profile=undef, cleanup=false, style="strict",
+//       cap_mode=undef, eps=1e-8, len_eps=1e-6, cleanup_eps=1e-8);
 // Description:
 //   Cantellate or expand a poly. When `df` is omitted, `c` is mapped onto a
 //   face offset using the square-edge calibration map.
@@ -933,13 +933,13 @@ function _ps_cantellate_vertex_connector_cycles(verts0, faces0, edges, edge_face
 //   df_max = optional maximum face offset used by normalized `c` mapping.
 //   steps = calibration search step count for normalized `c` mapping.
 //   family_edge_idx = representative source edge-family index used to choose which edge faces should become square at `c=0.5`.
-//   eps = geometric tolerance for transform construction.
-//   len_eps = point-merging tolerance for generated vertices.
 //   profile = optional face profile rows supporting `["df", value]` and `["c", value]` overrides, plus vertex `["cap_mode", value]` rows when `style="planarized"`.
 //   cleanup = whether to run structural cleanup on the result.
-//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 //   style = `"strict"` or `"planarized"` topology.
 //   cap_mode = vertex-cap realization mode for `style="planarized"`; defaults to `"planar_edge_fraction"` there and must be omitted for strict cantellation.
+//   eps = geometric tolerance for transform construction.
+//   len_eps = point-merging tolerance for generated vertices.
+//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_cantellate(
     poly,
     df=undef,
@@ -947,13 +947,13 @@ function poly_cantellate(
     df_max=undef,
     steps=16,
     family_edge_idx=0,
-    eps = 1e-8,
-    len_eps = 1e-6,
     profile=undef,
     cleanup=false,
-    cleanup_eps=1e-8,
     style="strict",
-    cap_mode=undef
+    cap_mode=undef,
+    eps = 1e-8,
+    len_eps = 1e-6,
+    cleanup_eps=1e-8
 ) =
     let(
         rows = is_undef(profile) ? [] : profile,
@@ -1148,8 +1148,8 @@ function solve_cantellate_square_df(poly, df_min, df_max, steps=40, family_edge_
 // Function: poly_cantellate_norm()
 // Usage:
 //   result = poly_cantellate_norm(poly, c, df_max=undef, steps=16,
-//       family_edge_idx=0, eps=1e-8, len_eps=1e-6, profile=undef,
-//       cleanup=false, cleanup_eps=1e-8, style="strict", cap_mode=undef);
+//       family_edge_idx=0, profile=undef, cleanup=false, style="strict",
+//       cap_mode=undef, eps=1e-8, len_eps=1e-6, cleanup_eps=1e-8);
 // Description:
 //   Cantellate a poly using normalized control `c in [0,1]`, mapped onto `df`
 //   so that `c=0.5` hits the computed square-edge offset.
@@ -1159,31 +1159,42 @@ function solve_cantellate_square_df(poly, df_min, df_max, steps=40, family_edge_
 //   df_max = optional maximum face offset used by normalized `c` mapping.
 //   steps = calibration search step count for normalized `c` mapping.
 //   family_edge_idx = representative source edge-family index used to choose which edge faces should become square at `c=0.5`.
-//   eps = geometric tolerance for transform construction.
-//   len_eps = point-merging tolerance for generated vertices.
 //   profile = optional face profile rows supporting `["df", value]` and `["c", value]` overrides.
 //   cleanup = whether to run structural cleanup on the result.
-//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 //   style = `"strict"` or `"planarized"` topology.
 //   cap_mode = vertex-cap realization mode for `style="planarized"`.
+//   eps = geometric tolerance for transform construction.
+//   len_eps = point-merging tolerance for generated vertices.
+//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_cantellate_norm(
     poly,
     c,
     df_max=undef,
     steps=16,
     family_edge_idx=0,
-    eps=1e-8,
-    len_eps=1e-6,
     profile=undef,
     cleanup=false,
-    cleanup_eps=1e-8,
     style="strict",
-    cap_mode=undef
+    cap_mode=undef,
+    eps=1e-8,
+    len_eps=1e-6,
+    cleanup_eps=1e-8
 ) =
     let(df = _ps_cantellate_df_from_c(poly, c, df_max, steps, family_edge_idx))
     poly_cantellate(
-        poly, df, undef, df_max, steps, family_edge_idx, eps, len_eps, profile,
-        cleanup, cleanup_eps, style, cap_mode
+        poly,
+        df = df,
+        c = undef,
+        df_max = df_max,
+        steps = steps,
+        family_edge_idx = family_edge_idx,
+        profile = profile,
+        cleanup = cleanup,
+        style = style,
+        cap_mode = cap_mode,
+        eps = eps,
+        len_eps = len_eps,
+        cleanup_eps = cleanup_eps
     );
 
 // --- Snub helpers ---
@@ -1986,9 +1997,9 @@ function _ps_cantitruncate_vertex_connector_cycles(verts0, faces0, edges, edge_f
 
 // Function: poly_cantitruncate()
 // Usage:
-//   result = poly_cantitruncate(poly, t=undef, c=undef, eps=1e-8,
-//       len_eps=1e-6, profile=undef, cleanup=false, cleanup_eps=1e-8,
-//       style="strict", cap_mode=undef);
+//   result = poly_cantitruncate(poly, t=undef, c=undef, profile=undef,
+//       cleanup=false, style="strict", cap_mode=undef, eps=1e-8,
+//       len_eps=1e-6, cleanup_eps=1e-8);
 // Description:
 //   Combine truncation and cantellation in one operator. `t` controls the
 //   face-plane shift and `c` controls edge and vertex expansion.
@@ -2000,24 +2011,24 @@ function _ps_cantitruncate_vertex_connector_cycles(verts0, faces0, edges, edge_f
 //   poly = source poly descriptor.
 //   t = truncation-style vertex control; when omitted for supported regular bases, a default is solved with `c`.
 //   c = cantellation-style expansion control; when omitted for supported regular bases, a default is solved with `t`.
-//   eps = geometric tolerance for transform construction.
-//   len_eps = point-merging tolerance for generated vertices.
 //   profile = optional vertex rows supporting `t`/`c` and, when `style="planarized"`, `cap_mode`; face rows supporting `c`; and edge rows supporting `c`/`de`.
 //   cleanup = whether to run structural cleanup on the result.
-//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 //   style = `"strict"` or `"planarized"` topology.
 //   cap_mode = vertex-cap realization mode for `style="planarized"`; defaults to `"planar_edge_fraction"` there and must be omitted for strict cantitruncation.
+//   eps = geometric tolerance for transform construction.
+//   len_eps = point-merging tolerance for generated vertices.
+//   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_cantitruncate(
     poly,
     t=undef,
     c=undef,
-    eps = 1e-8,
-    len_eps = 1e-6,
     profile=undef,
     cleanup=false,
-    cleanup_eps=1e-8,
     style="strict",
-    cap_mode=undef
+    cap_mode=undef,
+    eps = 1e-8,
+    len_eps = 1e-6,
+    cleanup_eps=1e-8
 ) =
     let(
         rows = is_undef(profile) ? [] : profile,
