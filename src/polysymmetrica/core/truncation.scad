@@ -1422,7 +1422,7 @@ function _ps_family_id_for_index(idx, fams) =
 function _ps_family_ids_from_fams(n, fams) =
     [for (i = [0:1:n-1]) _ps_family_id_for_index(i, fams)];
 
-function _ps_snub_default_angle_df_de(poly, d_f, d_e, handedness=1, steps=60, a_max=35, eps=1e-9) =
+function _ps_snub_default_angle_df_de(poly, d_f, d_e, handedness=1, steps=60, a_max=35, eps=1e-9, verbose=1) =
     let(
         base = _ps_poly_base(poly),
         verts0 = base[0],
@@ -1450,19 +1450,19 @@ function _ps_snub_default_angle_df_de(poly, d_f, d_e, handedness=1, steps=60, a_
         idx20 = [for (i = [0:1:len(cands)-1]) if (abs(cands[i][0] - 20) <= 1e-6) i],
         a0 = cands[0][1],
         a20 = (len(idx20) > 0) ? cands[idx20[0]][1] : undef,
-        _0 = echo(str(
+        _0 = verbose ? echo(str(
             "snub: angle solve (fixed df/de) min_err=", e_min,
             " at angle=", cands[idx][0],
             " (df=", d_f, ", de=", d_e, ")",
             " reps=", len(edge_reps),
             " err@angle0=", a0,
             is_undef(a20) ? "" : str(" err@angle20=", a20)
-        ))
+        )) : 0
     )
     cands[idx][0];
 
 // Solve angle for fixed c using representative-edge objective.
-function _ps_snub_default_angle_c(poly, c, df=undef, handedness=1, steps=16, a_max=30, eps=1e-9) =
+function _ps_snub_default_angle_c(poly, c, df=undef, handedness=1, steps=16, a_max=30, eps=1e-9, verbose=1) =
     let(
         map = _ps_cantellate_df_map(poly, steps=6),
         df_mid = map[0],
@@ -1470,12 +1470,12 @@ function _ps_snub_default_angle_c(poly, c, df=undef, handedness=1, steps=16, a_m
         de = _ps_cantellate_df_from_c_linear(c, df_mid, df_max_eff),
         d_f = is_undef(df) ? de : df
     )
-    _ps_snub_default_angle_df_de(poly, d_f, de, handedness, steps, a_max, eps);
+    _ps_snub_default_angle_df_de(poly, d_f, de, handedness, steps, a_max, eps, verbose);
 
 // Solve default snub parameters with a tiered strategy.
 // Regular -> family representative -> bounded heuristic.
 // Return tuple `[df, angle, c, tier]`.
-function _ps_snub_default_params(poly, handedness=1, eps=1e-9) =
+function _ps_snub_default_params(poly, handedness=1, eps=1e-9, verbose=1) =
     let(
         base = _ps_poly_base(poly),
         verts0 = base[0],
@@ -1505,7 +1505,7 @@ function _ps_snub_default_params(poly, handedness=1, eps=1e-9) =
         edge_reps = (!is_reg && len(edge_reps_all) > 48)
             ? [for (i = [0:1:47]) edge_reps_all[i]]
             : edge_reps_all,
-        reg_best = is_reg ? _ps_snub_default_params_full(poly, handedness, c_steps=reg_c_steps, a_steps=reg_a_steps, c_max=0.15, a_max=25, eps=eps, base=base, edge_reps=edge_reps_all) : undef,
+        reg_best = is_reg ? _ps_snub_default_params_full(poly, handedness, c_steps=reg_c_steps, a_steps=reg_a_steps, c_max=0.15, a_max=25, eps=eps, base=base, edge_reps=edge_reps_all, verbose=verbose) : undef,
         c_vals = is_reg ? [] : [for (i = [1:1:c_steps]) c_max * i / (c_steps + 1)],
         angs = is_reg ? [] : [for (i = [0:1:a_steps]) a_max * i / a_steps],
         cands = is_reg ? [] : [
@@ -1550,7 +1550,7 @@ function _ps_snub_default_params(poly, handedness=1, eps=1e-9) =
         err_a20 = _ps_snub_uniform_error_base(verts0, faces0, edges, edge_faces, face_n, poly0, df_best, de_best, 20, handedness, edge_reps),
         obj_a0 = is_reg ? _ps_snub_obj_regular_from_errors(ev_a0) : _ps_snub_obj_from_errors(ev_a0),
         obj_a20 = is_reg ? _ps_snub_obj_regular_from_errors(ev_a20) : _ps_snub_obj_from_errors(ev_a20),
-        _0 = echo(str(
+        _0 = verbose ? echo(str(
             "snub: default auto tier=", tier,
             " families(f/e/v)=", ff, "/", ef, "/", vf,
             " min_err=", e_min,
@@ -1564,13 +1564,13 @@ function _ps_snub_default_params(poly, handedness=1, eps=1e-9) =
             is_undef(obj_a20) ? "" : str(" obj@angle20=", obj_a20),
             " ev@angle0=", is_undef(ev_a0) ? "undef" : str(ev_a0),
             " ev@angle20=", is_undef(ev_a20) ? "undef" : str(ev_a20)
-        ))
+        )) : 0
     )
     [df_best, a_best, c_best, tier];
 
 // Solve for a c/angle pair by minimizing representative-edge snub uniformity.
 // This avoids full-poly rebuilds in the default path.
-function _ps_snub_default_params_full(poly, handedness=1, c_steps=10, a_steps=12, c_max=0.2, a_max=30, eps=1e-9, base=undef, edge_reps=undef) =
+function _ps_snub_default_params_full(poly, handedness=1, c_steps=10, a_steps=12, c_max=0.2, a_max=30, eps=1e-9, base=undef, edge_reps=undef, verbose=1) =
     let(
         base0 = is_undef(base) ? _ps_poly_base(poly) : base,
         verts0 = base0[0],
@@ -1616,7 +1616,7 @@ function _ps_snub_default_params_full(poly, handedness=1, c_steps=10, a_steps=12
         e_min2 = best[3],
         de_best = _ps_cantellate_df_from_c_linear(c_best, df_mid, df_max_eff),
         df_best = r_best * de_best,
-        _0 = echo(str(
+        _0 = verbose ? echo(str(
             "snub: default param FULL search min_err=", e_min2,
             " c=", c_best,
             " df=", df_best,
@@ -1624,7 +1624,7 @@ function _ps_snub_default_params_full(poly, handedness=1, c_steps=10, a_steps=12
             " r=", r_best,
             " reps=", len(edge_reps_eff),
             " samples(seed/local<=)=", seed_samples, "/", local_samples_bound
-        ))
+        )) : 0
     )
     [df_best, a_best, c_best, e_min2];
 
@@ -1644,7 +1644,7 @@ function _ps_snub_profile_rows(df, angle, c, face_df_by_family=undef) =
 
 // Function: ps_snub_default_profile()
 // Usage:
-//   result = ps_snub_default_profile(poly, handedness=1, eps=1e-9);
+//   result = ps_snub_default_profile(poly, handedness=1, eps=1e-9, verbose=1);
 // Description:
 //   Build a default snub profile for one poly by solving the library's snub
 //   defaults and converting them into profile rows.
@@ -1652,9 +1652,10 @@ function _ps_snub_profile_rows(df, angle, c, face_df_by_family=undef) =
 //   poly = source poly descriptor.
 //   handedness = snub handedness; positive and negative values choose opposite twist directions.
 //   eps = solver tolerance for automatic snub parameter search.
-function ps_snub_default_profile(poly, handedness=1, eps=1e-9) =
+//   verbose = whether to echo calculated defaults and solver diagnostics (`1`, default) or suppress them (`0`).
+function ps_snub_default_profile(poly, handedness=1, eps=1e-9, verbose=1) =
     let(
-        params = _ps_snub_default_params(poly, handedness, eps),
+        params = _ps_snub_default_params(poly, handedness, eps, verbose),
         face_df_by_family = (len(params) > 4) ? params[4] : undef
     )
     _ps_snub_profile_rows(params[0], params[1], params[2], face_df_by_family);
@@ -1663,7 +1664,8 @@ function ps_snub_default_profile(poly, handedness=1, eps=1e-9) =
 // Usage:
 //   result = poly_snub(poly, angle=undef, c=undef, df=undef, de=undef,
 //       handedness=1, eps=1e-8, len_eps=1e-6, profile=undef,
-//       cleanup=false, cleanup_eps=1e-8, style="strict", cap_mode=undef);
+//       cleanup=false, cleanup_eps=1e-8, style="strict", cap_mode=undef,
+//       verbose=1);
 // Description:
 //   Apply the snub operator with optional scalar controls and structured
 //   per-element overrides. If `angle`, `c`, `df`, and `de` are all `undef`,
@@ -1687,6 +1689,7 @@ function ps_snub_default_profile(poly, handedness=1, eps=1e-9) =
 //   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 //   style = `"strict"` or `"planarized"` topology.
 //   cap_mode = vertex-cap realization mode for `style="planarized"`; defaults to `"planar_edge_fraction"` and must be omitted for strict snub.
+//   verbose = whether to echo calculated defaults and solver diagnostics (`1`, default) or suppress them (`0`).
 function poly_snub(
     poly,
     angle=undef,
@@ -1700,21 +1703,22 @@ function poly_snub(
     cleanup=false,
     cleanup_eps=1e-8,
     style="strict",
-    cap_mode=undef
+    cap_mode=undef,
+    verbose=1
 ) =
     let(
         _ = assert(poly_valid(poly, "star_ok"), "snub: requires manifold poly (star_ok)"),
         _style_ok = assert(style == "strict" || style == "planarized", "poly_snub: style must be \"strict\" or \"planarized\""),
         auto_params = (is_undef(c) && is_undef(df) && is_undef(angle) && is_undef(de))
-            ? _ps_snub_default_params(poly, handedness, 1e-9)
+            ? _ps_snub_default_params(poly, handedness, 1e-9, verbose)
             : undef,
         auto_rows = is_undef(auto_params) ? [] : _ps_snub_profile_rows(auto_params[0], auto_params[1], auto_params[2], (len(auto_params) > 4) ? auto_params[4] : undef),
         profile_rows = is_undef(profile) ? auto_rows : concat(auto_rows, profile),
         _pwarn = _ps_override_warn_unsupported(profile_rows, "poly_snub", [["face", ["df", "angle"]], ["vert", ["c", "de", "cap_mode"]]]),
-        _choice = !is_undef(auto_params)
+        _choice = (verbose && !is_undef(auto_params))
             ? echo(str("snub: using auto defaults tier=", auto_params[3], " c=", auto_params[2], " df=", auto_params[0], " angle=", auto_params[1]))
             : 0,
-        _pf = (len(profile_rows) == 0) ? 0
+        _pf = (!verbose || len(profile_rows) == 0) ? 0
             : echo(str("snub: profile face_rows=", ps_profile_count_kind(profile_rows, "face"), " vert_rows=", ps_profile_count_kind(profile_rows, "vert"))),
         cmap = _ps_cantellate_df_map(poly, steps=6),
         df_mid = cmap[0],
@@ -1737,11 +1741,11 @@ function poly_snub(
                     // Keep the fast scalar paths unless de is explicitly provided.
                     // When de is explicit, solve against [df,de] so angle matches built geometry.
                     : (!is_undef(de)
-                        ? _ps_snub_default_angle_df_de(poly, df_base, de_base, handedness)
+                        ? _ps_snub_default_angle_df_de(poly, df_base, de_base, handedness, verbose=verbose)
                         : (!is_undef(c)
-                            ? _ps_snub_default_angle_c(poly, c, df_base, handedness)
-                            : _ps_snub_default_angle_df_de(poly, df_base, df_base, handedness))),
-                _ = echo(str("snub: angle unspecified, default=", a, " (df=", df_base, ", de=", de_base, is_undef(c) ? ")" : str(", c=", c, ")")))
+                            ? _ps_snub_default_angle_c(poly, c, df_base, handedness, verbose=verbose)
+                            : _ps_snub_default_angle_df_de(poly, df_base, df_base, handedness, verbose=verbose))),
+                _ = verbose ? echo(str("snub: angle unspecified, default=", a, " (df=", df_base, ", de=", de_base, is_undef(c) ? ")" : str(", c=", c, ")"))) : 0
               ) a
             : angle
     )
@@ -1944,7 +1948,7 @@ function poly_snub(
         errs = [for (f = faces_oriented) _ps_face_planarity_err(verts, f)],
         max_err = (len(errs) == 0) ? 0 : max(errs),
         bad = [for (e = errs) if (e > eps) e],
-        _0 = (len(bad) > 0)
+        _0 = (verbose && len(bad) > 0)
             ? echo("snub: non-planar faces", len(bad), "max_plane_err", max_err)
             : 0
     )

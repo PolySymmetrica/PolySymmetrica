@@ -20,15 +20,18 @@ poly_snub(
     cleanup = false,
     cleanup_eps = 1e-8,
     style = "strict",
-    cap_mode = undef
+    cap_mode = undef,
+    verbose = 1
 )
 ```
 
 Related helper:
 
 ```scad
-ps_snub_default_profile(poly, handedness=1, eps=1e-9)
+ps_snub_default_profile(poly, handedness=1, eps=1e-9, verbose=1)
 ```
+
+Use `verbose=0` to suppress the default-solving diagnostics.
 
 ## Parameter Semantics
 
@@ -42,6 +45,8 @@ ps_snub_default_profile(poly, handedness=1, eps=1e-9)
 - `profile`: structured per-element overrides (see `profile.md`).
 - `cleanup`: whether to run structural cleanup on the result.
 - `cleanup_eps`: tolerance used by cleanup when enabled.
+- `verbose`: `1` (default) echoes calculated defaults and solver diagnostics;
+  use `0` for quiet batch/test calls.
 - `style`: `"strict"` preserves the historical shared incidence sites;
   `"planarized"` gives each source vertex a separate realized cap loop and
   connector strips. The planarized style is useful when strict vertex faces

@@ -88,7 +88,8 @@ TESTS = [
                 ["vert", "all", ["c", 0.01]]
             ],
             cleanup = true,
-            cleanup_eps = 1e-8
+            cleanup_eps = 1e-8,
+            verbose = 0
         )
     ],
     [

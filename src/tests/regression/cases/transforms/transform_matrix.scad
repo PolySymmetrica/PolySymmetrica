@@ -20,7 +20,7 @@ TESTS = [
     ["dod_chamfer", function() poly_chamfer(dodecahedron())],
     ["ico_cantellate", function() poly_cantellate(icosahedron())],
     ["tet_cantitruncate", function() poly_cantitruncate(tetrahedron())],
-    ["cube_snub", function() poly_snub(hexahedron(), c = 0.06, df = 0.03, angle = 12)],
+    ["cube_snub", function() poly_snub(hexahedron(), c = 0.06, df = 0.03, angle = 12, verbose = 0)],
     ["prism6_dual", function() poly_dual(poly_prism(6))],
     ["prism6_cantellate", function() poly_cantellate(poly_prism(6))],
     ["ap5_2_truncate", function() poly_truncate(poly_antiprism(5, 2), t = 0.18)],
