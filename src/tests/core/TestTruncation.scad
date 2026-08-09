@@ -851,6 +851,61 @@ module test_poly_snub__cube_twist_moves_vertices() {
     assert(max_d > 1e-4, "snub cube: twist moves vertices");
 }
 
+module test_poly_snub__strict_exposes_tetrakis_vertex_cap_nonplanarity() {
+    p = tetrakis_hexahedron();
+    q = poly_snub(p, c=0.1, df=0.1, angle=15);
+    cap_faces = _source_vertex_faces(p, q);
+    err = _ps_faces_max_planarity_err(poly_verts(q), cap_faces);
+
+    assert(err > 1e-4, str("strict snub should expose tetrakis vertex-cap non-planarity err=", err));
+}
+
+module test_poly_snub__strict_exposes_irregular_vertex_cap_nonplanarity() {
+    p = _irregular_valence4_bipyramid();
+    q = poly_snub(p, c=0.1, df=0.1, angle=15);
+    cap_faces = _source_vertex_faces(p, q);
+    err = _ps_faces_max_planarity_err(poly_verts(q), cap_faces);
+
+    assert(err > 1e-4, str("strict snub should expose irregular vertex-cap non-planarity err=", err));
+}
+
+module test_poly_snub__planarized_keeps_tetrakis_vertex_caps_planar() {
+    p = tetrakis_hexahedron();
+    q = poly_snub(p, c=0.1, df=0.1, angle=15, style="planarized");
+    cap_faces = _source_vertex_faces(p, q);
+    err = _ps_faces_max_planarity_err(poly_verts(q), cap_faces);
+
+    assert(err <= 1e-7, str("planarized snub should keep tetrakis vertex caps planar err=", err));
+    assert(poly_valid(q, "star_ok", 1e-7), "planarized tetrakis snub should remain manifold and winding-consistent");
+}
+
+module test_poly_snub__planarized_keeps_irregular_vertex_caps_planar() {
+    p = _irregular_valence4_bipyramid();
+    q = poly_snub(p, c=0.1, df=0.1, angle=15, style="planarized");
+    cap_faces = _source_vertex_faces(p, q);
+    err = _ps_faces_max_planarity_err(poly_verts(q), cap_faces);
+
+    assert(err <= 1e-7, str("planarized snub should keep irregular vertex caps planar err=", err));
+    assert(poly_valid(q, "star_ok", 1e-7), "planarized irregular snub should remain manifold and winding-consistent");
+}
+
+module test_poly_snub__planarized_profile_cap_mode_override() {
+    p = _irregular_valence4_bipyramid();
+    q = poly_snub(
+        p,
+        c=0.1,
+        df=0.1,
+        angle=15,
+        style="planarized",
+        profile=[["vert", "id", 0, ["cap_mode", "centric"]]]
+    );
+    cap_faces = _source_vertex_faces(p, q);
+    err = _ps_faces_max_planarity_err(poly_verts(q), cap_faces);
+
+    assert(err <= 1e-7, str("planarized profile cap_mode should keep caps planar err=", err));
+    assert(poly_valid(q, "star_ok", 1e-7), "planarized profile cap_mode should remain manifold and winding-consistent");
+}
+
 module test__ps_snub_oriented_edge_faces__cube_consistent_handedness() {
     p = hexahedron();
     verts0 = poly_verts(p);
@@ -1057,6 +1112,11 @@ module run_TestTruncation() {
     test_poly_snub__cube_counts();
     test_poly_snub__dodeca_counts();
     test_poly_snub__cube_twist_moves_vertices();
+    test_poly_snub__strict_exposes_tetrakis_vertex_cap_nonplanarity();
+    test_poly_snub__strict_exposes_irregular_vertex_cap_nonplanarity();
+    test_poly_snub__planarized_keeps_tetrakis_vertex_caps_planar();
+    test_poly_snub__planarized_keeps_irregular_vertex_caps_planar();
+    test_poly_snub__planarized_profile_cap_mode_override();
     test__ps_snub_oriented_edge_faces__cube_consistent_handedness();
     test_poly_snub__cube_edge_tris_near_equilateral();
     test_poly_snub__cube_default_global_edges_near_uniform();

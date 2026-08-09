@@ -16,7 +16,11 @@ poly_snub(
     handedness = 1,
     eps = 1e-8,
     len_eps = 1e-6,
-    profile = undef
+    profile = undef,
+    cleanup = false,
+    cleanup_eps = 1e-8,
+    style = "strict",
+    cap_mode = undef
 )
 ```
 
@@ -36,6 +40,15 @@ ps_snub_default_profile(poly, handedness=1, eps=1e-9)
   - If `c` is supplied and `de` is not, then `de` comes from `c`.
 - `handedness`: diagonal split/chirality selector (`>=0` vs `<0`).
 - `profile`: structured per-element overrides (see `profile.md`).
+- `cleanup`: whether to run structural cleanup on the result.
+- `cleanup_eps`: tolerance used by cleanup when enabled.
+- `style`: `"strict"` preserves the historical shared incidence sites;
+  `"planarized"` gives each source vertex a separate realized cap loop and
+  connector strips. The planarized style is useful when strict vertex faces
+  would be non-planar on irregular or valence greater than three sources.
+- `cap_mode`: vertex-cap realization mode for `"planarized"`; defaults to
+  `"planar_edge_fraction"`. It may be overridden per vertex through the
+  profile. Leave it `undef` for strict snub.
 
 Important fallback rules:
 
@@ -57,6 +70,12 @@ Snub is constructed in the standard two-phase style:
    - keep face cycles,
    - split each edge quad into two triangles according to `handedness`,
    - keep vertex cycles.
+
+With `style="planarized"`, the raw face/edge sites remain shared as before,
+but the source-vertex cycles use separate cap sites. Connector quads join each
+raw incidence loop to its realized cap loop. Degenerate connector cycles are
+omitted after point simplification; this is important at endpoints where a
+planar cap happens to coincide with the raw incidence geometry.
 
 Face orientation is normalized with `ps_orient_all_faces_outward(...)`.
 
@@ -92,6 +111,7 @@ This prevents dependence on incidental `edge_faces` ordering and keeps handednes
 
 - face keys: `df`, `angle`
 - vertex keys: `c`, `de`
+- vertex key: `cap_mode` when `style="planarized"`
 
 Example:
 
