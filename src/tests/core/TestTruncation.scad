@@ -889,6 +889,16 @@ module test_poly_snub__planarized_keeps_irregular_vertex_caps_planar() {
     assert(poly_valid(q, "star_ok", 1e-7), "planarized irregular snub should remain manifold and winding-consistent");
 }
 
+module test_poly_snub__planarized_edge_fraction_matches_strict() {
+    p = _irregular_valence4_bipyramid();
+    q_strict = poly_snub(p, c=0.1, df=0.1, angle=15);
+    q_edge = poly_snub(p, c=0.1, df=0.1, angle=15, style="planarized", cap_mode="edge_fraction");
+
+    assert(_max_vertex_diff(q_strict, q_edge) < 1e-7, "planarized edge_fraction should collapse to strict snub points");
+    assert_int_eq(len(poly_verts(q_strict)), len(poly_verts(q_edge)), "planarized edge_fraction should collapse duplicate cap vertices");
+    assert_int_eq(len(poly_faces(q_strict)), len(poly_faces(q_edge)), "planarized edge_fraction should collapse degenerate connector faces");
+}
+
 module test_poly_snub__planarized_profile_cap_mode_override() {
     p = _irregular_valence4_bipyramid();
     q = poly_snub(
@@ -1116,6 +1126,7 @@ module run_TestTruncation() {
     test_poly_snub__strict_exposes_irregular_vertex_cap_nonplanarity();
     test_poly_snub__planarized_keeps_tetrakis_vertex_caps_planar();
     test_poly_snub__planarized_keeps_irregular_vertex_caps_planar();
+    test_poly_snub__planarized_edge_fraction_matches_strict();
     test_poly_snub__planarized_profile_cap_mode_override();
     test__ps_snub_oriented_edge_faces__cube_consistent_handedness();
     test_poly_snub__cube_edge_tris_near_equilateral();
