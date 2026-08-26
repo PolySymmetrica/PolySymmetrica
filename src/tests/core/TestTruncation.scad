@@ -817,7 +817,7 @@ module test__ps_is_regular_base__detects_regular() {
 
 module test_poly_snub__cube_counts() {
     p = hexahedron();
-    q = poly_snub(p);
+    q = poly_snub(p, verbose=0);
     assert_poly_valid(q);
 
     assert_int_eq(len(poly_verts(q)), 24, "snub cube verts count");
@@ -831,7 +831,7 @@ module test_poly_snub__dodeca_counts() {
     p = dodecahedron();
     // Use explicit parameters here to keep test runtime bounded;
     // default-solving behavior is covered by cube default tests.
-    q = poly_snub(p, c=0.07, angle=15);
+    q = poly_snub(p, c=0.07, angle=15, verbose=0);
     assert_poly_valid(q);
 
     assert_int_eq(len(poly_verts(q)), 60, "snub dodeca verts count");
@@ -843,12 +843,78 @@ module test_poly_snub__dodeca_counts() {
 
 module test_poly_snub__cube_twist_moves_vertices() {
     p = hexahedron();
-    q0 = poly_snub(p, angle=0, c=0.2);
-    q1 = poly_snub(p, angle=20, c=0.2);
+    q0 = poly_snub(p, angle=0, c=0.2, verbose=0);
+    q1 = poly_snub(p, angle=20, c=0.2, verbose=0);
     verts0 = poly_verts(q0);
     verts1 = poly_verts(q1);
     max_d = max([for (i = [0:1:len(verts0)-1]) norm(verts1[i] - verts0[i])]);
     assert(max_d > 1e-4, "snub cube: twist moves vertices");
+}
+
+module test_poly_snub__strict_exposes_tetrakis_vertex_cap_nonplanarity() {
+    p = tetrakis_hexahedron();
+    q = poly_snub(p, c=0.1, df=0.1, angle=15, verbose=0);
+    cap_faces = _source_vertex_faces(p, q);
+    err = _ps_faces_max_planarity_err(poly_verts(q), cap_faces);
+
+    assert(err > 1e-4, str("strict snub should expose tetrakis vertex-cap non-planarity err=", err));
+}
+
+module test_poly_snub__strict_exposes_irregular_vertex_cap_nonplanarity() {
+    p = _irregular_valence4_bipyramid();
+    q = poly_snub(p, c=0.1, df=0.1, angle=15, verbose=0);
+    cap_faces = _source_vertex_faces(p, q);
+    err = _ps_faces_max_planarity_err(poly_verts(q), cap_faces);
+
+    assert(err > 1e-4, str("strict snub should expose irregular vertex-cap non-planarity err=", err));
+}
+
+module test_poly_snub__planarized_keeps_tetrakis_vertex_caps_planar() {
+    p = tetrakis_hexahedron();
+    q = poly_snub(p, c=0.1, df=0.1, angle=15, style="planarized", verbose=0);
+    cap_faces = _source_vertex_faces(p, q);
+    err = _ps_faces_max_planarity_err(poly_verts(q), cap_faces);
+
+    assert(err <= 1e-7, str("planarized snub should keep tetrakis vertex caps planar err=", err));
+    assert(poly_valid(q, "star_ok", 1e-7), "planarized tetrakis snub should remain manifold and winding-consistent");
+}
+
+module test_poly_snub__planarized_keeps_irregular_vertex_caps_planar() {
+    p = _irregular_valence4_bipyramid();
+    q = poly_snub(p, c=0.1, df=0.1, angle=15, style="planarized", verbose=0);
+    cap_faces = _source_vertex_faces(p, q);
+    err = _ps_faces_max_planarity_err(poly_verts(q), cap_faces);
+
+    assert(err <= 1e-7, str("planarized snub should keep irregular vertex caps planar err=", err));
+    assert(poly_valid(q, "star_ok", 1e-7), "planarized irregular snub should remain manifold and winding-consistent");
+}
+
+module test_poly_snub__planarized_edge_fraction_matches_strict() {
+    p = _irregular_valence4_bipyramid();
+    q_strict = poly_snub(p, c=0.1, df=0.1, angle=15, verbose=0);
+    q_edge = poly_snub(p, c=0.1, df=0.1, angle=15, style="planarized", cap_mode="edge_fraction", verbose=0);
+
+    assert(_max_vertex_diff(q_strict, q_edge) < 1e-7, "planarized edge_fraction should collapse to strict snub points");
+    assert_int_eq(len(poly_verts(q_strict)), len(poly_verts(q_edge)), "planarized edge_fraction should collapse duplicate cap vertices");
+    assert_int_eq(len(poly_faces(q_strict)), len(poly_faces(q_edge)), "planarized edge_fraction should collapse degenerate connector faces");
+}
+
+module test_poly_snub__planarized_profile_cap_mode_override() {
+    p = _irregular_valence4_bipyramid();
+    q = poly_snub(
+        p,
+        c=0.1,
+        df=0.1,
+        angle=15,
+        style="planarized",
+        verbose=0,
+        profile=[["vert", "id", 0, ["cap_mode", "centric"]]]
+    );
+    cap_faces = _source_vertex_faces(p, q);
+    err = _ps_faces_max_planarity_err(poly_verts(q), cap_faces);
+
+    assert(err <= 1e-7, str("planarized profile cap_mode should keep caps planar err=", err));
+    assert(poly_valid(q, "star_ok", 1e-7), "planarized profile cap_mode should remain manifold and winding-consistent");
 }
 
 module test__ps_snub_oriented_edge_faces__cube_consistent_handedness() {
@@ -887,7 +953,7 @@ module test__ps_snub_oriented_edge_faces__cube_consistent_handedness() {
 
 module test_poly_snub__cube_edge_tris_near_equilateral() {
     p = hexahedron();
-    q = poly_snub(p);
+    q = poly_snub(p, verbose=0);
     verts = poly_verts(q);
     faces = poly_faces(q);
     edges = poly_edges(q);
@@ -915,60 +981,60 @@ module test_poly_snub__cube_edge_tris_near_equilateral() {
 
 module test_poly_snub__cube_default_global_edges_near_uniform() {
     p = hexahedron();
-    q = poly_snub(p);
+    q = poly_snub(p, verbose=0);
     spread = _edge_rel_spread(q);
     assert(spread < 0.02, str("snub cube default: global edge spread <2% got=", spread));
 }
 
 module test_poly_snub__cube_default_params_reasonable() {
     p = hexahedron();
-    params = _ps_snub_default_params(p);
+    params = _ps_snub_default_params(p, verbose=0);
     assert(params[3] == "regular", "snub cube: regular-tier default");
     assert(params[2] > 0.03 && params[2] < 0.12, str("snub cube: c in expected range got=", params[2]));
     assert(params[1] > 8 && params[1] < 25, str("snub cube: angle in expected range got=", params[1]));
 }
 
 module test_poly_snub__fixed_c_angle_solver_nonzero() {
-    a = _ps_snub_default_angle_c(hexahedron(), 0.07, steps=8, a_max=30);
+    a = _ps_snub_default_angle_c(hexahedron(), 0.07, steps=8, a_max=30, verbose=0);
     assert(a > 8 && a < 25, str("snub cube fixed-c angle should be nonzero got=", a));
 }
 
 module test_poly_snub__fixed_c_auto_beats_zero_angle() {
     p = hexahedron();
-    q0 = poly_snub(p, c=0.07, angle=0);
-    q1 = poly_snub(p, c=0.07);
+    q0 = poly_snub(p, c=0.07, angle=0, verbose=0);
+    q1 = poly_snub(p, c=0.07, verbose=0);
     assert(_edge_rel_spread(q1) < _edge_rel_spread(q0), "snub cube fixed-c auto-angle improves edge uniformity vs angle=0");
 }
 
 module test_poly_snub__default_solver_returns_structured_overrides() {
     p = hexahedron();
-    rows = ps_snub_default_profile(p);
-    q0 = poly_snub(p);
-    q1 = poly_snub(p, profile=rows);
+    rows = ps_snub_default_profile(p, verbose=0);
+    q0 = poly_snub(p, verbose=0);
+    q1 = poly_snub(p, profile=rows, verbose=0);
     assert(len(rows) > 0, "snub structured defaults should return rows");
     assert(_max_vertex_diff(q0, q1) < 1e-7, "snub structured defaults should recreate auto result");
 }
 
 module test_poly_snub__profile_face_angle_overrides_scalar() {
     p = hexahedron();
-    q0 = poly_snub(p, angle=0, c=0.07, df=0.05);
-    q1 = poly_snub(p, angle=0, c=0.07, df=0.05, profile=[["face", "family", 0, ["angle", 18]]]);
-    qx = poly_snub(p, angle=18, c=0.07, df=0.05);
+    q0 = poly_snub(p, angle=0, c=0.07, df=0.05, verbose=0);
+    q1 = poly_snub(p, angle=0, c=0.07, df=0.05, profile=[["face", "family", 0, ["angle", 18]]], verbose=0);
+    qx = poly_snub(p, angle=18, c=0.07, df=0.05, verbose=0);
     assert(_max_vertex_diff(q1, qx) < 1e-7, "snub profile face angle should match explicit angle");
     assert(_max_vertex_diff(q1, q0) > 1e-4, "snub profile face angle should override scalar angle");
 }
 
 module test_poly_snub__profile_face_df_overrides_scalar() {
     p = hexahedron();
-    q1 = poly_snub(p, angle=15, c=0.07, df=0.02, profile=[["face", "family", 0, ["df", 0.06]]]);
-    qx = poly_snub(p, angle=15, c=0.07, df=0.06);
+    q1 = poly_snub(p, angle=15, c=0.07, df=0.02, profile=[["face", "family", 0, ["df", 0.06]]], verbose=0);
+    qx = poly_snub(p, angle=15, c=0.07, df=0.06, verbose=0);
     assert(_max_vertex_diff(q1, qx) < 1e-7, "snub profile face df should match explicit df");
 }
 
 module test_poly_snub__profile_vert_c_overrides_scalar() {
     p = hexahedron();
-    q1 = poly_snub(p, angle=15, c=0.02, df=0.05, profile=[["vert", "family", 0, ["c", 0.08]]]);
-    qx = poly_snub(p, angle=15, c=0.08, df=0.05);
+    q1 = poly_snub(p, angle=15, c=0.02, df=0.05, profile=[["vert", "family", 0, ["c", 0.08]]], verbose=0);
+    qx = poly_snub(p, angle=15, c=0.08, df=0.05, verbose=0);
     assert(_max_vertex_diff(q1, qx) < 1e-7, "snub profile vert c should match explicit c");
 }
 
@@ -976,11 +1042,11 @@ module test_poly_snub__profile_vert_c_overrides_scalar() {
 // This is intentionally non-failing and opt-in to avoid slowing normal CI/dev runs.
 module perf_snub__defaults_smoke() {
     echo("PERF_SNUB: start cube default params");
-    p0 = _ps_snub_default_params(hexahedron());
+    p0 = _ps_snub_default_params(hexahedron(), verbose=0);
     echo("PERF_SNUB: done cube default params", p0);
 
     echo("PERF_SNUB: start dodeca default params");
-    p1 = _ps_snub_default_params(dodecahedron());
+    p1 = _ps_snub_default_params(dodecahedron(), verbose=0);
     echo("PERF_SNUB: done dodeca default params", p1);
 }
 
@@ -1057,6 +1123,12 @@ module run_TestTruncation() {
     test_poly_snub__cube_counts();
     test_poly_snub__dodeca_counts();
     test_poly_snub__cube_twist_moves_vertices();
+    test_poly_snub__strict_exposes_tetrakis_vertex_cap_nonplanarity();
+    test_poly_snub__strict_exposes_irregular_vertex_cap_nonplanarity();
+    test_poly_snub__planarized_keeps_tetrakis_vertex_caps_planar();
+    test_poly_snub__planarized_keeps_irregular_vertex_caps_planar();
+    test_poly_snub__planarized_edge_fraction_matches_strict();
+    test_poly_snub__planarized_profile_cap_mode_override();
     test__ps_snub_oriented_edge_faces__cube_consistent_handedness();
     test_poly_snub__cube_edge_tris_near_equilateral();
     test_poly_snub__cube_default_global_edges_near_uniform();

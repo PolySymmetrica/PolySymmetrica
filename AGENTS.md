@@ -29,7 +29,8 @@ and move feature-specific design notes to `docs/`.
   `src/tests/run_negative_all.sh`
 - Use `openscad-nightly`, though it's snap-sandboxed, so on this machine, use the watcher
   bridge in `.tmp/openscad_nightly_render.spec` and inspect it with:
-  `.tmp/openscad_nightly_status.sh` - don't vary the commands unnecessarily, to avoid repeated permission requests.
+  `.tmp/openscad_nightly_status.sh` - don't vary the commands unnecessarily, to avoid repeated
+  permission requests. You have permission to edit that .spec file, and any .scad file under .tmp/.
 
 Do not broadly kill `openscad-nightly`; the user may have an interactive session
 open. Only target exact non-interactive commands started for the current task.
@@ -52,7 +53,7 @@ the repo root. Do not commit `.tmp/` artifacts.
   at this time, so better to check and fix usages than add clutter.
 - Openscad is very weakly typed so high functional test coverage must be maintained.
 - Avoid "fallback" defensive coding and unwarranted defaults, which can lead to inexplicable behaviour. In cases of invalid use,
-  try to (in decrease order of preference) a) fix the usage site, b) assert, c) ok, maybe a default action. This is a higher priority 
+  try to (in decrease order of preference) a) fix the usage site, b) assert, c) ok, maybe a default action. This is a higher priority
   for the lower level internals; high-level user-facing code can be more generous.
 
 ## Data Model
@@ -118,4 +119,4 @@ the repo root. Do not commit `.tmp/` artifacts.
 - Never revert user changes unless explicitly asked. Work with dirty trees and
   keep edits scoped to the current task.
 - If GitHub access fails due to auth problems, just pause to let the user remediate - don't
-  waste tokens trying to work around it. Advise that client restart may work.
+  waste tokens trying to work around it. API access generally works, `gh` has sandbox issues.

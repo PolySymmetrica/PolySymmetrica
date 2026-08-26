@@ -152,7 +152,7 @@ It demonstrates:
 
 Snub now has a structured default solver output:
 
-- `ps_snub_default_profile(poly, handedness=1, eps=1e-9)`
+- `ps_snub_default_profile(poly, handedness=1, eps=1e-9, verbose=1)`
 
 This returns override rows directly (face/vert scopes), so it can be passed
 straight into `poly_snub`:

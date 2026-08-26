@@ -799,17 +799,17 @@ function _ps_cantellate_df_from_c(poly, c, df_max=undef, steps=16, family_edge_i
 function _ps_cantellate_face_site_idx(face_offsets, fi, pos) =
     face_offsets[fi] + pos;
 
-function _ps_cantellate_cap_site_idx(face_offsets, cap_site_offset, fi, pos) =
+function _ps_vertex_incidence_cap_site_idx(face_offsets, cap_site_offset, fi, pos) =
     cap_site_offset + face_offsets[fi] + pos;
 
-function _ps_cantellate_vertex_raw_pts(face_pts, faces0, fan_faces, vi) =
+function _ps_vertex_incidence_raw_pts(face_pts, faces0, fan_faces, vi) =
     [
         for (fi = fan_faces)
             let(pos = _ps_index_of(faces0[fi], vi))
                 face_pts[fi][pos]
     ];
 
-function _ps_cantellate_vertex_ray_pts(verts0, faces0, face_pts, face_n, fan_faces, vi, eps) =
+function _ps_vertex_incidence_ray_pts(verts0, faces0, face_pts, face_n, fan_faces, vi, eps) =
     [
         for (fi = fan_faces)
             let(
@@ -819,27 +819,27 @@ function _ps_cantellate_vertex_ray_pts(verts0, faces0, face_pts, face_n, fan_fac
             (norm(raw_pt - verts0[vi]) <= eps) ? (verts0[vi] + face_n[fi]) : raw_pt
     ];
 
-function _ps_cantellate_raw_pts_at_vertex(vertex_pt, raw_pts, eps) =
+function _ps_vertex_incidence_raw_pts_at_vertex(vertex_pt, raw_pts, eps) =
     max([for (p = raw_pts) norm(p - vertex_pt)]) <= eps;
 
-function _ps_cantellate_distinct_points_count(pts, eps, acc=[], i=0) =
+function _ps_vertex_incidence_distinct_points_count(pts, eps, acc=[], i=0) =
     (i >= len(pts)) ? len(acc) :
     let(p = pts[i])
     (_ps_find_point(acc, p, eps) >= 0)
-        ? _ps_cantellate_distinct_points_count(pts, eps, acc, i + 1)
-        : _ps_cantellate_distinct_points_count(pts, eps, concat(acc, [p]), i + 1);
+        ? _ps_vertex_incidence_distinct_points_count(pts, eps, acc, i + 1)
+        : _ps_vertex_incidence_distinct_points_count(pts, eps, concat(acc, [p]), i + 1);
 
-function _ps_cantellate_cap_active_by_vertex(verts0, faces0, face_pts, edges, edge_faces, poly0, eps) =
+function _ps_vertex_incidence_cap_active_by_vertex(verts0, faces0, face_pts, edges, edge_faces, poly0, eps) =
     [
         for (vi = [0:1:len(verts0)-1])
             let(
                 fan_faces = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)),
-                raw_pts = _ps_cantellate_vertex_raw_pts(face_pts, faces0, fan_faces, vi)
+                raw_pts = _ps_vertex_incidence_raw_pts(face_pts, faces0, fan_faces, vi)
             )
-            _ps_cantellate_distinct_points_count(raw_pts, eps) >= 3
+            _ps_vertex_incidence_distinct_points_count(raw_pts, eps) >= 3
     ];
 
-function _ps_cantellate_vertex_plane_pts(vertex_pt, raw_pts, ray_pts, eps) =
+function _ps_vertex_incidence_plane_pts(vertex_pt, raw_pts, ray_pts, eps) =
     let(
         nonzero_offsets = [for (p = raw_pts) let(d = norm(p - vertex_pt)) if (d > eps) d],
         offset_scale = (len(nonzero_offsets) == 0) ? 1 : (ps_sum(nonzero_offsets) / len(nonzero_offsets))
@@ -856,23 +856,23 @@ function _ps_cantellate_vertex_plane_pts(vertex_pt, raw_pts, ray_pts, eps) =
                 : raw_pt
     ];
 
-function _ps_cantellate_cap_pts_by_vertex(verts0, faces0, face_pts, face_n, edges, edge_faces, poly0, cap_mode_by_vert, poly_center, eps) =
+function _ps_vertex_incidence_cap_pts_by_vertex(verts0, faces0, face_pts, face_n, edges, edge_faces, poly0, cap_mode_by_vert, poly_center, eps) =
     [
         for (vi = [0:1:len(verts0)-1])
             let(
                 fan_faces = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)),
-                raw_pts = _ps_cantellate_vertex_raw_pts(face_pts, faces0, fan_faces, vi),
-                ray_pts = _ps_cantellate_vertex_ray_pts(verts0, faces0, face_pts, face_n, fan_faces, vi, eps),
-                plane_pts = _ps_cantellate_vertex_plane_pts(verts0[vi], raw_pts, ray_pts, eps)
+                raw_pts = _ps_vertex_incidence_raw_pts(face_pts, faces0, fan_faces, vi),
+                ray_pts = _ps_vertex_incidence_ray_pts(verts0, faces0, face_pts, face_n, fan_faces, vi, eps),
+                plane_pts = _ps_vertex_incidence_plane_pts(verts0[vi], raw_pts, ray_pts, eps)
             )
-            _ps_cantellate_raw_pts_at_vertex(verts0[vi], raw_pts, eps)
+            _ps_vertex_incidence_raw_pts_at_vertex(verts0[vi], raw_pts, eps)
                 ? raw_pts
                 : (cap_mode_by_vert[vi] == "edge_fraction")
                     ? raw_pts
                     : _ps_vertex_figure_points_from_raw_on_rays(verts0[vi], plane_pts, ray_pts, cap_mode_by_vert[vi], poly_center, eps)
     ];
 
-function _ps_cantellate_cap_pts_by_face(verts0, faces0, edges, edge_faces, poly0, cap_pts_by_vertex) =
+function _ps_vertex_incidence_cap_pts_by_face(verts0, faces0, edges, edge_faces, poly0, cap_pts_by_vertex) =
     [
         for (fi = [0:1:len(faces0)-1])
             [
@@ -885,7 +885,7 @@ function _ps_cantellate_cap_pts_by_face(verts0, faces0, edges, edge_faces, poly0
             ]
     ];
 
-function _ps_cantellate_vertex_connector_cycles(verts0, faces0, edges, edge_faces, poly0, face_offsets, cap_site_offset, cap_active_by_vertex) =
+function _ps_vertex_incidence_connector_cycles(verts0, faces0, edges, edge_faces, poly0, face_offsets, cap_site_offset, cap_active_by_vertex) =
     [
         for (vi = [0:1:len(verts0)-1])
             let(
@@ -903,8 +903,8 @@ function _ps_cantellate_vertex_connector_cycles(verts0, faces0, edges, edge_face
                 [
                     [1, _ps_cantellate_face_site_idx(face_offsets, fi0, pos0)],
                     [1, _ps_cantellate_face_site_idx(face_offsets, fi1, pos1)],
-                    [1, _ps_cantellate_cap_site_idx(face_offsets, cap_site_offset, fi1, pos1)],
-                    [1, _ps_cantellate_cap_site_idx(face_offsets, cap_site_offset, fi0, pos0)]
+                    [1, _ps_vertex_incidence_cap_site_idx(face_offsets, cap_site_offset, fi1, pos1)],
+                    [1, _ps_vertex_incidence_cap_site_idx(face_offsets, cap_site_offset, fi0, pos0)]
                 ]
     ];
 
@@ -1019,13 +1019,13 @@ function poly_cantellate(
         face_pts_flat = [for (fi = [0:1:len(faces0)-1]) for (p = face_pts[fi]) p],
         cap_site_offset = len(face_pts_flat),
         cap_active_by_vertex = (style == "planarized")
-            ? _ps_cantellate_cap_active_by_vertex(verts0, faces0, face_pts, edges, edge_faces, poly0, eps)
+            ? _ps_vertex_incidence_cap_active_by_vertex(verts0, faces0, face_pts, edges, edge_faces, poly0, eps)
             : undef,
         cap_pts_by_vertex = (style == "planarized")
-            ? _ps_cantellate_cap_pts_by_vertex(verts0, faces0, face_pts, face_n, edges, edge_faces, poly0, cap_mode_by_vert, v_sum(verts0) / len(verts0), eps)
+            ? _ps_vertex_incidence_cap_pts_by_vertex(verts0, faces0, face_pts, face_n, edges, edge_faces, poly0, cap_mode_by_vert, v_sum(verts0) / len(verts0), eps)
             : undef,
         cap_pts = (style == "planarized")
-            ? _ps_cantellate_cap_pts_by_face(verts0, faces0, edges, edge_faces, poly0, cap_pts_by_vertex)
+            ? _ps_vertex_incidence_cap_pts_by_face(verts0, faces0, edges, edge_faces, poly0, cap_pts_by_vertex)
             : undef,
         cap_pts_flat = (style == "planarized")
             ? [for (fi = [0:1:len(faces0)-1]) for (p = cap_pts[fi]) p]
@@ -1073,12 +1073,12 @@ function poly_cantellate(
                         for (fi = fc)
                             let(pos = _ps_index_of(faces0[fi], vi))
                                 [1, (style == "planarized")
-                                    ? _ps_cantellate_cap_site_idx(face_offsets, cap_site_offset, fi, pos)
+                                    ? _ps_vertex_incidence_cap_site_idx(face_offsets, cap_site_offset, fi, pos)
                                     : _ps_cantellate_face_site_idx(face_offsets, fi, pos)]
                     ]
         ],
         connector_cycles = (style == "planarized")
-            ? _ps_cantellate_vertex_connector_cycles(verts0, faces0, edges, edge_faces, poly0, face_offsets, cap_site_offset, cap_active_by_vertex)
+            ? _ps_vertex_incidence_connector_cycles(verts0, faces0, edges, edge_faces, poly0, face_offsets, cap_site_offset, cap_active_by_vertex)
             : [],
         cycles_all = concat(face_cycles, edge_cycles, connector_cycles, vert_cycles)
     )
@@ -1422,7 +1422,7 @@ function _ps_family_id_for_index(idx, fams) =
 function _ps_family_ids_from_fams(n, fams) =
     [for (i = [0:1:n-1]) _ps_family_id_for_index(i, fams)];
 
-function _ps_snub_default_angle_df_de(poly, d_f, d_e, handedness=1, steps=60, a_max=35, eps=1e-9) =
+function _ps_snub_default_angle_df_de(poly, d_f, d_e, handedness=1, steps=60, a_max=35, eps=1e-9, verbose=1) =
     let(
         base = _ps_poly_base(poly),
         verts0 = base[0],
@@ -1450,19 +1450,19 @@ function _ps_snub_default_angle_df_de(poly, d_f, d_e, handedness=1, steps=60, a_
         idx20 = [for (i = [0:1:len(cands)-1]) if (abs(cands[i][0] - 20) <= 1e-6) i],
         a0 = cands[0][1],
         a20 = (len(idx20) > 0) ? cands[idx20[0]][1] : undef,
-        _0 = echo(str(
+        _0 = verbose ? echo(str(
             "snub: angle solve (fixed df/de) min_err=", e_min,
             " at angle=", cands[idx][0],
             " (df=", d_f, ", de=", d_e, ")",
             " reps=", len(edge_reps),
             " err@angle0=", a0,
             is_undef(a20) ? "" : str(" err@angle20=", a20)
-        ))
+        )) : 0
     )
     cands[idx][0];
 
 // Solve angle for fixed c using representative-edge objective.
-function _ps_snub_default_angle_c(poly, c, df=undef, handedness=1, steps=16, a_max=30, eps=1e-9) =
+function _ps_snub_default_angle_c(poly, c, df=undef, handedness=1, steps=16, a_max=30, eps=1e-9, verbose=1) =
     let(
         map = _ps_cantellate_df_map(poly, steps=6),
         df_mid = map[0],
@@ -1470,12 +1470,12 @@ function _ps_snub_default_angle_c(poly, c, df=undef, handedness=1, steps=16, a_m
         de = _ps_cantellate_df_from_c_linear(c, df_mid, df_max_eff),
         d_f = is_undef(df) ? de : df
     )
-    _ps_snub_default_angle_df_de(poly, d_f, de, handedness, steps, a_max, eps);
+    _ps_snub_default_angle_df_de(poly, d_f, de, handedness, steps, a_max, eps, verbose);
 
 // Solve default snub parameters with a tiered strategy.
 // Regular -> family representative -> bounded heuristic.
 // Return tuple `[df, angle, c, tier]`.
-function _ps_snub_default_params(poly, handedness=1, eps=1e-9) =
+function _ps_snub_default_params(poly, handedness=1, eps=1e-9, verbose=1) =
     let(
         base = _ps_poly_base(poly),
         verts0 = base[0],
@@ -1505,7 +1505,7 @@ function _ps_snub_default_params(poly, handedness=1, eps=1e-9) =
         edge_reps = (!is_reg && len(edge_reps_all) > 48)
             ? [for (i = [0:1:47]) edge_reps_all[i]]
             : edge_reps_all,
-        reg_best = is_reg ? _ps_snub_default_params_full(poly, handedness, c_steps=reg_c_steps, a_steps=reg_a_steps, c_max=0.15, a_max=25, eps=eps, base=base, edge_reps=edge_reps_all) : undef,
+        reg_best = is_reg ? _ps_snub_default_params_full(poly, handedness, c_steps=reg_c_steps, a_steps=reg_a_steps, c_max=0.15, a_max=25, eps=eps, base=base, edge_reps=edge_reps_all, verbose=verbose) : undef,
         c_vals = is_reg ? [] : [for (i = [1:1:c_steps]) c_max * i / (c_steps + 1)],
         angs = is_reg ? [] : [for (i = [0:1:a_steps]) a_max * i / a_steps],
         cands = is_reg ? [] : [
@@ -1550,7 +1550,7 @@ function _ps_snub_default_params(poly, handedness=1, eps=1e-9) =
         err_a20 = _ps_snub_uniform_error_base(verts0, faces0, edges, edge_faces, face_n, poly0, df_best, de_best, 20, handedness, edge_reps),
         obj_a0 = is_reg ? _ps_snub_obj_regular_from_errors(ev_a0) : _ps_snub_obj_from_errors(ev_a0),
         obj_a20 = is_reg ? _ps_snub_obj_regular_from_errors(ev_a20) : _ps_snub_obj_from_errors(ev_a20),
-        _0 = echo(str(
+        _0 = verbose ? echo(str(
             "snub: default auto tier=", tier,
             " families(f/e/v)=", ff, "/", ef, "/", vf,
             " min_err=", e_min,
@@ -1564,13 +1564,13 @@ function _ps_snub_default_params(poly, handedness=1, eps=1e-9) =
             is_undef(obj_a20) ? "" : str(" obj@angle20=", obj_a20),
             " ev@angle0=", is_undef(ev_a0) ? "undef" : str(ev_a0),
             " ev@angle20=", is_undef(ev_a20) ? "undef" : str(ev_a20)
-        ))
+        )) : 0
     )
     [df_best, a_best, c_best, tier];
 
 // Solve for a c/angle pair by minimizing representative-edge snub uniformity.
 // This avoids full-poly rebuilds in the default path.
-function _ps_snub_default_params_full(poly, handedness=1, c_steps=10, a_steps=12, c_max=0.2, a_max=30, eps=1e-9, base=undef, edge_reps=undef) =
+function _ps_snub_default_params_full(poly, handedness=1, c_steps=10, a_steps=12, c_max=0.2, a_max=30, eps=1e-9, base=undef, edge_reps=undef, verbose=1) =
     let(
         base0 = is_undef(base) ? _ps_poly_base(poly) : base,
         verts0 = base0[0],
@@ -1616,7 +1616,7 @@ function _ps_snub_default_params_full(poly, handedness=1, c_steps=10, a_steps=12
         e_min2 = best[3],
         de_best = _ps_cantellate_df_from_c_linear(c_best, df_mid, df_max_eff),
         df_best = r_best * de_best,
-        _0 = echo(str(
+        _0 = verbose ? echo(str(
             "snub: default param FULL search min_err=", e_min2,
             " c=", c_best,
             " df=", df_best,
@@ -1624,7 +1624,7 @@ function _ps_snub_default_params_full(poly, handedness=1, c_steps=10, a_steps=12
             " r=", r_best,
             " reps=", len(edge_reps_eff),
             " samples(seed/local<=)=", seed_samples, "/", local_samples_bound
-        ))
+        )) : 0
     )
     [df_best, a_best, c_best, e_min2];
 
@@ -1644,7 +1644,7 @@ function _ps_snub_profile_rows(df, angle, c, face_df_by_family=undef) =
 
 // Function: ps_snub_default_profile()
 // Usage:
-//   result = ps_snub_default_profile(poly, handedness=1, eps=1e-9);
+//   result = ps_snub_default_profile(poly, handedness=1, eps=1e-9, verbose=1);
 // Description:
 //   Build a default snub profile for one poly by solving the library's snub
 //   defaults and converting them into profile rows.
@@ -1652,9 +1652,10 @@ function _ps_snub_profile_rows(df, angle, c, face_df_by_family=undef) =
 //   poly = source poly descriptor.
 //   handedness = snub handedness; positive and negative values choose opposite twist directions.
 //   eps = solver tolerance for automatic snub parameter search.
-function ps_snub_default_profile(poly, handedness=1, eps=1e-9) =
+//   verbose = whether to echo calculated defaults and solver diagnostics (`1`, default) or suppress them (`0`).
+function ps_snub_default_profile(poly, handedness=1, eps=1e-9, verbose=1) =
     let(
-        params = _ps_snub_default_params(poly, handedness, eps),
+        params = _ps_snub_default_params(poly, handedness, eps, verbose),
         face_df_by_family = (len(params) > 4) ? params[4] : undef
     )
     _ps_snub_profile_rows(params[0], params[1], params[2], face_df_by_family);
@@ -1663,12 +1664,17 @@ function ps_snub_default_profile(poly, handedness=1, eps=1e-9) =
 // Usage:
 //   result = poly_snub(poly, angle=undef, c=undef, df=undef, de=undef,
 //       handedness=1, eps=1e-8, len_eps=1e-6, profile=undef,
-//       cleanup=false, cleanup_eps=1e-8);
+//       cleanup=false, cleanup_eps=1e-8, style="strict", cap_mode=undef,
+//       verbose=1);
 // Description:
 //   Apply the snub operator with optional scalar controls and structured
 //   per-element overrides. If `angle`, `c`, `df`, and `de` are all `undef`,
 //   automatic defaults are solved and converted into profile rows before any
 //   explicit profile rows, so explicit rows still win.
+//   `style="strict"` preserves the historical shared-incidence topology;
+//   vertex faces may be non-planar for irregular or valence > 3 source vertices.
+//   `style="planarized"` retains the raw face and edge sites, then adds
+//   separate planarized vertex-cap sites and connector strips.
 // Arguments:
 //   poly = source poly descriptor.
 //   angle = explicit face-local twist angle in degrees; when `undef`, an angle is solved from the other controls.
@@ -1678,9 +1684,12 @@ function ps_snub_default_profile(poly, handedness=1, eps=1e-9) =
 //   handedness = snub handedness; positive and negative values choose opposite twist directions.
 //   eps = geometric tolerance for transform construction.
 //   len_eps = point-merging tolerance for generated vertices.
-//   profile = optional face rows supporting `df`/`angle` and vertex rows supporting `c`/`de`; explicit rows override automatic defaults.
+//   profile = optional face rows supporting `df`/`angle` and vertex rows supporting `c`/`de`/`cap_mode`; explicit rows override automatic defaults.
 //   cleanup = whether to run structural cleanup on the result.
 //   cleanup_eps = cleanup tolerance used when `cleanup=true`.
+//   style = `"strict"` or `"planarized"` topology.
+//   cap_mode = vertex-cap realization mode for `style="planarized"`; defaults to `"planar_edge_fraction"` and must be omitted for strict snub.
+//   verbose = whether to echo calculated defaults and solver diagnostics (`1`, default) or suppress them (`0`).
 function poly_snub(
     poly,
     angle=undef,
@@ -1692,20 +1701,24 @@ function poly_snub(
     len_eps=1e-6,
     profile=undef,
     cleanup=false,
-    cleanup_eps=1e-8
+    cleanup_eps=1e-8,
+    style="strict",
+    cap_mode=undef,
+    verbose=1
 ) =
     let(
         _ = assert(poly_valid(poly, "star_ok"), "snub: requires manifold poly (star_ok)"),
+        _style_ok = assert(style == "strict" || style == "planarized", "poly_snub: style must be \"strict\" or \"planarized\""),
         auto_params = (is_undef(c) && is_undef(df) && is_undef(angle) && is_undef(de))
-            ? _ps_snub_default_params(poly, handedness, 1e-9)
+            ? _ps_snub_default_params(poly, handedness, 1e-9, verbose)
             : undef,
         auto_rows = is_undef(auto_params) ? [] : _ps_snub_profile_rows(auto_params[0], auto_params[1], auto_params[2], (len(auto_params) > 4) ? auto_params[4] : undef),
         profile_rows = is_undef(profile) ? auto_rows : concat(auto_rows, profile),
-        _pwarn = _ps_override_warn_unsupported(profile_rows, "poly_snub", [["face", ["df", "angle"]], ["vert", ["c", "de"]]]),
-        _choice = !is_undef(auto_params)
+        _pwarn = _ps_override_warn_unsupported(profile_rows, "poly_snub", [["face", ["df", "angle"]], ["vert", ["c", "de", "cap_mode"]]]),
+        _choice = (verbose && !is_undef(auto_params))
             ? echo(str("snub: using auto defaults tier=", auto_params[3], " c=", auto_params[2], " df=", auto_params[0], " angle=", auto_params[1]))
             : 0,
-        _pf = (len(profile_rows) == 0) ? 0
+        _pf = (!verbose || len(profile_rows) == 0) ? 0
             : echo(str("snub: profile face_rows=", ps_profile_count_kind(profile_rows, "face"), " vert_rows=", ps_profile_count_kind(profile_rows, "vert"))),
         cmap = _ps_cantellate_df_map(poly, steps=6),
         df_mid = cmap[0],
@@ -1728,11 +1741,11 @@ function poly_snub(
                     // Keep the fast scalar paths unless de is explicitly provided.
                     // When de is explicit, solve against [df,de] so angle matches built geometry.
                     : (!is_undef(de)
-                        ? _ps_snub_default_angle_df_de(poly, df_base, de_base, handedness)
+                        ? _ps_snub_default_angle_df_de(poly, df_base, de_base, handedness, verbose=verbose)
                         : (!is_undef(c)
-                            ? _ps_snub_default_angle_c(poly, c, df_base, handedness)
-                            : _ps_snub_default_angle_df_de(poly, df_base, df_base, handedness))),
-                _ = echo(str("snub: angle unspecified, default=", a, " (df=", df_base, ", de=", de_base, is_undef(c) ? ")" : str(", c=", c, ")")))
+                            ? _ps_snub_default_angle_c(poly, c, df_base, handedness, verbose=verbose)
+                            : _ps_snub_default_angle_df_de(poly, df_base, df_base, handedness, verbose=verbose))),
+                _ = verbose ? echo(str("snub: angle unspecified, default=", a, " (df=", df_base, ", de=", de_base, is_undef(c) ? ")" : str(", c=", c, ")"))) : 0
               ) a
             : angle
     )
@@ -1752,12 +1765,23 @@ function poly_snub(
             ["face", "df", len(faces0), face_fid],
             ["face", "angle", len(faces0), face_fid],
             ["vert", "c", len(verts0), vert_fid],
-            ["vert", "de", len(verts0), vert_fid]
+            ["vert", "de", len(verts0), vert_fid],
+            ["vert", "cap_mode", len(verts0), vert_fid]
         ]),
         face_df_by_idx = is_undef(params_compiled) ? undef : params_compiled[0],
         face_angle_by_idx = is_undef(params_compiled) ? undef : params_compiled[1],
         vert_c_by_idx = is_undef(params_compiled) ? undef : params_compiled[2],
         vert_de_by_idx = is_undef(params_compiled) ? undef : params_compiled[3],
+        vert_cap_mode_by_idx = is_undef(params_compiled) ? undef : params_compiled[4],
+        has_cap_mode_rows = !is_undef(vert_cap_mode_by_idx) && len([for (x = vert_cap_mode_by_idx) if (!is_undef(x)) 1]) > 0,
+        _strict_cap_ok = assert(style == "planarized" || (is_undef(cap_mode) && !has_cap_mode_rows), "poly_snub: cap_mode requires style=\"planarized\""),
+        cap_mode_default = is_undef(cap_mode) ? "planar_edge_fraction" : cap_mode,
+        cap_mode_by_vert = [
+            for (vi = [0:1:len(verts0)-1])
+                let(mode_ov = ps_compiled_param_get(vert_cap_mode_by_idx, vi))
+                is_undef(mode_ov) ? cap_mode_default : mode_ov
+        ],
+        _cap_modes_ok = (style == "planarized") ? _ps_truncate_cap_modes_ok(cap_mode_by_vert) : 0,
         de_by_vertex = is_undef(vert_fid) ? undef : [
             for (vi = [0:1:len(verts0)-1])
                 let(
@@ -1802,16 +1826,29 @@ function poly_snub(
                 ]
         ],
         face_offsets = _ps_face_offsets(faces0),
+        face_pts_flat = [for (fi = [0:1:len(faces0)-1]) for (p = face_pts[fi]) p],
+        cap_site_offset = len(face_pts_flat),
+        cap_active_by_vertex = (style == "planarized")
+            ? _ps_vertex_incidence_cap_active_by_vertex(verts0, faces0, face_pts, edges, edge_faces, poly0, eps)
+            : undef,
+        cap_pts_by_vertex = (style == "planarized")
+            ? _ps_vertex_incidence_cap_pts_by_vertex(verts0, faces0, face_pts, face_n, edges, edge_faces, poly0, cap_mode_by_vert, v_sum(verts0) / len(verts0), eps)
+            : undef,
+        cap_pts = (style == "planarized")
+            ? _ps_vertex_incidence_cap_pts_by_face(verts0, faces0, edges, edge_faces, poly0, cap_pts_by_vertex)
+            : undef,
+        cap_pts_flat = (style == "planarized")
+            ? [for (fi = [0:1:len(faces0)-1]) for (p = cap_pts[fi]) p]
+            : [],
         sites = [
             for (fi = [0:1:len(faces0)-1])
                 for (v = faces0[fi])
                     [fi, v]
         ],
-        site_points = [
-            for (fi = [0:1:len(faces0)-1])
-                for (p = face_pts[fi])
-                    p
-        ],
+        site_points = concat(face_pts_flat, cap_pts_flat),
+        cap_sites = (style == "planarized")
+            ? [for (fi = [0:1:len(faces0)-1]) for (v = faces0[fi]) ["cap", fi, v]]
+            : [],
         face_cycles = [
             for (fi = [0:1:len(faces0)-1])
                 let(n = len(faces0[fi]))
@@ -1841,21 +1878,63 @@ function poly_snub(
         vert_cycles = [
             for (vi = [0:1:len(verts0)-1])
                 let(fc = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)))
-                [
-                    for (fi = fc)
-                        let(pos = _ps_index_of(faces0[fi], vi))
-                            [1, face_offsets[fi] + pos]
-                ]
+                (style == "planarized" && !cap_active_by_vertex[vi]) ? [] :
+                    [
+                        for (fi = fc)
+                            let(pos = _ps_index_of(faces0[fi], vi))
+                                [1, (style == "planarized")
+                                    ? _ps_vertex_incidence_cap_site_idx(face_offsets, cap_site_offset, fi, pos)
+                                    : face_offsets[fi] + pos]
+                    ]
         ],
-        cycles_all = concat(face_cycles, edge_cycles, vert_cycles),
-        q = ps_poly_transform_from_sites(verts0, sites, site_points, cycles_all, eps, len_eps),
+        connector_cycles = (style == "planarized")
+            ? _ps_vertex_incidence_connector_cycles(verts0, faces0, edges, edge_faces, poly0, face_offsets, cap_site_offset, cap_active_by_vertex)
+            : [],
+        cycles_all = concat(face_cycles, edge_cycles, connector_cycles, vert_cycles),
+        cycle_points = [
+            for (cy = cycles_all)
+                [for (c = cy) site_points[c[1]]]
+        ],
+        cycle_uniq_points = _ps_unique_points(
+            [for (fp = cycle_points) for (p = fp) p],
+            len_eps
+        ),
+        cycle_keep = [
+            for (fp = cycle_points)
+                _ps_face_keep_after_simplify(
+                    _ps_face_clean_cycle(_ps_face_points_to_indices(cycle_uniq_points, fp, len_eps))
+                )
+        ],
+        kept_cycle_indices = [
+            for (i = [0:1:len(cycle_keep)-1])
+                if (cycle_keep[i]) i
+        ],
+        q = ps_poly_transform_from_sites(verts0, concat(sites, cap_sites), site_points, cycles_all, eps, len_eps),
         verts = poly_verts(q),
         faces_q = poly_faces(q),
-        face_count = len(faces0),
-        edge_count = len(edges),
-        face_faces = [for (i = [0:1:face_count-1]) faces_q[i]],
-        edge_faces_q = [for (i = [0:1:edge_count-1]) faces_q[face_count + i]],
-        vert_faces = [for (i = [0:1:len(faces_q)-face_count-edge_count-1]) faces_q[face_count + edge_count + i]],
+        face_cycle_indices = [
+            for (i = [0:1:len(face_cycles)-1])
+                if (cycle_keep[i]) i
+        ],
+        edge_cycle_offset = len(face_cycles),
+        edge_cycle_indices = [
+            for (i = [0:1:len(edge_cycles)-1])
+                if (cycle_keep[edge_cycle_offset + i]) edge_cycle_offset + i
+        ],
+        connector_cycle_offset = edge_cycle_offset + len(edge_cycles),
+        connector_cycle_indices = [
+            for (i = [0:1:len(connector_cycles)-1])
+                if (cycle_keep[connector_cycle_offset + i]) connector_cycle_offset + i
+        ],
+        vert_cycle_offset = connector_cycle_offset + len(connector_cycles),
+        vert_cycle_indices = [
+            for (i = [0:1:len(vert_cycles)-1])
+                if (cycle_keep[vert_cycle_offset + i]) vert_cycle_offset + i
+        ],
+        face_faces = [for (i = face_cycle_indices) faces_q[_ps_index_of(kept_cycle_indices, i)]],
+        edge_faces_q = [for (i = edge_cycle_indices) faces_q[_ps_index_of(kept_cycle_indices, i)]],
+        connector_faces_q = [for (i = connector_cycle_indices) faces_q[_ps_index_of(kept_cycle_indices, i)]],
+        vert_faces = [for (i = vert_cycle_indices) faces_q[_ps_index_of(kept_cycle_indices, i)]],
         edge_tris = [
             for (f = edge_faces_q)
                 let(a = f[0], b = f[1], c = f[2], d = f[3])
@@ -1864,12 +1943,12 @@ function poly_snub(
                     : [ [a, b, d], [b, c, d] ]
         ],
         edge_tris_flat = [for (t = edge_tris) each t],
-        faces_new = concat(face_faces, edge_tris_flat, vert_faces),
+        faces_new = concat(face_faces, edge_tris_flat, connector_faces_q, vert_faces),
         faces_oriented = ps_orient_all_faces_outward(verts, faces_new),
         errs = [for (f = faces_oriented) _ps_face_planarity_err(verts, f)],
         max_err = (len(errs) == 0) ? 0 : max(errs),
         bad = [for (e = errs) if (e > eps) e],
-        _0 = (len(bad) > 0)
+        _0 = (verbose && len(bad) > 0)
             ? echo("snub: non-planar faces", len(bad), "max_plane_err", max_err)
             : 0
     )
@@ -1934,7 +2013,7 @@ function _ps_cantitruncate_cap_active_by_vertex(verts0, faces0, face_edge_pts3d,
                 fan_faces = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)),
                 raw_pts = _ps_cantitruncate_vertex_raw_pts(face_edge_pts3d, faces0, fan_faces, vi)
             )
-            _ps_cantellate_distinct_points_count(raw_pts, eps) >= 3
+            _ps_vertex_incidence_distinct_points_count(raw_pts, eps) >= 3
     ];
 
 function _ps_cantitruncate_cap_pts_by_vertex(verts0, faces0, face_edge_pts3d, edges, edge_faces, poly0, cap_mode_by_vert, poly_center, eps) =
@@ -1944,9 +2023,9 @@ function _ps_cantitruncate_cap_pts_by_vertex(verts0, faces0, face_edge_pts3d, ed
                 fan_faces = ps_vertex_fan_faces_idx(ps_vertex_fan(poly0, vi, edges, edge_faces)),
                 raw_pts = _ps_cantitruncate_vertex_raw_pts(face_edge_pts3d, faces0, fan_faces, vi),
                 ray_pts = _ps_cantitruncate_vertex_ray_pts(verts0, faces0, face_edge_pts3d, fan_faces, vi, eps),
-                plane_pts = _ps_cantellate_vertex_plane_pts(verts0[vi], raw_pts, ray_pts, eps)
+                plane_pts = _ps_vertex_incidence_plane_pts(verts0[vi], raw_pts, ray_pts, eps)
             )
-            _ps_cantellate_raw_pts_at_vertex(verts0[vi], raw_pts, eps)
+            _ps_vertex_incidence_raw_pts_at_vertex(verts0[vi], raw_pts, eps)
                 ? raw_pts
                 : (cap_mode_by_vert[vi] == "edge_fraction")
                     ? raw_pts
