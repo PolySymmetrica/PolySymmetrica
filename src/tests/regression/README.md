@@ -18,7 +18,21 @@ src/tests/regression/run_regression.sh generate
 src/tests/regression/run_regression.sh diff
 src/tests/regression/run_regression.sh diff --tolerance strict
 src/tests/regression/run_regression.sh diff --tolerance loose
+
+# Run every case below one directory.
+src/tests/regression/run_regression.sh diff --case transforms
+
+# Run every T value from one case file.
+src/tests/regression/run_regression.sh diff --case transforms/snubs.scad
+
+# Run one T value from one case file.
+src/tests/regression/run_regression.sh diff --case transforms/snubs.scad --test 3
 ```
+
+`--case` paths are resolved relative to `cases/`. A directory is searched
+recursively for `.scad` cases. `--test` is an index in the selected case's
+`TESTS` array and requires `--case` to name one file. With no selector, the
+entire regression suite runs as before.
 
 Generated local outputs are written under `target/regression-tests/`.
 
