@@ -19,6 +19,8 @@ PARALLEL_BIN="${PARALLEL_BIN:-parallel}"
 REGRESSION_COLOR="${REGRESSION_COLOR:-auto}"
 MODE="${1:-}"
 TOLERANCE="normal"
+CASE_SCOPE=""
+TEST_INDEX=""
 
 case "${REGRESSION_COLOR}" in
     auto|always|never) ;;
@@ -59,6 +61,15 @@ error_label() {
 usage() {
     cat <<EOF
 Usage: $0 generate|diff [--tolerance strict|normal|loose]
+       [--case CASE_PATH] [--test INDEX]
+
+Selectors:
+  --case CASE_PATH
+                Run a case directory recursively, or one .scad case file.
+                The path is relative to src/tests/regression/cases.
+  --test INDEX  Run one T value from a selected case file. Requires --case
+                to name a file; without it, all T values in the selected
+                scope run.
 
 Environment:
   OPENSCAD_BIN  OpenSCAD command to use (default: openscad-nightly)
@@ -80,7 +91,30 @@ shift
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --tolerance)
+            if [[ $# -lt 2 || -z "${2}" || "${2}" == --* ]]; then
+                echo "--tolerance requires strict, normal, or loose." >&2
+                usage
+                exit 2
+            fi
             TOLERANCE="${2:-}"
+            shift 2
+            ;;
+        --case)
+            if [[ $# -lt 2 || -z "${2}" || "${2}" == --* ]]; then
+                echo "--case requires a regression case directory or .scad file." >&2
+                usage
+                exit 2
+            fi
+            CASE_SCOPE="${2:-}"
+            shift 2
+            ;;
+        --test)
+            if [[ $# -lt 2 || -z "${2}" || "${2}" == --* ]]; then
+                echo "--test requires a non-negative T index." >&2
+                usage
+                exit 2
+            fi
+            TEST_INDEX="${2:-}"
             shift 2
             ;;
         *)
@@ -99,6 +133,27 @@ case "${MODE}" in
         exit 2
         ;;
 esac
+
+if [[ -n "${TEST_INDEX}" && ! "${TEST_INDEX}" =~ ^[0-9]+$ ]]; then
+    echo "Invalid --test value: ${TEST_INDEX}. Expected a non-negative integer." >&2
+    usage
+    exit 2
+fi
+
+if [[ -n "${TEST_INDEX}" ]]; then
+    TEST_INDEX="$((10#${TEST_INDEX}))"
+fi
+
+if [[ -n "${TEST_INDEX}" && -z "${CASE_SCOPE}" ]]; then
+    echo "--test requires --case to name one regression case file." >&2
+    usage
+    exit 2
+fi
+
+FULL_GENERATION=true
+if [[ -n "${CASE_SCOPE}" || -n "${TEST_INDEX}" ]]; then
+    FULL_GENERATION=false
+fi
 
 case "${TOLERANCE}" in
     strict)
@@ -172,6 +227,43 @@ mkdir -p "${RESULT_ROOT}"
 case_rel_path() {
     local case_file="$1"
     realpath --relative-to="${CASE_ROOT}" "${case_file}"
+}
+
+resolve_case_scope() {
+    local scope="$1"
+    local candidate resolved
+
+    if [[ "${scope}" = /* ]]; then
+        candidate="${scope}"
+    else
+        candidate="${CASE_ROOT}/${scope}"
+    fi
+
+    if [[ ! -e "${candidate}" ]]; then
+        echo "Regression case scope not found: ${scope}" >&2
+        exit 2
+    fi
+
+    resolved="$(realpath -e "${candidate}")"
+    case "${resolved}" in
+        "${CASE_ROOT}"|"${CASE_ROOT}"/*) ;;
+        *)
+            echo "Regression case scope must be under ${CASE_ROOT}: ${scope}" >&2
+            exit 2
+            ;;
+    esac
+
+    if [[ -n "${TEST_INDEX}" && ! -f "${resolved}" ]]; then
+        echo "--test requires --case to name one .scad case file: ${scope}" >&2
+        exit 2
+    fi
+
+    if [[ -f "${resolved}" && "${resolved}" != *.scad ]]; then
+        echo "Regression case file must have a .scad suffix: ${scope}" >&2
+        exit 2
+    fi
+
+    printf '%s\n' "${resolved}"
 }
 
 result_status_file() {
@@ -386,9 +478,6 @@ print_version_drift_notice() {
 }
 
 write_version_properties "${CURRENT_VERSION_FILE}"
-if [[ "${MODE}" == "generate" ]]; then
-    cp "${CURRENT_VERSION_FILE}" "${BASELINE_VERSION_FILE}"
-fi
 
 list_case_tests() {
     local case_file="$1"
@@ -562,7 +651,16 @@ run_regression_test() {
 }
 
 shopt -s nullglob globstar
-case_files=("${CASE_ROOT}"/**/*.scad)
+if [[ -n "${CASE_SCOPE}" ]]; then
+    resolved_scope="$(resolve_case_scope "${CASE_SCOPE}")"
+    if [[ -f "${resolved_scope}" ]]; then
+        case_files=("${resolved_scope}")
+    else
+        case_files=("${resolved_scope}"/**/*.scad)
+    fi
+else
+    case_files=("${CASE_ROOT}"/**/*.scad)
+fi
 
 if [[ "${#case_files[@]}" -eq 0 ]]; then
     echo "No regression case files found under ${CASE_ROOT}" >&2
@@ -594,13 +692,20 @@ for case_file in "${case_files[@]}"; do
 
     while read -r idx name; do
         [[ -n "${idx}" ]] || continue
+        if [[ -n "${TEST_INDEX}" && "${idx}" != "${TEST_INDEX}" ]]; then
+            continue
+        fi
         printf '%s\t%s\t%s\n' "${case_file}" "${idx}" "${name}" >>"${jobs_file}"
     done <"${tests_file}"
 done
 
 if [[ "${failures}" -eq 0 ]]; then
     if [[ ! -s "${jobs_file}" ]]; then
-        echo "No regression tests discovered." >&2
+        if [[ -n "${TEST_INDEX}" ]]; then
+            echo "No regression test T=${TEST_INDEX} discovered in ${CASE_SCOPE}." >&2
+        else
+            echo "No regression tests discovered." >&2
+        fi
         exit 1
     fi
 
@@ -668,6 +773,10 @@ if [[ "${failures}" -ne 0 ]]; then
     echo "Regression script errors: ${failures}"
     echo "No per-test status records were written; inspect ${LOG_ROOT}."
     exit 1
+fi
+
+if [[ "${MODE}" == "generate" && "${FULL_GENERATION}" == true ]]; then
+    cp "${CURRENT_VERSION_FILE}" "${BASELINE_VERSION_FILE}"
 fi
 
 echo "Regression ${MODE} completed successfully."
