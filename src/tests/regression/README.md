@@ -32,7 +32,9 @@ src/tests/regression/run_regression.sh diff --case transforms/snubs.scad --test 
 `--case` paths are resolved relative to `cases/`. A directory is searched
 recursively for `.scad` cases. `--test` is an index in the selected case's
 `TESTS` array and requires `--case` to name one file. With no selector, the
-entire regression suite runs as before.
+entire regression suite runs as before. Partial `generate` runs update only
+the selected images; the committed baseline renderer marker is updated only
+after a successful unfiltered full-suite generation.
 
 Generated local outputs are written under `target/regression-tests/`.
 

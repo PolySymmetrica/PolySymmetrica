@@ -150,6 +150,11 @@ if [[ -n "${TEST_INDEX}" && -z "${CASE_SCOPE}" ]]; then
     exit 2
 fi
 
+FULL_GENERATION=true
+if [[ -n "${CASE_SCOPE}" || -n "${TEST_INDEX}" ]]; then
+    FULL_GENERATION=false
+fi
+
 case "${TOLERANCE}" in
     strict)
         FUZZ="0%"
@@ -473,9 +478,6 @@ print_version_drift_notice() {
 }
 
 write_version_properties "${CURRENT_VERSION_FILE}"
-if [[ "${MODE}" == "generate" ]]; then
-    cp "${CURRENT_VERSION_FILE}" "${BASELINE_VERSION_FILE}"
-fi
 
 list_case_tests() {
     local case_file="$1"
@@ -771,6 +773,10 @@ if [[ "${failures}" -ne 0 ]]; then
     echo "Regression script errors: ${failures}"
     echo "No per-test status records were written; inspect ${LOG_ROOT}."
     exit 1
+fi
+
+if [[ "${MODE}" == "generate" && "${FULL_GENERATION}" == true ]]; then
+    cp "${CURRENT_VERSION_FILE}" "${BASELINE_VERSION_FILE}"
 fi
 
 echo "Regression ${MODE} completed successfully."
