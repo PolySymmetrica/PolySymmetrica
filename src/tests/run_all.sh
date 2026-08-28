@@ -108,7 +108,7 @@ run_unit_suite() {
     local output_file="${TARGET_ROOT}/suite_$(printf '%02d' "${suite_idx}")_${suite_name}.stl"
     local log_file="${LOG_ROOT}/suite_$(printf '%02d' "${suite_idx}")_${suite_name}.log"
     local status_file="${STATUS_ROOT}/suite_$(printf '%02d' "${suite_idx}")_${suite_name}.status"
-    local rc
+    local rc open_scad_rc
 
     mkdir -p "${TARGET_ROOT}" "${LOG_ROOT}" "${STATUS_ROOT}"
     echo "${suite_idx} ${suite_name}: running"
@@ -117,6 +117,12 @@ run_unit_suite() {
         -o "${output_file}" \
         -D "T=${suite_idx}" \
         "${TEST_FILE}" >"${log_file}" 2>&1; then
+        open_scad_rc=0
+    else
+        open_scad_rc=$?
+    fi
+
+    if [[ "${open_scad_rc}" -eq 0 ]]; then
         if rg -q '(^|[[:space:]])ERROR:' "${log_file}"; then
             rc=1
         else
@@ -125,7 +131,7 @@ run_unit_suite() {
             return 0
         fi
     else
-        rc=$?
+        rc="${open_scad_rc}"
     fi
 
     printf 'FAIL\n' >"${status_file}"
@@ -137,8 +143,18 @@ run_unit_suite() {
 mkdir -p "${TARGET_ROOT}" "${LOG_ROOT}" "${STATUS_ROOT}"
 rm -f "${JOBS_FILE}" "${STATUS_ROOT}"/*.status
 
+use_parallel=false
+if [[ "${UNIT_TEST_JOBS}" -gt 1 ]] && has_gnu_parallel "${PARALLEL_BIN}"; then
+    use_parallel=true
+fi
+
+parallel_jobs_file="${TARGET_ROOT}/parallel-suites.tsv"
+rm -f "${parallel_jobs_file}"
 for suite_idx in "${!SUITE_NAMES[@]}"; do
     printf '%s\t%s\n' "${suite_idx}" "${SUITE_NAMES[${suite_idx}]}" >>"${JOBS_FILE}"
+    if [[ "${suite_idx}" -gt 0 ]]; then
+        printf '%s\t%s\n' "${suite_idx}" "${SUITE_NAMES[${suite_idx}]}" >>"${parallel_jobs_file}"
+    fi
 done
 
 export ROOT_DIR TEST_FILE TARGET_ROOT LOG_ROOT STATUS_ROOT OPENSCAD_BIN
@@ -146,12 +162,15 @@ export use_color
 export -f color_label pass_label fail_label run_unit_suite
 
 failures=0
-use_parallel=false
-if [[ "${UNIT_TEST_JOBS}" -gt 1 ]] && has_gnu_parallel "${PARALLEL_BIN}"; then
-    use_parallel=true
-fi
 
 if [[ "${use_parallel}" == true ]]; then
+    # A completed serial OpenSCAD invocation initializes shared Snap/desktop
+    # state before the remaining processes are started concurrently.
+    echo "Running TestFuncs serially to initialize OpenSCAD state"
+    if ! run_unit_suite 0 "${SUITE_NAMES[0]}"; then
+        failures=1
+    fi
+
     parallel_log="${LOG_ROOT}/parallel.joblog"
     rm -f "${parallel_log}"
     echo "Running unit-test suites with ${PARALLEL_BIN} -j ${UNIT_TEST_JOBS}"
@@ -163,7 +182,7 @@ if [[ "${use_parallel}" == true ]]; then
         --line-buffer \
         --tagstring '{2}' \
         --joblog "${parallel_log}" \
-        run_unit_suite {1} {2} :::: "${JOBS_FILE}"
+        run_unit_suite {1} {2} :::: "${parallel_jobs_file}"
     parallel_rc=$?
     set -e
     if [[ "${parallel_rc}" -ne 0 ]]; then
