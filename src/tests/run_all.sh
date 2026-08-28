@@ -85,6 +85,14 @@ has_gnu_parallel() {
         "${PARALLEL_BIN}" --version 2>/dev/null | head -n 1 | rg -q '^GNU parallel '
 }
 
+has_unexpected_openscad_error() {
+    local log_file="$1"
+
+    rg 'ERROR:' "${log_file}" | \
+        rg -v 'ERROR: update-mime-database .* exited abnormally with status [0-9]+' | \
+        rg -q .
+}
+
 run_unit_suite() {
     local suite_idx="$1"
     local suite_name="$2"
@@ -106,7 +114,7 @@ run_unit_suite() {
     fi
 
     if [[ "${open_scad_rc}" -eq 0 ]]; then
-        if rg -q '(^|[[:space:]])ERROR:' "${log_file}"; then
+        if has_unexpected_openscad_error "${log_file}"; then
             rc=1
         else
             printf 'PASS\n' >"${status_file}"
@@ -138,7 +146,7 @@ if ! "${OPENSCAD_BIN}" \
     sed 's/^/    /' "${LIST_LOG}" >&2
     exit 1
 fi
-if rg -q '(^|[[:space:]])ERROR:' "${LIST_LOG}"; then
+if has_unexpected_openscad_error "${LIST_LOG}"; then
     echo "OpenSCAD reported errors while listing unit-test suites; see ${LIST_LOG}" >&2
     sed 's/^/    /' "${LIST_LOG}" >&2
     exit 1
@@ -169,7 +177,7 @@ fi
 
 export ROOT_DIR TEST_FILE TARGET_ROOT LOG_ROOT STATUS_ROOT OPENSCAD_BIN
 export use_color
-export -f color_label pass_label fail_label run_unit_suite
+export -f color_label pass_label fail_label has_unexpected_openscad_error run_unit_suite
 
 failures=0
 
