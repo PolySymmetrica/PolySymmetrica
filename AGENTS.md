@@ -25,6 +25,8 @@ and move feature-specific design notes to `docs/`.
   `openscad-nightly -o /tmp/ps-preview.stl src/examples/basics/main_basics.scad`
 - Run full tests:
   `openscad-nightly -o /tmp/ps-tests.stl src/tests/run_all.scad`
+- Run unit-test suites in parallel:
+  `src/tests/run_all.sh` (use `UNIT_TEST_JOBS=1` for serial execution).
 - Run negative tests:
   `src/tests/run_negative_all.sh`
 - Use `openscad-nightly`, though it's snap-sandboxed, so on this machine, use the watcher
