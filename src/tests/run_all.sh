@@ -7,29 +7,12 @@ TARGET_ROOT="${UNIT_TEST_TARGET:-${ROOT_DIR}/../../target/unit-tests}"
 LOG_ROOT="${TARGET_ROOT}/logs"
 STATUS_ROOT="${LOG_ROOT}/status"
 JOBS_FILE="${TARGET_ROOT}/suites.tsv"
+LIST_OUTPUT="${TARGET_ROOT}/suite-list.stl"
+LIST_LOG="${LOG_ROOT}/suite-list.log"
 OPENSCAD_BIN="${OPENSCAD_BIN:-openscad-nightly}"
 UNIT_TEST_JOBS="${UNIT_TEST_JOBS:-4}"
 PARALLEL_BIN="${PARALLEL_BIN:-parallel}"
 UNIT_TEST_COLOR="${UNIT_TEST_COLOR:-auto}"
-
-SUITE_NAMES=(
-    TestFuncs
-    TestVertex
-    TestDuals
-    TestCantellation
-    TestTruncation
-    TestCleanup
-    TestValidity
-    TestClassify
-    TestPlacement
-    TestEdgeRegions
-    TestFaceRegions
-    TestSelfCrossing
-    TestPrisms
-    TestAttach
-    TestRender
-    TestConstruction
-)
 
 usage() {
     cat <<EOF
@@ -143,19 +126,46 @@ run_unit_suite() {
 mkdir -p "${TARGET_ROOT}" "${LOG_ROOT}" "${STATUS_ROOT}"
 rm -f "${JOBS_FILE}" "${STATUS_ROOT}"/*.status
 
+# Discover suites in one serial OpenSCAD process.  Apart from avoiding a second
+# source of truth for suite names, this warms shared Snap/desktop state before
+# any suite processes are started concurrently.
+echo "Discovering unit-test suites"
+if ! "${OPENSCAD_BIN}" \
+    -o "${LIST_OUTPUT}" \
+    -D "T=-2" \
+    "${TEST_FILE}" >"${LIST_LOG}" 2>&1; then
+    echo "Unable to list unit-test suites; see ${LIST_LOG}" >&2
+    sed 's/^/    /' "${LIST_LOG}" >&2
+    exit 1
+fi
+if rg -q '(^|[[:space:]])ERROR:' "${LIST_LOG}"; then
+    echo "OpenSCAD reported errors while listing unit-test suites; see ${LIST_LOG}" >&2
+    sed 's/^/    /' "${LIST_LOG}" >&2
+    exit 1
+fi
+
+sed -n \
+    's/.*ECHO: "UNIT_TEST_SUITE \([0-9][0-9]*\) \([^"[:space:]]*\)".*/\1\t\2/p' \
+    "${LIST_LOG}" >"${JOBS_FILE}"
+if [[ ! -s "${JOBS_FILE}" ]]; then
+    echo "OpenSCAD listed no unit-test suites; see ${LIST_LOG}" >&2
+    sed 's/^/    /' "${LIST_LOG}" >&2
+    exit 1
+fi
+
+SUITE_INDICES=()
+SUITE_NAMES=()
+while IFS=$'\t' read -r suite_idx suite_name; do
+    if [[ -n "${suite_idx}" && -n "${suite_name}" ]]; then
+        SUITE_INDICES+=("${suite_idx}")
+        SUITE_NAMES+=("${suite_name}")
+    fi
+done <"${JOBS_FILE}"
+
 use_parallel=false
 if [[ "${UNIT_TEST_JOBS}" -gt 1 ]] && has_gnu_parallel "${PARALLEL_BIN}"; then
     use_parallel=true
 fi
-
-parallel_jobs_file="${TARGET_ROOT}/parallel-suites.tsv"
-rm -f "${parallel_jobs_file}"
-for suite_idx in "${!SUITE_NAMES[@]}"; do
-    printf '%s\t%s\n' "${suite_idx}" "${SUITE_NAMES[${suite_idx}]}" >>"${JOBS_FILE}"
-    if [[ "${suite_idx}" -gt 0 ]]; then
-        printf '%s\t%s\n' "${suite_idx}" "${SUITE_NAMES[${suite_idx}]}" >>"${parallel_jobs_file}"
-    fi
-done
 
 export ROOT_DIR TEST_FILE TARGET_ROOT LOG_ROOT STATUS_ROOT OPENSCAD_BIN
 export use_color
@@ -164,13 +174,6 @@ export -f color_label pass_label fail_label run_unit_suite
 failures=0
 
 if [[ "${use_parallel}" == true ]]; then
-    # A completed serial OpenSCAD invocation initializes shared Snap/desktop
-    # state before the remaining processes are started concurrently.
-    echo "Running TestFuncs serially to initialize OpenSCAD state"
-    if ! run_unit_suite 0 "${SUITE_NAMES[0]}"; then
-        failures=1
-    fi
-
     parallel_log="${LOG_ROOT}/parallel.joblog"
     rm -f "${parallel_log}"
     echo "Running unit-test suites with ${PARALLEL_BIN} -j ${UNIT_TEST_JOBS}"
@@ -182,7 +185,7 @@ if [[ "${use_parallel}" == true ]]; then
         --line-buffer \
         --tagstring '{2}' \
         --joblog "${parallel_log}" \
-        run_unit_suite {1} {2} :::: "${parallel_jobs_file}"
+        run_unit_suite {1} {2} :::: "${JOBS_FILE}"
     parallel_rc=$?
     set -e
     if [[ "${parallel_rc}" -ne 0 ]]; then
@@ -201,8 +204,9 @@ fi
 
 echo
 echo "Unit-test suite summary:"
-for suite_idx in "${!SUITE_NAMES[@]}"; do
-    suite_name="${SUITE_NAMES[${suite_idx}]}"
+for suite_pos in "${!SUITE_INDICES[@]}"; do
+    suite_idx="${SUITE_INDICES[${suite_pos}]}"
+    suite_name="${SUITE_NAMES[${suite_pos}]}"
     status_file="${STATUS_ROOT}/suite_$(printf '%02d' "${suite_idx}")_${suite_name}.status"
     status="ERROR"
     if [[ -f "${status_file}" ]]; then

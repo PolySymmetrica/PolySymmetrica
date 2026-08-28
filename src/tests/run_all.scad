@@ -23,11 +23,33 @@ use <core/TestConstruction.scad>
 
 T = -1;
 
+// OpenSCAD cannot invoke modules stored in values, so keep stable indices and names.
+TEST_SUITES = [
+    [0, "TestFuncs"],
+    [1, "TestVertex"],
+    [2, "TestDuals"],
+    [3, "TestCantellation"],
+    [4, "TestTruncation"],
+    [5, "TestCleanup"],
+    [6, "TestValidity"],
+    [7, "TestClassify"],
+    [8, "TestPlacement"],
+    [9, "TestEdgeRegions"],
+    [10, "TestFaceRegions"],
+    [11, "TestSelfCrossing"],
+    [12, "TestPrisms"],
+    [13, "TestAttach"],
+    [14, "TestRender"],
+    [15, "TestConstruction"]
+];
+
 function _ps_test_selector_values(t) = is_num(t) ? [t] : [for (v = t) v];
 function _ps_test_selector_is_all(t) = is_num(t) && t == -1;
-function _ps_test_selector_value_ok(t) = t >= 0 && t <= 15 && t == floor(t);
+function _ps_test_selector_is_list(t) = is_num(t) && t == -2;
+function _ps_test_selector_value_ok(t) =
+    t >= 0 && t < len(TEST_SUITES) && t == floor(t);
 function _ps_test_selector_ok(t) =
-    _ps_test_selector_is_all(t)
+    _ps_test_selector_is_all(t) || _ps_test_selector_is_list(t)
     || (
         len(_ps_test_selector_values(t)) > 0
         && len([
@@ -35,105 +57,75 @@ function _ps_test_selector_ok(t) =
                 if (_ps_test_selector_value_ok(v)) v
         ]) == len(_ps_test_selector_values(t))
     );
-function _ps_test_suite_selected(t, suite_idx) =
-    _ps_test_selector_is_all(t)
-    || search(suite_idx, _ps_test_selector_values(t)) != [];
-
 echo("=== PolySymmetrica tests: START ===");
 
-// T selects one suite or a list/range of suites for external runners;
-// scalar -1 runs the full suite.
-module _ps_run_test_suite(t) {
+module _ps_list_test_suites() {
+    for (suite = TEST_SUITES)
+        echo(str("UNIT_TEST_SUITE ", suite[0], " ", suite[1]));
+}
+
+module _ps_run_test_suite(suite_idx, suite_name) {
+    echo(str("=== PolySymmetrica tests: suite ", suite_idx, " ", suite_name, " START ==="));
+    if (suite_idx == 0) {
+        run_TestFuncs();
+    } else if (suite_idx == 1) {
+        run_TestVertex();
+    } else if (suite_idx == 2) {
+        run_TestDuals();
+    } else if (suite_idx == 3) {
+        run_TestCantellation();
+    } else if (suite_idx == 4) {
+        run_TestTruncation();
+    } else if (suite_idx == 5) {
+        run_TestCleanup();
+    } else if (suite_idx == 6) {
+        run_TestValidity();
+    } else if (suite_idx == 7) {
+        run_TestClassify();
+    } else if (suite_idx == 8) {
+        run_TestPlacement();
+    } else if (suite_idx == 9) {
+        run_TestEdgeRegions();
+    } else if (suite_idx == 10) {
+        run_TestFaceRegions();
+    } else if (suite_idx == 11) {
+        run_TestSelfCrossing();
+    } else if (suite_idx == 12) {
+        run_TestPrisms();
+    } else if (suite_idx == 13) {
+        run_TestAttach();
+    } else if (suite_idx == 14) {
+        run_TestRender();
+    } else if (suite_idx == 15) {
+        run_TestConstruction();
+    }
+    echo(str("=== PolySymmetrica tests: suite ", suite_idx, " ", suite_name, " PASS ==="));
+}
+
+// T=-2 lists suites, -1 runs all, and a scalar/list/range selects suites.
+module _ps_run_test_suites(t) {
     assert(
         _ps_test_selector_ok(t),
-        str("T must be -1 or a list of integers from 0 to 15, got ", t)
+        str("T must be -2, -1, or a list of suite indices from 0 to ", len(TEST_SUITES) - 1, ", got ", t)
     );
 
-    if (_ps_test_suite_selected(t, 0)) {
-        echo("=== PolySymmetrica tests: suite 0 TestFuncs START ===");
-        run_TestFuncs();
-        echo("=== PolySymmetrica tests: suite 0 TestFuncs PASS ===");
-    }
-    if (_ps_test_suite_selected(t, 1)) {
-        echo("=== PolySymmetrica tests: suite 1 TestVertex START ===");
-        run_TestVertex();
-        echo("=== PolySymmetrica tests: suite 1 TestVertex PASS ===");
-    }
-    if (_ps_test_suite_selected(t, 2)) {
-        echo("=== PolySymmetrica tests: suite 2 TestDuals START ===");
-        run_TestDuals();
-        echo("=== PolySymmetrica tests: suite 2 TestDuals PASS ===");
-    }
-    if (_ps_test_suite_selected(t, 3)) {
-        echo("=== PolySymmetrica tests: suite 3 TestCantellation START ===");
-        run_TestCantellation();
-        echo("=== PolySymmetrica tests: suite 3 TestCantellation PASS ===");
-    }
-    if (_ps_test_suite_selected(t, 4)) {
-        echo("=== PolySymmetrica tests: suite 4 TestTruncation START ===");
-        run_TestTruncation();
-        echo("=== PolySymmetrica tests: suite 4 TestTruncation PASS ===");
-    }
-    if (_ps_test_suite_selected(t, 5)) {
-        echo("=== PolySymmetrica tests: suite 5 TestCleanup START ===");
-        run_TestCleanup();
-        echo("=== PolySymmetrica tests: suite 5 TestCleanup PASS ===");
-    }
-    if (_ps_test_suite_selected(t, 6)) {
-        echo("=== PolySymmetrica tests: suite 6 TestValidity START ===");
-        run_TestValidity();
-        echo("=== PolySymmetrica tests: suite 6 TestValidity PASS ===");
-    }
-    if (_ps_test_suite_selected(t, 7)) {
-        echo("=== PolySymmetrica tests: suite 7 TestClassify START ===");
-        run_TestClassify();
-        echo("=== PolySymmetrica tests: suite 7 TestClassify PASS ===");
-    }
-    if (_ps_test_suite_selected(t, 8)) {
-        echo("=== PolySymmetrica tests: suite 8 TestPlacement START ===");
-        run_TestPlacement();
-        echo("=== PolySymmetrica tests: suite 8 TestPlacement PASS ===");
-    }
-    if (_ps_test_suite_selected(t, 9)) {
-        echo("=== PolySymmetrica tests: suite 9 TestEdgeRegions START ===");
-        run_TestEdgeRegions();
-        echo("=== PolySymmetrica tests: suite 9 TestEdgeRegions PASS ===");
-    }
-    if (_ps_test_suite_selected(t, 10)) {
-        echo("=== PolySymmetrica tests: suite 10 TestFaceRegions START ===");
-        run_TestFaceRegions();
-        echo("=== PolySymmetrica tests: suite 10 TestFaceRegions PASS ===");
-    }
-    if (_ps_test_suite_selected(t, 11)) {
-        echo("=== PolySymmetrica tests: suite 11 TestSelfCrossing START ===");
-        run_TestSelfCrossing();
-        echo("=== PolySymmetrica tests: suite 11 TestSelfCrossing PASS ===");
-    }
-    if (_ps_test_suite_selected(t, 12)) {
-        echo("=== PolySymmetrica tests: suite 12 TestPrisms START ===");
-        run_TestPrisms();
-        echo("=== PolySymmetrica tests: suite 12 TestPrisms PASS ===");
-    }
-    if (_ps_test_suite_selected(t, 13)) {
-        echo("=== PolySymmetrica tests: suite 13 TestAttach START ===");
-        run_TestAttach();
-        echo("=== PolySymmetrica tests: suite 13 TestAttach PASS ===");
-    }
-    if (_ps_test_suite_selected(t, 14)) {
-        echo("=== PolySymmetrica tests: suite 14 TestRender START ===");
-        run_TestRender();
-        echo("=== PolySymmetrica tests: suite 14 TestRender PASS ===");
-    }
-    if (_ps_test_suite_selected(t, 15)) {
-        echo("=== PolySymmetrica tests: suite 15 TestConstruction START ===");
-        run_TestConstruction();
-        echo("=== PolySymmetrica tests: suite 15 TestConstruction PASS ===");
+    if (_ps_test_selector_is_list(t)) {
+        _ps_list_test_suites();
+    } else {
+        selected = _ps_test_selector_values(t);
+        for (suite = TEST_SUITES)
+            if (_ps_test_selector_is_all(t) || search(suite[0], selected) != [])
+                _ps_run_test_suite(suite[0], suite[1]);
     }
 }
 
-_ps_run_test_suite(T);
-
-echo("=== PolySymmetrica tests: PASS ===");
+if (T == -2) {
+    _ps_run_test_suites(T);
+    echo("=== PolySymmetrica tests: LIST PASS ===");
+} else {
+    _ps_run_test_suites(T);
+    echo("=== PolySymmetrica tests: PASS ===");
+}
 
 color("green") 
 linear_extrude(height = 2)
