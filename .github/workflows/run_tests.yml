@@ -50,7 +50,14 @@ jobs:
           openscad-nightly -o target/openscad-nightly-warmup.png target/openscad-nightly-warmup.scad
           rm -f target/openscad-nightly-warmup.scad target/openscad-nightly-warmup.png
           
-          openscad-nightly -o target/unit-tests/passed-openscad-nightly.stl src/tests/run_all.scad
+          UNIT_TEST_JOBS=4 src/tests/run_all.sh
+
+      - name: Upload unit-test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: unit-test-artifacts
+          path: target/unit-tests
 
       - name: Check API docs build
         run: |
