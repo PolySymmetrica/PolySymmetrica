@@ -99,10 +99,11 @@ run_unit_suite() {
     local output_file="${TARGET_ROOT}/suite_$(printf '%02d' "${suite_idx}")_${suite_name}.stl"
     local log_file="${LOG_ROOT}/suite_$(printf '%02d' "${suite_idx}")_${suite_name}.log"
     local status_file="${STATUS_ROOT}/suite_$(printf '%02d' "${suite_idx}")_${suite_name}.status"
-    local rc open_scad_rc
+    local rc open_scad_rc started elapsed
 
     mkdir -p "${TARGET_ROOT}" "${LOG_ROOT}" "${STATUS_ROOT}"
     echo "${suite_idx} ${suite_name}: running"
+    started=${SECONDS}
 
     if "${OPENSCAD_BIN}" \
         -o "${output_file}" \
@@ -112,13 +113,14 @@ run_unit_suite() {
     else
         open_scad_rc=$?
     fi
+    elapsed=$((SECONDS - started))
 
     if [[ "${open_scad_rc}" -eq 0 ]]; then
         if has_unexpected_openscad_error "${log_file}"; then
             rc=1
         else
             printf 'PASS\n' >"${status_file}"
-            echo "${suite_idx} ${suite_name}: $(pass_label)"
+            echo "${suite_idx} ${suite_name} (${elapsed}s): $(pass_label)"
             return 0
         fi
     else
@@ -126,7 +128,7 @@ run_unit_suite() {
     fi
 
     printf 'FAIL\n' >"${status_file}"
-    echo "${suite_idx} ${suite_name}: $(fail_label) (see ${log_file})"
+    echo "${suite_idx} ${suite_name} (${elapsed}s): $(fail_label) (see ${log_file})"
     sed 's/^/    /' "${log_file}"
     return "${rc:-1}"
 }
