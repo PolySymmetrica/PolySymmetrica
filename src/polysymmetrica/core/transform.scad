@@ -46,6 +46,7 @@ function _ps_transform_site_provenance(prov, site, operation) =
         a = is_truncate && len(site) > 3 ? site[2] : undef,
         b = is_truncate && len(site) > 3 ? site[3] : undef,
         near_v = is_truncate && len(site) > 4 ? site[4] : (is_truncate ? site[1] : undef),
+        retain_truncate_vertex = is_truncate && len(site) > 5 ? site[5] : false,
         rectify_a = is_rectify && len(site) > 0 ? site[0] : undef,
         rectify_b = is_rectify && len(site) > 1 ? site[1] : undef,
         rectify_f0 = is_rectify && len(site) > 2 ? site[2] : undef,
@@ -62,11 +63,13 @@ function _ps_transform_site_provenance(prov, site, operation) =
                 is_undef(next_vi) ? [] : [vertices[next_vi]]
             )
             : is_truncate
-                ? concat(
-                    is_undef(a) ? [] : [vertices[a]],
-                    is_undef(b) ? [] : [vertices[b]],
-                    is_undef(near_v) ? [] : [vertices[near_v]]
-                )
+                ? (retain_truncate_vertex
+                    ? [vertices[near_v]]
+                    : concat(
+                        is_undef(a) ? [] : [vertices[a]],
+                        is_undef(b) ? [] : [vertices[b]],
+                        is_undef(near_v) ? [] : [vertices[near_v]]
+                    ))
                 : is_rectify
                     ? concat(
                         is_undef(rectify_a) ? [] : [vertices[rectify_a]],
@@ -83,14 +86,16 @@ function _ps_transform_site_provenance(prov, site, operation) =
                     )
                 : []
     )
-    _ps_prov_merge_records(
-        [for (r = records) _ps_prov_record(r[0], r[1])],
-        is_chamfer ? ["chamfer_site", fi, vi]
-            : is_truncate ? ["truncation_site", near_v]
-            : is_rectify ? ["rectify_site", rectify_a, rectify_b]
-            : is_cantitruncate ? ["cantitruncate_site", tag, cant_fi]
-            : ["generated_site"]
-    );
+    retain_truncate_vertex
+        ? vertices[near_v]
+        : _ps_prov_merge_records(
+            [for (r = records) _ps_prov_record(r[0], r[1])],
+            is_chamfer ? ["chamfer_site", fi, vi]
+                : is_truncate ? ["truncation_site", near_v]
+                : is_rectify ? ["rectify_site", rectify_a, rectify_b]
+                : is_cantitruncate ? ["cantitruncate_site", tag, cant_fi]
+                : ["generated_site"]
+        );
 
 function _ps_transform_cycle_provenance(records, operation) =
     _ps_prov_merge_records(

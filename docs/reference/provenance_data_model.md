@@ -158,6 +158,12 @@ vertices and faces that define its site, plus a derivation event. Generated
 points do not inherit a `source_vertex` event merely because they depend on an
 original vertex.
 
+Selective truncation is a deliberate exception for unchanged geometry: a
+zero-cut site reuses the complete provenance record of its near endpoint.
+Consequently, an unselected source vertex remains a retained source vertex
+after the surrounding topology is rebuilt and can be selected by a later
+selective operation.
+
 That distinction makes the following two queries intentionally different:
 
 - `poly_source_vertex_indices(poly)` returns current vertices that are still

@@ -40,10 +40,19 @@ module test_provenance__chamfer_edges_are_derived_from_lineage() {
 module test_provenance__selective_truncation_targets_only_source_vertices() {
     p = hexahedron();
     q = poly_chamfer(p, t=0.1);
-    r = poly_truncate(q, t=0.08, selected_vertices=poly_source_vertex_indices(q));
+    selected = concat(
+        poly_source_vertex_indices(q, 0),
+        poly_source_vertex_indices(q, 1),
+        poly_source_vertex_indices(q, 2),
+        poly_source_vertex_indices(q, 3)
+    );
+    r = poly_truncate(q, t=0.08, selected_vertices=selected);
     all_cut = poly_truncate(q, t=0.08);
     assert(poly_has_provenance(r), "selective truncation provenance");
     assert(poly_provenance_history(r) == [["chamfer"], ["truncate"]], "compound history");
+    assert(len(poly_source_vertex_indices(r, 0)) == 0, "selected source vertex is cut");
+    assert(len(poly_source_vertex_indices(r, 4)) == 1, "unselected source vertex remains identifiable");
+    assert(len(poly_source_vertex_indices(r, 7)) == 1, "unselected source vertex remains selectable");
     assert(len(poly_verts(r)) < len(poly_verts(all_cut)), "selective cut does not cut generated sites");
 }
 

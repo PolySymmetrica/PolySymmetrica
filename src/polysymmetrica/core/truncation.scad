@@ -535,8 +535,8 @@ function poly_truncate(
                 sites = [
                     for (ei = [0:1:len(edges)-1])
                         each [
-                            ["truncate", ei, edges[ei][0], edges[ei][1], edges[ei][0]],
-                            ["truncate", ei, edges[ei][0], edges[ei][1], edges[ei][1]]
+                            ["truncate", ei, edges[ei][0], edges[ei][1], edges[ei][0], t_by_vert[edges[ei][0]] == 0],
+                            ["truncate", ei, edges[ei][0], edges[ei][1], edges[ei][1], t_by_vert[edges[ei][1]] == 0]
                         ]
                 ],
                 site_points = [
