@@ -110,6 +110,7 @@ Related deep-dive notes:
 - [Face attachment](guides/attach.md)
 - [Construction helpers](guides/construction.md)
 - [Placement data model](reference/placement_data_model.md)
+- [Provenance data model](reference/provenance_data_model.md)
 
 ---
 
@@ -140,7 +141,9 @@ lineage computed from endpoint and incident-face lineage.
 Stage-A provenance is initialized lazily by chamfer and is preserved through
 the provenance-aware truncation/rectification and cleanup paths. A retained
 source vertex is marked separately from generated chamfer or truncation sites,
-which lets compound operators select only the intended current vertices.
+which lets compound operators select only the intended current vertices. See
+the [provenance data model](reference/provenance_data_model.md) for the full
+record format, current limitations, and the Stage-B design.
 
 Where:
 
