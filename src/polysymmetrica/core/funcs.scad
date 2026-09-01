@@ -111,6 +111,13 @@ function _ps_prov_history(prov) = prov[3];
 //   Return the private lineage record for one current vertex.
 function poly_vertex_provenance(poly, vertex_idx) =
     assert(poly_has_provenance(poly), "poly_vertex_provenance: poly has no provenance")
+    assert(
+        !is_undef(vertex_idx) &&
+        vertex_idx >= 0 &&
+        vertex_idx < len(poly_verts(poly)) &&
+        vertex_idx == floor(vertex_idx),
+        str("poly_vertex_provenance: current vertex index does not resolve: ", vertex_idx)
+    )
     poly_provenance(poly)[1][vertex_idx];
 
 // Function: poly_face_provenance()
@@ -120,6 +127,13 @@ function poly_vertex_provenance(poly, vertex_idx) =
 //   Return the private lineage record for one current face.
 function poly_face_provenance(poly, face_idx) =
     assert(poly_has_provenance(poly), "poly_face_provenance: poly has no provenance")
+    assert(
+        !is_undef(face_idx) &&
+        face_idx >= 0 &&
+        face_idx < len(poly_faces(poly)) &&
+        face_idx == floor(face_idx),
+        str("poly_face_provenance: current face index does not resolve: ", face_idx)
+    )
     poly_provenance(poly)[2][face_idx];
 
 // Function: poly_provenance_history()
