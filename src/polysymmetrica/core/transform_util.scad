@@ -44,7 +44,12 @@ function ps_finalize_poly(
         )
         // Preserve the operator's e_over_ir descriptor to avoid re-scaling
         // regressions when transformed meshes carry large coordinates.
-        poly_make(poly_verts(cleaned), poly_faces(cleaned), poly_e_over_ir(poly))
+        poly_make(
+            poly_verts(cleaned),
+            poly_faces(cleaned),
+            poly_e_over_ir(poly),
+            poly_provenance(cleaned)
+        )
         : poly;
 
 // Index k where edge f[k]->f[k+1] matches (v0->v1), or -1 if not found.
@@ -80,7 +85,7 @@ function _ps_poly_base(poly) =
         edges = _ps_edges_from_faces(faces0),
         edge_faces = ps_edge_faces_table(faces0, edges),
         face_n = [ for (f = faces0) ps_face_frame_normal(verts0, f) ],
-        poly0 = poly_make(verts0, faces0, poly_e_over_ir(poly))
+        poly0 = poly_make(verts0, faces0, poly_e_over_ir(poly), poly_provenance(poly))
     )
     [verts0, faces0, edges, edge_faces, face_n, poly0];
 

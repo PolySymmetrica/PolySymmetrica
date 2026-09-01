@@ -20,6 +20,7 @@ use <core/TestPrisms.scad>
 use <core/TestAttach.scad>
 use <core/TestRender.scad>
 use <core/TestConstruction.scad>
+use <core/TestProvenance.scad>
 
 T = -1;
 
@@ -40,7 +41,8 @@ TEST_SUITES = [
     [12, "TestPrisms"],
     [13, "TestAttach"],
     [14, "TestRender"],
-    [15, "TestConstruction"]
+    [15, "TestConstruction"],
+    [16, "TestProvenance"]
 ];
 
 function _ps_test_selector_values(t) = is_num(t) ? [t] : [for (v = t) v];
@@ -98,6 +100,8 @@ module _ps_run_test_suite(suite_idx, suite_name) {
         run_TestRender();
     } else if (suite_idx == 15) {
         run_TestConstruction();
+    } else if (suite_idx == 16) {
+        run_TestProvenance();
     }
     echo(str("=== PolySymmetrica tests: suite ", suite_idx, " ", suite_name, " PASS ==="));
 }

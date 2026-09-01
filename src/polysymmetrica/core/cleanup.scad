@@ -82,7 +82,7 @@ function _ps_compact_unreferenced(verts, faces) =
         verts_new = [for (oi = used_unique) verts[oi]],
         faces_new = _ps_faces_remap(faces, old_to_new)
     )
-    [verts_new, faces_new];
+    [verts_new, faces_new, old_to_new];
 
 // Function: poly_cleanup()
 // Usage:
@@ -115,27 +115,81 @@ function poly_cleanup(
     let(
         verts0 = poly_verts(poly),
         faces0 = poly_faces(poly),
+        prov0 = poly_provenance(poly),
 
         faces1 = _ps_faces_clean_cycles(faces0),
+        fprov1 = is_undef(prov0) ? undef : [for (i = [0:1:len(faces0)-1]) prov0[2][i]],
 
         merged = merge_vertices ? _ps_merge_vertices_eps(verts0, eps) : [verts0, _ps_identity_map(len(verts0))],
         verts2 = merged[0],
         map2 = merged[1],
         faces2 = _ps_faces_clean_cycles(_ps_faces_remap(faces1, map2)),
+        vprov2 = is_undef(prov0)
+            ? undef
+            : [
+                for (ri = [0:1:len(verts2)-1])
+                    let(records = [
+                        for (i = [0:1:len(verts0)-1])
+                            if (map2[i] == ri) prov0[1][i]
+                    ])
+                    len(records) == 1
+                        ? records[0]
+                        : _ps_prov_merge_records(records, ["merged_vertex", ri])
+            ],
+        fprov2 = fprov1,
 
         faces3 = drop_degenerate ? _ps_faces_drop_degenerate(verts2, faces2, eps) : faces2,
+        fprov3 = is_undef(prov0)
+            ? undef
+            : [
+                for (i = [0:1:len(faces2)-1])
+                    if (!drop_degenerate || !_ps_face_is_degenerate(verts2, faces2[i], eps)) fprov2[i]
+            ],
         max_planarity_before = _ps_faces_max_planarity_err(verts2, faces3, eps),
 
         faces4 = triangulate_nonplanar ? _ps_faces_triangulate_nonplanar(verts2, faces3, eps) : faces3,
+        fprov4 = is_undef(prov0)
+            ? undef
+            : triangulate_nonplanar
+                ? [
+                    for (i = [0:1:len(faces3)-1])
+                        for (tri = (_ps_face_is_planar(verts2, faces3[i], eps) ? [faces3[i]] : _ps_face_triangulate_fan(faces3[i])))
+                            _ps_face_is_planar(verts2, faces3[i], eps)
+                                ? fprov3[i]
+                                : _ps_prov_merge_records([fprov3[i]], ["triangulated_face"])
+                ]
+                : fprov3,
         faces5 = drop_degenerate ? _ps_faces_drop_degenerate(verts2, faces4, eps) : faces4,
+        fprov5 = is_undef(prov0)
+            ? undef
+            : [
+                for (i = [0:1:len(faces4)-1])
+                    if (!drop_degenerate || !_ps_face_is_degenerate(verts2, faces4[i], eps)) fprov4[i]
+            ],
 
-        compacted = remove_unreferenced ? _ps_compact_unreferenced(verts2, faces5) : [verts2, faces5],
+        compacted = remove_unreferenced ? _ps_compact_unreferenced(verts2, faces5) : [verts2, faces5, _ps_identity_map(len(verts2))],
         verts6 = compacted[0],
         faces6 = compacted[1],
+        vprov6 = is_undef(prov0)
+            ? undef
+            : remove_unreferenced
+                ? [
+                    for (ni = [0:1:len(verts6)-1])
+                        let(oi = [for (i = [0:1:len(verts2)-1]) if (compacted[2][i] == ni) i][0])
+                        vprov2[oi]
+                ]
+                : vprov2,
         max_planarity_after = _ps_faces_max_planarity_err(verts6, faces6, eps),
 
         // poly_make recomputes e_over_ir from current geometry.
-        p0 = poly_make(verts6, faces6),
+        p0 = is_undef(prov0)
+            ? poly_make(verts6, faces6)
+            : poly_make(
+                verts6,
+                faces6,
+                undef,
+                ["ps_provenance_v1", vprov6, fprov5, prov0[3]]
+            ),
         p = fix_winding ? poly_fix_winding(p0) : p0,
 
         report = [

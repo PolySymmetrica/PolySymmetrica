@@ -15,7 +15,7 @@
 //   .
 //   - Returns: vertex list
 // Arguments:
-//   poly = `[verts, faces, e_over_ir]`
+//   poly = `[verts, faces, e_over_ir, provenance?]`
 function poly_verts(poly)      = poly[0];
 
 // Function: poly_faces()
@@ -26,7 +26,7 @@ function poly_verts(poly)      = poly[0];
 //   .
 //   - Returns: face list
 // Arguments:
-//   poly = `[verts, faces, e_over_ir]`
+//   poly = `[verts, faces, e_over_ir, provenance?]`
 function poly_faces(poly)      = poly[1];
 
 // Function: poly_e_over_ir()
@@ -37,8 +37,260 @@ function poly_faces(poly)      = poly[1];
 //   .
 //   - Returns: positive scalar ratio
 // Arguments:
-//   poly = `[verts, faces, e_over_ir]`
+//   poly = `[verts, faces, e_over_ir, provenance?]`
 function poly_e_over_ir(poly)  = poly[2];
+
+// Function: poly_provenance()
+// Usage:
+//   result = poly_provenance(poly);
+// Description:
+//   Return the optional provenance record, or `undef` for a raw descriptor.
+//   The record layout is private; use the named query functions below.
+function poly_provenance(poly) = (len(poly) > 3) ? poly[3] : undef;
+
+// Function: poly_has_provenance()
+// Usage:
+//   result = poly_has_provenance(poly);
+// Description:
+//   Test whether a descriptor carries provenance metadata.
+function poly_has_provenance(poly) = !is_undef(poly_provenance(poly));
+
+function _ps_prov_has_item(xs, value, i=0) =
+    (i >= len(xs)) ? false
+    : (xs[i] == value) ? true : _ps_prov_has_item(xs, value, i + 1);
+
+function _ps_prov_unique(xs, acc=[], i=0) =
+    (i >= len(xs)) ? acc
+    : _ps_prov_unique(
+        xs,
+        _ps_prov_has_item(acc, xs[i]) ? acc : concat(acc, [xs[i]]),
+        i + 1
+    );
+
+function _ps_prov_record(vertex_roots=[], face_roots=[], events=[]) =
+    [_ps_prov_unique(vertex_roots), _ps_prov_unique(face_roots), events];
+
+function _ps_prov_source_vertex_record(i) =
+    _ps_prov_record([["vertex", i]], [], [["source_vertex", i]]);
+
+function _ps_prov_source_face_record(i, face) =
+    _ps_prov_record([], [["face", i]], [["source_face", i, face]]);
+
+function _ps_prov_empty_history() = [];
+
+function _ps_prov_init_record(poly) =
+    [
+        "ps_provenance_v1",
+        [for (i = [0:1:len(poly_verts(poly))-1]) _ps_prov_source_vertex_record(i)],
+        [for (i = [0:1:len(poly_faces(poly))-1]) _ps_prov_source_face_record(i, poly_faces(poly)[i])],
+        _ps_prov_empty_history()
+    ];
+
+// Function: poly_with_provenance()
+// Usage:
+//   result = poly_with_provenance(poly);
+// Description:
+//   Lazily initialize source lineage on a raw descriptor. Existing metadata is
+//   returned unchanged.
+function poly_with_provenance(poly) =
+    poly_has_provenance(poly)
+        ? poly
+        : [poly_verts(poly), poly_faces(poly), poly_e_over_ir(poly), _ps_prov_init_record(poly)];
+
+// Compatibility spelling for callers that prefer an explicit initializer.
+function poly_provenance_init(poly) = poly_with_provenance(poly);
+
+function _ps_prov_vertices(prov) = prov[1];
+function _ps_prov_faces(prov) = prov[2];
+function _ps_prov_history(prov) = prov[3];
+
+// Function: poly_vertex_provenance()
+// Usage:
+//   result = poly_vertex_provenance(poly, vertex_idx);
+// Description:
+//   Return the private lineage record for one current vertex.
+function poly_vertex_provenance(poly, vertex_idx) =
+    assert(poly_has_provenance(poly), "poly_vertex_provenance: poly has no provenance")
+    assert(
+        !is_undef(vertex_idx) &&
+        vertex_idx >= 0 &&
+        vertex_idx < len(poly_verts(poly)) &&
+        vertex_idx == floor(vertex_idx),
+        str("poly_vertex_provenance: current vertex index does not resolve: ", vertex_idx)
+    )
+    poly_provenance(poly)[1][vertex_idx];
+
+// Function: poly_face_provenance()
+// Usage:
+//   result = poly_face_provenance(poly, face_idx);
+// Description:
+//   Return the private lineage record for one current face.
+function poly_face_provenance(poly, face_idx) =
+    assert(poly_has_provenance(poly), "poly_face_provenance: poly has no provenance")
+    assert(
+        !is_undef(face_idx) &&
+        face_idx >= 0 &&
+        face_idx < len(poly_faces(poly)) &&
+        face_idx == floor(face_idx),
+        str("poly_face_provenance: current face index does not resolve: ", face_idx)
+    )
+    poly_provenance(poly)[2][face_idx];
+
+// Function: poly_provenance_history()
+// Usage:
+//   result = poly_provenance_history(poly);
+// Description:
+//   Return semantic public operations recorded on a provenance-bearing poly.
+function poly_provenance_history(poly) =
+    assert(poly_has_provenance(poly), "poly_provenance_history: poly has no provenance")
+    _ps_prov_history(poly_provenance(poly));
+
+function _ps_prov_record_has_event(record, tag) =
+    len([for (e = record[2]) if (is_list(e) && len(e) > 0 && e[0] == tag) 1]) > 0;
+
+// Function: poly_vertex_descends_from()
+// Usage:
+//   result = poly_vertex_descends_from(poly, vertex_idx, source_vertex_idx);
+// Description:
+//   Test whether a current vertex has lineage rooted at a source vertex.
+function poly_vertex_descends_from(poly, vertex_idx, source_vertex_idx) =
+    let(r = poly_vertex_provenance(poly, vertex_idx))
+    _ps_prov_has_item(r[0], ["vertex", source_vertex_idx]);
+
+// Function: poly_source_vertex_indices()
+// Usage:
+//   result = poly_source_vertex_indices(poly);
+// Description:
+//   Return current vertices that are retained source vertices, optionally
+//   restricted to one source vertex identity.
+function poly_source_vertex_indices(poly, source_vertex_idx=undef) =
+    assert(poly_has_provenance(poly), "poly_source_vertex_indices: poly has no provenance")
+    [
+        for (i = [0:1:len(poly_verts(poly))-1])
+            let(r = poly_vertex_provenance(poly, i))
+            if (
+                _ps_prov_record_has_event(r, "source_vertex") &&
+                (is_undef(source_vertex_idx) || _ps_prov_has_item(r[0], ["vertex", source_vertex_idx]))
+            ) i
+    ];
+
+function _ps_prov_merge_records(records, event=undef) =
+    let(
+        vr = [for (r = records) for (x = r[0]) x],
+        fr = [for (r = records) for (x = r[1]) x],
+        ev = [for (r = records) for (x = r[2]) x]
+    )
+    _ps_prov_record(vr, fr, is_undef(event) ? ev : concat(ev, [event]));
+
+function _ps_prov_merge_records_preserving_source_faces(records, event=undef) =
+    let(
+        roots = _ps_prov_merge_records([for (r = records) _ps_prov_record(r[0], r[1])]),
+        source_face_events = _ps_prov_unique([
+            for (r = records)
+                for (e = r[2])
+                    if (is_list(e) && len(e) > 0 && e[0] == "source_face") e
+        ])
+    )
+    _ps_prov_record(
+        roots[0],
+        roots[1],
+        concat(source_face_events, is_undef(event) ? [] : [event])
+    );
+
+function _ps_prov_source_face_events(record) =
+    [
+        for (e = record[2])
+            if (is_list(e) && len(e) > 2 && e[0] == "source_face") [e[1], e[2]]
+    ];
+
+function _ps_prov_source_face_has_edge(face, a, b) =
+    len(face) > 0 &&
+    len([
+        for (i = [0:1:len(face)-1])
+            if (
+                (face[i] == a && face[(i + 1) % len(face)] == b) ||
+                (face[i] == b && face[(i + 1) % len(face)] == a)
+            ) 1
+    ]) > 0;
+
+function _ps_prov_append_history(prov, operation) =
+    [prov[0], prov[1], prov[2], concat(prov[3], [[operation]])];
+
+function _ps_prov_history_prefix(history, i=0) =
+    (i >= len(history) - 1)
+        ? []
+        : concat([history[i]], _ps_prov_history_prefix(history, i + 1));
+
+function _ps_prov_replace_last_operation(prov, operation) =
+    [
+        prov[0],
+        prov[1],
+        prov[2],
+        concat(_ps_prov_history_prefix(prov[3]), [[operation]])
+    ];
+
+// Function: poly_edge_provenance()
+// Usage:
+//   result = poly_edge_provenance(poly, edge);
+// Description:
+//   Derive one edge's lineage from its endpoints and incident face cycles.
+//   Edges are intentionally not stored in the descriptor.
+function poly_edge_provenance(poly, edge) =
+    let(
+        edges = _ps_edges_from_faces(poly_faces(poly)),
+        ei = is_num(edge) ? edge : ps_find_edge_index(edges, edge[0], edge[1])
+    )
+    assert(
+        !is_undef(ei) && ei >= 0 && ei < len(edges) && ei == floor(ei),
+        str("poly_edge_provenance: edge does not resolve to a current edge: ", edge)
+    )
+    let(
+        ef = ps_edge_faces_table(poly_faces(poly), edges),
+        e = edges[ei],
+        vr = concat(poly_vertex_provenance(poly, e[0])[0], poly_vertex_provenance(poly, e[1])[0]),
+        fr = [for (fi = ef[ei]) for (x = poly_face_provenance(poly, fi)[1]) x],
+        source_faces = [
+            for (fi = ef[ei])
+                for (source_face = _ps_prov_source_face_events(poly_face_provenance(poly, fi)))
+                    source_face
+        ],
+        ids = [
+            for (a = _ps_prov_unique(vr))
+                for (b = _ps_prov_unique(vr))
+                    if (
+                        a[0] == "vertex" &&
+                        b[0] == "vertex" &&
+                        a[1] < b[1] &&
+                        len([
+                            for (source_face = source_faces)
+                                if (_ps_prov_source_face_has_edge(source_face[1], a[1], b[1])) 1
+                        ]) > 0
+                    )
+                    ["edge", a[1], b[1]]
+        ]
+    )
+    [
+        _ps_prov_unique(ids),
+        _ps_prov_unique(vr),
+        _ps_prov_unique(fr),
+        [["derived_edge", ei]]
+    ];
+
+// Function: poly_edge_source_ids()
+// Usage:
+//   result = poly_edge_source_ids(poly, edge);
+// Description:
+//   Return source-edge identities derived from current face topology.
+function poly_edge_source_ids(poly, edge) = poly_edge_provenance(poly, edge)[0];
+
+// Function: ps_assert_no_provenance()
+// Usage:
+//   result = ps_assert_no_provenance(poly, operator_name);
+// Description:
+//   Guard Stage-B operators while their lineage mappings are not implemented.
+function ps_assert_no_provenance(poly, operator_name) =
+    assert(!poly_has_provenance(poly), str(operator_name, ": provenance-bearing input is not supported yet"))
+    0;
 
 // Function: poly_edges()
 // Usage:
@@ -77,7 +329,7 @@ function ps_clamp(x, lo, hi) = min(max(x, lo), hi);
 //   verts = 3D vertex list
 //   faces = face index loops
 //   e_over_ir = optional scale ratio
-function poly_make(verts, faces, e_over_ir=undef) =
+function poly_make(verts, faces, e_over_ir=undef, provenance=undef) =
     let(
         // Validation
         _0 = assert(len(verts) >= 3, "Polyhedron must have at least 3 vertices"),
@@ -108,7 +360,13 @@ function poly_make(verts, faces, e_over_ir=undef) =
         
         _5 = assert(computed_e_over_ir > 0, "e_over_ir must be positive")
     )
-    [verts_centered, faces, computed_e_over_ir];
+    is_undef(provenance)
+        ? [verts_centered, faces, computed_e_over_ir]
+        : let(
+            _pv = assert(len(provenance[1]) == len(verts), "poly_make: provenance vertex count mismatch"),
+            _pf = assert(len(provenance[2]) == len(faces), "poly_make: provenance face count mismatch")
+        )
+        [verts_centered, faces, computed_e_over_ir, provenance];
 
 // Function: poly_fix_winding()
 // Usage:
@@ -127,7 +385,9 @@ function poly_fix_winding(poly) =
         faces = poly_faces(poly),
         fixed = _ps_fix_winding_all(faces)
     )
-    [verts, fixed, poly_e_over_ir(poly)];
+    is_undef(poly_provenance(poly))
+        ? [verts, fixed, poly_e_over_ir(poly)]
+        : [verts, fixed, poly_e_over_ir(poly), poly_provenance(poly)];
 
 ///////////////////////////////////////
 // ---- Basic validation helpers ----

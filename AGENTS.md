@@ -60,8 +60,11 @@ the repo root. Do not commit `.tmp/` artifacts.
 
 ## Data Model
 
-- Poly descriptors are `[verts, faces, e_over_ir]`; use accessors from
-  `core/funcs.scad`.
+- Poly descriptors are `[verts, faces, e_over_ir]` with an optional private
+  fourth provenance slot `[verts, faces, e_over_ir, provenance]`; raw three-slot
+  descriptors remain valid. Use the named descriptor and provenance accessors
+  from `core/funcs.scad`, and preserve provenance when rebuilding a descriptor.
+  Faces are the sole topology authority; edges remain derived from face cycles.
 - Orientation follows OpenSCAD LHR: faces are clockwise when viewed from
   outside. `ps_face_normal(...)` and `poly_face_ez(...)` follow this convention.
 - Placement metadata uses `$ps_*` variables. Keep names stable and document new

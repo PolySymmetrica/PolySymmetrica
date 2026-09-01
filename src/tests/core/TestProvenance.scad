@@ -1,0 +1,281 @@
+/*
+ * This file is part of PolySymmetrica, a Polyhedral Geometry Modelling System.
+ * Copyright 2025-2026 Susan Witts
+ * SPDX-License-Identifier: MIT
+ */
+
+use <../../polysymmetrica/core/funcs.scad>
+use <../../polysymmetrica/core/cleanup.scad>
+use <../../polysymmetrica/core/truncation.scad>
+use <../../polysymmetrica/core/transform.scad>
+use <../../polysymmetrica/models/platonics_all.scad>
+
+module test_provenance__raw_descriptors_are_lazy() {
+    p = hexahedron();
+    assert(!poly_has_provenance(p), "raw descriptor should not carry provenance");
+    q = poly_with_provenance(p);
+    assert(poly_has_provenance(q), "initializer should add provenance");
+    assert(len(poly_provenance(q)[1]) == len(poly_verts(p)), "source vertex record count");
+    assert(len(poly_provenance(q)[2]) == len(poly_faces(p)), "source face record count");
+}
+
+module test_provenance__chamfer_keeps_source_vertices_and_history() {
+    p = hexahedron();
+    q = poly_chamfer(p, t=0.1);
+    source = poly_source_vertex_indices(q);
+    assert(poly_has_provenance(q), "chamfer provenance");
+    assert(len(source) == len(poly_verts(p)), "chamfer retains source vertices");
+    assert(len(poly_provenance_history(q)) == 1, "one semantic operation");
+    assert(poly_provenance_history(q)[0] == ["chamfer"], "semantic operation is chamfer");
+    assert(len(poly_source_vertex_indices(q)) < len(poly_verts(q)), "generated site events");
+}
+
+module test_provenance__chamfer_edges_are_derived_from_lineage() {
+    q = poly_chamfer(hexahedron(), t=0.1);
+    ids = [for (ei = [0:1:len(poly_edges(q))-1]) poly_edge_source_ids(q, ei)];
+    assert(len([for (xs = ids) if (len(xs) > 0) xs]) > 0, "derived chamfer edge lineage");
+    assert(len(poly_edges(q)) == 48, "edges remain derived from faces");
+}
+
+module test_provenance__edge_queries_are_undirected() {
+    p = poly_with_provenance(tetrahedron());
+    e = poly_edges(p)[0];
+    reverse_e = [e[1], e[0]];
+    forward = poly_edge_provenance(p, e);
+    reverse = poly_edge_provenance(p, reverse_e);
+    assert(poly_edge_source_ids(p, reverse_e) == poly_edge_source_ids(p, e), "reversed edge source query");
+    assert(reverse[1] == forward[1], "reversed edge endpoint lineage");
+    assert(reverse[2] == forward[2], "reversed edge incident-face lineage");
+}
+
+module test_provenance__edge_queries_require_source_adjacency() {
+    p = poly_make(
+        [
+            [0, 0, 1],
+            [1, 0, 1],
+            [0, 1, 1]
+        ],
+        [[0, 1, 2]],
+        undef,
+        [
+            "ps_provenance_v1",
+            [
+                _ps_prov_record([["vertex", 0], ["vertex", 1]], [], []),
+                _ps_prov_record([["vertex", 1], ["vertex", 2]], [], []),
+                _ps_prov_record([["vertex", 0]], [], [])
+            ],
+            [
+                _ps_prov_record([], [["face", 0]], [["source_face", 0, [0, 1, 2, 3]]])
+            ],
+            []
+        ]
+    );
+    ids = poly_edge_source_ids(p, [0, 1]);
+    assert(len([for (id = ids) if (id == ["edge", 0, 1]) id]) == 1, "source-adjacent edge lineage");
+    assert(len([for (id = ids) if (id == ["edge", 1, 2]) id]) == 1, "second source-adjacent edge lineage");
+    assert(len([for (id = ids) if (id == ["edge", 0, 2]) id]) == 0, "source diagonal is not an edge");
+}
+
+module test_provenance__selective_truncation_targets_only_source_vertices() {
+    p = hexahedron();
+    q = poly_chamfer(p, t=0.1);
+    selected = concat(
+        poly_source_vertex_indices(q, 0),
+        poly_source_vertex_indices(q, 1),
+        poly_source_vertex_indices(q, 2),
+        poly_source_vertex_indices(q, 3)
+    );
+    r = poly_truncate(q, t=0.08, selected_vertices=selected);
+    all_cut = poly_truncate(q, t=0.08);
+    assert(poly_has_provenance(r), "selective truncation provenance");
+    assert(poly_provenance_history(r) == [["chamfer"], ["truncate"]], "compound history");
+    assert(len(poly_source_vertex_indices(r, 0)) == 0, "selected source vertex is cut");
+    assert(len(poly_source_vertex_indices(r, 4)) == 1, "unselected source vertex remains identifiable");
+    assert(len(poly_source_vertex_indices(r, 7)) == 1, "unselected source vertex remains selectable");
+    assert(len(poly_verts(r)) < len(poly_verts(all_cut)), "selective cut does not cut generated sites");
+}
+
+module test_provenance__cantitruncate_records_one_semantic_operation() {
+    p = poly_with_provenance(hexahedron());
+    q = poly_cantitruncate(p, t=0.08, c=0.08);
+    assert(poly_has_provenance(q), "cantitruncate provenance");
+    assert(poly_provenance_history(q) == [["cantitruncate"]], "compound operation history");
+    assert(len(poly_faces(q)) > len(poly_faces(p)), "cantitruncate topology");
+}
+
+module test_provenance__strict_rectify_preserves_site_lineage() {
+    p = poly_with_provenance(hexahedron());
+    q = poly_rectify(p, style="strict");
+    edge_ids = [for (ei = [0:1:len(poly_edges(q))-1]) poly_edge_source_ids(q, ei)];
+    face_roots = [for (fi = [0:1:len(poly_faces(q))-1]) poly_face_provenance(q, fi)[1]];
+    assert(poly_has_provenance(q), "strict rectify provenance");
+    assert(len(poly_source_vertex_indices(q)) == 0, "rectify creates edge-midpoint vertices");
+    assert(len([for (i = [0:1:len(poly_verts(q))-1]) if (poly_vertex_descends_from(q, i, 0)) i]) > 0, "rectify vertex descendants");
+    assert(len([for (xs = edge_ids) if (len(xs) > 0) xs]) > 0, "rectify edge lineage");
+    assert(len([for (xs = face_roots) if (len(xs) > 0) xs]) > 0, "rectify face lineage");
+}
+
+module test_provenance__truncation_preserves_source_face_lineage() {
+    q = poly_truncate(poly_with_provenance(hexahedron()), t=0.08);
+    face_roots = [for (fi = [0:1:len(poly_faces(q))-1]) poly_face_provenance(q, fi)[1]];
+    edge_ids = [for (ei = [0:1:len(poly_edges(q))-1]) poly_edge_source_ids(q, ei)];
+    assert(len([for (xs = face_roots) if (len(xs) > 0) xs]) == len(face_roots), "truncation source face lineage");
+    assert(len([for (xs = edge_ids) if (len(xs) > 0) xs]) > 0, "truncation edge lineage");
+}
+
+module test_provenance__planarized_rectify_has_rectify_history() {
+    p = poly_with_provenance(hexahedron());
+    q = poly_rectify(p, style="planarized");
+    assert(poly_provenance_history(q) == [["rectify"]], "planarized rectify semantic history");
+    assert(poly_has_provenance(q), "planarized rectify provenance");
+}
+
+module test_provenance__transform_merges_coincident_point_lineage() {
+    p = poly_with_provenance(tetrahedron());
+    pts = [
+        [poly_verts(p)[0], poly_verts(p)[1], poly_verts(p)[2]],
+        [poly_verts(p)[0], poly_verts(p)[2], poly_verts(p)[3]]
+    ];
+    point_provenance = [
+        poly_vertex_provenance(p, 0),
+        poly_vertex_provenance(p, 1),
+        poly_vertex_provenance(p, 2),
+        poly_vertex_provenance(p, 3),
+        poly_vertex_provenance(p, 2),
+        poly_vertex_provenance(p, 3)
+    ];
+    face_provenance = [poly_face_provenance(p, 0), poly_face_provenance(p, 1)];
+    q = _ps_poly_from_face_points(pts, 1e-8, 1e-8, "global", point_provenance, face_provenance, []);
+    assert(
+        len([
+            for (i = [0:1:len(poly_verts(q))-1])
+                if (poly_vertex_descends_from(q, i, 0) && poly_vertex_descends_from(q, i, 3)) i
+        ]) > 0,
+        "coincident point lineage is merged"
+    );
+}
+
+module test_provenance__cleanup_remaps_lineage() {
+    q = poly_chamfer(hexahedron(), t=0.1);
+    r = poly_cleanup(q, merge_vertices=true, remove_unreferenced=true);
+    assert(poly_has_provenance(r), "cleanup preserves provenance");
+    assert(len(poly_provenance(r)[1]) == len(poly_verts(r)), "cleanup vertex remap");
+    assert(len(poly_provenance(r)[2]) == len(poly_faces(r)), "cleanup face remap");
+}
+
+module test_provenance__cleanup_only_records_actual_vertex_merges() {
+    tetra = poly_with_provenance(tetrahedron());
+    p = tetra;
+    duplicate = poly_with_provenance(poly_make(
+        concat(poly_verts(tetra), [poly_verts(tetra)[0]]),
+        [
+            [4, 1, 2],
+            [4, 3, 1],
+            [4, 2, 3],
+            [1, 3, 2]
+        ],
+        poly_e_over_ir(tetra)
+    ));
+    no_merge = poly_cleanup(
+        duplicate,
+        merge_vertices=false,
+        remove_unreferenced=false,
+        fix_winding=false
+    );
+    no_coincident_merge = poly_cleanup(p, merge_vertices=true, fix_winding=false);
+    merged = poly_cleanup(
+        duplicate,
+        merge_vertices=true,
+        fix_winding=false
+    );
+    assert(
+        len([
+            for (i = [0:1:len(poly_verts(no_merge))-1])
+                if (_ps_prov_record_has_event(poly_vertex_provenance(no_merge, i), "merged_vertex")) i
+        ]) == 0,
+        "disabled cleanup merging does not record merges"
+    );
+    assert(
+        poly_vertex_descends_from(no_merge, 0, 0) &&
+        poly_vertex_descends_from(no_merge, 4, 4) &&
+        _ps_prov_record_has_event(poly_vertex_provenance(no_merge, 0), "source_vertex") &&
+        _ps_prov_record_has_event(poly_vertex_provenance(no_merge, 4), "source_vertex"),
+        "disabled cleanup merging preserves singleton source records"
+    );
+    assert(
+        len([
+            for (i = [0:1:len(poly_verts(no_coincident_merge))-1])
+                if (_ps_prov_record_has_event(poly_vertex_provenance(no_coincident_merge, i), "merged_vertex")) i
+        ]) == 0,
+        "singleton cleanup groups do not record merges"
+    );
+    assert(
+        len([
+            for (i = [0:1:len(poly_verts(merged))-1])
+                if (_ps_prov_record_has_event(poly_vertex_provenance(merged, i), "merged_vertex")) i
+        ]) == 1,
+        "coincident cleanup group records one merge"
+    );
+    assert(
+        poly_vertex_descends_from(merged, 0, 0) &&
+        poly_vertex_descends_from(merged, 0, 4),
+        "merged cleanup vertex retains every source root"
+    );
+}
+
+module test_provenance__cleanup_only_marks_split_faces_as_triangulated() {
+    planar = poly_cleanup(
+        poly_with_provenance(hexahedron()),
+        triangulate_nonplanar=true,
+        fix_winding=false
+    );
+    nonplanar = poly_with_provenance(poly_make(
+        [
+            [0, 0, 1],
+            [1, 0, 1],
+            [1, 1, 1],
+            [0, 1, 2]
+        ],
+        [[0, 1, 2, 3]]
+    ));
+    split = poly_cleanup(
+        nonplanar,
+        triangulate_nonplanar=true,
+        fix_winding=false
+    );
+
+    assert(
+        len([
+            for (i = [0:1:len(poly_faces(planar))-1])
+                if (_ps_prov_record_has_event(poly_face_provenance(planar, i), "triangulated_face")) i
+        ]) == 0,
+        "planar cleanup faces are not reported as triangulated"
+    );
+    assert(len(poly_faces(split)) == 2, "non-planar cleanup face is split");
+    assert(
+        len([
+            for (i = [0:1:len(poly_faces(split))-1])
+                if (_ps_prov_record_has_event(poly_face_provenance(split, i), "triangulated_face")) i
+        ]) == len(poly_faces(split)),
+        "split cleanup faces report triangulation"
+    );
+}
+
+module run_TestProvenance() {
+    test_provenance__raw_descriptors_are_lazy();
+    test_provenance__chamfer_keeps_source_vertices_and_history();
+    test_provenance__chamfer_edges_are_derived_from_lineage();
+    test_provenance__edge_queries_are_undirected();
+    test_provenance__edge_queries_require_source_adjacency();
+    test_provenance__selective_truncation_targets_only_source_vertices();
+    test_provenance__cantitruncate_records_one_semantic_operation();
+    test_provenance__strict_rectify_preserves_site_lineage();
+    test_provenance__planarized_rectify_has_rectify_history();
+    test_provenance__truncation_preserves_source_face_lineage();
+    test_provenance__transform_merges_coincident_point_lineage();
+    test_provenance__cleanup_remaps_lineage();
+    test_provenance__cleanup_only_records_actual_vertex_merges();
+    test_provenance__cleanup_only_marks_split_faces_as_triangulated();
+}
+
+run_TestProvenance();

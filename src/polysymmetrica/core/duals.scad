@@ -414,7 +414,8 @@ function ps_dual_scale_face_radius(poly, dual, face_k=undef, dual_face_k=undef) 
 //   profile = reserved for future extensions; currently unsupported
 function poly_dual(poly, profile=undef) =
     let(
-        _p_ok = assert(ps_profile_row_count(profile) == 0, "poly_dual: profile not supported")
+        _p_ok = assert(ps_profile_row_count(profile) == 0, "poly_dual: profile not supported"),
+        _prov_ok = ps_assert_no_provenance(poly, "poly_dual")
     )
     let(
         // Ensure input faces are outward for correct polar normals
