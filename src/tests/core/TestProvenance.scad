@@ -54,6 +54,18 @@ module test_provenance__cantitruncate_records_one_semantic_operation() {
     assert(len(poly_faces(q)) > len(poly_faces(p)), "cantitruncate topology");
 }
 
+module test_provenance__strict_rectify_preserves_site_lineage() {
+    p = poly_with_provenance(hexahedron());
+    q = poly_rectify(p, style="strict");
+    edge_ids = [for (ei = [0:1:len(poly_edges(q))-1]) poly_edge_source_ids(q, ei)];
+    face_roots = [for (fi = [0:1:len(poly_faces(q))-1]) poly_face_provenance(q, fi)[1]];
+    assert(poly_has_provenance(q), "strict rectify provenance");
+    assert(len(poly_source_vertex_indices(q)) == 0, "rectify creates edge-midpoint vertices");
+    assert(len([for (i = [0:1:len(poly_verts(q))-1]) if (poly_vertex_descends_from(q, i, 0)) i]) > 0, "rectify vertex descendants");
+    assert(len([for (xs = edge_ids) if (len(xs) > 0) xs]) > 0, "rectify edge lineage");
+    assert(len([for (xs = face_roots) if (len(xs) > 0) xs]) > 0, "rectify face lineage");
+}
+
 module test_provenance__cleanup_remaps_lineage() {
     q = poly_chamfer(hexahedron(), t=0.1);
     r = poly_cleanup(q, merge_vertices=true, remove_unreferenced=true);
@@ -68,6 +80,7 @@ module run_TestProvenance() {
     test_provenance__chamfer_edges_are_derived_from_lineage();
     test_provenance__selective_truncation_targets_only_source_vertices();
     test_provenance__cantitruncate_records_one_semantic_operation();
+    test_provenance__strict_rectify_preserves_site_lineage();
     test_provenance__cleanup_remaps_lineage();
 }
 

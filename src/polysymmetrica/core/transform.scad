@@ -37,6 +37,7 @@ function _ps_transform_site_provenance(prov, site, operation) =
         faces = _ps_prov_faces(prov),
         is_chamfer = operation == "chamfer",
         is_truncate = operation == "truncate",
+        is_rectify = operation == "rectify",
         is_cantitruncate = operation == "cantitruncate",
         fi = is_chamfer ? site[0] : undef,
         vi = is_chamfer ? site[1] : undef,
@@ -45,6 +46,10 @@ function _ps_transform_site_provenance(prov, site, operation) =
         a = is_truncate && len(site) > 3 ? site[2] : undef,
         b = is_truncate && len(site) > 3 ? site[3] : undef,
         near_v = is_truncate && len(site) > 4 ? site[4] : (is_truncate ? site[1] : undef),
+        rectify_a = is_rectify && len(site) > 0 ? site[0] : undef,
+        rectify_b = is_rectify && len(site) > 1 ? site[1] : undef,
+        rectify_f0 = is_rectify && len(site) > 2 ? site[2] : undef,
+        rectify_f1 = is_rectify && len(site) > 3 ? site[3] : undef,
         tag = is_cantitruncate && len(site) > 0 ? site[0] : undef,
         cant_fi = is_cantitruncate && len(site) > 1 ? site[1] : undef,
         cant_a = is_cantitruncate && len(site) > 2 ? site[2] : undef,
@@ -62,6 +67,13 @@ function _ps_transform_site_provenance(prov, site, operation) =
                     is_undef(b) ? [] : [vertices[b]],
                     is_undef(near_v) ? [] : [vertices[near_v]]
                 )
+                : is_rectify
+                    ? concat(
+                        is_undef(rectify_a) ? [] : [vertices[rectify_a]],
+                        is_undef(rectify_b) ? [] : [vertices[rectify_b]],
+                        is_undef(rectify_f0) ? [] : [faces[rectify_f0]],
+                        is_undef(rectify_f1) ? [] : [faces[rectify_f1]]
+                    )
                 : is_cantitruncate
                     ? concat(
                         is_undef(cant_a) || tag == "cantitruncate_face" ? [] : [vertices[cant_a]],
@@ -75,6 +87,7 @@ function _ps_transform_site_provenance(prov, site, operation) =
         [for (r = records) _ps_prov_record(r[0], r[1])],
         is_chamfer ? ["chamfer_site", fi, vi]
             : is_truncate ? ["truncation_site", near_v]
+            : is_rectify ? ["rectify_site", rectify_a, rectify_b]
             : is_cantitruncate ? ["cantitruncate_site", tag, cant_fi]
             : ["generated_site"]
     );

@@ -410,7 +410,10 @@ function _ps_rectify_strict(poly, eps=1e-8, cleanup=false, cleanup_eps=1e-8) =
         ],
         q = ps_poly_transform_from_sites(
             verts,
-            [for (i = [0:1:len(edge_mid)-1]) [i]],
+            [
+                for (i = [0:1:len(edge_mid)-1])
+                    [edges[i][0], edges[i][1], edge_faces[i][0], edge_faces[i][1]]
+            ],
             edge_mid,
             cycles_all,
             eps,

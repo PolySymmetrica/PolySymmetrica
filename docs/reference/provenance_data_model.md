@@ -118,6 +118,7 @@ The current event vocabulary includes:
 - `source_vertex` and `source_face` for lazy source records;
 - `chamfer_site` for generated chamfer sites;
 - `truncation_site` for generated truncation sites;
+- `rectify_site` for strict-rectification edge-midpoint sites;
 - `cantitruncate_site` for generated cantitruncation sites;
 - operation-specific face events such as `chamfer_face` and
   `truncate_face`;
