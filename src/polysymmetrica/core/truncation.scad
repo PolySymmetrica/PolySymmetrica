@@ -480,7 +480,10 @@ function poly_truncate(
             _selected_ok = is_undef(selected_vertices)
                 ? 0
                 : assert(
-                    len([for (vi = selected_vertices) if (vi >= 0 && vi < len(verts)) vi]) == len(selected_vertices),
+                    len([
+                        for (vi = selected_vertices)
+                            if (vi >= 0 && vi < len(verts) && vi == floor(vi)) vi
+                    ]) == len(selected_vertices),
                     "poly_truncate: selected_vertices contains an invalid index"
                 ),
             vert_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "vert"))
