@@ -647,15 +647,25 @@ function poly_rectify(
     )
     (style == "strict")
         ? _ps_rectify_strict(poly, eps, cleanup, cleanup_eps)
-        : poly_truncate(
-            poly,
-            t=0.5,
-            eps=eps,
-            profile=profile_eff,
-            cap_mode=cap_mode_eff,
-            cleanup=cleanup,
-            cleanup_eps=cleanup_eps
-        );
+        : let(
+            q = poly_truncate(
+                poly,
+                t=0.5,
+                eps=eps,
+                profile=profile_eff,
+                cap_mode=cap_mode_eff,
+                cleanup=cleanup,
+                cleanup_eps=cleanup_eps
+            )
+        )
+        poly_has_provenance(q)
+            ? poly_make(
+                poly_verts(q),
+                poly_faces(q),
+                poly_e_over_ir(q),
+                _ps_prov_replace_last_operation(poly_provenance(q), "rectify")
+            )
+            : q;
 
 // Function: poly_chamfer()
 // Usage:

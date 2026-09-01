@@ -259,7 +259,8 @@ The following paths currently preserve or create provenance:
   `selected_vertices` argument is the Stage-A selective selector.
 - `poly_rectify(...)` preserves provenance through strict rectification and
   through the provenance-aware truncation path used by planarized
-  rectification.
+  rectification. Both styles record one semantic `rectify` operation; the
+  planarized implementation detail does not appear as `truncate` in history.
 - `poly_cantitruncate(...)` preserves a supplied provenance record and records
   one semantic `cantitruncate` operation. Its generated site events retain
   the source face/vertex information needed by current lineage queries.

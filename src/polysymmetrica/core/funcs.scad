@@ -171,6 +171,19 @@ function _ps_prov_merge_records(records, event=undef) =
 function _ps_prov_append_history(prov, operation) =
     [prov[0], prov[1], prov[2], concat(prov[3], [[operation]])];
 
+function _ps_prov_history_prefix(history, i=0) =
+    (i >= len(history) - 1)
+        ? []
+        : concat([history[i]], _ps_prov_history_prefix(history, i + 1));
+
+function _ps_prov_replace_last_operation(prov, operation) =
+    [
+        prov[0],
+        prov[1],
+        prov[2],
+        concat(_ps_prov_history_prefix(prov[3]), [[operation]])
+    ];
+
 // Function: poly_edge_provenance()
 // Usage:
 //   result = poly_edge_provenance(poly, edge);

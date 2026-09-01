@@ -76,6 +76,13 @@ module test_provenance__strict_rectify_preserves_site_lineage() {
     assert(len([for (xs = face_roots) if (len(xs) > 0) xs]) > 0, "rectify face lineage");
 }
 
+module test_provenance__planarized_rectify_has_rectify_history() {
+    p = poly_with_provenance(hexahedron());
+    q = poly_rectify(p, style="planarized");
+    assert(poly_provenance_history(q) == [["rectify"]], "planarized rectify semantic history");
+    assert(poly_has_provenance(q), "planarized rectify provenance");
+}
+
 module test_provenance__transform_merges_coincident_point_lineage() {
     p = poly_with_provenance(tetrahedron());
     pts = [
@@ -116,6 +123,7 @@ module run_TestProvenance() {
     test_provenance__selective_truncation_targets_only_source_vertices();
     test_provenance__cantitruncate_records_one_semantic_operation();
     test_provenance__strict_rectify_preserves_site_lineage();
+    test_provenance__planarized_rectify_has_rectify_history();
     test_provenance__transform_merges_coincident_point_lineage();
     test_provenance__cleanup_remaps_lineage();
 }
