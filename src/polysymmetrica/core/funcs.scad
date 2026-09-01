@@ -224,7 +224,13 @@ function _ps_prov_replace_last_operation(prov, operation) =
 function poly_edge_provenance(poly, edge) =
     let(
         edges = _ps_edges_from_faces(poly_faces(poly)),
-        ei = is_num(edge) ? edge : ps_find_edge_index(edges, edge[0], edge[1]),
+        ei = is_num(edge) ? edge : ps_find_edge_index(edges, edge[0], edge[1])
+    )
+    assert(
+        !is_undef(ei) && ei >= 0 && ei < len(edges) && ei == floor(ei),
+        str("poly_edge_provenance: edge does not resolve to a current edge: ", edge)
+    )
+    let(
         ef = ps_edge_faces_table(poly_faces(poly), edges),
         e = edges[ei],
         vr = concat(poly_vertex_provenance(poly, e[0])[0], poly_vertex_provenance(poly, e[1])[0]),
