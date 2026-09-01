@@ -132,7 +132,13 @@ function _ps_poly_from_face_points(
         faces_idx_keep = [ for (f = faces_idx_simpl) if (_ps_face_keep_after_simplify(f)) f ],
         point_lineages = is_undef(point_provenance)
             ? undef
-            : [for (p = uniq_verts) point_provenance[_ps_find_point(all_pts, p, len_eps_eff)]],
+            : [
+                for (p = uniq_verts)
+                    _ps_prov_merge_records([
+                        for (i = [0:1:len(all_pts)-1])
+                            if (ps_point_eq(all_pts[i], p, len_eps_eff)) point_provenance[i]
+                    ])
+            ],
         face_lineages = is_undef(face_provenance)
             ? undef
             : [

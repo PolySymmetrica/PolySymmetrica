@@ -7,6 +7,7 @@
 use <../../polysymmetrica/core/funcs.scad>
 use <../../polysymmetrica/core/cleanup.scad>
 use <../../polysymmetrica/core/truncation.scad>
+use <../../polysymmetrica/core/transform.scad>
 use <../../polysymmetrica/models/platonics_all.scad>
 
 module test_provenance__raw_descriptors_are_lazy() {
@@ -66,6 +67,31 @@ module test_provenance__strict_rectify_preserves_site_lineage() {
     assert(len([for (xs = face_roots) if (len(xs) > 0) xs]) > 0, "rectify face lineage");
 }
 
+module test_provenance__transform_merges_coincident_point_lineage() {
+    p = poly_with_provenance(tetrahedron());
+    pts = [
+        [poly_verts(p)[0], poly_verts(p)[1], poly_verts(p)[2]],
+        [poly_verts(p)[0], poly_verts(p)[2], poly_verts(p)[3]]
+    ];
+    point_provenance = [
+        poly_vertex_provenance(p, 0),
+        poly_vertex_provenance(p, 1),
+        poly_vertex_provenance(p, 2),
+        poly_vertex_provenance(p, 3),
+        poly_vertex_provenance(p, 2),
+        poly_vertex_provenance(p, 3)
+    ];
+    face_provenance = [poly_face_provenance(p, 0), poly_face_provenance(p, 1)];
+    q = _ps_poly_from_face_points(pts, 1e-8, 1e-8, "global", point_provenance, face_provenance, []);
+    assert(
+        len([
+            for (i = [0:1:len(poly_verts(q))-1])
+                if (poly_vertex_descends_from(q, i, 0) && poly_vertex_descends_from(q, i, 3)) i
+        ]) > 0,
+        "coincident point lineage is merged"
+    );
+}
+
 module test_provenance__cleanup_remaps_lineage() {
     q = poly_chamfer(hexahedron(), t=0.1);
     r = poly_cleanup(q, merge_vertices=true, remove_unreferenced=true);
@@ -81,6 +107,7 @@ module run_TestProvenance() {
     test_provenance__selective_truncation_targets_only_source_vertices();
     test_provenance__cantitruncate_records_one_semantic_operation();
     test_provenance__strict_rectify_preserves_site_lineage();
+    test_provenance__transform_merges_coincident_point_lineage();
     test_provenance__cleanup_remaps_lineage();
 }
 
