@@ -76,6 +76,14 @@ module test_provenance__strict_rectify_preserves_site_lineage() {
     assert(len([for (xs = face_roots) if (len(xs) > 0) xs]) > 0, "rectify face lineage");
 }
 
+module test_provenance__truncation_preserves_source_face_lineage() {
+    q = poly_truncate(poly_with_provenance(hexahedron()), t=0.08);
+    face_roots = [for (fi = [0:1:len(poly_faces(q))-1]) poly_face_provenance(q, fi)[1]];
+    edge_ids = [for (ei = [0:1:len(poly_edges(q))-1]) poly_edge_source_ids(q, ei)];
+    assert(len([for (xs = face_roots) if (len(xs) > 0) xs]) == len(face_roots), "truncation source face lineage");
+    assert(len([for (xs = edge_ids) if (len(xs) > 0) xs]) > 0, "truncation edge lineage");
+}
+
 module test_provenance__planarized_rectify_has_rectify_history() {
     p = poly_with_provenance(hexahedron());
     q = poly_rectify(p, style="planarized");
@@ -124,6 +132,7 @@ module run_TestProvenance() {
     test_provenance__cantitruncate_records_one_semantic_operation();
     test_provenance__strict_rectify_preserves_site_lineage();
     test_provenance__planarized_rectify_has_rectify_history();
+    test_provenance__truncation_preserves_source_face_lineage();
     test_provenance__transform_merges_coincident_point_lineage();
     test_provenance__cleanup_remaps_lineage();
 }

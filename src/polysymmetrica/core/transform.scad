@@ -47,6 +47,8 @@ function _ps_transform_site_provenance(prov, site, operation) =
         b = is_truncate && len(site) > 3 ? site[3] : undef,
         near_v = is_truncate && len(site) > 4 ? site[4] : (is_truncate ? site[1] : undef),
         retain_truncate_vertex = is_truncate && len(site) > 5 ? site[5] : false,
+        truncate_f0 = is_truncate && len(site) > 6 ? site[6] : undef,
+        truncate_f1 = is_truncate && len(site) > 7 ? site[7] : undef,
         rectify_a = is_rectify && len(site) > 0 ? site[0] : undef,
         rectify_b = is_rectify && len(site) > 1 ? site[1] : undef,
         rectify_f0 = is_rectify && len(site) > 2 ? site[2] : undef,
@@ -68,7 +70,9 @@ function _ps_transform_site_provenance(prov, site, operation) =
                     : concat(
                         is_undef(a) ? [] : [vertices[a]],
                         is_undef(b) ? [] : [vertices[b]],
-                        is_undef(near_v) ? [] : [vertices[near_v]]
+                        is_undef(near_v) ? [] : [vertices[near_v]],
+                        is_undef(truncate_f0) ? [] : [faces[truncate_f0]],
+                        is_undef(truncate_f1) ? [] : [faces[truncate_f1]]
                     ))
                 : is_rectify
                     ? concat(
