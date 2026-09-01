@@ -223,6 +223,44 @@ module test_provenance__cleanup_only_records_actual_vertex_merges() {
     );
 }
 
+module test_provenance__cleanup_only_marks_split_faces_as_triangulated() {
+    planar = poly_cleanup(
+        poly_with_provenance(hexahedron()),
+        triangulate_nonplanar=true,
+        fix_winding=false
+    );
+    nonplanar = poly_with_provenance(poly_make(
+        [
+            [0, 0, 1],
+            [1, 0, 1],
+            [1, 1, 1],
+            [0, 1, 2]
+        ],
+        [[0, 1, 2, 3]]
+    ));
+    split = poly_cleanup(
+        nonplanar,
+        triangulate_nonplanar=true,
+        fix_winding=false
+    );
+
+    assert(
+        len([
+            for (i = [0:1:len(poly_faces(planar))-1])
+                if (_ps_prov_record_has_event(poly_face_provenance(planar, i), "triangulated_face")) i
+        ]) == 0,
+        "planar cleanup faces are not reported as triangulated"
+    );
+    assert(len(poly_faces(split)) == 2, "non-planar cleanup face is split");
+    assert(
+        len([
+            for (i = [0:1:len(poly_faces(split))-1])
+                if (_ps_prov_record_has_event(poly_face_provenance(split, i), "triangulated_face")) i
+        ]) == len(poly_faces(split)),
+        "split cleanup faces report triangulation"
+    );
+}
+
 module run_TestProvenance() {
     test_provenance__raw_descriptors_are_lazy();
     test_provenance__chamfer_keeps_source_vertices_and_history();
@@ -237,6 +275,7 @@ module run_TestProvenance() {
     test_provenance__transform_merges_coincident_point_lineage();
     test_provenance__cleanup_remaps_lineage();
     test_provenance__cleanup_only_records_actual_vertex_merges();
+    test_provenance__cleanup_only_marks_split_faces_as_triangulated();
 }
 
 run_TestProvenance();

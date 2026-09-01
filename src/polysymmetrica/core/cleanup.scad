@@ -154,7 +154,9 @@ function poly_cleanup(
                 ? [
                     for (i = [0:1:len(faces3)-1])
                         for (tri = (_ps_face_is_planar(verts2, faces3[i], eps) ? [faces3[i]] : _ps_face_triangulate_fan(faces3[i])))
-                            _ps_prov_merge_records([fprov3[i]], ["triangulated_face"])
+                            _ps_face_is_planar(verts2, faces3[i], eps)
+                                ? fprov3[i]
+                                : _ps_prov_merge_records([fprov3[i]], ["triangulated_face"])
                 ]
                 : fprov3,
         faces5 = drop_degenerate ? _ps_faces_drop_degenerate(verts2, faces4, eps) : faces4,
