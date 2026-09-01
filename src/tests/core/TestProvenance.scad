@@ -37,6 +37,17 @@ module test_provenance__chamfer_edges_are_derived_from_lineage() {
     assert(len(poly_edges(q)) == 48, "edges remain derived from faces");
 }
 
+module test_provenance__edge_queries_are_undirected() {
+    p = poly_with_provenance(tetrahedron());
+    e = poly_edges(p)[0];
+    reverse_e = [e[1], e[0]];
+    forward = poly_edge_provenance(p, e);
+    reverse = poly_edge_provenance(p, reverse_e);
+    assert(poly_edge_source_ids(p, reverse_e) == poly_edge_source_ids(p, e), "reversed edge source query");
+    assert(reverse[1] == forward[1], "reversed edge endpoint lineage");
+    assert(reverse[2] == forward[2], "reversed edge incident-face lineage");
+}
+
 module test_provenance__selective_truncation_targets_only_source_vertices() {
     p = hexahedron();
     q = poly_chamfer(p, t=0.1);
@@ -188,6 +199,7 @@ module run_TestProvenance() {
     test_provenance__raw_descriptors_are_lazy();
     test_provenance__chamfer_keeps_source_vertices_and_history();
     test_provenance__chamfer_edges_are_derived_from_lineage();
+    test_provenance__edge_queries_are_undirected();
     test_provenance__selective_truncation_targets_only_source_vertices();
     test_provenance__cantitruncate_records_one_semantic_operation();
     test_provenance__strict_rectify_preserves_site_lineage();
