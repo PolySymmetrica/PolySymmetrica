@@ -374,6 +374,7 @@ function _ps_rectify_strict(poly, eps=1e-8, cleanup=false, cleanup_eps=1e-8) =
         edges = base[2],
         edge_faces = base[3],
         poly0 = base[5],
+        provenance = poly_has_provenance(poly) ? poly_provenance(poly) : undef,
         edge_mid = [
             for (e = edges)
                 (verts[e[0]] + verts[e[1]]) / 2
@@ -413,7 +414,10 @@ function _ps_rectify_strict(poly, eps=1e-8, cleanup=false, cleanup_eps=1e-8) =
             edge_mid,
             cycles_all,
             eps,
-            eps
+            eps,
+            "global",
+            provenance,
+            "rectify"
         )
     )
     ps_finalize_poly(q, cleanup, cleanup_eps);
@@ -449,7 +453,8 @@ function poly_truncate(
     profile=undef,
     cap_mode="planar_edge_fraction",
     cleanup=false,
-    cleanup_eps=1e-8
+    cleanup_eps=1e-8,
+    selected_vertices=undef
 ) =
     let(
         _cap_mode_ok = _ps_truncate_cap_mode_ok(cap_mode),
@@ -466,6 +471,15 @@ function poly_truncate(
             edges = base[2],
             edge_faces = base[3],
             poly0 = base[5],
+            provenance = poly_has_provenance(poly)
+                ? poly_provenance(poly)
+                : (is_undef(selected_vertices) ? undef : poly_with_provenance(poly)[3]),
+            _selected_ok = is_undef(selected_vertices)
+                ? 0
+                : assert(
+                    len([for (vi = selected_vertices) if (vi >= 0 && vi < len(verts)) vi]) == len(selected_vertices),
+                    "poly_truncate: selected_vertices contains an invalid index"
+                ),
             vert_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "vert"))
                 ? ps_classify_vert_ids(poly_classify(poly, 1, 1e-6, 1, false), len(verts))
                 : undef,
@@ -477,7 +491,7 @@ function poly_truncate(
             vert_t_by_idx = is_undef(params_compiled) ? undef : params_compiled[0],
             vert_c_by_idx = is_undef(params_compiled) ? undef : params_compiled[1],
             vert_cap_mode_by_idx = is_undef(params_compiled) ? undef : params_compiled[2],
-            t_by_vert = [
+            t_by_vert_raw = [
                 for (vi = [0:1:len(verts)-1])
                     let(
                         t_ov = ps_compiled_param_get(vert_t_by_idx, vi),
@@ -487,6 +501,9 @@ function poly_truncate(
                         : !is_undef(c_ov) ? _ps_truncate_norm_to_t(poly, c_ov)
                         : t_base
             ],
+            t_by_vert = is_undef(selected_vertices)
+                ? t_by_vert_raw
+                : [for (vi = [0:1:len(verts)-1]) search(vi, selected_vertices) != [] ? t_by_vert_raw[vi] : 0],
             cap_mode_by_vert = [
                 for (vi = [0:1:len(verts)-1])
                     let(mode_ov = ps_compiled_param_get(vert_cap_mode_by_idx, vi))
@@ -500,7 +517,7 @@ function poly_truncate(
         )
         let(
             q = all_zero
-            ? poly
+            ? (is_undef(provenance) ? poly : poly_with_provenance(poly))
             : let(
                 edge_pts = _ps_truncate_edge_points_by_vert_cap_mode(len(verts), edges, t_by_vert, poly0, edge_faces, cap_mode_by_vert, eps),
                 overlapping_edges = _ps_truncate_overlapping_edge_cuts(verts, edges, edge_pts, t_by_vert, eps),
@@ -514,7 +531,10 @@ function poly_truncate(
                 ),
                 sites = [
                     for (ei = [0:1:len(edges)-1])
-                        each [[ei, edges[ei][0]], [ei, edges[ei][1]]]
+                        each [
+                            ["truncate", ei, edges[ei][0], edges[ei][1], edges[ei][0]],
+                            ["truncate", ei, edges[ei][0], edges[ei][1], edges[ei][1]]
+                        ]
                 ],
                 site_points = [
                     for (ei = [0:1:len(edges)-1])
@@ -549,9 +569,31 @@ function poly_truncate(
                 ],
                 cycles_all = concat(face_cycles, vert_cycles)
             )
-            ps_poly_transform_from_sites(verts, sites, site_points, cycles_all, eps, eps, transform_orientation)
+            ps_poly_transform_from_sites(
+                verts,
+                sites,
+                site_points,
+                cycles_all,
+                eps,
+                eps,
+                transform_orientation,
+                provenance,
+                "truncate"
+            )
         )
         ps_finalize_poly(q, cleanup, cleanup_eps);
+
+// Internal selective truncation entry point used by compound provenance-aware
+// operators. Selection is by current vertex identity, never by coordinates.
+function _ps_truncate_selected_vertices(poly, selected_vertices, t, eps=1e-8, cleanup=false, cleanup_eps=1e-8) =
+    poly_truncate(
+        poly,
+        t=t,
+        eps=eps,
+        cleanup=cleanup,
+        cleanup_eps=cleanup_eps,
+        selected_vertices=selected_vertices
+    );
 
 // Function: poly_rectify()
 // Usage:
@@ -651,6 +693,7 @@ function poly_chamfer(
         edges = base[2],
         edge_faces = base[3],
         face_n = base[4],
+        provenance = poly_with_provenance(poly)[3],
         face_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "face"))
             ? ps_classify_face_ids(poly_classify(poly, 1, 1e-6, 1, false), len(faces0))
             : undef,
@@ -701,7 +744,7 @@ function poly_chamfer(
             for (fi = [0:1:len(faces0)-1])
                 let(f = faces0[fi], n = len(f))
                 for (k = [0:1:n-1])
-                    [fi, f[k]]
+                    [fi, f[k], f[(k-1+n)%n], f[(k+1)%n]]
         ],
         site_points = [
             for (fi = [0:1:len(faces0)-1])
@@ -745,8 +788,18 @@ function poly_chamfer(
         cycles_all = concat(face_cycles, edge_cycles)
     )
     let(q = all_zero
-        ? poly
-        : ps_poly_transform_from_sites(verts0, sites, site_points, cycles_all, eps, len_eps))
+        ? poly_with_provenance(poly)
+        : ps_poly_transform_from_sites(
+            verts0,
+            sites,
+            site_points,
+            cycles_all,
+            eps,
+            len_eps,
+            "global",
+            provenance,
+            "chamfer"
+        ))
     ps_finalize_poly(q, cleanup, cleanup_eps);
 
 // --- Cantellation helpers ---
@@ -958,6 +1011,7 @@ function poly_cantellate(
     let(
         rows = is_undef(profile) ? [] : profile,
         _style_ok = assert(style == "strict" || style == "planarized", "poly_cantellate: style must be \"strict\" or \"planarized\""),
+        _prov_ok = ps_assert_no_provenance(poly, "poly_cantellate"),
         _pwarn = _ps_override_warn_unsupported(rows, "poly_cantellate", [["face", ["df", "c"]], ["vert", ["cap_mode"]]])
     )
     let(
@@ -968,6 +1022,7 @@ function poly_cantellate(
         edge_faces = base[3],
         face_n = base[4],
         poly0 = base[5],
+        provenance = poly_has_provenance(poly) ? poly_provenance(poly) : undef,
         need_face_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "face")),
         need_vert_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "vert")),
         cls = (need_face_fid || need_vert_fid) ? poly_classify(poly, 1, 1e-6, 1, false) : undef,
@@ -1709,6 +1764,7 @@ function poly_snub(
     let(
         _ = assert(poly_valid(poly, "star_ok"), "snub: requires manifold poly (star_ok)"),
         _style_ok = assert(style == "strict" || style == "planarized", "poly_snub: style must be \"strict\" or \"planarized\""),
+        _prov_ok = ps_assert_no_provenance(poly, "poly_snub"),
         auto_params = (is_undef(c) && is_undef(df) && is_undef(angle) && is_undef(de))
             ? _ps_snub_default_params(poly, handedness, 1e-9, verbose)
             : undef,
@@ -2125,6 +2181,7 @@ function poly_cantitruncate(
         edge_faces = base[3],
         face_n = base[4],
         poly0 = base[5],
+        provenance = poly_has_provenance(poly) ? poly_provenance(poly) : undef,
         need_face_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "face")),
         need_vert_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "vert")),
         need_edge_fid = (len(rows) > 0 && ps_profile_uses_family(rows, "edge")),
@@ -2258,11 +2315,33 @@ function poly_cantitruncate(
         cap_face_edge_pts_flat = (style == "planarized")
             ? [ for (fi = [0:1:len(faces0)-1]) for (p = cap_face_edge_pts3d[fi]) p ]
             : [],
+        edge_site_records = [
+            for (fi = [0:1:len(faces0)-1])
+                let(f = faces0[fi], n = len(f))
+                for (k = [0:1:n-1])
+                    each [
+                        ["cantitruncate_edge", fi, f[k], f[(k+1)%n]],
+                        ["cantitruncate_edge", fi, f[(k+1)%n], f[k]]
+                    ]
+        ],
+        face_site_records = [
+            for (fi = [0:1:len(faces0)-1])
+                for (v = faces0[fi]) ["cantitruncate_face", fi, v]
+        ],
+        cap_site_records = [
+            for (fi = [0:1:len(faces0)-1])
+                let(f = faces0[fi], n = len(f))
+                for (k = [0:1:n-1])
+                    each [
+                        ["cantitruncate_cap", fi, f[k], f[(k+1)%n]],
+                        ["cantitruncate_cap", fi, f[(k+1)%n], f[k]]
+                    ]
+        ],
         sites = concat(
-            [ for (i = [0:1:len(face_edge_pts_flat)-1]) [0, i] ],
-            face_sites,
+            edge_site_records,
+            face_site_records,
             (style == "planarized")
-                ? [ for (i = [0:1:len(cap_face_edge_pts_flat)-1]) ["cap", i] ]
+                ? cap_site_records
                 : []
         ),
         site_points = concat(face_edge_pts_flat, face_pts_flat, cap_face_edge_pts_flat),
@@ -2283,7 +2362,17 @@ function poly_cantitruncate(
             : [],
         cycles_all = concat(face_cycles, edge_cycles, connector_cycles, vert_cycles)
     )
-    let(q = ps_poly_transform_from_sites(verts0, sites, site_points, cycles_all, eps, len_eps))
+    let(q = ps_poly_transform_from_sites(
+        verts0,
+        sites,
+        site_points,
+        cycles_all,
+        eps,
+        len_eps,
+        "global",
+        provenance,
+        "cantitruncate"
+    ))
     ps_finalize_poly(q, cleanup, cleanup_eps);
 
 // Truncation default estimators are implemented in solvers.scad.

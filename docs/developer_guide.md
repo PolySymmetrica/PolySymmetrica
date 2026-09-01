@@ -123,6 +123,25 @@ Every polyhedron in PolySymmetrica is defined as:
 [ verts, faces, e_over_ir ]
 ```
 
+Provenance-aware transforms may append a fourth slot:
+
+```scad
+[ verts, faces, e_over_ir, provenance ]
+```
+
+The fourth slot is optional and private-layout metadata. Raw three-slot
+descriptors remain valid. Use the named provenance accessors in
+`core/funcs.scad` (`poly_with_provenance()`, `poly_vertex_provenance()`,
+`poly_face_provenance()`, `poly_edge_source_ids()`, and
+`poly_provenance_history()`) instead of indexing it directly. Faces remain the
+sole topology authority: edges are always derived from face cycles, with edge
+lineage computed from endpoint and incident-face lineage.
+
+Stage-A provenance is initialized lazily by chamfer and is preserved through
+the provenance-aware truncation/rectification and cleanup paths. A retained
+source vertex is marked separately from generated chamfer or truncation sites,
+which lets compound operators select only the intended current vertices.
+
 Where:
 
 | Field       | Meaning                                                                  |
@@ -130,6 +149,7 @@ Where:
 | `verts`     | List of 3D vertex coordinates (unit-edge by convention; not required)     |
 | `faces`     | List of faces, each face = ordered list of vertex indices                |
 | `e_over_ir` | Ratio of edge length to **inter-radius**                                 |
+| `provenance` | Optional lineage metadata; access through named functions                |
 
 This compact representation allows:
 

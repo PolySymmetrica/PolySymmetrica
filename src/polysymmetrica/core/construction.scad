@@ -169,6 +169,7 @@ function poly_boundary_loops(poly) =
 //   cleanup_eps = cleanup tolerance
 function poly_cap_loops(poly, loops=undef, cleanup=true, cleanup_eps=1e-8) =
     let(
+        _prov_ok = ps_assert_no_provenance(poly, "poly_cap_loops"),
         verts = poly_verts(poly),
         faces = poly_faces(poly),
         loops_eff = is_undef(loops) ? poly_boundary_loops(poly) : loops,
@@ -201,6 +202,7 @@ function poly_cap_loops(poly, loops=undef, cleanup=true, cleanup_eps=1e-8) =
 //   cleanup_eps = cleanup tolerance used when `cleanup=true`.
 function poly_delete_faces(poly, fids, cap=false, cleanup=true, cleanup_eps=1e-8) =
     let(
+        _prov_ok = ps_assert_no_provenance(poly, "poly_delete_faces"),
         fids_raw = is_list(fids) ? fids : [fids],
         fids_non_int = [for (fi = fids_raw) if (abs(fi - round(fi)) > 1e-9) fi],
         _0 = assert(len(fids_non_int) == 0, "delete_faces: face indices must be integers"),
@@ -350,6 +352,7 @@ function poly_slice(
 ) =
     let(
         _0 = assert(poly_valid(poly, "closed"), "slice: source poly must be closed-valid"),
+        _prov_ok = ps_assert_no_provenance(poly, "poly_slice"),
         _1 = assert(keep == "above" || keep == "below", "slice: keep must be 'above' or 'below'"),
         n_hat = v_norm(plane_n),
         _2 = assert(norm(n_hat) > 0, "slice: plane normal must be non-zero"),
@@ -634,6 +637,8 @@ function poly_attach(
     cleanup_eps=1e-8
 ) =
     let(
+        _prov_ok = ps_assert_no_provenance(p1, "poly_attach"),
+        _prov_ok2 = ps_assert_no_provenance(p2, "poly_attach"),
         _0 = assert(poly_valid(p1, "closed"), "attach: p1 must be closed-valid"),
         _1 = assert(poly_valid(p2, "closed"), "attach: p2 must be closed-valid"),
         _2 = assert(scale_mode == "fit_edge" || scale_mode == "none", "attach: scale_mode must be 'fit_edge' or 'none'"),
