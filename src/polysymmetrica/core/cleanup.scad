@@ -128,10 +128,13 @@ function poly_cleanup(
             ? undef
             : [
                 for (ri = [0:1:len(verts2)-1])
-                    _ps_prov_merge_records([
+                    let(records = [
                         for (i = [0:1:len(verts0)-1])
                             if (map2[i] == ri) prov0[1][i]
-                    ], ["merged_vertex", ri])
+                    ])
+                    len(records) == 1
+                        ? records[0]
+                        : _ps_prov_merge_records(records, ["merged_vertex", ri])
             ],
         fprov2 = fprov1,
 

@@ -124,6 +124,66 @@ module test_provenance__cleanup_remaps_lineage() {
     assert(len(poly_provenance(r)[2]) == len(poly_faces(r)), "cleanup face remap");
 }
 
+module test_provenance__cleanup_only_records_actual_vertex_merges() {
+    tetra = poly_with_provenance(tetrahedron());
+    p = tetra;
+    duplicate = poly_with_provenance(poly_make(
+        concat(poly_verts(tetra), [poly_verts(tetra)[0]]),
+        [
+            [4, 1, 2],
+            [4, 3, 1],
+            [4, 2, 3],
+            [1, 3, 2]
+        ],
+        poly_e_over_ir(tetra)
+    ));
+    no_merge = poly_cleanup(
+        duplicate,
+        merge_vertices=false,
+        remove_unreferenced=false,
+        fix_winding=false
+    );
+    no_coincident_merge = poly_cleanup(p, merge_vertices=true, fix_winding=false);
+    merged = poly_cleanup(
+        duplicate,
+        merge_vertices=true,
+        fix_winding=false
+    );
+    assert(
+        len([
+            for (i = [0:1:len(poly_verts(no_merge))-1])
+                if (_ps_prov_record_has_event(poly_vertex_provenance(no_merge, i), "merged_vertex")) i
+        ]) == 0,
+        "disabled cleanup merging does not record merges"
+    );
+    assert(
+        poly_vertex_descends_from(no_merge, 0, 0) &&
+        poly_vertex_descends_from(no_merge, 4, 4) &&
+        _ps_prov_record_has_event(poly_vertex_provenance(no_merge, 0), "source_vertex") &&
+        _ps_prov_record_has_event(poly_vertex_provenance(no_merge, 4), "source_vertex"),
+        "disabled cleanup merging preserves singleton source records"
+    );
+    assert(
+        len([
+            for (i = [0:1:len(poly_verts(no_coincident_merge))-1])
+                if (_ps_prov_record_has_event(poly_vertex_provenance(no_coincident_merge, i), "merged_vertex")) i
+        ]) == 0,
+        "singleton cleanup groups do not record merges"
+    );
+    assert(
+        len([
+            for (i = [0:1:len(poly_verts(merged))-1])
+                if (_ps_prov_record_has_event(poly_vertex_provenance(merged, i), "merged_vertex")) i
+        ]) == 1,
+        "coincident cleanup group records one merge"
+    );
+    assert(
+        poly_vertex_descends_from(merged, 0, 0) &&
+        poly_vertex_descends_from(merged, 0, 4),
+        "merged cleanup vertex retains every source root"
+    );
+}
+
 module run_TestProvenance() {
     test_provenance__raw_descriptors_are_lazy();
     test_provenance__chamfer_keeps_source_vertices_and_history();
@@ -135,6 +195,7 @@ module run_TestProvenance() {
     test_provenance__truncation_preserves_source_face_lineage();
     test_provenance__transform_merges_coincident_point_lineage();
     test_provenance__cleanup_remaps_lineage();
+    test_provenance__cleanup_only_records_actual_vertex_merges();
 }
 
 run_TestProvenance();
