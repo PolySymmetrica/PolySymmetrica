@@ -73,8 +73,8 @@ function _ps_prov_record(vertex_roots=[], face_roots=[], events=[]) =
 function _ps_prov_source_vertex_record(i) =
     _ps_prov_record([["vertex", i]], [], [["source_vertex", i]]);
 
-function _ps_prov_source_face_record(i) =
-    _ps_prov_record([], [["face", i]], [["source_face", i]]);
+function _ps_prov_source_face_record(i, face) =
+    _ps_prov_record([], [["face", i]], [["source_face", i, face]]);
 
 function _ps_prov_empty_history() = [];
 
@@ -82,7 +82,7 @@ function _ps_prov_init_record(poly) =
     [
         "ps_provenance_v1",
         [for (i = [0:1:len(poly_verts(poly))-1]) _ps_prov_source_vertex_record(i)],
-        [for (i = [0:1:len(poly_faces(poly))-1]) _ps_prov_source_face_record(i)],
+        [for (i = [0:1:len(poly_faces(poly))-1]) _ps_prov_source_face_record(i, poly_faces(poly)[i])],
         _ps_prov_empty_history()
     ];
 
@@ -168,6 +168,37 @@ function _ps_prov_merge_records(records, event=undef) =
     )
     _ps_prov_record(vr, fr, is_undef(event) ? ev : concat(ev, [event]));
 
+function _ps_prov_merge_records_preserving_source_faces(records, event=undef) =
+    let(
+        roots = _ps_prov_merge_records([for (r = records) _ps_prov_record(r[0], r[1])]),
+        source_face_events = _ps_prov_unique([
+            for (r = records)
+                for (e = r[2])
+                    if (is_list(e) && len(e) > 0 && e[0] == "source_face") e
+        ])
+    )
+    _ps_prov_record(
+        roots[0],
+        roots[1],
+        concat(source_face_events, is_undef(event) ? [] : [event])
+    );
+
+function _ps_prov_source_face_events(record) =
+    [
+        for (e = record[2])
+            if (is_list(e) && len(e) > 2 && e[0] == "source_face") [e[1], e[2]]
+    ];
+
+function _ps_prov_source_face_has_edge(face, a, b) =
+    len(face) > 0 &&
+    len([
+        for (i = [0:1:len(face)-1])
+            if (
+                (face[i] == a && face[(i + 1) % len(face)] == b) ||
+                (face[i] == b && face[(i + 1) % len(face)] == a)
+            ) 1
+    ]) > 0;
+
 function _ps_prov_append_history(prov, operation) =
     [prov[0], prov[1], prov[2], concat(prov[3], [[operation]])];
 
@@ -198,10 +229,23 @@ function poly_edge_provenance(poly, edge) =
         e = edges[ei],
         vr = concat(poly_vertex_provenance(poly, e[0])[0], poly_vertex_provenance(poly, e[1])[0]),
         fr = [for (fi = ef[ei]) for (x = poly_face_provenance(poly, fi)[1]) x],
+        source_faces = [
+            for (fi = ef[ei])
+                for (source_face = _ps_prov_source_face_events(poly_face_provenance(poly, fi)))
+                    source_face
+        ],
         ids = [
             for (a = _ps_prov_unique(vr))
                 for (b = _ps_prov_unique(vr))
-                    if (a[0] == "vertex" && b[0] == "vertex" && a[1] < b[1])
+                    if (
+                        a[0] == "vertex" &&
+                        b[0] == "vertex" &&
+                        a[1] < b[1] &&
+                        len([
+                            for (source_face = source_faces)
+                                if (_ps_prov_source_face_has_edge(source_face[1], a[1], b[1])) 1
+                        ]) > 0
+                    )
                     ["edge", a[1], b[1]]
         ]
     )

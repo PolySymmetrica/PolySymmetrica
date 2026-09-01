@@ -48,6 +48,34 @@ module test_provenance__edge_queries_are_undirected() {
     assert(reverse[2] == forward[2], "reversed edge incident-face lineage");
 }
 
+module test_provenance__edge_queries_require_source_adjacency() {
+    p = poly_make(
+        [
+            [0, 0, 1],
+            [1, 0, 1],
+            [0, 1, 1]
+        ],
+        [[0, 1, 2]],
+        undef,
+        [
+            "ps_provenance_v1",
+            [
+                _ps_prov_record([["vertex", 0], ["vertex", 1]], [], []),
+                _ps_prov_record([["vertex", 1], ["vertex", 2]], [], []),
+                _ps_prov_record([["vertex", 0]], [], [])
+            ],
+            [
+                _ps_prov_record([], [["face", 0]], [["source_face", 0, [0, 1, 2, 3]]])
+            ],
+            []
+        ]
+    );
+    ids = poly_edge_source_ids(p, [0, 1]);
+    assert(len([for (id = ids) if (id == ["edge", 0, 1]) id]) == 1, "source-adjacent edge lineage");
+    assert(len([for (id = ids) if (id == ["edge", 1, 2]) id]) == 1, "second source-adjacent edge lineage");
+    assert(len([for (id = ids) if (id == ["edge", 0, 2]) id]) == 0, "source diagonal is not an edge");
+}
+
 module test_provenance__selective_truncation_targets_only_source_vertices() {
     p = hexahedron();
     q = poly_chamfer(p, t=0.1);
@@ -200,6 +228,7 @@ module run_TestProvenance() {
     test_provenance__chamfer_keeps_source_vertices_and_history();
     test_provenance__chamfer_edges_are_derived_from_lineage();
     test_provenance__edge_queries_are_undirected();
+    test_provenance__edge_queries_require_source_adjacency();
     test_provenance__selective_truncation_targets_only_source_vertices();
     test_provenance__cantitruncate_records_one_semantic_operation();
     test_provenance__strict_rectify_preserves_site_lineage();

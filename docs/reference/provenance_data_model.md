@@ -104,9 +104,15 @@ and source face 2 has:
 [
     [],
     [["face", 2]],
-    [["source_face", 2]]
+    [["source_face", 2, source_face_cycle]]
 ]
 ```
+
+The source-face event retains the source face cycle privately so derived edge
+queries can distinguish a genuine source edge from a pair of source vertices
+that merely occur in the same face. This is lineage support metadata, not a
+second current-topology edge table; current edges are still derived from the
+current face cycles.
 
 The lists of roots are sets in intent, although they are represented as
 ordered lists. Lineage operations merge and remove duplicate roots. A record
@@ -229,8 +235,11 @@ The current returned record is:
 ```
 
 An inferred source edge ID currently has the form `["edge", a, b]`, where
-`a < b` are source vertex indices. `poly_edge_source_ids(poly, edge)` returns
-only these IDs.
+`a < b` are source vertex indices. An ID is returned only when `a` and `b`
+are consecutive in a retained source-face cycle associated with an incident
+current face. Shared face membership alone is insufficient: a source-face
+diagonal must not be reported as an edge. `poly_edge_source_ids(poly, edge)`
+returns only these IDs.
 
 This is intentionally a many-to-many query. A chamfer edge can be related to
 several source edges, and an edge may have no inferred source edge when its

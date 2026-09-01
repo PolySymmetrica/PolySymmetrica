@@ -92,8 +92,8 @@ function _ps_transform_site_provenance(prov, site, operation) =
     )
     retain_truncate_vertex
         ? vertices[near_v]
-        : _ps_prov_merge_records(
-            [for (r = records) _ps_prov_record(r[0], r[1])],
+        : _ps_prov_merge_records_preserving_source_faces(
+            records,
             is_chamfer ? ["chamfer_site", fi, vi]
                 : is_truncate ? ["truncation_site", near_v]
                 : is_rectify ? ["rectify_site", rectify_a, rectify_b]
@@ -102,8 +102,8 @@ function _ps_transform_site_provenance(prov, site, operation) =
         );
 
 function _ps_transform_cycle_provenance(records, operation) =
-    _ps_prov_merge_records(
-        [for (r = records) _ps_prov_record(r[0], r[1])],
+    _ps_prov_merge_records_preserving_source_faces(
+        records,
         is_undef(operation) ? ["transform_face"] : [str(operation, "_face")]
     );
 
