@@ -11,4 +11,3 @@ p = poly_with_provenance(tetrahedron());
 
 // EXPECT FAIL: [0, 0] is not a current edge.
 _ = poly_edge_provenance(p, [0, 0]);
-

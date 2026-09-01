@@ -10,4 +10,3 @@ use <../../polysymmetrica/models/platonics_all.scad>
 // EXPECT FAIL: this current vertex index is past the vertex table.
 p = poly_with_provenance(tetrahedron());
 _ = poly_vertex_provenance(p, len(poly_verts(p)));
-

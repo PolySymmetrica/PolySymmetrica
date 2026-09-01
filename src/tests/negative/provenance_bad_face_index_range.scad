@@ -10,4 +10,3 @@ use <../../polysymmetrica/models/platonics_all.scad>
 // EXPECT FAIL: this current face index is past the face table.
 p = poly_with_provenance(tetrahedron());
 _ = poly_face_provenance(p, len(poly_faces(p)));
-

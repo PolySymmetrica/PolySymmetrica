@@ -9,4 +9,3 @@ use <../../polysymmetrica/models/platonics_all.scad>
 
 // EXPECT FAIL: current vertex indices cannot be negative.
 _ = poly_vertex_provenance(poly_with_provenance(tetrahedron()), -1);
-
