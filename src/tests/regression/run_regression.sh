@@ -591,7 +591,7 @@ compare_images() {
     rc=$?
     set -e
 
-    changed="$(sed 's/[^0-9].*//' <"${metric_log}")"
+    changed="$(awk '{printf "%.0f\n", $1}' <"${metric_log}")"
     changed="${changed:-0}"
 
     if [[ "${rc}" -gt 1 ]]; then
