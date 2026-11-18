@@ -219,6 +219,7 @@ if [[ "${MODE}" == "diff" && -z "${COMPARE_BIN}" ]]; then
     echo "ImageMagick compare command not found. Install imagemagick." >&2
     exit 1
 fi
+"${COMPARE_BIN}" --version
 
 mkdir -p "${ACTUAL_ROOT}" "${DIFF_ROOT}" "${LOG_ROOT}" "${BASELINE_ROOT}"
 rm -rf "${RESULT_ROOT}"
@@ -591,7 +592,7 @@ compare_images() {
     rc=$?
     set -e
 
-    changed="$(tr -dc '0-9' <"${metric_log}")"
+    changed="$(sed 's/[^0-9].*//' <"${metric_log}")"
     changed="${changed:-0}"
 
     if [[ "${rc}" -gt 1 ]]; then
